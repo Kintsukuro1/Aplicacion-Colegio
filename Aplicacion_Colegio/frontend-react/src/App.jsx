@@ -55,27 +55,26 @@ const ApoderadoPage = lazy(() => import('./features/apoderado/ApoderadoPage'));
 const PricingPage = lazy(() => import('./features/subscriptions/PricingPage'));
 const PaymentHistoryPage = lazy(() => import('./features/subscriptions/PaymentHistoryPage'));
 const TransferNoticesPage = lazy(() => import('./features/subscriptions/TransferNoticesPage'));
-const LegacyProxy = lazy(() => import('./components/LegacyProxy'));
 
 const APP_ROUTES = [
   {
     path: 'dashboard',
     to: '/dashboard',
-    label: 'Dashboard',
+    label: 'Inicio',
     component: DashboardPage,
     anyOf: ['DASHBOARD_VIEW_SELF', 'DASHBOARD_VIEW_SCHOOL', 'DASHBOARD_VIEW_ANALYTICS'],
   },
   {
     path: 'admin-escolar/panel',
     to: '/admin-escolar/panel',
-    label: 'Admin Panel',
+    label: 'Panel administrativo',
     component: AdminOverviewPage,
     anyOf: ['DASHBOARD_VIEW_SCHOOL', 'DASHBOARD_VIEW_ANALYTICS'],
   },
   {
     path: 'admin-escolar/estudiantes',
     to: '/admin-escolar/estudiantes',
-    label: 'Admin Estudiantes',
+    label: 'Estudiantes',
     component: AdminStudentsPage,
     anyOf: ['STUDENT_EDIT', 'STUDENT_CREATE', 'SYSTEM_CONFIGURE'],
     allOf: ['DASHBOARD_VIEW_SCHOOL'],
@@ -83,7 +82,7 @@ const APP_ROUTES = [
   {
     path: 'admin-escolar/cursos',
     to: '/admin-escolar/cursos',
-    label: 'Admin Cursos',
+    label: 'Cursos',
     component: AdminCoursesPage,
     anyOf: ['COURSE_EDIT', 'COURSE_CREATE', 'SYSTEM_CONFIGURE'],
     allOf: ['DASHBOARD_VIEW_SCHOOL'],
@@ -91,7 +90,7 @@ const APP_ROUTES = [
   {
     path: 'admin-escolar/clases',
     to: '/admin-escolar/clases',
-    label: 'Admin Clases',
+    label: 'Clases',
     component: AdminClassesPage,
     anyOf: ['CLASS_EDIT', 'CLASS_CREATE', 'SYSTEM_CONFIGURE'],
     allOf: ['DASHBOARD_VIEW_SCHOOL'],
@@ -99,7 +98,7 @@ const APP_ROUTES = [
   {
     path: 'admin-escolar/evaluaciones',
     to: '/admin-escolar/evaluaciones',
-    label: 'Admin Evaluaciones',
+    label: 'Evaluaciones',
     component: AdminEvaluationsPage,
     anyOf: ['GRADE_EDIT', 'GRADE_CREATE', 'SYSTEM_CONFIGURE'],
     allOf: ['DASHBOARD_VIEW_SCHOOL'],
@@ -107,7 +106,7 @@ const APP_ROUTES = [
   {
     path: 'admin-escolar/calificaciones',
     to: '/admin-escolar/calificaciones',
-    label: 'Admin Calificaciones',
+    label: 'Calificaciones',
     component: AdminGradesPage,
     anyOf: ['GRADE_EDIT', 'GRADE_CREATE', 'SYSTEM_CONFIGURE'],
     allOf: ['DASHBOARD_VIEW_SCHOOL'],
@@ -115,7 +114,7 @@ const APP_ROUTES = [
   {
     path: 'admin-escolar/asistencias',
     to: '/admin-escolar/asistencias',
-    label: 'Admin Asistencias',
+    label: 'Asistencias',
     component: AdminAttendancePage,
     anyOf: ['CLASS_TAKE_ATTENDANCE', 'SYSTEM_CONFIGURE'],
     allOf: ['DASHBOARD_VIEW_SCHOOL'],
@@ -123,7 +122,7 @@ const APP_ROUTES = [
   {
     path: 'admin-escolar/importacion-exportacion',
     to: '/admin-escolar/importacion-exportacion',
-    label: 'Admin Import/Export',
+    label: 'Importar y exportar',
     component: AdminImportExportPage,
     anyOf: ['SYSTEM_ADMIN', 'SYSTEM_CONFIGURE'],
     allOf: ['DASHBOARD_VIEW_SCHOOL'],
@@ -131,35 +130,36 @@ const APP_ROUTES = [
   {
     path: 'calendario/eventos',
     to: '/calendario/eventos',
-    label: 'Calendario Escolar',
+    label: 'Calendario escolar',
     component: CalendarEventsPage,
     anyOf: ['ANNOUNCEMENT_VIEW', 'ANNOUNCEMENT_CREATE', 'ANNOUNCEMENT_EDIT', 'ANNOUNCEMENT_DELETE', 'SYSTEM_ADMIN'],
   },
   {
     path: 'reuniones/solicitudes',
     to: '/reuniones/solicitudes',
-    label: 'Solicitudes Reunion',
+    label: 'Solicitudes',
     component: MeetingRequestsPage,
+    allowedRoles: ['profesor', 'apoderado', 'admin_escolar', 'admin_general'],
     anyOf: ['CLASS_VIEW', 'SYSTEM_CONFIGURE', 'SYSTEM_ADMIN'],
   },
   {
     path: 'seguridad/sesiones-activas',
     to: '/seguridad/sesiones-activas',
-    label: 'Active Sessions',
+    label: 'Sesiones activas',
     component: ActiveSessionsPage,
     anyOf: ['AUDIT_VIEW', 'SYSTEM_ADMIN'],
   },
   {
     path: 'seguridad/password-history',
     to: '/seguridad/password-history',
-    label: 'Password History',
+    label: 'Historial de claves',
     component: PasswordHistoryPage,
     anyOf: ['AUDIT_VIEW', 'SYSTEM_ADMIN'],
   },
   {
     path: 'profesor/clases',
     to: '/profesor/clases',
-    label: 'Profesor Clases',
+    label: 'Mis clases',
     component: TeacherClassesPage,
     allowedRoles: ['profesor'],
     anyOf: ['CLASS_VIEW'],
@@ -167,7 +167,7 @@ const APP_ROUTES = [
   {
     path: 'profesor/asistencias',
     to: '/profesor/asistencias',
-    label: 'Profesor Asistencias',
+    label: 'Asistencias',
     component: TeacherAttendancePage,
     allowedRoles: ['profesor'],
     anyOf: ['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE'],
@@ -175,7 +175,7 @@ const APP_ROUTES = [
   {
     path: 'profesor/evaluaciones',
     to: '/profesor/evaluaciones',
-    label: 'Profesor Evaluaciones',
+    label: 'Evaluaciones',
     component: TeacherEvaluationsPage,
     allowedRoles: ['profesor'],
     anyOf: ['GRADE_VIEW', 'GRADE_CREATE', 'GRADE_EDIT', 'GRADE_DELETE'],
@@ -183,7 +183,7 @@ const APP_ROUTES = [
   {
     path: 'profesor/calificaciones',
     to: '/profesor/calificaciones',
-    label: 'Profesor Calificaciones',
+    label: 'Calificaciones',
     component: TeacherGradesPage,
     allowedRoles: ['profesor'],
     anyOf: ['GRADE_VIEW', 'GRADE_CREATE', 'GRADE_EDIT', 'GRADE_DELETE'],
@@ -191,15 +191,15 @@ const APP_ROUTES = [
   {
     path: 'estudiante/panel',
     to: '/estudiante/panel',
-    label: 'Estudiante Panel',
+    label: 'Mi panel',
     component: StudentSelfPage,
-    allowedRoles: ['estudiante'],
+    allowedRoles: ['estudiante', 'alumno'],
     anyOf: ['PORTAL_ESTUDIANTE'],
   },
   {
     path: 'asesor-financiero/panel',
     to: '/asesor-financiero/panel',
-    label: 'Asesor Financiero',
+    label: 'Panel financiero',
     component: AsesorFinancieroPage,
     allowedRoles: ['asesor_financiero'],
     anyOf: ['FINANCE_VIEW', 'FINANCE_MANAGE_PAYMENTS'],
@@ -207,7 +207,7 @@ const APP_ROUTES = [
   {
     path: 'inspector-convivencia/panel',
     to: '/inspector-convivencia/panel',
-    label: 'Inspector Convivencia',
+    label: 'Panel convivencia',
     component: InspectorConvivenciaPage,
     allowedRoles: ['inspector_convivencia'],
     anyOf: ['DISCIPLINE_VIEW', 'DISCIPLINE_CREATE', 'JUSTIFICATION_APPROVE'],
@@ -215,7 +215,7 @@ const APP_ROUTES = [
   {
     path: 'psicologo-orientador/panel',
     to: '/psicologo-orientador/panel',
-    label: 'Psicologo Orientador',
+    label: 'Panel orientacion',
     component: PsicologoOrientadorPage,
     allowedRoles: ['psicologo_orientador'],
     anyOf: ['COUNSELING_VIEW', 'COUNSELING_CREATE', 'REFERRAL_CREATE', 'REFERRAL_EDIT'],
@@ -223,7 +223,7 @@ const APP_ROUTES = [
   {
     path: 'soporte-tecnico/panel',
     to: '/soporte-tecnico/panel',
-    label: 'Soporte Tecnico',
+    label: 'Panel soporte',
     component: SoporteTecnicoPage,
     allowedRoles: ['soporte_tecnico_escolar'],
     anyOf: ['SUPPORT_VIEW_TICKETS', 'SUPPORT_CREATE_TICKET', 'SUPPORT_RESOLVE_TICKET', 'SUPPORT_RESET_PASSWORD'],
@@ -231,7 +231,7 @@ const APP_ROUTES = [
   {
     path: 'bibliotecario-digital/panel',
     to: '/bibliotecario-digital/panel',
-    label: 'Bibliotecario Digital',
+    label: 'Panel biblioteca',
     component: BibliotecarioDigitalPage,
     allowedRoles: ['bibliotecario_digital'],
     anyOf: ['LIBRARY_VIEW', 'LIBRARY_CREATE', 'LIBRARY_MANAGE_LOANS'],
@@ -239,7 +239,7 @@ const APP_ROUTES = [
   {
     path: 'coordinador-academico/panel',
     to: '/coordinador-academico/panel',
-    label: 'Coordinador Academico',
+    label: 'Panel academico',
     component: CoordinadorAcademicoPage,
     allowedRoles: ['coordinador_academico'],
     anyOf: ['PLANNING_VIEW', 'PLANNING_APPROVE'],
@@ -247,7 +247,7 @@ const APP_ROUTES = [
   {
     path: 'apoderado/panel',
     to: '/apoderado/panel',
-    label: 'Apoderado Panel',
+    label: 'Mi panel',
     component: ApoderadoPage,
     allowedRoles: ['apoderado'],
     anyOf: ['PORTAL_APODERADO'],
@@ -262,7 +262,7 @@ const APP_ROUTES = [
   {
     path: 'pagos/historial',
     to: '/pagos/historial',
-    label: 'Historial de Pagos',
+    label: 'Historial de pagos',
     component: PaymentHistoryPage,
     anyOf: ['FINANCE_MANAGE_PAYMENTS', 'SYSTEM_ADMIN'],
   },
@@ -288,6 +288,15 @@ function AccessDeniedPage() {
   );
 }
 
+function FallbackRedirect({ visibleRoutes }) {
+  const fallback = visibleRoutes[0]?.to;
+  if (!fallback) {
+    return <AccessDeniedPage />;
+  }
+
+  return <Navigate to={fallback} replace />;
+}
+
 function PageLoader() {
   return (
     <div style={{ padding: '2rem', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
@@ -303,15 +312,33 @@ function ShellLayout({ children, visibleRoutes }) {
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  // Lock body scroll when sidebar is open on mobile
   useEffect(() => {
-    if (sidebarOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+    if (typeof window.matchMedia !== 'function') {
+      document.body.style.overflow = sidebarOpen ? 'hidden' : '';
+      return () => {
+        document.body.style.overflow = '';
+      };
     }
+
+    const mobileQuery = window.matchMedia('(max-width: 768px)');
+    const syncBodyScroll = () => {
+      document.body.style.overflow = sidebarOpen && mobileQuery.matches ? 'hidden' : '';
+    };
+
+    syncBodyScroll();
+    if (typeof mobileQuery.addEventListener === 'function') {
+      mobileQuery.addEventListener('change', syncBodyScroll);
+    } else {
+      mobileQuery.addListener(syncBodyScroll);
+    }
+
     return () => {
       document.body.style.overflow = '';
+      if (typeof mobileQuery.removeEventListener === 'function') {
+        mobileQuery.removeEventListener('change', syncBodyScroll);
+      } else {
+        mobileQuery.removeListener(syncBodyScroll);
+      }
     };
   }, [sidebarOpen]);
 
@@ -365,7 +392,7 @@ function ShellLayout({ children, visibleRoutes }) {
             type="button"
             className="sidebar-toggle-btn"
             onClick={() => setSidebarOpen(true)}
-            aria-label="Abrir menú"
+            aria-label="Abrir menu"
             aria-expanded={sidebarOpen}
             aria-controls="primary-sidebar"
           >
@@ -463,7 +490,7 @@ function AuthorizedApp() {
               element={<GuardedPage route={route} />}
             />
           ))}
-          <Route path="*" element={<LegacyProxy />} />
+          <Route path="*" element={<FallbackRedirect visibleRoutes={visibleRoutes} />} />
         </Routes>
       </ShellLayout>
     </>

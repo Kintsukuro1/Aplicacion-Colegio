@@ -1,33 +1,27 @@
 import { NavLink } from 'react-router-dom';
 
-/**
- * Barra de navegación inferior para dispositivos móviles.
- * Muestra las 5 secciones principales con iconos.
- * Solo visible en pantallas ≤ 768px (controlado por CSS).
- */
-
 const BOTTOM_NAV_ITEMS = [
-  { to: '/dashboard', icon: '📊', label: 'Inicio' },
-  { to: '/admin-escolar/estudiantes', icon: '👥', label: 'Alumnos' },
-  { to: '/admin-escolar/asistencias', icon: '📋', label: 'Asistencia' },
-  { to: '/calendario/eventos', icon: '📅', label: 'Calendario' },
-  { to: '/admin-escolar/calificaciones', icon: '📝', label: 'Notas' },
+  { to: '/dashboard', icon: 'IN', label: 'Inicio' },
+  { to: '/estudiante/panel', icon: 'MI', label: 'Mi panel' },
+  { to: '/apoderado/panel', icon: 'AP', label: 'Pupilos' },
+  { to: '/profesor/clases', icon: 'CL', label: 'Clases' },
+  { to: '/admin-escolar/estudiantes', icon: 'AL', label: 'Alumnos' },
+  { to: '/admin-escolar/asistencias', icon: 'AS', label: 'Asistencia' },
+  { to: '/calendario/eventos', icon: 'CA', label: 'Calendario' },
+  { to: '/admin-escolar/calificaciones', icon: 'NO', label: 'Notas' },
 ];
 
-export default function MobileBottomNav({ visibleRoutes }) {
-  // Filter to only show items the user can access
-  const visiblePaths = new Set(visibleRoutes.map((r) => r.to));
-
+export default function MobileBottomNav({ visibleRoutes = [] }) {
+  const visiblePaths = new Set(visibleRoutes.map((route) => route.to));
   const items = BOTTOM_NAV_ITEMS.filter((item) => visiblePaths.has(item.to));
 
-  // If user can't see enough items, add fallback based on visible routes
   if (items.length < 3) {
-    const existingTos = new Set(items.map((i) => i.to));
+    const existingTos = new Set(items.map((item) => item.to));
     for (const route of visibleRoutes) {
       if (!existingTos.has(route.to) && items.length < 5) {
         items.push({
           to: route.to,
-          icon: '📌',
+          icon: buildInitials(route.label),
           label: route.label.split(' ').slice(0, 2).join(' '),
         });
         existingTos.add(route.to);
@@ -35,10 +29,12 @@ export default function MobileBottomNav({ visibleRoutes }) {
     }
   }
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
-    <nav className="mobile-bottom-nav" aria-label="Navegación principal móvil">
+    <nav className="mobile-bottom-nav" aria-label="Navegacion principal movil">
       {items.slice(0, 5).map((item) => (
         <NavLink
           key={item.to}
@@ -51,4 +47,12 @@ export default function MobileBottomNav({ visibleRoutes }) {
       ))}
     </nav>
   );
+}
+
+function buildInitials(label) {
+  const words = String(label || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+  return words.map((word) => word[0]).join('').toUpperCase() || 'IR';
 }

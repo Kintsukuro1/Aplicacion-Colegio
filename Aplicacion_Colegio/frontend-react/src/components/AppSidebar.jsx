@@ -1,152 +1,167 @@
-/**
- * AppSidebar.jsx — Sidebar Global Mejorado (Fase 5)
- * 
- * Reemplaza GroupedSidebar con componentes reutilizables
- * Integra SidebarMenu de Fase 5 con navegación dinámica
- * 
- * Uso en App.jsx:
- * <AppSidebar 
- *   visibleRoutes={visibleRoutes}
- *   onLogout={onLogout}
- *   isOpen={sidebarOpen}
- *   onClose={closeSidebar}
- * />
- */
+import { useEffect, useMemo, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
-import React, { useMemo, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { SidebarMenu } from '@/components/ui';
-import { useAuthStore } from '@/lib/store/useAuthStore';
+import { getUserRole } from '../lib/capabilities';
+import { useAuthStore } from '../lib/store/useAuthStore';
+
+const MODULE_ORDER = [
+  'dashboard',
+  'estudiante',
+  'apoderado',
+  'profesor',
+  'admin-escolar',
+  'calendario',
+  'reuniones',
+  'asesor-financiero',
+  'coordinador-academico',
+  'inspector-convivencia',
+  'psicologo-orientador',
+  'bibliotecario-digital',
+  'soporte-tecnico',
+  'seguridad',
+  'pagos',
+  'planes',
+];
 
 export function AppSidebar({ visibleRoutes = [], onLogout = () => {}, isOpen = false, onClose = () => {} }) {
-  const navigate = useNavigate();
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
-  const [expandedMenus, setExpandedMenus] = useState({});
+  const [expanded, setExpanded] = useState({});
 
-  // Mapeo de roles a emojis e iconos
-  const roleIcons = {
-    admin: '👨‍💼',
-    profesor: '👨‍🏫',
-    estudiante: '👨‍🎓',
-    apoderado: '👨‍👩‍👧',
-    asesor_financiero: '💰',
-    inspector_convivencia: '🛡️',
-    psicologo_orientador: '🧠',
-    soporte_tecnico_escolar: '🔧',
-    bibliotecario_digital: '📚',
-    coordinador_academico: '📋',
-  };
+  const activeModule = getRouteModule(location.pathname);
 
-  const getRoleDisplay = (role) => {
-    const icon = roleIcons[role] || '👤';
-    const label = role
-      ?.split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ') || 'Usuario';
-    return { icon, label };
-  };
-
-  // Agrupar rutas por módulo
-  const menuItems = useMemo(() => {
-    if (!visibleRoutes.length) return [];
-
-    // Crear estructura de menú jerárquico
-    const grouped = {};
+  const menuGroups = useMemo(() => {
+    const grouped = new Map();
 
     visibleRoutes.forEach((route) => {
-      const pathParts = route.path.split('/');
-      const module = pathParts[0] || 'dashboard';
+      const module = route.path.split('/')[0] || 'dashboard';
+      const current = grouped.get(module) || {
+        id: module,
+        label: getModuleLabel(module),
+        icon: getModuleIcon(module),
+        route: null,
+        children: [],
+      };
 
-      if (!grouped[module]) {
-        grouped[module] = {
-          id: module,
-          label: getModuleLabel(module),
-          icon: getModuleIcon(module),
-          children: [],
-          route,
-        };
+      if (route.path === module) {
+        current.route = route;
+      } else {
+        current.children.push(route);
       }
 
-      // Si hay más niveles, agregarlos como children
-      if (pathParts.length > 1) {
-        grouped[module].children.push({
-          id: route.path,
-          label: route.label,
-          route,
-        });
-      }
+      grouped.set(module, current);
     });
 
-    return Object.values(grouped).sort((a, b) => {
-      // Dashboard primero
-      if (a.id === 'dashboard') return -1;
-      if (b.id === 'dashboard') return 1;
+    return Array.from(grouped.values()).sort((a, b) => {
+      const aIndex = MODULE_ORDER.indexOf(a.id);
+      const bIndex = MODULE_ORDER.indexOf(b.id);
+      if (aIndex !== -1 || bIndex !== -1) {
+        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+      }
       return a.label.localeCompare(b.label);
     });
   }, [visibleRoutes]);
 
-  const handleMenuSelect = (itemId) => {
-    // Si tiene children y está en el menú, expandir/contraer
-    const item = menuItems.find((m) => m.id === itemId);
-    if (item?.children?.length > 0) {
-      setExpandedMenus((prev) => ({
-        ...prev,
-        [itemId]: !prev[itemId],
-      }));
-    } else {
-      // Si no tiene children, navegar directamente
-      const route = item?.route || visibleRoutes.find((r) => r.path === itemId);
-      if (route) {
-        navigate(route.to);
-        onClose(); // Cerrar sidebar en mobile
-      }
+  useEffect(() => {
+    if (activeModule) {
+      setExpanded((current) => ({ ...current, [activeModule]: true }));
     }
-  };
+  }, [activeModule]);
 
-  const { icon: roleIcon, label: roleLabel } = getRoleDisplay(user?.role);
+  const role = getRoleDisplay(getUserRole(user));
+  const displayName = user?.full_name || user?.user?.name || user?.email || 'Usuario';
+  const schoolName = user?.school?.name || 'Colegio';
 
   return (
     <aside
       id="primary-sidebar"
-      className={`app-sidebar ${isOpen ? 'app-sidebar-visible' : ''}`}
+      className={`app-sidebar${isOpen ? ' app-sidebar-visible' : ''}`}
       role="navigation"
-      aria-label="Navegación principal"
+      aria-label="Navegacion principal"
     >
       <div className="sidebar-content">
-        {/* Header */}
         <div className="sidebar-header">
-          <div className="sidebar-logo">
-            <h1>🎓 Colegio</h1>
+          <div className="sidebar-logo-mark" aria-hidden="true">C</div>
+          <div className="sidebar-brand">
+            <h1>{schoolName}</h1>
+            <span>Portal escolar</span>
           </div>
+          <button type="button" className="sidebar-close-action" onClick={onClose} aria-label="Cerrar menu">
+            X
+          </button>
         </div>
 
-        {/* Menú Dinámico */}
-        <nav className="sidebar-menu">
-          <SidebarMenu
-            items={menuItems.map((item) => ({
-              ...item,
-              children: item.children?.map((child) => ({
-                id: child.id,
-                label: child.label,
-              })) || [],
-            }))}
-            activeItem={null} // Puede actualizarse basado en location.pathname si es necesario
-            onSelect={handleMenuSelect}
-          />
+        <nav className="sidebar-menu" aria-label="Secciones">
+          {menuGroups.map((group) => {
+            const isActive = activeModule === group.id;
+            const hasChildren = group.children.length > 0;
+            const isExpanded = Boolean(expanded[group.id]);
+            const singleChild = !group.route && group.children.length === 1 ? group.children[0] : null;
+
+            if ((!hasChildren && group.route) || singleChild) {
+              const targetRoute = singleChild || group.route;
+              return (
+                <NavLink
+                  key={group.id}
+                  to={targetRoute.to}
+                  className={({ isActive: linkActive }) => `sidebar-nav-link${linkActive ? ' active' : ''}`}
+                  onClick={onClose}
+                >
+                  <span className="sidebar-nav-icon">{group.icon}</span>
+                  <span>{targetRoute.label}</span>
+                </NavLink>
+              );
+            }
+
+            return (
+              <div key={group.id} className={`sidebar-nav-group${isActive ? ' active' : ''}`}>
+                <button
+                  type="button"
+                  className="sidebar-module-toggle"
+                  onClick={() => setExpanded((current) => ({ ...current, [group.id]: !isExpanded }))}
+                  aria-expanded={isExpanded}
+                >
+                  <span className="sidebar-nav-icon">{group.icon}</span>
+                  <span className="sidebar-module-label">{group.label}</span>
+                  <span className="sidebar-module-chevron" aria-hidden="true">&gt;</span>
+                </button>
+
+                <div className={`sidebar-submenu${isExpanded ? ' expanded' : ''}`}>
+                  {group.route ? (
+                    <NavLink
+                      to={group.route.to}
+                      className={({ isActive: linkActive }) => `sidebar-sub-link${linkActive ? ' active' : ''}`}
+                      onClick={onClose}
+                    >
+                      {group.route.label}
+                    </NavLink>
+                  ) : null}
+                  {group.children.map((route) => (
+                    <NavLink
+                      key={route.path}
+                      to={route.to}
+                      className={({ isActive: linkActive }) => `sidebar-sub-link${linkActive ? ' active' : ''}`}
+                      onClick={onClose}
+                    >
+                      {route.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
-        {/* User Section */}
         <div className="sidebar-footer">
           <div className="user-card">
-            <div className="user-avatar">{roleIcon}</div>
+            <div className="user-avatar" aria-hidden="true">{role.initials}</div>
             <div className="user-info">
-              <p className="user-name">{user?.name || 'Usuario'}</p>
-              <p className="user-role">{roleLabel}</p>
+              <p className="user-name">{displayName}</p>
+              <p className="user-role">{role.label}</p>
             </div>
           </div>
-          <button onClick={onLogout} className="logout-btn">
-            Cerrar Sesión
+          <button type="button" onClick={onLogout} className="logout-btn">
+            Cerrar sesion
           </button>
         </div>
       </div>
@@ -154,51 +169,73 @@ export function AppSidebar({ visibleRoutes = [], onLogout = () => {}, isOpen = f
   );
 }
 
-/**
- * Funciones auxiliares para obtener labels e iconos de módulos
- */
+function getRouteModule(pathname) {
+  const cleanPath = String(pathname || '').replace(/^\/+/, '');
+  return cleanPath.split('/')[0] || 'dashboard';
+}
+
+function getRoleDisplay(role) {
+  const labels = {
+    administrador_general: { label: 'Administrador general', initials: 'AG' },
+    administrador_escolar: { label: 'Administrador escolar', initials: 'AE' },
+    admin_general: { label: 'Administrador general', initials: 'AG' },
+    admin_escolar: { label: 'Administrador escolar', initials: 'AE' },
+    profesor: { label: 'Profesor', initials: 'PR' },
+    estudiante: { label: 'Estudiante', initials: 'ES' },
+    alumno: { label: 'Estudiante', initials: 'ES' },
+    apoderado: { label: 'Apoderado', initials: 'AP' },
+    asesor_financiero: { label: 'Asesor financiero', initials: 'AF' },
+    inspector_convivencia: { label: 'Inspector convivencia', initials: 'IC' },
+    psicologo_orientador: { label: 'Psicologo orientador', initials: 'PO' },
+    soporte_tecnico_escolar: { label: 'Soporte tecnico', initials: 'ST' },
+    bibliotecario_digital: { label: 'Bibliotecario digital', initials: 'BD' },
+    coordinador_academico: { label: 'Coordinador academico', initials: 'CA' },
+  };
+  return labels[role] || { label: 'Usuario', initials: 'US' };
+}
+
 function getModuleLabel(module) {
   const labels = {
-    dashboard: 'Dashboard',
-    'admin-escolar': 'Administración',
+    dashboard: 'Inicio',
+    'admin-escolar': 'Administracion',
     profesor: 'Profesor',
     estudiante: 'Estudiante',
     apoderado: 'Apoderado',
-    'asesor-financiero': 'Asesor Financiero',
-    'inspector-convivencia': 'Inspector',
-    'psicologo-orientador': 'Psicólogo',
+    'asesor-financiero': 'Finanzas',
+    'inspector-convivencia': 'Convivencia',
+    'psicologo-orientador': 'Orientacion',
     'soporte-tecnico': 'Soporte',
     'bibliotecario-digital': 'Biblioteca',
-    'coordinador-academico': 'Coordinador',
+    'coordinador-academico': 'Academico',
     calendario: 'Calendario',
     reuniones: 'Reuniones',
     seguridad: 'Seguridad',
     pagos: 'Pagos',
     planes: 'Planes',
   };
-  return labels[module] || module.replace(/-/g, ' ').toUpperCase();
+  return labels[module] || module.replace(/-/g, ' ');
 }
 
 function getModuleIcon(module) {
   const icons = {
-    dashboard: '📊',
-    'admin-escolar': '⚙️',
-    profesor: '👨‍🏫',
-    estudiante: '👨‍🎓',
-    apoderado: '👨‍👩‍👧',
-    'asesor-financiero': '💰',
-    'inspector-convivencia': '🛡️',
-    'psicologo-orientador': '🧠',
-    'soporte-tecnico': '🔧',
-    'bibliotecario-digital': '📚',
-    'coordinador-academico': '📋',
-    calendario: '📅',
-    reuniones: '👥',
-    seguridad: '🔐',
-    pagos: '💳',
-    planes: '📄',
+    dashboard: 'IN',
+    'admin-escolar': 'AD',
+    profesor: 'PR',
+    estudiante: 'ES',
+    apoderado: 'AP',
+    'asesor-financiero': 'FI',
+    'inspector-convivencia': 'CO',
+    'psicologo-orientador': 'OR',
+    'soporte-tecnico': 'ST',
+    'bibliotecario-digital': 'BI',
+    'coordinador-academico': 'AC',
+    calendario: 'CA',
+    reuniones: 'RE',
+    seguridad: 'SE',
+    pagos: 'PA',
+    planes: 'PL',
   };
-  return icons[module] || '📌';
+  return icons[module] || 'MD';
 }
 
 export default AppSidebar;

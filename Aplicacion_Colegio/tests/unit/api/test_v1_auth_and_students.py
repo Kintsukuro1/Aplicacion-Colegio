@@ -135,6 +135,20 @@ def test_jwt_verify_and_logout_endpoints_available():
     assert logout_response.status_code == 200
 
 
+def test_auth_token_preflight_allows_configured_react_origin():
+    client = APIClient(
+        HTTP_HOST='localhost',
+        HTTP_ORIGIN='http://localhost:5175',
+        HTTP_ACCESS_CONTROL_REQUEST_METHOD='POST',
+        HTTP_ACCESS_CONTROL_REQUEST_HEADERS='content-type',
+    )
+
+    response = client.options('/api/v1/auth/token/')
+
+    assert response.status_code == 200
+    assert response['Access-Control-Allow-Origin'] == 'http://localhost:5175'
+
+
 def test_logout_rejects_refresh_token_from_other_user():
     user_one = _mk_user('admin4@test.cl', 'Administrador escolar', 700, '66666666-6')
     user_two = _mk_user('admin5@test.cl', 'Administrador escolar', 700, '77777777-7')

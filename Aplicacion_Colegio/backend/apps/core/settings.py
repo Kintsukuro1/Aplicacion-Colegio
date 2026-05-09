@@ -37,6 +37,12 @@ except ValueError:
 DEBUG_TOOLBAR_ENABLED = config('DEBUG_TOOLBAR_ENABLED', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver').split(',')
 
+API_ALLOWED_ORIGINS = config(
+    'API_ALLOWED_ORIGINS',
+    default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:5175,http://127.0.0.1:5175',
+)
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in API_ALLOWED_ORIGINS.split(',') if origin.strip()]
+
 
 # Application definition
 
@@ -85,7 +91,9 @@ INSTALLED_APPS.append('backend.apps.api')
 if DEBUG and DEBUG_TOOLBAR_ENABLED:
     INSTALLED_APPS.append('debug_toolbar')
 
-CORS_ENABLED = config('CORS_ENABLED', default='True' if DEBUG else 'False', cast=bool)
+# CORS must be available for configured React origins even when an external
+# DEBUG env var disables Django debug mode in local shells.
+CORS_ENABLED = config('CORS_ENABLED', default='True' if CORS_ALLOWED_ORIGINS else 'False', cast=bool)
 if CORS_ENABLED:
     INSTALLED_APPS.append('corsheaders')
 
@@ -494,11 +502,6 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-API_ALLOWED_ORIGINS = config(
-    'API_ALLOWED_ORIGINS',
-    default='http://localhost:5173,http://127.0.0.1:5173',
-)
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in API_ALLOWED_ORIGINS.split(',') if origin.strip()]
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
 
 # Dominio base para resolver subdominios tenant (ej: redpanda.cl).

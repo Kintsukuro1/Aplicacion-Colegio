@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../lib/apiClient';
@@ -54,6 +55,7 @@ function EmptySection({ title, description }) {
 }
 
 export default function StudentSelfPage() {
+  const location = useLocation();
   const [selectedCycle, setSelectedCycle] = useState('');
 
   const { data: profile, isLoading: loadingProfile, error: profileErrorObj } = useQuery({
@@ -119,6 +121,15 @@ export default function StudentSelfPage() {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
+
+  useEffect(() => {
+    if (!location.hash) {
+      return;
+    }
+
+    const target = location.hash.slice(1);
+    window.setTimeout(() => scrollToSection(target), 0);
+  }, [location.hash, summaryLoading]);
 
   const profileCards = useMemo(() => {
     const subjectCount = classes.length;
