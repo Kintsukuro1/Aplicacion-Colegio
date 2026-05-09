@@ -64,7 +64,7 @@ from backend.apps.api.resources_serializers import (
     TeacherClassCompactSerializer,
 )
 from backend.apps.cursos.models import Asignatura, Clase, ClaseEstudiante, Curso
-from backend.apps.institucion.models import CicloAcademico
+from backend.apps.institucion.models import CicloAcademico, Colegio
 from backend.apps.matriculas.models import Matricula
 
 
@@ -747,6 +747,34 @@ def dashboard_summary(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def dashboard_schools(request):
+    if not is_global_admin(request.user):
+        return Response({'detail': 'No tiene permisos para listar colegios.'}, status=status.HTTP_403_FORBIDDEN)
+
+    schools = (
+        Colegio.objects.all_schools()
+        .select_related('comuna')
+        .order_by('nombre')
+        .values('rbd', 'nombre', 'slug', 'comuna__nombre')
+    )
+    return Response(
+        {
+            'results': [
+                {
+                    'rbd': row['rbd'],
+                    'nombre': row['nombre'],
+                    'slug': row['slug'],
+                    'comuna': row['comuna__nombre'],
+                }
+                for row in schools
+            ]
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def dashboard_executive(request):
     """Vista ejecutiva del dashboard con datos para gráficos y alertas."""
     from backend.apps.api.services.dashboard_analytics_service import DashboardAnalyticsService
@@ -756,7 +784,10 @@ def dashboard_executive(request):
     requested_school = request.query_params.get('colegio_id')
 
     try:
-        effective_school_id = int(requested_school) if requested_school else user_school_id
+        if scope == 'global':
+            effective_school_id = None
+        else:
+            effective_school_id = int(requested_school) if requested_school else user_school_id
     except (TypeError, ValueError):
         effective_school_id = user_school_id
 

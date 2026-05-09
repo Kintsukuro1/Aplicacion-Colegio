@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from backend.apps.api.tasks import process_payment_webhook_task
+from backend.common.services.policy_service import PolicyService
 
 from backend.apps.institucion.models import Colegio
 from backend.apps.subscriptions.models import Plan
@@ -105,7 +106,8 @@ def create_checkout(request):
 @permission_classes([IsAuthenticated])
 def payment_history(request):
     colegio_rbd = request.query_params.get('colegio_rbd') or getattr(request.user, 'rbd_colegio', None)
-    if colegio_rbd is None:
+    is_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
+    if colegio_rbd is None and not is_admin:
         return Response({'detail': 'No se pudo resolver el colegio.'}, status=status.HTTP_400_BAD_REQUEST)
 
     payments = PaymentService.history_for_school(school_id=colegio_rbd)
@@ -132,7 +134,8 @@ def payment_history(request):
 @permission_classes([IsAuthenticated])
 def transfer_notices(request):
     colegio_rbd = request.query_params.get('colegio_rbd') or getattr(request.user, 'rbd_colegio', None)
-    if colegio_rbd is None:
+    is_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
+    if colegio_rbd is None and not is_admin:
         return Response({'detail': 'No se pudo resolver el colegio.'}, status=status.HTTP_400_BAD_REQUEST)
 
     status_filter = str(request.query_params.get('status') or '').strip().lower() or None
@@ -140,13 +143,16 @@ def transfer_notices(request):
     since_filter = str(request.query_params.get('since') or '').strip() or None
     until_filter = str(request.query_params.get('until') or '').strip() or None
 
-    try:
-        colegio = Colegio.objects.get(rbd=colegio_rbd)
-    except Colegio.DoesNotExist:
-        return Response({'detail': 'Colegio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+    school_id_to_pass = None
+    if colegio_rbd is not None:
+        try:
+            colegio = Colegio.objects.get(rbd=colegio_rbd)
+            school_id_to_pass = colegio.rbd
+        except Colegio.DoesNotExist:
+            return Response({'detail': 'Colegio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
     payments = PaymentService.list_transfer_notices(
-        school_id=colegio.rbd,
+        school_id=school_id_to_pass,
         status_filter=status_filter,
         gateway_filter=gateway_filter,
         since_filter=since_filter,
@@ -176,7 +182,8 @@ def transfer_notices(request):
 @permission_classes([IsAuthenticated])
 def transfer_notices_export(request):
     colegio_rbd = request.query_params.get('colegio_rbd') or getattr(request.user, 'rbd_colegio', None)
-    if colegio_rbd is None:
+    is_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
+    if colegio_rbd is None and not is_admin:
         return Response({'detail': 'No se pudo resolver el colegio.'}, status=status.HTTP_400_BAD_REQUEST)
 
     status_filter = str(request.query_params.get('status') or '').strip().lower() or None
@@ -184,13 +191,18 @@ def transfer_notices_export(request):
     since_filter = str(request.query_params.get('since') or '').strip() or None
     until_filter = str(request.query_params.get('until') or '').strip() or None
 
-    try:
-        colegio = Colegio.objects.get(rbd=colegio_rbd)
-    except Colegio.DoesNotExist:
-        return Response({'detail': 'Colegio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+    school_id_to_pass = None
+    filename_suffix = "todos"
+    if colegio_rbd is not None:
+        try:
+            colegio = Colegio.objects.get(rbd=colegio_rbd)
+            school_id_to_pass = colegio.rbd
+            filename_suffix = str(colegio.rbd)
+        except Colegio.DoesNotExist:
+            return Response({'detail': 'Colegio no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
     payments = PaymentService.list_transfer_notices(
-        school_id=colegio.rbd,
+        school_id=school_id_to_pass,
         status_filter=status_filter,
         gateway_filter=gateway_filter,
         since_filter=since_filter,
@@ -233,7 +245,7 @@ def transfer_notices_export(request):
         ])
 
     response = HttpResponse(stream.getvalue(), content_type='text/csv; charset=utf-8')
-    response['Content-Disposition'] = f'attachment; filename="transferencias_{colegio.rbd}.csv"'
+    response['Content-Disposition'] = f'attachment; filename="transferencias_{filename_suffix}.csv"'
     return response
 
 

@@ -132,17 +132,20 @@ class PaymentService:
         return payment
 
     @staticmethod
-    def history_for_school(*, school_id: int):
-        return Payment.objects.select_related('subscription__plan', 'subscription__colegio').filter(
-            subscription__colegio_id=school_id
-        ).order_by('-fecha_creacion')
+    def history_for_school(*, school_id: Optional[int] = None):
+        qs = Payment.objects.select_related('subscription__plan', 'subscription__colegio')
+        if school_id is not None:
+            qs = qs.filter(subscription__colegio_id=school_id)
+        return qs.order_by('-fecha_creacion')
 
     @staticmethod
-    def list_transfer_notices(*, school_id: int, status_filter: Optional[str] = None, gateway_filter: Optional[str] = None, since_filter: Optional[str] = None, until_filter: Optional[str] = None):
-        payments = Payment.objects.select_related('subscription__plan', 'subscription__colegio').filter(
-            subscription__colegio_id=school_id,
+    def list_transfer_notices(*, school_id: Optional[int] = None, status_filter: Optional[str] = None, gateway_filter: Optional[str] = None, since_filter: Optional[str] = None, until_filter: Optional[str] = None):
+        qs = Payment.objects.select_related('subscription__plan', 'subscription__colegio').filter(
             gateway__in=['bank_transfer', 'bank_transfer_bancoestado'],
-        ).order_by('-fecha_creacion')
+        )
+        if school_id is not None:
+            qs = qs.filter(subscription__colegio_id=school_id)
+        payments = qs.order_by('-fecha_creacion')
         notice_payments = [payment for payment in payments if (payment.metadata_json or {}).get('bank_transfer_notice')]
 
         if status_filter:

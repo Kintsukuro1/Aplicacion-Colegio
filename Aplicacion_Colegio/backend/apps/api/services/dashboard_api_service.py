@@ -428,6 +428,54 @@ class DashboardApiService:
 
     @classmethod
     def _build_admin_general_self(cls, user, *, today, school_id):
+        return cls._build_admin_general_global_self(today=today)
+
+    @staticmethod
+    def _build_admin_general_global_self(*, today):
+        from django.db.models import Sum
+        from backend.apps.matriculas.models import Matricula, EstadoCuenta
+
+        primer_dia_mes = today.replace(day=1)
+        att_mes = Asistencia.objects.filter(fecha__gte=primer_dia_mes, fecha__lte=today)
+        att_total = att_mes.count()
+        att_pct = 0.0
+        if att_total > 0:
+            att_present = att_mes.filter(estado='P').count()
+            att_pct = round((att_present / att_total) * 100, 1)
+
+        cuentas_pendientes = EstadoCuenta.objects.filter(estado__in=['GENERADO', 'ENVIADO'])
+        next_7 = today + timedelta(days=7)
+
+        data = {
+            'matriculas_activas': Matricula.objects.filter(estado='ACTIVA').count(),
+            'total_estudiantes': User.objects.filter(
+                Q(role__nombre__iexact='Estudiante') | Q(role__nombre__iexact='Alumno'),
+                is_active=True,
+            ).count(),
+            'total_profesores': User.objects.filter(role__nombre__iexact='Profesor', is_active=True).count(),
+            'total_cursos': Curso.objects.filter(activo=True).count(),
+            'asistencia_promedio_mes': att_pct,
+            'total_morosidad': float(cuentas_pendientes.aggregate(total=Sum('saldo_pendiente'))['total'] or 0),
+            'alumnos_morosos': cuentas_pendientes.values('estudiante_id').distinct().count(),
+            'evaluaciones_proximas': Evaluacion.objects.filter(
+                activa=True,
+                fecha_evaluacion__gte=today,
+                fecha_evaluacion__lte=next_7,
+            ).count(),
+        }
+
+        try:
+            from backend.apps.subscriptions.models import Subscription
+            data['suscripciones_activas'] = Subscription.objects.filter(status='active').count()
+            data['suscripciones_vencidas'] = Subscription.objects.filter(status='expired').count()
+        except Exception:
+            data['suscripciones_activas'] = 0
+            data['suscripciones_vencidas'] = 0
+
+        return data
+
+    @classmethod
+    def _build_admin_general_school_self(cls, user, *, today, school_id):
         """Admin general ve datos del colegio más métricas globales."""
         # Reutilizar admin escolar como base
         data = cls._build_admin_escolar_self(user, today=today, school_id=school_id)

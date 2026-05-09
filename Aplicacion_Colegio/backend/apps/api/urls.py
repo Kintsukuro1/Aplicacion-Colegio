@@ -49,8 +49,9 @@ from backend.apps.api.resources_views import (
     TeacherClassViewSet,
     TeacherEvaluationViewSet,
     TeacherGradeViewSet,
-    dashboard_summary,
     dashboard_executive,
+    dashboard_schools,
+    dashboard_summary,
     ministerial_monthly_report,
     student_my_attendance,
     student_my_classes,
@@ -229,6 +230,7 @@ urlpatterns = [
     path('notificaciones/stream/', notifications_sse_stream, name='notifications_sse_stream'),
     path('dashboard/resumen/', dashboard_summary, name='dashboard_summary'),
     path('dashboard/executive/', dashboard_executive, name='dashboard_executive'),
+    path('dashboard/colegios/', dashboard_schools, name='dashboard_schools'),
     path(
         'reportes/ministeriales/resumen-mensual/',
         ministerial_monthly_report,

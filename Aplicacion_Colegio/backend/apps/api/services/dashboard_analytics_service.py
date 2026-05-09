@@ -99,15 +99,24 @@ class DashboardAnalyticsService:
     @classmethod
     def _build_kpis(cls, *, school_id, today):
         """Construye KPIs ejecutivos simples y estables."""
-        total_students = (
-            ClaseEstudiante.objects.filter(clase__colegio_id=school_id, activo=True)
-            .values('estudiante_id')
-            .distinct()
-            .count()
-        )
-        total_teachers = User.objects.filter(rbd_colegio=school_id, role__nombre__iexact='Profesor').count()
+        student_qs = ClaseEstudiante.objects.filter(activo=True)
+        teacher_qs = User.objects.filter(role__nombre__iexact='Profesor')
+        attendance_today = Asistencia.objects.filter(fecha=today)
+        grades_qs = Calificacion.objects.all()
+        evaluations_qs = Evaluacion.objects.filter(activa=True)
+        classes_qs = Clase.objects.filter(activo=True)
 
-        attendance_today = Asistencia.objects.filter(colegio_id=school_id, fecha=today)
+        if school_id is not None:
+            student_qs = student_qs.filter(clase__colegio_id=school_id)
+            teacher_qs = teacher_qs.filter(rbd_colegio=school_id)
+            attendance_today = attendance_today.filter(colegio_id=school_id)
+            grades_qs = grades_qs.filter(colegio_id=school_id)
+            evaluations_qs = evaluations_qs.filter(colegio_id=school_id)
+            classes_qs = classes_qs.filter(colegio_id=school_id)
+
+        total_students = student_qs.values('estudiante_id').distinct().count()
+        total_teachers = teacher_qs.count()
+
         attendance_total = attendance_today.count()
         attendance_present = attendance_today.filter(estado='P').count()
         attendance_rate_today = round((attendance_present / attendance_total) * 100, 1) if attendance_total else 0
@@ -123,19 +132,15 @@ class DashboardAnalyticsService:
         except Exception:
             pass
 
-        grades_below_threshold = Calificacion.objects.filter(
-            colegio_id=school_id,
-            nota__lt=nota_aprobacion,
-        ).values('estudiante_id').distinct().count()
+        grades_below_threshold = grades_qs.filter(nota__lt=nota_aprobacion).values('estudiante_id').distinct().count()
 
-        upcoming_evaluations = Evaluacion.objects.filter(
-            colegio_id=school_id,
+        upcoming_evaluations = evaluations_qs.filter(
             activa=True,
             fecha_evaluacion__gte=today,
             fecha_evaluacion__lte=today + timedelta(days=7),
         ).count()
 
-        active_classes = Clase.objects.filter(colegio_id=school_id, activo=True).count()
+        active_classes = classes_qs.count()
 
         return {
             'total_students': total_students,
@@ -153,8 +158,18 @@ class DashboardAnalyticsService:
         """Une las acciones recientes más visibles del colegio en una sola lista."""
         activities = []
 
+        evaluations_qs = Evaluacion.objects.all()
+        class_logs_qs = RegistroClase.objects.all()
+        grades_qs = Calificacion.objects.all()
+        attendance_qs = Asistencia.objects.all()
+        if school_id is not None:
+            evaluations_qs = evaluations_qs.filter(colegio_id=school_id)
+            class_logs_qs = class_logs_qs.filter(colegio_id=school_id)
+            grades_qs = grades_qs.filter(colegio_id=school_id)
+            attendance_qs = attendance_qs.filter(colegio_id=school_id)
+
         evaluations = (
-            Evaluacion.objects.filter(colegio_id=school_id)
+            evaluations_qs
             .select_related('clase__curso', 'clase__asignatura')
             .order_by('-fecha_creacion')[:4]
         )
@@ -172,7 +187,7 @@ class DashboardAnalyticsService:
             )
 
         class_logs = (
-            RegistroClase.objects.filter(colegio_id=school_id)
+            class_logs_qs
             .select_related('clase__curso', 'clase__asignatura', 'profesor')
             .order_by('-fecha_creacion')[:4]
         )
@@ -190,7 +205,7 @@ class DashboardAnalyticsService:
             )
 
         grades = (
-            Calificacion.objects.filter(colegio_id=school_id)
+            grades_qs
             .select_related('evaluacion__clase__curso', 'evaluacion__clase__asignatura', 'estudiante', 'registrado_por')
             .order_by('-fecha_creacion')[:4]
         )
@@ -208,7 +223,7 @@ class DashboardAnalyticsService:
             )
 
         attendance = (
-            Asistencia.objects.filter(colegio_id=school_id)
+            attendance_qs
             .select_related('clase__curso', 'clase__asignatura', 'estudiante')
             .order_by('-fecha_creacion')[:4]
         )
@@ -245,8 +260,8 @@ class DashboardAnalyticsService:
             .filter(fecha__gte=start_date, fecha__lte=today)
             .values('fecha')
             .annotate(
-                total=Count('id'),
-                present=Count('id', filter=Q(estado='P')),
+                total=Count('id_asistencia'),
+                present=Count('id_asistencia', filter=Q(estado='P')),
             )
             .order_by('fecha')
         )
@@ -341,8 +356,8 @@ class DashboardAnalyticsService:
             base_qs
             .values('clase_id', 'clase__curso__nombre')
             .annotate(
-                total=Count('id'),
-                present=Count('id', filter=Q(estado='P')),
+                total=Count('id_asistencia'),
+                present=Count('id_asistencia', filter=Q(estado='P')),
             )
             .order_by('-total')[:limit * 2]  # Get extra to merge by curso
         )
@@ -373,13 +388,10 @@ class DashboardAnalyticsService:
         """Genera alertas basadas en métricas actuales."""
         alerts = []
 
-        if school_id is None:
-            return alerts
-
         # Asistencia baja hoy
-        att_today = Asistencia.objects.filter(
-            colegio_id=school_id, fecha=today
-        )
+        att_today = Asistencia.objects.filter(fecha=today)
+        if school_id is not None:
+            att_today = att_today.filter(colegio_id=school_id)
         total = att_today.count()
         if total > 0:
             present = att_today.filter(estado='P').count()
@@ -399,12 +411,14 @@ class DashboardAnalyticsService:
 
         # Evaluaciones próximas
         next_3 = today + timedelta(days=3)
-        eval_count = Evaluacion.objects.filter(
-            colegio_id=school_id,
+        eval_qs = Evaluacion.objects.filter(
             activa=True,
             fecha_evaluacion__gte=today,
             fecha_evaluacion__lte=next_3,
-        ).count()
+        )
+        if school_id is not None:
+            eval_qs = eval_qs.filter(colegio_id=school_id)
+        eval_count = eval_qs.count()
         if eval_count > 0:
             alerts.append({
                 'type': 'info',
@@ -423,10 +437,10 @@ class DashboardAnalyticsService:
         except Exception:
             pass
 
-        below_count = Calificacion.objects.filter(
-            colegio_id=school_id,
-            nota__lt=nota_aprobacion,
-        ).values('estudiante_id').distinct().count()
+        grade_qs = Calificacion.objects.filter(nota__lt=nota_aprobacion)
+        if school_id is not None:
+            grade_qs = grade_qs.filter(colegio_id=school_id)
+        below_count = grade_qs.values('estudiante_id').distinct().count()
 
         if below_count > 10:
             alerts.append({

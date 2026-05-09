@@ -15,19 +15,7 @@ export default function MobileBottomNav({ visibleRoutes = [] }) {
   const visiblePaths = new Set(visibleRoutes.map((route) => route.to));
   const items = BOTTOM_NAV_ITEMS.filter((item) => visiblePaths.has(item.to));
 
-  if (items.length < 3) {
-    const existingTos = new Set(items.map((item) => item.to));
-    for (const route of visibleRoutes) {
-      if (!existingTos.has(route.to) && items.length < 5) {
-        items.push({
-          to: route.to,
-          icon: buildInitials(route.label),
-          label: route.label.split(' ').slice(0, 2).join(' '),
-        });
-        existingTos.add(route.to);
-      }
-    }
-  }
+
 
   if (items.length === 0) {
     return null;
