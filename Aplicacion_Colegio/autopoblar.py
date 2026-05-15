@@ -21,7 +21,7 @@ DATOS DE INICIO DE SESIÓN (USUARIOS DE PRUEBA):
 3) Profesor
    Usuario (RUT): 18.222.444-1
    Email: javier.torres@colegio.cl
-   Contraseña: n
+   Contraseña: Prof*2025&Seg!
 
 4) Apoderado
    Usuario (RUT): 15.555.666-7
