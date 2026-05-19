@@ -332,7 +332,7 @@ form {
 .signin-btn {
     width: 100%;
     padding: 16px 24px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 10px;
