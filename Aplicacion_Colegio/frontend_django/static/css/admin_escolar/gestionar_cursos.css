@@ -99,7 +99,7 @@
 }
 
 .stat-card.orange .stat-icon {
-    background: linear-gradient(135deg, #fbbf24 0%, var(--color-primary) 100%);
+    background: var(--color-primary);
     color: white;
 }
 

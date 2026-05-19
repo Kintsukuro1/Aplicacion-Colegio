@@ -1,4 +1,4 @@
-﻿/* ===========================
+/* ===========================
    DETALLE DE CLASE - MODERN DESIGN
    Diseño moderno inspirado en plataformas LMS
    =========================== */
@@ -94,7 +94,7 @@ body {
 }
 
 .badge-semester {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
     border-color: rgba(255, 138, 0, 0.5);
 }
 
@@ -147,7 +147,7 @@ body {
 
 .progress-fill-hero {
     height: 100%;
-    background: linear-gradient(90deg, var(--color-primary) 0%, #ffd93d 100%);
+    background: var(--color-primary);
     border-radius: 10px;
     transition: width 0.6s ease;
     box-shadow: 0 0 15px rgba(255, 138, 0, 0.5);
@@ -216,7 +216,7 @@ body {
 }
 
 .tab-btn.active {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
     color: white;
     box-shadow: 0 4px 12px rgba(255, 138, 0, 0.3);
 }
@@ -505,7 +505,7 @@ body {
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 8px;
@@ -706,7 +706,7 @@ body {
 }
 
 .btn-action.email {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
     color: white;
 }
 
@@ -773,7 +773,7 @@ body {
 }
 
 .deadline-item.critical {
-    background: #fff5f5;
+    background: #F0F7FB;
     border-left-color: #ff6b6b;
 }
 

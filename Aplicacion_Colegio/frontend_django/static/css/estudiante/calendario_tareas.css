@@ -123,7 +123,7 @@ body {
 }
 
 .btn-add-event {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
     color: white;
     border-color: var(--color-primary);
 }
@@ -256,7 +256,7 @@ body {
 }
 
 .event-entregada {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
 }
 
 .event-corregida {
@@ -368,7 +368,7 @@ body {
 }
 
 .event-date-badge {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
     color: white;
     border-radius: 8px;
     padding: 8px 10px;
@@ -600,7 +600,7 @@ body {
 
 .btn-primary {
     padding: 12px 24px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 8px;

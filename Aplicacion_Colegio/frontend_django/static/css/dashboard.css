@@ -1,4 +1,4 @@
-﻿/* --- 1. GENERALES Y RESET --- */
+/* --- 1. GENERALES Y RESET --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -7,7 +7,7 @@
 
 body {
     font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--color-background, #FDF8F0);
+    background-color: var(--color-background, #F0F7FB);
     margin: 0;
     color: var(--color-text, #3D3D3D);
     font-size: 14px;
@@ -24,17 +24,17 @@ body {
 /* --- 3. BARRA LATERAL (SIDEBAR) --- */
 .sidebar {
     width: 260px;
-    background: linear-gradient(180deg, var(--color-navbar, #FFE4E4) 0%, #fff5f5 100%);
+    background: var(--color-navbar);
     color: var(--color-text, #3D3D3D);
     height: 100vh;
     position: fixed;
     left: 0;
     top: 0;
     overflow-y: auto;
-    border-right: 1px solid var(--color-border, #F0E0E0);
+    border-right: 1px solid var(--color-border, #D0E8F2);
     display: flex;
     flex-direction: column;
-    box-shadow: 6px 0 24px rgba(192, 132, 160, 0.08);
+    box-shadow: 6px 0 24px rgba(106, 168, 196, 0.08);
 }
 
 .sidebar-header {
@@ -146,7 +146,7 @@ body {
     color: var(--color-secondary);
     font-weight: 600;
     border-left: 3px solid var(--color-primary);
-    box-shadow: 0 2px 8px rgba(232, 150, 122, 0.15);
+    box-shadow: 0 2px 8px rgba(123, 184, 212, 0.15);
 }
 
 /* Badge para mensajes/notificaciones en sidebar */
@@ -189,14 +189,14 @@ body {
     width: calc(100% - 260px);
     display: flex;
     flex-direction: column;
-    background-color: var(--color-background, #FDF8F0);
+    background-color: var(--color-background, #F0F7FB);
 }
 
 /* 4.1. Encabezado Superior (Header) */
 .top-header {
-    background-color: var(--color-navbar, #FFE4E4);
+    background-color: var(--color-navbar, #E3F2F9);
     padding: 16px 32px;
-    border-bottom: 1px solid var(--color-border, #F0E0E0);
+    border-bottom: 1px solid var(--color-border, #D0E8F2);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -240,7 +240,7 @@ body {
 
 .school-icon {
     font-size: 1.2rem;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    background: var(--color-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -288,7 +288,7 @@ body {
 .user-avatar {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, #ff6b6b 100%);
+    background: var(--color-primary);
     color: #fff;
     border-radius: 50%;
     display: flex;
@@ -369,7 +369,7 @@ body {
 }
 
 .dropdown-item.logout:hover {
-    background-color: #fff5f5;
+    background-color: #F0F7FB;
     color: #c0392b;
 }
 
@@ -466,10 +466,10 @@ button.dropdown-item.logout {
 .card {
     background-color: var(--color-white, #ffffff);
     border-radius: 16px;
-    border: 1px solid var(--color-border, #F0E0E0);
+    border: 1px solid var(--color-border, #D0E8F2);
     padding: 24px;
     margin-bottom: 24px;
-    box-shadow: 0 4px 16px rgba(192, 132, 160, 0.08);
+    box-shadow: 0 4px 16px rgba(106, 168, 196, 0.08);
     transition: all 0.2s ease;
 }
 
@@ -490,8 +490,8 @@ button.dropdown-item.logout {
     padding: 24px;
     border-radius: 16px;
     text-align: center;
-    border: 1px solid var(--color-border, #F0E0E0);
-    box-shadow: 0 4px 16px rgba(192, 132, 160, 0.08);
+    border: 1px solid var(--color-border, #D0E8F2);
+    box-shadow: 0 4px 16px rgba(106, 168, 196, 0.08);
     transition: all 0.2s ease;
 }
 
@@ -613,7 +613,7 @@ button.dropdown-item.logout {
 .module-icon-container {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, var(--color-navbar) 0%, var(--color-card) 100%);
+    background: var(--color-navbar);
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -771,10 +771,10 @@ button.dropdown-item.logout {
 .card {
     background-color: var(--color-white, #ffffff);
     border-radius: 16px;
-    border: 1px solid var(--color-border, #F0E0E0);
+    border: 1px solid var(--color-border, #D0E8F2);
     padding: 24px;
     margin-bottom: 24px;
-    box-shadow: 0 4px 16px rgba(192, 132, 160, 0.08);
+    box-shadow: 0 4px 16px rgba(106, 168, 196, 0.08);
     transition: all 0.2s ease;
 }
 
@@ -795,8 +795,8 @@ button.dropdown-item.logout {
     padding: 24px;
     border-radius: 16px;
     text-align: center;
-    border: 1px solid var(--color-border, #F0E0E0);
-    box-shadow: 0 4px 16px rgba(192, 132, 160, 0.08);
+    border: 1px solid var(--color-border, #D0E8F2);
+    box-shadow: 0 4px 16px rgba(106, 168, 196, 0.08);
     transition: all 0.2s ease;
 }
 
@@ -927,7 +927,7 @@ button.dropdown-item.logout {
 }
 
 .gradient-orange {
-    background: linear-gradient(135deg, var(--color-primary), #ff6b6b);
+    background: var(--color-primary);
 }
 
 .gradient-blue {
@@ -1049,7 +1049,7 @@ button.dropdown-item.logout {
     align-items: center;
     padding: 1rem 1.2rem;
     border-bottom: 1px solid #e8e4df;
-    background: linear-gradient(135deg, var(--color-primary) 0%, #ff6b6b 100%);
+    background: var(--color-primary);
 }
 
 .notif-header h3 {
@@ -1309,7 +1309,7 @@ body.pagina-libro_clases {
 }
 
 body.pagina-reportes {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%); /* Gradiente naranja */
+    background: var(--color-primary); /* Gradiente naranja */
 }
 
 body.pagina-gestionar_estudiantes {
@@ -1333,7 +1333,7 @@ body.pagina-infraestructura {
 }
 
 body.pagina-mi_escuela {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%); /* Naranja */
+    background: var(--color-primary); /* Naranja */
 }
 
 body.pagina-escuelas {

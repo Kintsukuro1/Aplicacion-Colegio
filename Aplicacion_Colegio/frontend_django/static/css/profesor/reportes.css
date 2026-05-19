@@ -197,7 +197,7 @@
 }
 
 .bar-tardanza {
-    background: linear-gradient(180deg, var(--color-primary), #f1c40f);
+    background: var(--color-primary);
 }
 
 .bar-label {
@@ -244,7 +244,7 @@
 }
 
 .dist-suficiente {
-    background: linear-gradient(180deg, var(--color-primary), #f1c40f);
+    background: var(--color-primary);
 }
 
 .dist-bueno {

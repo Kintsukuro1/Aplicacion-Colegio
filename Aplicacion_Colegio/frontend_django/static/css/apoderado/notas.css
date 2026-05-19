@@ -33,7 +33,7 @@
 }
 
 .estudiante-info-card {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
+    background: var(--color-primary);
     color: white;
     padding: 2rem;
     border-radius: 16px;

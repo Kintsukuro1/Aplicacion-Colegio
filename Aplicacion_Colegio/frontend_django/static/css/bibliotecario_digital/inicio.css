@@ -9,7 +9,7 @@
 
 /* ── Welcome Banner ── */
 .welcome-banner {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
+    background: var(--color-primary);
     border-radius: 15px;
     padding: 40px;
     margin-bottom: 30px;
@@ -133,7 +133,7 @@
 
 /* ── Module Card Extended ── */
 .module-card-header {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
+    background: var(--color-primary);
     color: white;
     padding: 16px 20px;
     border-radius: 10px 10px 0 0;

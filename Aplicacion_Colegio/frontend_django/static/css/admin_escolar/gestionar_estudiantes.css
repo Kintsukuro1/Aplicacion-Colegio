@@ -94,7 +94,7 @@
 }
 
 .stat-card.orange .stat-icon {
-    background: linear-gradient(135deg, #fbbf24 0%, var(--color-primary) 100%);
+    background: var(--color-primary);
     color: white;
 }
 
@@ -804,7 +804,7 @@
     align-items: center;
     gap: 4px;
     padding: 4px 10px;
-    background: linear-gradient(135deg, #fbbf24 0%, var(--color-primary) 100%);
+    background: var(--color-primary);
     color: #78350f;
     border-radius: 6px;
     font-size: 0.75rem;

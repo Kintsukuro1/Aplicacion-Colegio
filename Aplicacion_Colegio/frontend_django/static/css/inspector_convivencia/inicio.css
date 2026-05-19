@@ -197,7 +197,7 @@
     transition: background 0.2s;
 }
 
-.data-table tbody tr:hover { background: #fff5f5; }
+.data-table tbody tr:hover { background: #F0F7FB; }
 
 .data-table tbody td {
     padding: 12px 16px;
