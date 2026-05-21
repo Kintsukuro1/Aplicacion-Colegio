@@ -1,9 +1,22 @@
 import { SectionStatus } from './StudentSelfCommon';
 
-export function StudentProfileTab({ profile, loading, error }) {
+export function StudentProfileTab({ profile, loading, error, statusBadges = [] }) {
   return (
     <article className="card section-card">
       <h3>Mi Perfil</h3>
+      {statusBadges.length ? (
+        <div className="badge-row">
+          {statusBadges.map((badge) => (
+            <span
+              key={badge.label}
+              className={`badge ${badge.tone === 'warning' ? 'badge-warning' : badge.tone === 'danger' ? 'badge-danger' : 'badge-inactive'}`}
+              title={badge.description || badge.label}
+            >
+              {badge.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
       {loading ? (
         <SectionStatus title="Cargando perfil" description="Obteniendo los datos personales del estudiante." loading />
       ) : error ? (

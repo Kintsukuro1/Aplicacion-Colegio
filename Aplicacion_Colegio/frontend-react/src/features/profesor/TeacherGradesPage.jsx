@@ -3,7 +3,7 @@ import { useAuthStore } from '../../lib/store/useAuthStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '../../lib/apiClient';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber, formatGrade, normalizeGrade } from '../../lib/formatters';
 import { asResults } from '../../lib/httpHelpers';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
 import { usePermissions } from '../../lib/hooks/usePermissions';
@@ -84,8 +84,8 @@ export default function TeacherGradesPage() {
     const totalEvaluations = evaluations.length;
     const totalStudents = students.length;
     const averageGrade = totalGrades
-      ? rows.reduce((sum, row) => sum + Number(row.nota || 0), 0) / totalGrades
-      : 0;
+      ? rows.reduce((sum, row) => sum + (normalizeGrade(row.nota) ?? 0), 0) / totalGrades
+      : null;
 
     return [
       {
@@ -171,7 +171,7 @@ export default function TeacherGradesPage() {
     await createMutation.mutateAsync({
       evaluacion: Number(form.evaluacion),
       estudiante: Number(form.estudiante),
-      nota: form.nota,
+      nota: normalizeGrade(form.nota) ?? form.nota,
     });
   }
 
@@ -204,7 +204,7 @@ export default function TeacherGradesPage() {
           : summary.map((item) => (
               <article key={item.title} className="summary-tile">
                 <small>{item.title}</small>
-                <strong>{formatNumber(item.value)}</strong>
+                <strong>{item.title === 'Promedio' ? formatGrade(item.value, '-') : formatNumber(item.value)}</strong>
                 <span>{item.subtitle}</span>
               </article>
             ))}
@@ -250,7 +250,7 @@ export default function TeacherGradesPage() {
           canEdit={canEdit}
           canDelete={canDelete}
           onUpdate={async (id, data) => {
-            await updateMutation.mutateAsync({ id, payload: { nota: data.nota } });
+            await updateMutation.mutateAsync({ id, payload: { nota: normalizeGrade(data.nota) ?? data.nota } });
           }}
           onDelete={onDelete}
         />

@@ -92,7 +92,7 @@ describe('TeacherGradesPage', () => {
     await user.selectOptions(screen.getByLabelText('Clase'), '2');
 
     await waitFor(() => {
-      expect(screen.getAllByText('7').length).toBeGreaterThanOrEqual(2);
+      expect(screen.getAllByText('7,0').length).toBeGreaterThanOrEqual(2);
       expect(getMock).toHaveBeenCalledWith('/api/v1/profesor/calificaciones/?evaluacion_id=21');
     });
   });

@@ -1,5 +1,5 @@
 import { SectionStatus } from './StudentSelfCommon';
-import { formatNumber } from '../../lib/formatters';
+import { formatGrade } from '../../lib/formatters';
 
 export function StudentHistoryTab({ history, loading, error, selectedCycle, onCycleChange, historyAverage, formatPercentage }) {
   return (
@@ -36,7 +36,7 @@ export function StudentHistoryTab({ history, loading, error, selectedCycle, onCy
           </article>
           <article className="summary-tile">
             <small>Promedio general</small>
-            <strong>{historyAverage !== null ? formatNumber(historyAverage, '-') : '-'}</strong>
+            <strong>{historyAverage !== null ? formatGrade(historyAverage, '-') : '-'}</strong>
             <span>Promedio de asignaturas</span>
           </article>
         </div>
@@ -59,9 +59,13 @@ export function StudentHistoryTab({ history, loading, error, selectedCycle, onCy
                 <tr key={item.clase_id}>
                   <td>{item.asignatura}</td>
                   <td>{item.curso}</td>
-                  <td>{formatNumber(item.promedio, '-')}</td>
+                  <td>{formatGrade(item.promedio, '-')}</td>
                   <td>{formatPercentage(item.porcentaje_asistencia)}</td>
-                  <td>{Array.isArray(item.notas) && item.notas.length ? item.notas.join(', ') : '-'}</td>
+                  <td>
+                    {Array.isArray(item.notas) && item.notas.length
+                      ? item.notas.map((nota) => formatGrade(nota, '-')).join(' | ')
+                      : '-'}
+                  </td>
                 </tr>
               ))}
             </tbody>

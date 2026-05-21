@@ -6,7 +6,7 @@ import PaginationControls from '../../components/tables/PaginationControls';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
 import { apiClient } from '../../lib/apiClient';
 import { usePagination } from '../../lib/hooks';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber, normalizeGrade } from '../../lib/formatters';
 import { usePermissions } from '../../lib/hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 
@@ -62,7 +62,7 @@ function reducer(state, action) {
         form: {
           evaluacion: String(action.row.evaluacion),
           estudiante: String(action.row.estudiante),
-          nota: String(action.row.nota),
+          nota: String(normalizeGrade(action.row.nota) ?? action.row.nota ?? ''),
         },
       };
     case 'RESET_FORM':
@@ -124,7 +124,7 @@ export default function AdminGradesPage() {
     return {
       evaluacion: Number.parseInt(state.form.evaluacion, 10),
       estudiante: Number.parseInt(state.form.estudiante, 10),
-      nota: Number.parseFloat(state.form.nota),
+      nota: normalizeGrade(state.form.nota) ?? Number.parseFloat(state.form.nota),
     };
   }
 

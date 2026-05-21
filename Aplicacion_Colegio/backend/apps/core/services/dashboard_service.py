@@ -133,6 +133,12 @@ class DashboardService:
         return DashboardAdminService.get_admin_escolar_context(user, pagina_solicitada, escuela_rbd)
 
     @staticmethod
+    def get_gestionar_finanzas_context(user, escuela_rbd):
+        """Delegate to admin service"""
+        DashboardService._validate_school_integrity(escuela_rbd, 'DASHBOARD_GET_GESTIONAR_FINANZAS_CONTEXT')
+        return DashboardAdminService.get_gestionar_finanzas_context(user, escuela_rbd)
+
+    @staticmethod
     def get_gestionar_estudiantes_context(user, request, escuela_rbd):
         """Delegate to admin service"""
         DashboardService._validate_school_integrity(escuela_rbd, 'DASHBOARD_GET_GESTIONAR_ESTUDIANTES_CONTEXT', fail_on_integrity=False)

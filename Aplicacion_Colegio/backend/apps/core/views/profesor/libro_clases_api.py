@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -131,6 +131,24 @@ def guardar_registro_profesor(request):
             observaciones=observaciones,
         )
 
+        AuditoriaEvento.registrar_evento(
+            usuario=request.user,
+            accion=AuditoriaEvento.CREAR if created else AuditoriaEvento.MODIFICAR,
+            tabla_afectada='registro_clase',
+            descripcion=f"{'Creación' if created else 'Actualización'} de registro de clase por el docente",
+            categoria=AuditoriaEvento.CATEGORIA_ACADEMICO,
+            content_object=registro,
+            ip_address=(request.META.get('REMOTE_ADDR') or '')[:45],
+            user_agent=(request.META.get('HTTP_USER_AGENT') or '')[:1000],
+            nivel=AuditoriaEvento.NIVEL_INFO,
+            metadata={
+                'registro_id': registro.id_registro,
+                'clase_id': registro.clase_id,
+                'fecha': registro.fecha.isoformat(),
+                'numero_clase': registro.numero_clase,
+            }
+        )
+
         return JsonResponse(
             {
                 'success': True,
@@ -142,6 +160,8 @@ def guardar_registro_profesor(request):
         return JsonResponse({'success': False, 'error': str(exc)}, status=400)
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'JSON inválido'}, status=400)
+    except ObjectDoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Registro no encontrado'}, status=404)
     except Exception:
         logger.exception('Error guardando registro del libro de clases')
         return JsonResponse({'success': False, 'error': 'Error interno del servidor'}, status=500)
@@ -165,6 +185,26 @@ def firmar_registro_profesor(request, registro_id):
             ip_address=(request.META.get('REMOTE_ADDR') or '')[:45],
             user_agent=(request.META.get('HTTP_USER_AGENT') or '')[:255],
         )
+
+        AuditoriaEvento.registrar_evento(
+            usuario=request.user,
+            accion=AuditoriaEvento.MODIFICAR,
+            tabla_afectada='registro_clase',
+            descripcion="Firma digital del registro de clase por el docente",
+            categoria=AuditoriaEvento.CATEGORIA_SEGURIDAD,
+            content_object=registro,
+            ip_address=(request.META.get('REMOTE_ADDR') or '')[:45],
+            user_agent=(request.META.get('HTTP_USER_AGENT') or '')[:1000],
+            nivel=AuditoriaEvento.NIVEL_INFO,
+            metadata={
+                'registro_id': registro.id_registro,
+                'clase_id': registro.clase_id,
+                'fecha': registro.fecha.isoformat(),
+                'numero_clase': registro.numero_clase,
+                'hash_contenido': registro.hash_contenido,
+            }
+        )
+
         return JsonResponse({'success': True, 'registro': _serialize_registro(registro)})
     except ValidationError as exc:
         return JsonResponse({'success': False, 'error': str(exc)}, status=400)

@@ -1487,8 +1487,9 @@ class DashboardContextService:
 
     @staticmethod
     def _get_profesor_planificaciones_context(user, colegio):
-        from backend.apps.academico.models import Planificacion
+        from backend.apps.academico.models import Planificacion, Rubrica
         from backend.apps.cursos.models import Clase
+        from django.db.models import Q
 
         planificaciones = Planificacion.objects.filter(
             clase__profesor=user,
@@ -1515,15 +1516,33 @@ class DashboardContextService:
                 'id': p.id_planificacion,
                 'titulo': p.titulo,
                 'clase': f"{p.clase.curso.nombre} - {p.clase.asignatura.nombre}",
-                'fecha_inicio': p.fecha_inicio,
-                'fecha_fin': p.fecha_fin,
+                'clase_id': p.clase_id,
+                'asignatura_id': p.clase.asignatura_id,
+                'objetivo_general': p.objetivo_general,
+                'rubrica_id': p.rubrica_id,
+                'objetivos_ids': list(p.objetivos_aprendizaje.values_list('id_oa', flat=True)),
+                'fecha_inicio': p.fecha_inicio.strftime('%Y-%m-%d') if p.fecha_inicio else '',
+                'fecha_fin': p.fecha_fin.strftime('%Y-%m-%d') if p.fecha_fin else '',
                 'estado': estado_key,
                 'estado_display': p.get_estado_display(),
                 'observaciones': p.observaciones_coordinador,
                 'fecha_actualizacion': p.fecha_aprobacion or p.fecha_envio or p.fecha_creacion
             })
 
+        clases_qs = Clase.objects.filter(
+            profesor=user,
+            colegio=colegio,
+            activo=True
+        ).select_related('asignatura', 'curso')
+
+        rubricas_qs = Rubrica.objects.filter(
+            colegio=colegio,
+            activo=True
+        ).filter(Q(creado_por=user) | Q(es_compartida=True)).select_related('asignatura')
+
         return {
             'planificaciones': planificaciones_data,
-            'stats': estado_counts
+            'stats': estado_counts,
+            'clases': clases_qs,
+            'rubricas': rubricas_qs
         }

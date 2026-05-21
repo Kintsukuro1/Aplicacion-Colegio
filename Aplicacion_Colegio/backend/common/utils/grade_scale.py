@@ -61,3 +61,20 @@ def redondear_nota(nota: float, colegio=None) -> float:
     """Redondea una nota según la configuración del colegio."""
     escala = get_escala(colegio)
     return round(nota, escala['redondeo_decimales'])
+
+
+def normalize_grade_value(value: Any) -> Optional[Decimal]:
+    """
+    Normaliza el valor de una calificación. Si es mayor a 10 (ej. 65),
+    la divide por 10 (ej. 6.5) para soportar datos heredados o de importaciones.
+    """
+    if value is None:
+        return None
+    try:
+        val = Decimal(str(value))
+        if abs(val) > 10:
+            val = val / Decimal('10.0')
+        return val
+    except Exception:
+        return value
+

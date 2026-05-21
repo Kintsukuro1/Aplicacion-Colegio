@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { formatNumber } from '../../lib/formatters';
+import { formatGrade, normalizeGrade } from '../../lib/formatters';
 import EditableTableRow from '../../components/tables/EditableTableRow';
 import { TableLoadingState } from '../../components/feedback/TableLoadingState';
 
 function InlineEditGrade({ row, isSaving, onSave, onCancel }) {
-  const notaRef = useRef(row.nota ?? '');
+  const notaRef = useRef(normalizeGrade(row.nota) ?? '');
 
   useEffect(() => {
-    notaRef.current = row.nota ?? '';
+    notaRef.current = normalizeGrade(row.nota) ?? '';
   }, [row.nota]);
 
   return (
@@ -19,7 +19,7 @@ function InlineEditGrade({ row, isSaving, onSave, onCancel }) {
           type="number"
           step="0.1"
           style={{ width: '80px', padding: '0.2rem' }}
-          defaultValue={row.nota ?? ''}
+          defaultValue={normalizeGrade(row.nota) ?? ''}
           onChange={(e) => {
             notaRef.current = e.target.value;
           }}
@@ -62,7 +62,11 @@ export function TeacherGradesTable({ rows, loading, canEdit, canDelete, onUpdate
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {rows.map((row) => {
+            const normalizedGrade = normalizeGrade(row.nota);
+            const isLowGrade = normalizedGrade !== null && normalizedGrade < 4;
+
+            return (
             <EditableTableRow
               key={row.id_calificacion}
               onSave={async (data) => onUpdate(row.id_calificacion, data)}
@@ -70,7 +74,11 @@ export function TeacherGradesTable({ rows, loading, canEdit, canDelete, onUpdate
                 <>
                   <td>{row.id_calificacion}</td>
                   <td>{row.estudiante_nombre}</td>
-                  <td>{formatNumber(row.nota)}</td>
+                  <td>
+                    <span className={isLowGrade ? 'grade-low' : undefined}>
+                      {formatGrade(row.nota, '-')}
+                    </span>
+                  </td>
                   <td>{row.fecha_creacion}</td>
                   <td className="actions-cell">
                     {canEdit ? (
@@ -91,7 +99,8 @@ export function TeacherGradesTable({ rows, loading, canEdit, canDelete, onUpdate
                 <InlineEditGrade row={row} isSaving={isSaving} onSave={onSave} onCancel={onCancel} />
               )}
             />
-          ))}
+          );
+          })}
           {!loading && rows.length === 0 ? (
             <tr>
               <td colSpan="5">Sin registros</td>

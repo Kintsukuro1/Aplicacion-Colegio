@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../lib/apiClient';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber, formatGrade, normalizeGrade } from '../../lib/formatters';
 
 function formatPercentage(value) {
   if (value === null || value === undefined || value === '') {
@@ -14,11 +14,16 @@ function formatPercentage(value) {
   return `${formatNumber(value, '-')}%`;
 }
 
-function buildAverage(items) {
+function buildAverage(items, valueSelector = (item) => item?.promedio) {
   let total = 0;
   let count = 0;
   for (const item of items) {
-    const value = Number(item?.promedio);
+    const rawValue = valueSelector(item);
+    if (rawValue === null || rawValue === undefined || rawValue === '') {
+      continue;
+    }
+
+    const value = Number(rawValue);
     if (!Number.isNaN(value)) {
       total += value;
       count += 1;
@@ -43,6 +48,9 @@ import { StudentHistoryTab } from './StudentHistoryTab';
 export default function StudentSelfPage() {
   const [activeTab, setActiveTab] = useState('student-profile');
   const [selectedCycle, setSelectedCycle] = useState('');
+
+  const LOW_GRADE_THRESHOLD = 4;
+  const LOW_ATTENDANCE_THRESHOLD = 85;
 
   const { data: profile, isLoading: loadingProfile, error: profileErrorObj } = useQuery({
     queryKey: ['student-profile'],
@@ -101,12 +109,50 @@ export default function StudentSelfPage() {
     { id: 'student-history', label: 'Historial Académico' },
   ];
 
+  const gradeAverage = useMemo(
+    () => buildAverage(history?.asignaturas || [], (item) => normalizeGrade(item?.promedio)),
+    [history]
+  );
+
+  const attendanceAverage = useMemo(
+    () => buildAverage(history?.asignaturas || [], (item) => item?.porcentaje_asistencia),
+    [history]
+  );
+
+  const hasLowTest = useMemo(
+    () => grades.some((item) => {
+      const value = normalizeGrade(item?.nota ?? item?.promedio);
+      return value !== null && value < LOW_GRADE_THRESHOLD;
+    }),
+    [grades]
+  );
+
+  const isRepeating = useMemo(() => {
+    const lowAverage = gradeAverage !== null && gradeAverage < LOW_GRADE_THRESHOLD;
+    const lowAttendance = attendanceAverage !== null && attendanceAverage < LOW_ATTENDANCE_THRESHOLD;
+    return lowAverage || lowAttendance;
+  }, [attendanceAverage, gradeAverage]);
+
+  const statusBadges = useMemo(() => {
+    const badges = [];
+
+    if (profile?.tiene_nee) {
+      badges.push({ label: 'NEE', tone: 'warning', description: profile?.tipo_nee || 'Necesidades especiales' });
+    }
+
+    if (hasLowTest) {
+      badges.push({ label: 'Bajo 4,0', tone: 'danger', description: 'Rendimiento bajo en una evaluacion' });
+    }
+
+    if (isRepeating) {
+      badges.push({ label: 'Repitencia', tone: 'danger', description: 'Riesgo por notas o asistencia' });
+    }
+
+    return badges;
+  }, [hasLowTest, isRepeating, profile?.tiene_nee, profile?.tipo_nee]);
+
   const profileCards = useMemo(() => {
     const subjectCount = classes.length;
-    const gradeAverage = buildAverage(history?.asignaturas || []);
-    const attendanceAverage = history?.asignaturas?.length
-      ? buildAverage(history.asignaturas.map((item) => ({ promedio: item.porcentaje_asistencia })))
-      : null;
     const pendingTasks = Array.isArray(grades)
       ? grades.reduce((acc, item) => acc + (Number(item?.pendientes) || 0), 0)
       : 0;
@@ -124,7 +170,7 @@ export default function StudentSelfPage() {
       },
       {
         title: 'Promedio general',
-        value: gradeAverage !== null ? formatNumber(gradeAverage, '-') : '-',
+        value: gradeAverage !== null ? formatGrade(gradeAverage, '-') : '-',
         subtitle: gradeAverage !== null ? 'Promedio ponderado del historial' : 'Aún no hay notas suficientes',
       },
       {
@@ -138,9 +184,9 @@ export default function StudentSelfPage() {
         subtitle: pendingTasks > 0 ? 'Revisa tareas abiertas' : 'Sin tareas pendientes',
       },
     ];
-  }, [classes.length, grades, history, profile]);
+  }, [attendanceAverage, classes.length, gradeAverage, grades, profile]);
 
-  const historyAverage = useMemo(() => buildAverage(history?.asignaturas || []), [history]);
+  const historyAverage = gradeAverage;
 
   return (
     <section>
@@ -166,7 +212,14 @@ export default function StudentSelfPage() {
       </div>
 
       <div className="stack">
-        {activeTab === 'student-profile' && <StudentProfileTab profile={profile} loading={loadingProfile} error={profileError} />}
+        {activeTab === 'student-profile' && (
+          <StudentProfileTab
+            profile={profile}
+            loading={loadingProfile}
+            error={profileError}
+            statusBadges={statusBadges}
+          />
+        )}
         {activeTab === 'student-classes' && <StudentClassesTab classes={classes} loading={loadingClasses} error={classesError} />}
         {activeTab === 'student-grades' && <StudentGradesTab grades={grades} loading={loadingGrades} error={gradesError} />}
         {activeTab === 'student-attendance' && <StudentAttendanceTab attendance={attendance} loading={loadingAttendance} error={attendanceError} />}

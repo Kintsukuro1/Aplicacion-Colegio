@@ -283,6 +283,18 @@ class AttendanceService:
                             )
                             continue
                     
+                    # Control defensivo de duplicados: consultar estado anterior
+                    try:
+                        asistencia_previa = Asistencia.objects.get(
+                            colegio=colegio,
+                            clase=clase,
+                            estudiante=estudiante,
+                            fecha=fecha
+                        )
+                        estado_anterior = asistencia_previa.estado
+                    except Asistencia.DoesNotExist:
+                        estado_anterior = None
+
                     Asistencia.objects.update_or_create(
                         colegio=colegio,
                         clase=clase,
@@ -291,6 +303,19 @@ class AttendanceService:
                         defaults={'estado': estado}
                     )
                     count += 1
+
+                    # Disparar notificación si pasa a estar ausente
+                    if estado in [AttendanceService.AUSENTE, 'AUSENTE', 'A'] and estado_anterior not in [AttendanceService.AUSENTE, 'AUSENTE', 'A']:
+                        from backend.apps.notificaciones.services.attendance_notifications import AttendanceNotificationService
+                        try:
+                            AttendanceNotificationService.notify_absence(
+                                estudiante=estudiante,
+                                clase=clase,
+                                fecha=fecha,
+                                registrada_por=user
+                            )
+                        except Exception as e:
+                            logger.error(f"Error al enviar notificacion de inasistencia en AttendanceService: {e}", exc_info=True)
                 except User.DoesNotExist:
                     logger.warning(f"Estudiante {estudiante_id} no encontrado en colegio {colegio.rbd}")
                     continue

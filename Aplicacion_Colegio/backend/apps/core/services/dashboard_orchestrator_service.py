@@ -173,6 +173,11 @@ class DashboardOrchestratorService:
                 elif pagina_solicitada == 'reportes':
                     reportes_context = DashboardService.get_admin_reportes_context(request.user, request, escuela_rbd)
                     context.update(reportes_context)
+                elif pagina_solicitada == 'gestionar_finanzas':
+                    finanzas_context = DashboardService.get_gestionar_finanzas_context(
+                        request.user, escuela_rbd
+                    )
+                    context.update(finanzas_context)
                 else:
                     role_context = DashboardService.get_admin_escolar_context(
                         request.user, pagina_solicitada, escuela_rbd

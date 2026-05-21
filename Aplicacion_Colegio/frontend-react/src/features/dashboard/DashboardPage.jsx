@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardBody, Badge, Button } from '@/components/ui';
 import { useTenant } from '@/lib/tenantContext';
 import { EXECUTIVE_SCOPES, fetchDashboardExecutive, fetchDashboardResumen, fetchDashboardSchools, formatDateTime, formatValue } from './dashboardHelpers';
+import { formatGrade } from '../../lib/formatters';
 
 export default function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -253,7 +254,12 @@ function AnalyticsDashboard({ resumen, executive }) {
         <MetricCard title="Presentes hoy" value={analytics.attendance_today_present ?? kpis.attendance_today_present} tone="green" />
         <MetricCard title="Tasa de asistencia" value={analytics.attendance_rate_today ?? kpis.attendance_rate_today} suffix="%" tone="blue" />
         <MetricCard title="Evaluaciones 7 dias" value={analytics.evaluations_next_7_days ?? kpis.upcoming_evaluations} tone="purple" />
-        <MetricCard title="Notas bajo aprobacion" value={analytics.grades_below_approval ?? kpis.grades_below_threshold} detail={`Umbral ${analytics.nota_aprobacion ?? 4.0}`} tone="red" />
+        <MetricCard
+          title="Notas bajo aprobacion"
+          value={analytics.grades_below_approval ?? kpis.grades_below_threshold}
+          detail={`Umbral ${formatGrade(analytics.nota_aprobacion ?? 4.0)}`}
+          tone="red"
+        />
         <MetricCard title="Clases activas" value={kpis.active_classes} tone="amber" />
       </div>
 

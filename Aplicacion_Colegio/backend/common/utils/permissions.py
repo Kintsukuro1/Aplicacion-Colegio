@@ -53,6 +53,7 @@ def get_paginas_por_rol(rol):
             'gestionar_cursos': 'admin_escolar/gestionar_cursos.html',
             'gestionar_ciclos': 'admin_escolar/gestionar_ciclos.html',
             'gestionar_asignaturas': 'admin_escolar/gestionar_asignaturas.html',
+            'gestionar_finanzas': 'admin_escolar/gestionar_finanzas.html',
             'gestionar_profesores': 'admin_escolar/gestionar_profesores.html',
             'asistencia': 'profesor/asistencia.html',
             'notas': 'profesor/notas.html',

@@ -178,7 +178,6 @@ class TestDashboardServiceDelegatedMethods:
     @pytest.mark.parametrize(
         'method_name,service_target,action,fail_on_integrity',
         [
-<<<<<<< HEAD
             ('get_gestionar_estudiantes_context', 'get_gestionar_estudiantes_context', 'DASHBOARD_GET_GESTIONAR_ESTUDIANTES_CONTEXT', False),
             ('get_gestionar_cursos_context', 'get_gestionar_cursos_context', 'DASHBOARD_GET_GESTIONAR_CURSOS_CONTEXT', False),
             ('get_gestionar_profesores_context', 'get_gestionar_profesores_context', 'DASHBOARD_GET_GESTIONAR_PROFESORES_CONTEXT', False),
@@ -189,38 +188,6 @@ class TestDashboardServiceDelegatedMethods:
         ],
     )
     def test_admin_request_delegates(self, method_name, service_target, action, fail_on_integrity):
-=======
-            ('get_gestionar_estudiantes_context', 'get_gestionar_estudiantes_context', 'DASHBOARD_GET_GESTIONAR_ESTUDIANTES_CONTEXT'),
-            ('get_gestionar_cursos_context', 'get_gestionar_cursos_context', 'DASHBOARD_GET_GESTIONAR_CURSOS_CONTEXT'),
-            ('get_gestionar_profesores_context', 'get_gestionar_profesores_context', 'DASHBOARD_GET_GESTIONAR_PROFESORES_CONTEXT'),
-            ('get_gestionar_asignaturas_context', 'get_gestionar_asignaturas_context', 'DASHBOARD_GET_GESTIONAR_ASIGNATURAS_CONTEXT'),
-        ],
-    )
-    def test_admin_request_delegates_soft_integrity(self, method_name, service_target, action):
-        """Métodos gestionar_* usan fail_on_integrity=False tanto en integrity como en admin service."""
-        user = Mock()
-        request = Mock(GET={'q': '1'})
-        with patch.object(DashboardService, '_validate_school_integrity') as mock_integrity, patch(
-            f'backend.apps.core.services.dashboard_admin_service.DashboardAdminService.{service_target}',
-            return_value={'ok': method_name},
-        ) as mock_admin:
-            result = getattr(DashboardService, method_name)(user, request, 999)
-
-        assert result == {'ok': method_name}
-        mock_integrity.assert_called_once_with(999, action, fail_on_integrity=False)
-        mock_admin.assert_called_once_with(user, request.GET, 999, fail_on_integrity=False)
-
-    @pytest.mark.parametrize(
-        'method_name,service_target,action',
-        [
-            ('get_admin_notas_context', 'get_admin_notas_context', 'DASHBOARD_GET_ADMIN_NOTAS_CONTEXT'),
-            ('get_admin_libro_clases_context', 'get_admin_libro_clases_context', 'DASHBOARD_GET_ADMIN_LIBRO_CLASES_CONTEXT'),
-            ('get_admin_reportes_context', 'get_admin_reportes_context', 'DASHBOARD_GET_ADMIN_REPORTES_CONTEXT'),
-        ],
-    )
-    def test_admin_request_delegates(self, method_name, service_target, action):
-        """Métodos admin_* usan integrity estricta (fail_on_integrity=True por defecto)."""
->>>>>>> fceac4d (WIP local antes de sincronizar main)
         user = Mock()
         request = Mock(GET={'q': '1'})
         with patch.object(DashboardService, '_validate_school_integrity') as mock_integrity, patch(

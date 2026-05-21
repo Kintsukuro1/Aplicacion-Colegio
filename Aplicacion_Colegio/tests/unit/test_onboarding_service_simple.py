@@ -101,7 +101,6 @@ def test_service_uses_exists_queries():
 
 
 def test_service_uses_distinct_for_teachers():
-<<<<<<< HEAD
     """Verifica que el servicio identifica profesores por capacidad."""
     import inspect
     source = inspect.getsource(OnboardingService.get_setup_status)
@@ -110,16 +109,6 @@ def test_service_uses_distinct_for_teachers():
     assert 'has_capability' in source, "Debe usar has_capability para validar roles"
     assert '.distinct()' not in source, "No debe usar distinct en esta consulta simple"
     print("✓ Servicio valida profesores usando has_capability")
-=======
-    """Verifica que el servicio valida profesores correctamente."""
-    import inspect
-    source = inspect.getsource(OnboardingService.get_setup_status)
-
-    # Debe usar perfil_profesor o role para validar profesores
-    assert ('perfil_profesor' in source) or ("role__nombre__iexact='profesor'" in source), \
-        "Debe validar profesores por perfil o rol"
-    print("✓ Servicio valida profesores correctamente")
->>>>>>> fceac4d (WIP local antes de sincronizar main)
 
 
 def test_require_setup_complete_decorator_exists():
@@ -174,7 +163,6 @@ def test_is_legacy_school_validates_date():
 
 
 def test_service_does_not_use_select_related():
-<<<<<<< HEAD
     """Verifica que select_related se usa de forma controlada."""
     import inspect
     source = inspect.getsource(OnboardingService)
@@ -183,17 +171,6 @@ def test_service_does_not_use_select_related():
     select_count = source.count('select_related')
     assert select_count <= 4, f"Demasiados usos de select_related ({select_count}), revisar"
     assert 'prefetch_related' not in source, "No debe usar prefetch_related (optimización prematura)"
-=======
-    """Verifica que el servicio solo usa select_related en caminos de compatibilidad legacy."""
-    import inspect
-    source = inspect.getsource(OnboardingService)
-
-    # El uso de select_related está justificado para compatibilidad transicional (datos legacy).
-    # Este test valida que existe como uso controlado, no como abuso generalizado.
-    # Una única carga de 'role' evita N+1 en ciclos legacy — aceptable.
-    select_count = source.count('select_related')
-    assert select_count <= 2, f"Demasiados usos de select_related ({select_count}), revisar"
->>>>>>> fceac4d (WIP local antes de sincronizar main)
     print(f"✓ Servicio usa select_related de forma controlada ({select_count} usos)")
 
 

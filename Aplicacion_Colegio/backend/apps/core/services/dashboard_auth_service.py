@@ -56,6 +56,7 @@ PAGE_CAPABILITIES_ANY = {
     'gestionar_cursos': {'COURSE_VIEW'},
     'gestionar_ciclos': {'COURSE_VIEW'},
     'gestionar_asignaturas': {'COURSE_VIEW'},
+    'gestionar_finanzas': {'SYSTEM_CONFIGURE', 'FINANCE_VIEW'},
     'gestionar_profesores': {'TEACHER_VIEW'},
     'mis_pupilos': {'STUDENT_VIEW'},
     'justificativos': {'STUDENT_VIEW', 'JUSTIFICATION_VIEW'},

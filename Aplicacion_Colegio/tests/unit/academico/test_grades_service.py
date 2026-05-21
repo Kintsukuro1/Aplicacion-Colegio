@@ -219,6 +219,15 @@ class TestGradesServiceOperations:
             GradesService, "_validate_school_integrity", return_value=None
         ), patch.object(
             GradesService, "_validate_clase_active_state", return_value=None
+        ), patch.object(
+            GradesService,
+            "_get_escala",
+            return_value={
+                "nota_minima": Decimal("1.0"),
+                "nota_maxima": Decimal("7.0"),
+                "nota_aprobacion": Decimal("4.0"),
+                "redondeo_decimales": 1,
+            },
         ), patch(
             "backend.apps.accounts.models.User.objects.get",
             side_effect=[student_ok, student_wrong_cycle],
@@ -379,6 +388,15 @@ class TestGradesServiceQueries:
         with patch(
             "backend.apps.academico.models.Calificacion.objects.filter",
             return_value=queryset,
+        ), patch.object(
+            GradesService,
+            "_get_escala",
+            return_value={
+                "nota_minima": Decimal("1.0"),
+                "nota_maxima": Decimal("7.0"),
+                "nota_aprobacion": Decimal("4.0"),
+                "redondeo_decimales": 1,
+            },
         ):
             result = GradesService.calculate_student_final_grade(Mock(), Mock())
 

@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { apiClient } from '../../lib/apiClient';
 import { useFetch } from '../../lib/hooks';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber, formatGrade } from '../../lib/formatters';
 
 const SCOPES = ['school', 'analytics'];
 
@@ -105,7 +105,7 @@ export default function AdminOverviewPage() {
       { title: 'Asistencias Hoy (Presentes)', value: analytics.attendance_today_present },
       { title: 'Tasa Asistencia Hoy', value: `${analytics.attendance_rate_today ?? 0}%` },
       { title: 'Evaluaciones 7 Dias', value: analytics.evaluations_next_7_days },
-      { title: 'Notas Bajo 4.0', value: analytics.grades_below_4 },
+      { title: 'Notas Bajo 4,0', value: analytics.grades_below_4 },
     ];
   }, [overviewResp, scope]);
 
@@ -183,7 +183,7 @@ export default function AdminOverviewPage() {
                   </div>
                   <div className="summary-tile">
                     <small>Promedio general</small>
-                    <strong>{cycleStats.academico?.promedio_general ?? '-'}</strong>
+                    <strong>{formatGrade(cycleStats.academico?.promedio_general, '-')}</strong>
                   </div>
                   <div className="summary-tile">
                     <small>Asistencia</small>

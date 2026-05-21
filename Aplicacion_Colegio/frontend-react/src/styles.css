@@ -1058,6 +1058,40 @@ tbody tr:last-child td {
   color: #be123c;
 }
 
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.badge-row.compact {
+  margin: 0;
+}
+
+.badge-row.compact .badge {
+  font-size: 0.65rem;
+  padding: 0.12rem 0.4rem;
+}
+
+.grade-low {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+tr.row-nee {
+  background-color: #fff9c4 !important; /* Yellow for NEE */
+}
+
+tr.row-repitencia {
+  background-color: #ffcdd2 !important; /* Red for Repitencia */
+}
+
+tr.row-low-grade {
+  background-color: #ffe0b2 !important; /* Orange for Low Grade */
+}
+
+
 /* ============================================
    KPI Cards (Dashboard)
    ============================================ */

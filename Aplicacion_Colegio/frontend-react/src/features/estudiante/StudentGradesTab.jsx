@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { SectionStatus, EmptySection } from './StudentSelfCommon';
-import { formatNumber } from '../../lib/formatters';
+import { formatGrade, normalizeGrade } from '../../lib/formatters';
 
 const GradesChart = lazy(() => import('./GradesChart'));
 
@@ -15,7 +15,7 @@ export function StudentGradesTab({ grades, loading, error }) {
     });
 
     const labels = sortedGrades.map((g, i) => g.evaluacion_nombre || g.evaluacion || g.nombre || `Nota ${i + 1}`);
-    const data = sortedGrades.map(g => Number(g.nota ?? g.promedio));
+    const data = sortedGrades.map((g) => normalizeGrade(g.nota ?? g.promedio));
 
     return {
       labels,
@@ -58,13 +58,22 @@ export function StudentGradesTab({ grades, loading, error }) {
                 </tr>
               </thead>
               <tbody>
-                {grades.map((item, index) => (
-                  <tr key={item.id_calificacion || item.evaluacion_id || item.id || `${item.nombre}-${index}`}>
-                    <td>{item.evaluacion_nombre || item.evaluacion || item.nombre || 'Evaluación'}</td>
-                    <td>{item.fecha_evaluacion || item.fecha_creacion || '-'}</td>
-                    <td><strong>{formatNumber(item.nota ?? item.promedio, '-')}</strong></td>
-                  </tr>
-                ))}
+                {grades.map((item, index) => {
+                  const normalizedGrade = normalizeGrade(item.nota ?? item.promedio);
+                  const isLowGrade = normalizedGrade !== null && normalizedGrade < 4;
+
+                  return (
+                    <tr key={item.id_calificacion || item.evaluacion_id || item.id || `${item.nombre}-${index}`}>
+                      <td>{item.evaluacion_nombre || item.evaluacion || item.nombre || 'Evaluación'}</td>
+                      <td>{item.fecha_evaluacion || item.fecha_creacion || '-'}</td>
+                      <td>
+                        <strong className={isLowGrade ? 'grade-low' : undefined}>
+                          {formatGrade(item.nota ?? item.promedio, '-')}
+                        </strong>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

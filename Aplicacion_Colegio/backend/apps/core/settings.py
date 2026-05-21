@@ -311,7 +311,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'frontend_django', 'static'),
-    os.path.join(BASE_DIR.parent, 'static_shared'),
+    os.path.join(BASE_DIR, 'shared_assets'),
 ]
 
 # Required for `python manage.py collectstatic`

@@ -62,6 +62,14 @@
                 </a>
             </li>
             {% endif %}
+            {% if 'gestionar_finanzas' in paginas_habilitadas %}
+            <li {% if pagina_actual == 'gestionar_finanzas' %}class="active"{% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=gestionar_finanzas">
+                    <span class="icon">💰</span>
+                    <span>Finanzas y Pagos</span>
+                </a>
+            </li>
+            {% endif %}
             
             <li class="nav-section">
                 <span class="section-title">Académico</span>

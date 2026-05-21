@@ -138,6 +138,11 @@ from backend.apps.core.views.coordinador_academico.api import (
     listar_planificaciones as coordinador_listar_planificaciones,
     actualizar_estado_planificacion,
 )
+from backend.apps.core.views.admin_escolar.finanzas_api import (
+    registrar_pago_manual,
+    listar_cuotas_estudiante,
+    condonar_cuota as admin_condonar_cuota,
+)
 from backend.apps.api.importacion_exportacion_views import (
     api_descargar_plantilla,
     api_exportar_asistencia,
@@ -360,6 +365,13 @@ urlpatterns = [
     # -------------------------------------------------------------------
     path('api/coordinador/planificaciones/', coordinador_listar_planificaciones, name='api_coordinador_listar_planificaciones'),
     path('api/coordinador/planificaciones/<int:planificacion_id>/estado/', actualizar_estado_planificacion, name='api_coordinador_actualizar_planificacion'),
+
+    # -------------------------------------------------------------------
+    # Admin Escolar — Finanzas APIs
+    # -------------------------------------------------------------------
+    path('api/admin-escolar/finanzas/registrar-pago/', registrar_pago_manual, name='api_admin_registrar_pago'),
+    path('api/admin-escolar/finanzas/cuotas-estudiante/', listar_cuotas_estudiante, name='api_admin_cuotas_estudiante'),
+    path('api/admin-escolar/finanzas/condonar-cuota/', admin_condonar_cuota, name='api_admin_condonar_cuota'),
 
     # -------------------------------------------------------------------
     # Soporte Técnico Escolar — APIs

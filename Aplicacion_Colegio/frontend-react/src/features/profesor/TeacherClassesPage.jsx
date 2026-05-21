@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../lib/apiClient';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber, formatGrade } from '../../lib/formatters';
 
 function formatPercentage(value) {
   if (value === null || value === undefined || value === '') {
@@ -69,7 +69,7 @@ export default function TeacherClassesPage() {
       },
       {
         title: 'Promedio general',
-        value: averageGrade !== undefined && averageGrade !== null ? formatNumber(averageGrade, '-') : '-',
+        value: averageGrade !== undefined && averageGrade !== null ? formatGrade(averageGrade, '-') : '-',
         subtitle: averageGrade ? 'Del periodo seleccionado' : 'Sin datos de promedio',
       },
       {
@@ -144,7 +144,7 @@ export default function TeacherClassesPage() {
               <div className="summary-grid section-card">
                 <article className="summary-tile">
                   <small>Promedio general</small>
-                  <strong>{formatNumber(trends.tendencia_general.promedio_general, '-')}</strong>
+                  <strong>{formatGrade(trends.tendencia_general.promedio_general, '-')}</strong>
                 </article>
                 <article className="summary-tile">
                   <small>Asistencia general</small>

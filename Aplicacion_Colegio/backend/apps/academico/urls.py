@@ -42,6 +42,18 @@ from backend.apps.academico.views.infrastructure_views import (
     gestionar_infraestructura,
 )
 
+from backend.apps.academico.views.planning_api import (
+    planning_api_save,
+    planning_api_delete,
+    planning_api_enviar,
+    planning_api_revisar,
+    planning_api_get_oas,
+    banco_rubricas_list,
+    banco_rubrica_clone,
+    banco_evaluaciones_list,
+    banco_evaluacion_clone,
+)
+
 app_name = 'academico'
 
 urlpatterns = [
@@ -83,4 +95,16 @@ urlpatterns = [
     
     # Infrastructure management (FASE 16)
     path('admin/gestionar-infraestructura/', gestionar_infraestructura, name='gestionar_infraestructura'),
+
+    # Curricular Planning & Resources API endpoints (FASE 2.2)
+    path('profesor/planificacion/save/', planning_api_save, name='planning_api_save'),
+    path('profesor/planificacion/delete/', planning_api_delete, name='planning_api_delete'),
+    path('profesor/planificacion/enviar/', planning_api_enviar, name='planning_api_enviar'),
+    path('profesor/planificacion/revisar/', planning_api_revisar, name='planning_api_revisar'),
+    path('profesor/planificacion/get-oas/', planning_api_get_oas, name='planning_api_get_oas'),
+    path('profesor/banco/rubricas/', banco_rubricas_list, name='banco_rubricas_list'),
+    path('profesor/banco/rubricas/clonar/', banco_rubrica_clone, name='banco_rubrica_clone'),
+    path('profesor/banco/evaluaciones/', banco_evaluaciones_list, name='banco_evaluaciones_list'),
+    path('profesor/banco/evaluaciones/clonar/', banco_evaluacion_clone, name='banco_evaluacion_clone'),
 ]
+

@@ -132,8 +132,136 @@ class DashboardAdminService:
         elif pagina_solicitada == 'gestionar_estudiantes':
             # Note: This requires request parameters, will be handled in view
             pass
+
+        # Gestionar finanzas page
+        elif pagina_solicitada == 'gestionar_finanzas':
+            finanzas_context = DashboardAdminService.get_gestionar_finanzas_context(user, escuela_rbd)
+            context.update(finanzas_context)
         
         return context
+
+    @staticmethod
+    @PermissionService.require_permission('ADMINISTRATIVO', 'VIEW_REPORTS')
+    def get_gestionar_finanzas_context(user, escuela_rbd):
+        """
+        Get context for gestionar_finanzas page (Admin Escolar).
+        Loads key financial KPIs and reference data for the finance panel.
+        """
+        from decimal import Decimal
+        from django.db.models import F, Sum, Value, DecimalField
+        from django.db.models.functions import Coalesce
+        from django.utils import timezone
+
+        from backend.apps.institucion.models import Colegio, CicloAcademico
+        from backend.apps.matriculas.models import Beca, Cuota, Matricula, Pago
+
+        DashboardAdminService._validate_school_integrity(escuela_rbd, 'DASHBOARD_GESTIONAR_FINANZAS_CONTEXT')
+
+        hoy = timezone.localtime(timezone.now()).date()
+
+        # Detect active academic cycle
+        ciclo_activo = CicloAcademico.objects.filter(
+            colegio_id=escuela_rbd, estado='ACTIVO'
+        ).order_by('-fecha_inicio', '-id').first()
+
+        # Base querysets scoped to school
+        cuotas_qs = Cuota.objects.filter(matricula__colegio_id=escuela_rbd)
+        if ciclo_activo:
+            cuotas_qs = cuotas_qs.filter(matricula__ciclo_academico=ciclo_activo)
+
+        # KPI: Total Facturado / Recaudado
+        stats = cuotas_qs.aggregate(
+            total_facturado=Coalesce(Sum('monto_final'), Value(Decimal('0')), output_field=DecimalField(max_digits=12, decimal_places=0)),
+            total_recaudado=Coalesce(Sum('monto_pagado'), Value(Decimal('0')), output_field=DecimalField(max_digits=12, decimal_places=0)),
+        )
+        total_facturado = stats['total_facturado']
+        total_recaudado = stats['total_recaudado']
+
+        # KPI: Collection rate
+        tasa_cobro = 0.0
+        if total_facturado and total_facturado > 0:
+            tasa_cobro = round(float((total_recaudado / total_facturado) * 100), 1)
+
+        # KPI: Overdue debt
+        from django.db.models import Q
+        cuotas_vencidas_qs = cuotas_qs.filter(
+            Q(estado='VENCIDA') | (
+                Q(estado__in=['PENDIENTE', 'PAGADA_PARCIAL']) & Q(fecha_vencimiento__lt=hoy)
+            )
+        )
+        cuotas_vencidas_count = cuotas_vencidas_qs.count()
+
+        deuda_vencida = cuotas_vencidas_qs.annotate(
+            saldo=Coalesce(
+                F('monto_final') - F('monto_pagado'),
+                Value(Decimal('0')),
+                output_field=DecimalField(max_digits=12, decimal_places=0),
+            )
+        ).aggregate(total=Coalesce(Sum('saldo'), Value(Decimal('0'))))['total']
+
+        # KPI: Scholarships
+        becas_filter = {'matricula__colegio_id': escuela_rbd}
+        if ciclo_activo:
+            becas_filter['matricula__ciclo_academico'] = ciclo_activo
+
+        becas_activas = Beca.objects.filter(**becas_filter, estado__in=['APROBADA', 'VIGENTE']).count()
+        becas_pendientes = Beca.objects.filter(**becas_filter, estado__in=['SOLICITADA', 'EN_REVISION']).count()
+
+        # Top 5 debtors
+        matriculas_deudoras_qs = Matricula.objects.filter(
+            colegio_id=escuela_rbd, estado='ACTIVA'
+        ).select_related('estudiante', 'curso')
+        if ciclo_activo:
+            matriculas_deudoras_qs = matriculas_deudoras_qs.filter(ciclo_academico=ciclo_activo)
+
+        matriculas_deudoras = (
+            matriculas_deudoras_qs
+            .annotate(
+                total_facturado_m=Coalesce(
+                    Sum('cuotas__monto_final'), Value(Decimal('0')),
+                    output_field=DecimalField(max_digits=12, decimal_places=0)
+                ),
+                total_pagado_m=Coalesce(
+                    Sum('cuotas__monto_pagado'), Value(Decimal('0')),
+                    output_field=DecimalField(max_digits=12, decimal_places=0)
+                ),
+            )
+            .annotate(
+                saldo_m=Coalesce(
+                    F('total_facturado_m') - F('total_pagado_m'),
+                    Value(Decimal('0')),
+                    output_field=DecimalField(max_digits=12, decimal_places=0),
+                )
+            )
+            .filter(saldo_m__gt=0)
+            .order_by('-saldo_m')[:5]
+        )
+
+        deudores = []
+        for m in matriculas_deudoras:
+            deudores.append({
+                'estudiante': m.estudiante.get_full_name() if m.estudiante else '(Sin estudiante)',
+                'curso': str(m.curso) if m.curso else 'Sin curso',
+                'saldo': int(m.saldo_m or 0),
+            })
+
+        # Reference data for modals
+        metodos_pago = [{'code': code, 'label': label} for code, label in Pago.METODO_CHOICES]
+        tipos_beca = [{'code': code, 'label': label} for code, label in Beca.TIPO_CHOICES]
+
+        return {
+            'total_facturado': int(total_facturado),
+            'total_recaudado': int(total_recaudado),
+            'deuda_vencida': int(deuda_vencida),
+            'tasa_cobro': tasa_cobro,
+            'cuotas_vencidas_count': cuotas_vencidas_count,
+            'becas_activas': becas_activas,
+            'becas_pendientes': becas_pendientes,
+            'deudores': deudores,
+            'metodos_pago': metodos_pago,
+            'tipos_beca': tipos_beca,
+            'ciclo_activo': ciclo_activo,
+        }
 
     @staticmethod
     def _get_infraestructura_context(escuela_rbd):

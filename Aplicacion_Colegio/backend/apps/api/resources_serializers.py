@@ -266,6 +266,10 @@ class GradeSerializer(serializers.ModelSerializer):
             'fecha_actualizacion',
         ]
 
+    def validate_nota(self, value):
+        from backend.common.utils.grade_scale import normalize_grade_value
+        return normalize_grade_value(value)
+
 
 class GradeCompactSerializer(serializers.ModelSerializer):
     class Meta:
@@ -276,6 +280,10 @@ class GradeCompactSerializer(serializers.ModelSerializer):
             'estudiante',
             'nota',
         ]
+
+    def validate_nota(self, value):
+        from backend.common.utils.grade_scale import normalize_grade_value
+        return normalize_grade_value(value)
 
 
 class OpcionPreguntaResolubleSerializer(serializers.ModelSerializer):
@@ -507,6 +515,10 @@ class StudentGradeSerializer(serializers.ModelSerializer):
             'nota',
             'fecha_creacion',
         ]
+
+    def validate_nota(self, value):
+        from backend.common.utils.grade_scale import normalize_grade_value
+        return normalize_grade_value(value)
 
 
 class StudentAttendanceSerializer(serializers.ModelSerializer):

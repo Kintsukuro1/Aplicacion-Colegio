@@ -1,3 +1,5 @@
+import { formatGrade, normalizeGrade } from '../../lib/formatters';
+
 /**
  * Table displaying grades with selection and row actions.
  */
@@ -34,7 +36,11 @@ export function AdminGradesTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {rows.map((row) => {
+            const normalizedGrade = normalizeGrade(row.nota);
+            const isLowGrade = normalizedGrade !== null && normalizedGrade < 4;
+
+            return (
             <tr key={row.id_calificacion}>
               <td>
                 <input
@@ -47,7 +53,11 @@ export function AdminGradesTable({
               <td>{row.id_calificacion}</td>
               <td>{row.evaluacion}</td>
               <td>{row.estudiante_nombre || row.estudiante}</td>
-              <td>{row.nota}</td>
+              <td>
+                <span className={isLowGrade ? 'grade-low' : undefined}>
+                  {formatGrade(row.nota, '-')}
+                </span>
+              </td>
               <td>{row.fecha_creacion || '-'}</td>
               <td className="actions-cell">
                 {canEdit ? (
@@ -63,7 +73,8 @@ export function AdminGradesTable({
                 {!canEdit && !canDelete ? <span>-</span> : null}
               </td>
             </tr>
-          ))}
+          );
+          })}
           {rows.length === 0 ? (
             <tr>
               <td colSpan="7">Sin registros</td>

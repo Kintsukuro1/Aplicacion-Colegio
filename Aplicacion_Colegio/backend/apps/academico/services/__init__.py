@@ -4,6 +4,7 @@ from .asistencia_service import AsistenciaService
 from .grades_service import GradesService
 from .calificaciones_service import CalificacionesService
 from .material_clase_service import MaterialClaseService
+from .planning_curricular import PlanningCurricularService
 
 __all__ = [
 	'AttendanceService',
@@ -11,4 +12,6 @@ __all__ = [
 	'GradesService',
 	'CalificacionesService',
 	'MaterialClaseService',
+	'PlanningCurricularService',
 ]
+

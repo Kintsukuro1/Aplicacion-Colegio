@@ -141,6 +141,18 @@ class InspectorConvivenciaApiService:
         """Crea o actualiza un registro de asistencia con estado 'T' (Tardanza)."""
         from backend.apps.academico.models import Asistencia
 
+        # Control defensivo de duplicados: consultar estado anterior
+        try:
+            asistencia_previa = Asistencia.objects.get(
+                colegio_id=rbd,
+                clase=clase,
+                estudiante=estudiante,
+                fecha=fecha
+            )
+            estado_anterior = asistencia_previa.estado
+        except Asistencia.DoesNotExist:
+            estado_anterior = None
+
         asistencia, _ = Asistencia.objects.update_or_create(
             colegio_id=rbd,
             clase=clase,
@@ -152,4 +164,29 @@ class InspectorConvivenciaApiService:
                 'observaciones': observaciones,
             },
         )
+
+        # Disparar notificación si pasa a estar con atraso
+        if estado_anterior != 'T':
+            from backend.apps.notificaciones.services.attendance_notifications import AttendanceNotificationService
+            import logging
+            logger = logging.getLogger(__name__)
+            try:
+                # Convertir fecha a date object si es string, para consistencia
+                from datetime import datetime, date
+                fecha_obj = fecha
+                if isinstance(fecha, str):
+                    try:
+                        fecha_obj = datetime.strptime(fecha, "%Y-%m-%d").date()
+                    except ValueError:
+                        pass
+
+                AttendanceNotificationService.notify_lateness(
+                    estudiante=estudiante,
+                    clase=clase,
+                    fecha=fecha_obj,
+                    observaciones=observaciones
+                )
+            except Exception as e:
+                logger.error(f"Error al enviar notificacion de atraso: {e}", exc_info=True)
+
         return asistencia

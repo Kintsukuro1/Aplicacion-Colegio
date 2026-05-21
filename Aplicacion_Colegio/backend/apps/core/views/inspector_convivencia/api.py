@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from backend.apps.auditoria.models import AuditoriaEvento
 from backend.apps.core.services.inspector_convivencia_api_service import InspectorConvivenciaApiService
 from backend.apps.core.views.school_context import resolve_request_rbd
 from backend.common.services.policy_service import PolicyService
@@ -101,6 +102,25 @@ def crear_anotacion(request):
             registrado_por=request.user,
         )
 
+        AuditoriaEvento.registrar_evento(
+            usuario=request.user,
+            accion=AuditoriaEvento.CREAR,
+            tabla_afectada='anotacion_convivencia',
+            descripcion=f"Creación de anotación de convivencia {tipo.lower()} para el estudiante",
+            categoria=AuditoriaEvento.CATEGORIA_ESTUDIANTES,
+            content_object=anotacion,
+            ip_address=(request.META.get('REMOTE_ADDR') or '')[:45],
+            user_agent=(request.META.get('HTTP_USER_AGENT') or '')[:1000],
+            nivel=AuditoriaEvento.NIVEL_INFO,
+            metadata={
+                'anotacion_id': anotacion.id_anotacion,
+                'estudiante_id': estudiante.id,
+                'tipo': tipo,
+                'categoria': categoria,
+                'gravedad': gravedad,
+            }
+        )
+
         return JsonResponse({
             'success': True,
             'message': 'Anotación registrada correctamente',
@@ -152,6 +172,23 @@ def actualizar_justificativo(request, justificativo_id):
             observaciones=body.get('observaciones', ''),
         )
 
+        AuditoriaEvento.registrar_evento(
+            usuario=request.user,
+            accion=AuditoriaEvento.MODIFICAR,
+            tabla_afectada='justificativo_inasistencia',
+            descripcion=f"Resolución de justificativo de inasistencia: {nuevo_estado.lower()}",
+            categoria=AuditoriaEvento.CATEGORIA_ASISTENCIA,
+            content_object=justificativo,
+            ip_address=(request.META.get('REMOTE_ADDR') or '')[:45],
+            user_agent=(request.META.get('HTTP_USER_AGENT') or '')[:1000],
+            nivel=AuditoriaEvento.NIVEL_INFO,
+            metadata={
+                'justificativo_id': justificativo.id_justificativo,
+                'estado': nuevo_estado,
+                'observaciones': body.get('observaciones', ''),
+            }
+        )
+
         return JsonResponse({
             'success': True,
             'message': f'Justificativo {nuevo_estado.lower()} correctamente',
@@ -196,6 +233,25 @@ def registrar_atraso(request):
             estudiante=estudiante,
             fecha=fecha,
             observaciones=observaciones,
+        )
+
+        AuditoriaEvento.registrar_evento(
+            usuario=request.user,
+            accion=AuditoriaEvento.CREAR,
+            tabla_afectada='asistencia',
+            descripcion="Registro de atraso de estudiante en clase",
+            categoria=AuditoriaEvento.CATEGORIA_ASISTENCIA,
+            content_object=asistencia,
+            ip_address=(request.META.get('REMOTE_ADDR') or '')[:45],
+            user_agent=(request.META.get('HTTP_USER_AGENT') or '')[:1000],
+            nivel=AuditoriaEvento.NIVEL_INFO,
+            metadata={
+                'asistencia_id': asistencia.id_asistencia,
+                'estudiante_id': estudiante.id,
+                'clase_id': clase.id,
+                'fecha': fecha if isinstance(fecha, str) else fecha.isoformat(),
+                'estado': 'T',
+            }
         )
 
         return JsonResponse({

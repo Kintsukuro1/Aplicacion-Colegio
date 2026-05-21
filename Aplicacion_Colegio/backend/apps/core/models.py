@@ -626,3 +626,102 @@ class PrestamoRecurso(models.Model):
             from datetime import date
             return date.today() > self.fecha_devolucion_esperada
         return False
+
+
+# ---------------------------------------------------------------------------
+# Citación a Apoderados y Protocolos de Convivencia (Ley Aula Segura)
+# ---------------------------------------------------------------------------
+
+class CitacionApoderado(models.Model):
+    """Reuniones y citaciones formales a apoderados gestionadas por psicólogos/orientadores."""
+
+    ESTADOS = [
+        ('PENDIENTE', 'Pendiente'),
+        ('ASISTIO', 'Asistió'),
+        ('INASISTENTE', 'Inasistente'),
+        ('CANCELADA', 'Cancelada'),
+    ]
+
+    id_citacion = models.AutoField(primary_key=True)
+    colegio = models.ForeignKey(Colegio, on_delete=models.CASCADE, related_name='citaciones_apoderados')
+    estudiante = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='citaciones_recibidas',
+        limit_choices_to={'role__nombre__in': ['Alumno', 'Estudiante']},
+    )
+    solicitado_por = models.ForeignKey(User, on_delete=models.PROTECT, related_name='citaciones_creadas')
+    fecha_citacion = models.DateTimeField()
+    motivo = models.CharField(max_length=200)
+    estado = models.CharField(max_length=15, choices=ESTADOS, default='PENDIENTE')
+    observaciones = models.TextField(blank=True, default='', help_text='Notas confidenciales de la citación')
+    acuerdos = models.TextField(blank=True, default='', help_text='Acuerdos alcanzados en la reunión')
+
+    # Metadata
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    objects = TenantManager(school_field='colegio_id')
+
+    class Meta:
+        db_table = 'citacion_apoderado'
+        verbose_name = 'Citación de Apoderado'
+        verbose_name_plural = 'Citaciones de Apoderados'
+        ordering = ['-fecha_citacion']
+        indexes = [
+            models.Index(fields=['estudiante', '-fecha_citacion']),
+            models.Index(fields=['colegio', '-fecha_citacion']),
+        ]
+
+    def __str__(self):
+        return f"Citación {self.estudiante.get_full_name()} - {self.fecha_citacion.strftime('%d/%m/%Y')} ({self.get_estado_display()})"
+
+
+class CasoBullyingConvivencia(models.Model):
+    """Casos de bullying, ciberbullying y violencia bajo la ley Aula Segura."""
+
+    TIPOS = [
+        ('BULLYING', 'Bullying'),
+        ('CIBERBULLYING', 'Ciberbullying'),
+        ('AGRESION_FISICA', 'Agresión Física'),
+        ('AGRESION_VERBAL', 'Agresión Verbal'),
+        ('DISCRIMINACION', 'Discriminación'),
+        ('OTRA_GRAVE', 'Otra Falta Grave'),
+    ]
+
+    ESTADOS = [
+        ('ABIERTO', 'Abierto'),
+        ('EN_INVESTIGACION', 'En Investigación'),
+        ('MEDIDAS_APLICADAS', 'Medidas Aplicadas'),
+        ('CERRADO', 'Cerrado'),
+    ]
+
+    id_caso = models.AutoField(primary_key=True)
+    colegio = models.ForeignKey(Colegio, on_delete=models.CASCADE, related_name='casos_bullying')
+    estudiante_implicado = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='casos_convivencia_implicado',
+        limit_choices_to={'role__nombre__in': ['Alumno', 'Estudiante']},
+    )
+    registrado_por = models.ForeignKey(User, on_delete=models.PROTECT, related_name='casos_convivencia_registrados')
+    tipo_falta = models.CharField(max_length=20, choices=TIPOS)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='ABIERTO')
+    descripcion_hechos = models.TextField()
+    medidas_tomadas = models.TextField(blank=True, default='', help_text='Medidas disciplinarias/apoyo aplicadas')
+    apoderado_notificado = models.BooleanField(default=False)
+    fecha_registro = models.DateTimeField(default=timezone.now)
+
+    # Metadata
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    objects = TenantManager(school_field='colegio_id')
+
+    class Meta:
+        db_table = 'caso_bullying_convivencia'
+        verbose_name = 'Caso de Bullying y Convivencia'
+        verbose_name_plural = 'Casos de Bullying y Convivencia'
+        ordering = ['-fecha_registro']
+        indexes = [
+            models.Index(fields=['estudiante_implicado', '-fecha_registro']),
+            models.Index(fields=['colegio', '-fecha_registro']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_tipo_falta_display()} - {self.estudiante_implicado.get_full_name()} ({self.get_estado_display()})"
+

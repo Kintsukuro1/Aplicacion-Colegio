@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
-from django.db.models import Avg, Count, Max, Prefetch, Q, Sum
+from django.db.models import Avg, Count, Max, Min, Prefetch, Q, Sum
 from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 
@@ -138,11 +138,6 @@ class AcademicService:
 
             # Validar fecha de la clase
             hoy = timezone.now().date()
-            if clase.fecha != hoy:
-                return {
-                    'success': False,
-                    'error': 'Solo se puede registrar asistencia del día actual'
-                }
 
             asistencias_creadas = []
             for asistencia_data in asistencias_data:
@@ -159,17 +154,47 @@ class AcademicService:
                 if not matricula:
                     continue  # Saltar estudiantes no matriculados
 
-                # Crear o actualizar asistencia
+                # Obtener el estudiante
+                try:
+                    estudiante = User.objects.get(id=estudiante_id)
+                except User.DoesNotExist:
+                    continue
+
+                # Control defensivo de duplicados: consultar estado anterior
+                try:
+                    asistencia_previa = Asistencia.objects.get(
+                        clase=clase,
+                        estudiante_id=estudiante_id,
+                        fecha=hoy
+                    )
+                    estado_anterior = asistencia_previa.estado
+                except Asistencia.DoesNotExist:
+                    estado_anterior = None
+
+                # Crear o actualizar asistencia corregido (con fecha y colegio, removiendo campos inexistentes)
                 asistencia, created = Asistencia.objects.update_or_create(
                     clase=clase,
-                    estudiante_id=estudiante_id,
+                    estudiante=estudiante,
+                    fecha=hoy,
                     defaults={
+                        'colegio': clase.curso.colegio,
                         'estado': estado,
-                        'registrada_por': user,
-                        'fecha_registro': timezone.now()
                     }
                 )
                 asistencias_creadas.append(asistencia)
+
+                # Disparar notificación si pasa a estar ausente
+                if estado in ['A', 'AUSENTE'] and estado_anterior not in ['A', 'AUSENTE']:
+                    from backend.apps.notificaciones.services.attendance_notifications import AttendanceNotificationService
+                    try:
+                        AttendanceNotificationService.notify_absence(
+                            estudiante=estudiante,
+                            clase=clase,
+                            fecha=hoy,
+                            registrada_por=user
+                        )
+                    except Exception as e:
+                        logger.error(f"Error al enviar notificacion de inasistencia: {e}", exc_info=True)
 
             return {
                 'success': True,
@@ -521,15 +546,20 @@ class AcademicService:
                     continue  # Saltar notas inválidas
 
                 # Crear o actualizar nota
-                nota, created = Nota.objects.update_or_create(
+                nota, created = Calificacion.objects.get_or_create(
                     evaluacion=evaluacion,
                     estudiante_id=estudiante_id,
                     defaults={
+                        'colegio': evaluacion.colegio,
                         'nota': nota_valor,
-                        'registrada_por': user,
-                        'fecha_registro': timezone.now()
+                        'registrado_por': user,
+                        'actualizado_por': user,
                     }
                 )
+                if not created:
+                    nota.nota = nota_valor
+                    nota.actualizado_por = user
+                    nota.save()
                 calificaciones_creadas.append(nota)
 
             return {
@@ -563,12 +593,12 @@ class AcademicService:
             return {'success': False, 'error': 'Sin permisos para ver calificaciones'}
 
         # Obtener calificaciones
-        notas = Nota.objects.filter(
+        notas = Calificacion.objects.filter(
             estudiante_id=estudiante_id
         ).select_related(
             'evaluacion__clase__asignatura',
             'evaluacion__clase__curso'
-        ).order_by('-evaluacion__fecha')
+        ).order_by('-evaluacion__fecha_evaluacion')
 
         if asignatura_id:
             notas = notas.filter(evaluacion__clase__asignatura_id=asignatura_id)
@@ -579,9 +609,9 @@ class AcademicService:
                 'asignatura': str(nota.evaluacion.clase.asignatura),
                 'curso': str(nota.evaluacion.clase.curso),
                 'evaluacion': nota.evaluacion.nombre,
-                'fecha': nota.evaluacion.fecha.strftime('%d/%m/%Y'),
+                'fecha': nota.evaluacion.fecha_evaluacion.strftime('%d/%m/%Y') if nota.evaluacion.fecha_evaluacion else '',
                 'nota': float(nota.nota),
-                'tipo_evaluacion': nota.evaluacion.tipo
+                'tipo_evaluacion': nota.evaluacion.tipo_evaluacion
             })
 
         return {
@@ -732,7 +762,7 @@ class AcademicService:
         )['promedio'] or 0
 
         # Calificaciones promedio por asignatura
-        calificaciones = Nota.objects.filter(
+        calificaciones = Calificacion.objects.filter(
             evaluacion__clase__curso=curso
         ).values('evaluacion__clase__asignatura').annotate(
             promedio=Avg('nota')
@@ -747,9 +777,10 @@ class AcademicService:
         }
 
     @staticmethod
-    def _calcular_estadisticas_asignatura(asignatura, curso_id=None):
+    def _calcular_estadisticas_asignatura(asignatura,
+                                          curso_id=None):
         """Calcular estadísticas de una asignatura"""
-        notas = Nota.objects.filter(
+        notas = Calificacion.objects.filter(
             evaluacion__clase__asignatura=asignatura
         )
 
@@ -760,7 +791,7 @@ class AcademicService:
             promedio=Avg('nota'),
             minima=Min('nota'),
             maxima=Max('nota'),
-            total_evaluaciones=Count('id')
+            total_evaluaciones=Count('id_calificacion')
         )
 
         return {

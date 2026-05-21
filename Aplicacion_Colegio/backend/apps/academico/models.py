@@ -19,6 +19,91 @@ from backend.apps.accounts.models import User
 from backend.common.tenancy import TenantManager
 
 
+class ObjetivoAprendizaje(models.Model):
+    """Objetivos de Aprendizaje (OA) del MINEDUC o personalizados"""
+    id_oa = models.AutoField(primary_key=True)
+    colegio = models.ForeignKey(Colegio, on_delete=models.CASCADE, related_name='objetivos_aprendizaje')
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, related_name='objetivos_aprendizaje')
+    codigo = models.CharField(max_length=50)
+    descripcion = models.TextField()
+    nivel = models.CharField(max_length=50)
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    objects = TenantManager(school_field='colegio_id')
+
+    class Meta:
+        db_table = 'objetivo_aprendizaje'
+        verbose_name = 'Objetivo de Aprendizaje'
+        verbose_name_plural = 'Objetivos de Aprendizaje'
+        unique_together = ('colegio', 'asignatura', 'codigo', 'nivel')
+        ordering = ['codigo']
+
+    def __str__(self):
+        return f"{self.codigo} ({self.nivel}) - {self.asignatura.nombre}"
+
+
+class Rubrica(models.Model):
+    """Rúbrica de evaluación compartida o propia"""
+    id_rubrica = models.AutoField(primary_key=True)
+    colegio = models.ForeignKey(Colegio, on_delete=models.CASCADE, related_name='rubricas')
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, related_name='rubricas')
+    creado_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rubricas_creadas')
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True, default='')
+    es_compartida = models.BooleanField(default=True)
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    objects = TenantManager(school_field='colegio_id')
+
+    class Meta:
+        db_table = 'rubrica'
+        verbose_name = 'Rúbrica'
+        verbose_name_plural = 'Rúbricas'
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f"{self.nombre} - {self.asignatura.nombre}"
+
+
+class CriterioRubrica(models.Model):
+    """Criterios de evaluación dentro de una rúbrica"""
+    id_criterio = models.AutoField(primary_key=True)
+    rubrica = models.ForeignKey(Rubrica, on_delete=models.CASCADE, related_name='criterios')
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True, default='')
+    peso = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    orden = models.IntegerField(default=1)
+    objects = TenantManager(school_field='rubrica__colegio_id')
+
+    class Meta:
+        db_table = 'criterio_rubrica'
+        verbose_name = 'Criterio de Rúbrica'
+        verbose_name_plural = 'Criterios de Rúbrica'
+        ordering = ['orden']
+
+    def __str__(self):
+        return f"{self.nombre} - {self.rubrica.nombre}"
+
+
+class NivelRubrica(models.Model):
+    """Nivel de desempeño de un criterio"""
+    id_nivel = models.AutoField(primary_key=True)
+    criterio = models.ForeignKey(CriterioRubrica, on_delete=models.CASCADE, related_name='niveles')
+    puntaje = models.IntegerField()
+    descripcion = models.TextField()
+    orden = models.IntegerField(default=1)
+    objects = TenantManager(school_field='criterio__rubrica__colegio_id')
+
+    class Meta:
+        db_table = 'nivel_rubrica'
+        verbose_name = 'Nivel de Rúbrica'
+        verbose_name_plural = 'Niveles de Rúbrica'
+        ordering = ['-puntaje', 'orden']
+
+    def __str__(self):
+        return f"{self.puntaje} pts - {self.criterio.nombre}"
+
+
 class Planificacion(models.Model):
     """Planificación de clases del profesor"""
     id_planificacion = models.AutoField(primary_key=True)
@@ -71,6 +156,22 @@ class Planificacion(models.Model):
     fecha_envio = models.DateTimeField(null=True, blank=True)
     activa = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    # Nuevas relaciones del módulo curricular
+    objetivos_aprendizaje = models.ManyToManyField(
+        ObjetivoAprendizaje,
+        blank=True,
+        related_name='planificaciones',
+        db_table='planificacion_oa_link'
+    )
+    rubrica = models.ForeignKey(
+        Rubrica,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='planificaciones'
+    )
+    
     objects = TenantManager(school_field='colegio_id')
 
     class Meta:
@@ -282,16 +383,25 @@ class Calificacion(models.Model):
         """Valida la nota contra la escala configurada del colegio."""
         from django.core.exceptions import ValidationError
         from backend.apps.institucion.models import ConfiguracionAcademica
+        from backend.common.utils.grade_scale import normalize_grade_value
 
         super().clean()
 
-        if self.nota is not None and self.colegio_id:
-            escala = ConfiguracionAcademica.get_escala_para_colegio(self.colegio)
-            if self.nota < escala['nota_minima'] or self.nota > escala['nota_maxima']:
-                raise ValidationError({
-                    'nota': f"La nota debe estar entre {escala['nota_minima']} y {escala['nota_maxima']} "
-                            f"según la configuración del colegio."
-                })
+        if self.nota is not None:
+            self.nota = normalize_grade_value(self.nota)
+            if self.colegio_id:
+                escala = ConfiguracionAcademica.get_escala_para_colegio(self.colegio)
+                if self.nota < escala['nota_minima'] or self.nota > escala['nota_maxima']:
+                    raise ValidationError({
+                        'nota': f"La nota debe estar entre {escala['nota_minima']} y {escala['nota_maxima']} "
+                                f"según la configuración del colegio."
+                    })
+
+    def save(self, *args, **kwargs):
+        from backend.common.utils.grade_scale import normalize_grade_value
+        if self.nota is not None:
+            self.nota = normalize_grade_value(self.nota)
+        super().save(*args, **kwargs)
 
     def get_nota_efectiva(self):
         """Retorna la nota efectiva considerando recuperaciones"""

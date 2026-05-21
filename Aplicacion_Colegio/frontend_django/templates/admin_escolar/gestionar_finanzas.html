@@ -1,0 +1,786 @@
+{% load static %}
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+/* ─── Design tokens ───────────────────────────────────── */
+:root {
+    --fin-bg:        hsl(220, 20%, 97%);
+    --fin-surface:   hsl(0, 0%, 100%);
+    --fin-glass:     hsla(0, 0%, 100%, 0.72);
+    --fin-glass-border: hsla(0, 0%, 100%, 0.40);
+    --fin-text:      hsl(220, 25%, 14%);
+    --fin-text-secondary: hsl(220, 12%, 48%);
+    --fin-emerald:   hsl(160, 68%, 42%);
+    --fin-emerald-light: hsl(160, 68%, 95%);
+    --fin-blue:      hsl(215, 78%, 52%);
+    --fin-blue-light: hsl(215, 78%, 95%);
+    --fin-amber:     hsl(38, 92%, 50%);
+    --fin-amber-light: hsl(38, 92%, 95%);
+    --fin-rose:      hsl(350, 72%, 54%);
+    --fin-rose-light: hsl(350, 72%, 95%);
+    --fin-purple:    hsl(270, 62%, 55%);
+    --fin-purple-light: hsl(270, 62%, 95%);
+    --fin-radius:    16px;
+    --fin-radius-sm: 10px;
+    --fin-shadow:    0 2px 12px hsla(220, 40%, 10%, 0.06);
+    --fin-shadow-lg: 0 8px 32px hsla(220, 40%, 10%, 0.10);
+    --fin-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Container ───────────────────────────────────────── */
+.fin-container { font-family: 'Inter', sans-serif; color: var(--fin-text); }
+.fin-container h1, .fin-container h2, .fin-container h3 { font-family: 'Outfit', sans-serif; }
+
+.fin-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 28px;
+}
+.fin-header-icon {
+    width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
+    border-radius: var(--fin-radius); font-size: 26px;
+    background: linear-gradient(135deg, var(--fin-emerald), var(--fin-blue));
+    color: #fff; box-shadow: 0 4px 16px hsla(160, 68%, 42%, 0.25);
+}
+.fin-header h1 { font-size: 26px; font-weight: 700; margin: 0; }
+.fin-header p  { font-size: 14px; color: var(--fin-text-secondary); margin: 2px 0 0; }
+
+/* ─── KPI Cards ───────────────────────────────────────── */
+.fin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px; margin-bottom: 28px;
+}
+.fin-kpi-card {
+    background: var(--fin-glass);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--fin-glass-border);
+    border-radius: var(--fin-radius);
+    padding: 22px 24px;
+    box-shadow: var(--fin-shadow);
+    transition: transform var(--fin-transition), box-shadow var(--fin-transition);
+    position: relative; overflow: hidden;
+}
+.fin-kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--fin-shadow-lg);
+}
+.fin-kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 4px; height: 100%; border-radius: 4px 0 0 4px;
+}
+.fin-kpi-card.kpi-facturado::before  { background: var(--fin-blue); }
+.fin-kpi-card.kpi-recaudado::before  { background: var(--fin-emerald); }
+.fin-kpi-card.kpi-deuda::before      { background: var(--fin-rose); }
+.fin-kpi-card.kpi-tasa::before       { background: var(--fin-purple); }
+
+.fin-kpi-label {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--fin-text-secondary); margin-bottom: 8px;
+}
+.fin-kpi-value {
+    font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800;
+    line-height: 1.1;
+}
+.fin-kpi-card.kpi-facturado  .fin-kpi-value { color: var(--fin-blue); }
+.fin-kpi-card.kpi-recaudado  .fin-kpi-value { color: var(--fin-emerald); }
+.fin-kpi-card.kpi-deuda      .fin-kpi-value { color: var(--fin-rose); }
+.fin-kpi-card.kpi-tasa       .fin-kpi-value { color: var(--fin-purple); }
+.fin-kpi-detail { font-size: 12px; color: var(--fin-text-secondary); margin-top: 6px; }
+
+/* ─── Tabs ────────────────────────────────────────────── */
+.fin-tabs {
+    display: flex; gap: 4px; margin-bottom: 0;
+    background: hsl(220, 16%, 93%); border-radius: var(--fin-radius) var(--fin-radius) 0 0;
+    padding: 6px;
+}
+.fin-tab {
+    flex: 1; padding: 12px 8px; text-align: center;
+    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+    border-radius: var(--fin-radius-sm); color: var(--fin-text-secondary);
+    background: transparent; transition: all var(--fin-transition);
+    font-family: 'Inter', sans-serif;
+}
+.fin-tab:hover { color: var(--fin-text); background: hsla(0,0%,100%,0.5); }
+.fin-tab.active {
+    color: var(--fin-emerald); background: var(--fin-surface);
+    box-shadow: 0 2px 8px hsla(0,0%,0%,0.06);
+}
+.fin-tab-content {
+    display: none; background: var(--fin-surface);
+    border-radius: 0 0 var(--fin-radius) var(--fin-radius);
+    padding: 24px; box-shadow: var(--fin-shadow); min-height: 320px;
+}
+.fin-tab-content.active { display: block; animation: finFadeIn 0.3s ease; }
+@keyframes finFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── Tables ──────────────────────────────────────────── */
+.fin-table-wrap { overflow-x: auto; }
+.fin-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.fin-table thead th {
+    text-align: left; padding: 12px 14px; font-weight: 600;
+    color: var(--fin-text-secondary); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 2px solid hsl(220, 16%, 92%);
+    background: hsl(220, 16%, 97%); position: sticky; top: 0;
+}
+.fin-table tbody td {
+    padding: 12px 14px; border-bottom: 1px solid hsl(220, 16%, 94%);
+    vertical-align: middle;
+}
+.fin-table tbody tr { transition: background var(--fin-transition); }
+.fin-table tbody tr:hover { background: hsl(220, 20%, 97%); }
+
+/* ─── Badges ──────────────────────────────────────────── */
+.fin-badge {
+    display: inline-block; padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.fin-badge-success { background: var(--fin-emerald-light); color: var(--fin-emerald); }
+.fin-badge-warning { background: var(--fin-amber-light); color: hsl(38, 80%, 38%); }
+.fin-badge-danger  { background: var(--fin-rose-light); color: var(--fin-rose); }
+.fin-badge-info    { background: var(--fin-blue-light); color: var(--fin-blue); }
+.fin-badge-neutral { background: hsl(220, 16%, 93%); color: var(--fin-text-secondary); }
+
+/* ─── Buttons ─────────────────────────────────────────── */
+.fin-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 20px; border-radius: var(--fin-radius-sm);
+    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all var(--fin-transition);
+}
+.fin-btn-primary {
+    background: linear-gradient(135deg, var(--fin-emerald), hsl(170, 60%, 38%));
+    color: #fff; box-shadow: 0 3px 12px hsla(160, 68%, 42%, 0.25);
+}
+.fin-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 18px hsla(160, 68%, 42%, 0.35); }
+.fin-btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+.fin-btn-outline {
+    background: transparent; border: 1.5px solid hsl(220, 16%, 85%);
+    color: var(--fin-text);
+}
+.fin-btn-outline:hover { border-color: var(--fin-emerald); color: var(--fin-emerald); }
+.fin-btn-danger {
+    background: var(--fin-rose); color: #fff;
+    box-shadow: 0 3px 12px hsla(350, 72%, 54%, 0.2);
+}
+
+/* ─── Filters ─────────────────────────────────────────── */
+.fin-filters {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
+    align-items: center;
+}
+.fin-input, .fin-select {
+    padding: 9px 14px; border-radius: var(--fin-radius-sm);
+    border: 1.5px solid hsl(220, 16%, 88%); font-size: 13px;
+    font-family: 'Inter', sans-serif; background: var(--fin-surface);
+    transition: border-color var(--fin-transition);
+    outline: none;
+}
+.fin-input:focus, .fin-select:focus { border-color: var(--fin-emerald); }
+.fin-input { min-width: 220px; }
+
+/* ─── Modal ───────────────────────────────────────────── */
+.fin-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: hsla(220, 20%, 10%, 0.45); backdrop-filter: blur(4px);
+    z-index: 9000; align-items: center; justify-content: center;
+}
+.fin-modal-overlay.active { display: flex; animation: finFadeIn 0.2s ease; }
+.fin-modal {
+    background: var(--fin-surface); border-radius: var(--fin-radius);
+    width: 92%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+    box-shadow: var(--fin-shadow-lg); padding: 28px;
+}
+.fin-modal-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+.fin-form-group { margin-bottom: 16px; }
+.fin-form-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--fin-text-secondary); margin-bottom: 6px;
+}
+.fin-form-group input, .fin-form-group select, .fin-form-group textarea {
+    width: 100%; padding: 10px 14px; border-radius: var(--fin-radius-sm);
+    border: 1.5px solid hsl(220, 16%, 88%); font-size: 14px;
+    font-family: 'Inter', sans-serif; background: var(--fin-surface);
+    transition: border-color var(--fin-transition); outline: none; box-sizing: border-box;
+}
+.fin-form-group input:focus, .fin-form-group select:focus, .fin-form-group textarea:focus {
+    border-color: var(--fin-emerald);
+}
+.fin-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* ─── Toast ───────────────────────────────────────────── */
+.fin-toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 14px 22px; border-radius: var(--fin-radius-sm);
+    font-size: 14px; font-weight: 500; color: #fff; z-index: 9999;
+    box-shadow: var(--fin-shadow-lg); transform: translateY(100px); opacity: 0;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Inter', sans-serif;
+}
+.fin-toast.show { transform: translateY(0); opacity: 1; }
+.fin-toast.success { background: var(--fin-emerald); }
+.fin-toast.error   { background: var(--fin-rose); }
+
+/* ─── Debtors ─────────────────────────────────────────── */
+.fin-debtor-list { list-style: none; padding: 0; margin: 0; }
+.fin-debtor-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid hsl(220, 16%, 94%);
+}
+.fin-debtor-item:last-child { border-bottom: none; }
+.fin-debtor-name { font-weight: 600; font-size: 14px; }
+.fin-debtor-curso { font-size: 12px; color: var(--fin-text-secondary); }
+.fin-debtor-amount { font-family: 'Outfit'; font-weight: 700; color: var(--fin-rose); font-size: 15px; }
+
+/* ─── Empty state ─────────────────────────────────────── */
+.fin-empty { text-align: center; padding: 48px 20px; color: var(--fin-text-secondary); }
+.fin-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.fin-empty-text { font-size: 15px; }
+
+/* ─── Spinner ─────────────────────────────────────────── */
+.fin-spinner {
+    display: inline-block; width: 20px; height: 20px;
+    border: 2.5px solid hsl(220, 16%, 88%);
+    border-top-color: var(--fin-emerald);
+    border-radius: 50%; animation: finSpin 0.7s linear infinite;
+}
+@keyframes finSpin { to { transform: rotate(360deg); } }
+
+/* ─── Responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+    .fin-kpi-grid { grid-template-columns: 1fr 1fr; }
+    .fin-tabs { flex-wrap: wrap; }
+    .fin-tab { font-size: 12px; }
+    .fin-header h1 { font-size: 20px; }
+    .fin-modal { width: 96%; padding: 20px; }
+}
+</style>
+
+<div class="fin-container">
+    <!-- Header -->
+    <div class="fin-header">
+        <div class="fin-header-icon">💰</div>
+        <div>
+            <h1>Finanzas y Pagos</h1>
+            <p>Control de cuotas, pagos, becas y morosidad {% if ciclo_activo %}— {{ ciclo_activo.nombre }}{% endif %}</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="fin-kpi-grid">
+        <div class="fin-kpi-card kpi-facturado">
+            <div class="fin-kpi-label">Total Facturado</div>
+            <div class="fin-kpi-value">${{ total_facturado|default:"0" | floatformat:0 }}</div>
+            <div class="fin-kpi-detail">Cuotas emitidas del ciclo activo</div>
+        </div>
+        <div class="fin-kpi-card kpi-recaudado">
+            <div class="fin-kpi-label">Total Recaudado</div>
+            <div class="fin-kpi-value">${{ total_recaudado|default:"0" | floatformat:0 }}</div>
+            <div class="fin-kpi-detail">Pagos recibidos acumulados</div>
+        </div>
+        <div class="fin-kpi-card kpi-deuda">
+            <div class="fin-kpi-label">Deuda Vencida</div>
+            <div class="fin-kpi-value">${{ deuda_vencida|default:"0" | floatformat:0 }}</div>
+            <div class="fin-kpi-detail">{{ cuotas_vencidas_count|default:"0" }} cuota{{ cuotas_vencidas_count|pluralize:"s" }} vencida{{ cuotas_vencidas_count|pluralize:"s" }}</div>
+        </div>
+        <div class="fin-kpi-card kpi-tasa">
+            <div class="fin-kpi-label">Tasa de Cobro</div>
+            <div class="fin-kpi-value">{{ tasa_cobro|default:"0" }}%</div>
+            <div class="fin-kpi-detail">Becas activas: {{ becas_activas|default:"0" }} · Pendientes: {{ becas_pendientes|default:"0" }}</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="fin-tabs" id="finTabs">
+        <button class="fin-tab active" data-tab="cuotas" onclick="finSwitchTab('cuotas')">📋 Cuotas y Pagos</button>
+        <button class="fin-tab" data-tab="becas" onclick="finSwitchTab('becas')">🎓 Becas</button>
+        <button class="fin-tab" data-tab="morosos" onclick="finSwitchTab('morosos')">⚠️ Morosos</button>
+    </div>
+
+    <!-- Tab 1: Cuotas y Pagos -->
+    <div class="fin-tab-content active" id="tab-cuotas">
+        <div class="fin-filters">
+            <input type="text" class="fin-input" id="finBusquedaCuotas" placeholder="🔍 Buscar estudiante..." oninput="finBuscarCuotas()">
+            <select class="fin-select" id="finFiltroCuotas" onchange="finFiltrarCuotas()">
+                <option value="">Todos los estados</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="PAGADA_PARCIAL">Pagada Parcial</option>
+                <option value="PAGADA">Pagada</option>
+                <option value="VENCIDA">Vencida</option>
+                <option value="CONDONADA">Condonada</option>
+            </select>
+            <button class="fin-btn fin-btn-primary" onclick="finCargarCuotas()">🔄 Actualizar</button>
+        </div>
+        <div class="fin-table-wrap">
+            <table class="fin-table" id="finTablaCuotas">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Mes</th>
+                        <th>Monto Final</th>
+                        <th>Pagado</th>
+                        <th>Saldo</th>
+                        <th>Estado</th>
+                        <th>Vencimiento</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="finCuotasBody">
+                    <tr><td colspan="8" class="fin-empty">
+                        <div class="fin-empty-icon">📋</div>
+                        <div class="fin-empty-text">Cargando cuotas...</div>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 2: Becas -->
+    <div class="fin-tab-content" id="tab-becas">
+        <div class="fin-filters">
+            <select class="fin-select" id="finFiltroBecas" onchange="finCargarBecas()">
+                <option value="pendientes">Pendientes</option>
+                <option value="activas">Activas</option>
+                <option value="historial">Historial</option>
+            </select>
+            <button class="fin-btn fin-btn-primary" onclick="finAbrirModalBeca()">➕ Asignar Beca</button>
+        </div>
+
+        <!-- Becas stats -->
+        <div class="fin-kpi-grid" style="margin-bottom: 18px;">
+            <div class="fin-kpi-card" style="padding:16px 20px;">
+                <div class="fin-kpi-label">Becas Activas</div>
+                <div class="fin-kpi-value" style="font-size:22px; color:var(--fin-emerald);">{{ becas_activas|default:"0" }}</div>
+            </div>
+            <div class="fin-kpi-card" style="padding:16px 20px;">
+                <div class="fin-kpi-label">Pendientes de Revisión</div>
+                <div class="fin-kpi-value" style="font-size:22px; color:var(--fin-amber);">{{ becas_pendientes|default:"0" }}</div>
+            </div>
+        </div>
+
+        <div class="fin-table-wrap">
+            <table class="fin-table">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Tipo</th>
+                        <th>Descuento</th>
+                        <th>Estado</th>
+                        <th>Vigencia</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody id="finBecasBody">
+                    <tr><td colspan="6" class="fin-empty">
+                        <div class="fin-empty-icon">🎓</div>
+                        <div class="fin-empty-text">Cargando becas...</div>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 3: Morosos -->
+    <div class="fin-tab-content" id="tab-morosos">
+        <h3 style="margin-top:0; margin-bottom: 18px; font-family:'Outfit'; font-size: 18px;">
+            🔴 Estudiantes con Mayor Deuda Pendiente
+        </h3>
+        {% if deudores %}
+        <ul class="fin-debtor-list">
+            {% for d in deudores %}
+            <li class="fin-debtor-item">
+                <div>
+                    <div class="fin-debtor-name">{{ d.estudiante }}</div>
+                    <div class="fin-debtor-curso">{{ d.curso }}</div>
+                </div>
+                <div class="fin-debtor-amount">${{ d.saldo | floatformat:0 }}</div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="fin-empty">
+            <div class="fin-empty-icon">✅</div>
+            <div class="fin-empty-text">No hay estudiantes con deuda pendiente</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal: Registrar Pago -->
+<div class="fin-modal-overlay" id="finModalPago">
+    <div class="fin-modal">
+        <h2 class="fin-modal-title">💳 Registrar Pago Manual</h2>
+        <div class="fin-form-group">
+            <label>Cuota</label>
+            <input type="text" id="finPagoCuotaInfo" readonly style="background:hsl(220,16%,97%);">
+            <input type="hidden" id="finPagoCuotaId">
+        </div>
+        <div class="fin-form-group">
+            <label>Saldo Pendiente</label>
+            <input type="text" id="finPagoSaldo" readonly style="background:hsl(220,16%,97%); color:var(--fin-rose); font-weight:700;">
+        </div>
+        <div class="fin-form-group">
+            <label>Monto a Pagar *</label>
+            <input type="number" id="finPagoMonto" min="1" step="1" placeholder="Ej: 50000">
+        </div>
+        <div class="fin-form-group">
+            <label>Método de Pago</label>
+            <select id="finPagoMetodo">
+                {% for m in metodos_pago %}
+                <option value="{{ m.code }}">{{ m.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="fin-form-group">
+            <label>N° Comprobante</label>
+            <input type="text" id="finPagoComprobante" placeholder="Opcional">
+        </div>
+        <div class="fin-form-group">
+            <label>Observaciones</label>
+            <textarea id="finPagoObs" rows="2" placeholder="Opcional"></textarea>
+        </div>
+        <div class="fin-modal-actions">
+            <button class="fin-btn fin-btn-outline" onclick="finCerrarModal('finModalPago')">Cancelar</button>
+            <button class="fin-btn fin-btn-primary" id="finBtnGuardarPago" onclick="finRegistrarPago()">
+                Registrar Pago
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Condonar Cuota -->
+<div class="fin-modal-overlay" id="finModalCondonar">
+    <div class="fin-modal">
+        <h2 class="fin-modal-title">📝 Condonar Cuota</h2>
+        <div class="fin-form-group">
+            <label>Cuota</label>
+            <input type="text" id="finCondonarCuotaInfo" readonly style="background:hsl(220,16%,97%);">
+            <input type="hidden" id="finCondonarCuotaId">
+        </div>
+        <div class="fin-form-group">
+            <label>Motivo de Condonación *</label>
+            <textarea id="finCondonarMotivo" rows="3" placeholder="Indique el motivo de la condonación..."></textarea>
+        </div>
+        <div class="fin-modal-actions">
+            <button class="fin-btn fin-btn-outline" onclick="finCerrarModal('finModalCondonar')">Cancelar</button>
+            <button class="fin-btn fin-btn-danger" onclick="finCondonarCuota()">Condonar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Asignar Beca -->
+<div class="fin-modal-overlay" id="finModalBeca">
+    <div class="fin-modal">
+        <h2 class="fin-modal-title">🎓 Asignar Nueva Beca</h2>
+        <div class="fin-form-group">
+            <label>Buscar Estudiante</label>
+            <input type="text" id="finBecaBuscar" placeholder="Nombre o RUT..." oninput="finBuscarEstudianteBeca()">
+            <div id="finBecaResultados" style="margin-top:6px;"></div>
+            <input type="hidden" id="finBecaMatriculaId">
+        </div>
+        <div class="fin-form-group">
+            <label>Tipo de Beca</label>
+            <select id="finBecaTipo">
+                {% for t in tipos_beca %}
+                <option value="{{ t.code }}">{{ t.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="fin-form-group">
+            <label>Porcentaje de Descuento (%)</label>
+            <input type="number" id="finBecaPorcentaje" min="1" max="100" step="1" placeholder="Ej: 50">
+        </div>
+        <div class="fin-form-group">
+            <label>Motivo *</label>
+            <textarea id="finBecaMotivo" rows="2" placeholder="Motivo de la beca..."></textarea>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="fin-form-group">
+                <label>Fecha Inicio</label>
+                <input type="date" id="finBecaFechaInicio">
+            </div>
+            <div class="fin-form-group">
+                <label>Fecha Fin</label>
+                <input type="date" id="finBecaFechaFin">
+            </div>
+        </div>
+        <div class="fin-modal-actions">
+            <button class="fin-btn fin-btn-outline" onclick="finCerrarModal('finModalBeca')">Cancelar</button>
+            <button class="fin-btn fin-btn-primary" onclick="finCrearBeca()">Asignar Beca</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="fin-toast" id="finToast"></div>
+
+<script>
+/* ── Helpers ────────────────────────────────────────── */
+function finGetCSRF() {
+    const c = document.cookie.match(/csrftoken=([^;]+)/);
+    return c ? c[1] : '';
+}
+function finShowToast(msg, type) {
+    const t = document.getElementById('finToast');
+    t.textContent = msg; t.className = 'fin-toast ' + type;
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => t.classList.remove('show'), 3200);
+}
+function finFormatCurrency(v) {
+    return '$' + parseInt(v || 0).toLocaleString('es-CL');
+}
+
+/* ── Tabs ───────────────────────────────────────────── */
+function finSwitchTab(tab) {
+    document.querySelectorAll('.fin-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.querySelectorAll('.fin-tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
+    if (tab === 'cuotas') finCargarCuotas();
+    if (tab === 'becas') finCargarBecas();
+}
+
+/* ── Badge helper ───────────────────────────────────── */
+function finBadgeEstado(estado) {
+    const map = {
+        'PENDIENTE': 'warning', 'PAGADA_PARCIAL': 'info',
+        'PAGADA': 'success', 'VENCIDA': 'danger', 'CONDONADA': 'neutral',
+        'SOLICITADA': 'warning', 'EN_REVISION': 'info',
+        'APROBADA': 'success', 'VIGENTE': 'success',
+        'RECHAZADA': 'danger', 'CANCELADA': 'neutral', 'VENCIDA_BECA': 'neutral',
+    };
+    const labels = {
+        'PENDIENTE': 'Pendiente', 'PAGADA_PARCIAL': 'Parcial',
+        'PAGADA': 'Pagada', 'VENCIDA': 'Vencida', 'CONDONADA': 'Condonada',
+    };
+    const cls = map[estado] || 'neutral';
+    const label = labels[estado] || estado;
+    return `<span class="fin-badge fin-badge-${cls}">${label}</span>`;
+}
+
+/* ── Cuotas: Load ────────────────────────────────────── */
+let _cuotasData = [];
+function finCargarCuotas() {
+    const body = document.getElementById('finCuotasBody');
+    body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;"><div class="fin-spinner"></div></td></tr>';
+
+    fetch('/api/asesor-financiero/cuotas/proximas/')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.cuotas || !data.cuotas.length) {
+                body.innerHTML = '<tr><td colspan="8" class="fin-empty"><div class="fin-empty-icon">📋</div><div class="fin-empty-text">No hay cuotas registradas</div></td></tr>';
+                return;
+            }
+            _cuotasData = data.cuotas;
+            finRenderCuotas(_cuotasData);
+        })
+        .catch(() => {
+            body.innerHTML = '<tr><td colspan="8" class="fin-empty"><div class="fin-empty-text">Error al cargar cuotas</div></td></tr>';
+        });
+}
+
+function finRenderCuotas(cuotas) {
+    const body = document.getElementById('finCuotasBody');
+    if (!cuotas.length) {
+        body.innerHTML = '<tr><td colspan="8" class="fin-empty"><div class="fin-empty-icon">📋</div><div class="fin-empty-text">Sin resultados</div></td></tr>';
+        return;
+    }
+    body.innerHTML = cuotas.map(c => {
+        const saldo = (c.monto_final || 0) - (c.monto_pagado || 0);
+        const acciones = (c.estado_code !== 'PAGADA' && c.estado_code !== 'CONDONADA')
+            ? `<button class="fin-btn fin-btn-sm fin-btn-primary" onclick="finAbrirModalPago(${c.id}, '${(c.estudiante || '')}', '${c.mes || ''}', ${c.monto_final || 0}, ${c.monto_pagado || 0})">💳 Pagar</button>
+               <button class="fin-btn fin-btn-sm fin-btn-outline" onclick="finAbrirModalCondonar(${c.id}, '${(c.estudiante || '')}', '${c.mes || ''}')">📝</button>`
+            : '<span style="color:var(--fin-text-secondary);font-size:12px;">—</span>';
+        return `<tr>
+            <td style="font-weight:500;">${c.estudiante || 'N/A'}</td>
+            <td>${c.mes || ''} ${c.anio || ''}</td>
+            <td>${finFormatCurrency(c.monto_final)}</td>
+            <td>${finFormatCurrency(c.monto_pagado)}</td>
+            <td style="font-weight:600;color:${saldo > 0 ? 'var(--fin-rose)' : 'var(--fin-emerald)'};">${finFormatCurrency(saldo)}</td>
+            <td>${finBadgeEstado(c.estado_code)}</td>
+            <td>${c.fecha_vencimiento || ''}</td>
+            <td>${acciones}</td>
+        </tr>`;
+    }).join('');
+}
+
+function finBuscarCuotas() {
+    const q = document.getElementById('finBusquedaCuotas').value.toLowerCase();
+    const filtered = _cuotasData.filter(c => (c.estudiante || '').toLowerCase().includes(q));
+    finRenderCuotas(filtered);
+}
+function finFiltrarCuotas() {
+    const estado = document.getElementById('finFiltroCuotas').value;
+    const filtered = estado ? _cuotasData.filter(c => c.estado_code === estado) : _cuotasData;
+    finRenderCuotas(filtered);
+}
+
+/* ── Pago Modal ──────────────────────────────────────── */
+function finAbrirModalPago(cuotaId, estudiante, mes, montoFinal, montoPagado) {
+    document.getElementById('finPagoCuotaId').value = cuotaId;
+    document.getElementById('finPagoCuotaInfo').value = `${estudiante} — ${mes}`;
+    const saldo = montoFinal - montoPagado;
+    document.getElementById('finPagoSaldo').value = finFormatCurrency(saldo);
+    document.getElementById('finPagoMonto').value = '';
+    document.getElementById('finPagoMonto').max = saldo;
+    document.getElementById('finPagoComprobante').value = '';
+    document.getElementById('finPagoObs').value = '';
+    document.getElementById('finModalPago').classList.add('active');
+}
+function finCerrarModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function finRegistrarPago() {
+    const btn = document.getElementById('finBtnGuardarPago');
+    const cuotaId = document.getElementById('finPagoCuotaId').value;
+    const monto = document.getElementById('finPagoMonto').value;
+    const metodo = document.getElementById('finPagoMetodo').value;
+    const comprobante = document.getElementById('finPagoComprobante').value;
+    const obs = document.getElementById('finPagoObs').value;
+
+    if (!monto || parseInt(monto) <= 0) { finShowToast('Ingrese un monto válido', 'error'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="fin-spinner"></div> Procesando...';
+
+    fetch('/api/admin-escolar/finanzas/registrar-pago/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': finGetCSRF() },
+        body: JSON.stringify({ cuota_id: parseInt(cuotaId), monto: parseInt(monto), metodo_pago: metodo, numero_comprobante: comprobante, observaciones: obs })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false; btn.innerHTML = 'Registrar Pago';
+        if (data.success) {
+            finShowToast('✅ ' + data.message, 'success');
+            finCerrarModal('finModalPago');
+            finCargarCuotas();
+        } else {
+            finShowToast('❌ ' + (data.error || 'Error'), 'error');
+        }
+    })
+    .catch(() => { btn.disabled = false; btn.innerHTML = 'Registrar Pago'; finShowToast('Error de conexión', 'error'); });
+}
+
+/* ── Condonar Modal ──────────────────────────────────── */
+function finAbrirModalCondonar(cuotaId, estudiante, mes) {
+    document.getElementById('finCondonarCuotaId').value = cuotaId;
+    document.getElementById('finCondonarCuotaInfo').value = `${estudiante} — ${mes}`;
+    document.getElementById('finCondonarMotivo').value = '';
+    document.getElementById('finModalCondonar').classList.add('active');
+}
+function finCondonarCuota() {
+    const cuotaId = document.getElementById('finCondonarCuotaId').value;
+    const motivo = document.getElementById('finCondonarMotivo').value.trim();
+    if (!motivo) { finShowToast('Ingrese un motivo', 'error'); return; }
+
+    fetch('/api/admin-escolar/finanzas/condonar-cuota/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': finGetCSRF() },
+        body: JSON.stringify({ cuota_id: parseInt(cuotaId), motivo })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { finShowToast('✅ Cuota condonada', 'success'); finCerrarModal('finModalCondonar'); finCargarCuotas(); }
+        else finShowToast('❌ ' + (data.error || 'Error'), 'error');
+    })
+    .catch(() => finShowToast('Error de conexión', 'error'));
+}
+
+/* ── Becas ────────────────────────────────────────────── */
+function finCargarBecas() {
+    const estado = document.getElementById('finFiltroBecas').value;
+    const body = document.getElementById('finBecasBody');
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;"><div class="fin-spinner"></div></td></tr>';
+
+    fetch(`/api/asesor-financiero/becas/?estado=${estado}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.becas || !data.becas.length) {
+                body.innerHTML = '<tr><td colspan="6" class="fin-empty"><div class="fin-empty-icon">🎓</div><div class="fin-empty-text">No hay becas en esta categoría</div></td></tr>';
+                return;
+            }
+            body.innerHTML = data.becas.map(b => `<tr>
+                <td style="font-weight:500;">${b.estudiante_nombre}</td>
+                <td>${b.tipo_beca}</td>
+                <td style="font-weight:600; color:var(--fin-emerald);">${b.porcentaje}%</td>
+                <td>${finBadgeEstado(b.estado.toUpperCase().replace(/ /g,'_'))}</td>
+                <td>${b.fecha_inicio} — ${b.fecha_fin}</td>
+                <td style="font-size:12px;color:var(--fin-text-secondary);">${b.motivo_solicitud || ''}</td>
+            </tr>`).join('');
+        })
+        .catch(() => { body.innerHTML = '<tr><td colspan="6" class="fin-empty"><div class="fin-empty-text">Error al cargar becas</div></td></tr>'; });
+}
+
+/* ── Beca Modal ──────────────────────────────────────── */
+let _becaTimeout = null;
+function finAbrirModalBeca() {
+    document.getElementById('finBecaBuscar').value = '';
+    document.getElementById('finBecaResultados').innerHTML = '';
+    document.getElementById('finBecaMatriculaId').value = '';
+    document.getElementById('finBecaPorcentaje').value = '';
+    document.getElementById('finBecaMotivo').value = '';
+    document.getElementById('finBecaFechaInicio').value = '';
+    document.getElementById('finBecaFechaFin').value = '';
+    document.getElementById('finModalBeca').classList.add('active');
+}
+function finBuscarEstudianteBeca() {
+    clearTimeout(_becaTimeout);
+    const q = document.getElementById('finBecaBuscar').value.trim();
+    const results = document.getElementById('finBecaResultados');
+    if (q.length < 3) { results.innerHTML = ''; return; }
+    _becaTimeout = setTimeout(() => {
+        fetch(`/api/asesor-financiero/becas/buscar-estudiantes/?q=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.estudiantes || !data.estudiantes.length) { results.innerHTML = '<div style="font-size:13px;color:var(--fin-text-secondary);padding:6px;">Sin resultados</div>'; return; }
+                results.innerHTML = data.estudiantes.map(e =>
+                    `<div style="padding:8px 10px;cursor:pointer;border-radius:8px;margin-bottom:2px;font-size:13px;transition:background 0.15s;"
+                          onmouseover="this.style.background='var(--fin-emerald-light)'"
+                          onmouseout="this.style.background='transparent'"
+                          onclick="finSeleccionarEstudianteBeca(${e.matricula_id}, '${e.nombre}', '${e.curso}')">
+                        <strong>${e.nombre}</strong> <span style="color:var(--fin-text-secondary);">— ${e.rut} · ${e.curso}</span>
+                    </div>`
+                ).join('');
+            });
+    }, 350);
+}
+function finSeleccionarEstudianteBeca(matriculaId, nombre, curso) {
+    document.getElementById('finBecaMatriculaId').value = matriculaId;
+    document.getElementById('finBecaBuscar').value = `${nombre} — ${curso}`;
+    document.getElementById('finBecaResultados').innerHTML = '';
+}
+function finCrearBeca() {
+    const matriculaId = document.getElementById('finBecaMatriculaId').value;
+    const tipo = document.getElementById('finBecaTipo').value;
+    const porcentaje = document.getElementById('finBecaPorcentaje').value;
+    const motivo = document.getElementById('finBecaMotivo').value.trim();
+    const fechaInicio = document.getElementById('finBecaFechaInicio').value;
+    const fechaFin = document.getElementById('finBecaFechaFin').value;
+
+    if (!matriculaId) { finShowToast('Seleccione un estudiante', 'error'); return; }
+    if (!porcentaje || parseInt(porcentaje) <= 0) { finShowToast('Ingrese un porcentaje válido', 'error'); return; }
+    if (!motivo) { finShowToast('Ingrese el motivo', 'error'); return; }
+    if (!fechaInicio || !fechaFin) { finShowToast('Complete las fechas', 'error'); return; }
+
+    fetch('/api/asesor-financiero/becas/crear/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': finGetCSRF() },
+        body: JSON.stringify({
+            matricula_id: parseInt(matriculaId), tipo_beca: tipo,
+            porcentaje_descuento: parseInt(porcentaje), motivo_solicitud: motivo,
+            fecha_inicio: fechaInicio, fecha_fin: fechaFin
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { finShowToast('✅ Beca asignada exitosamente', 'success'); finCerrarModal('finModalBeca'); finCargarBecas(); }
+        else finShowToast('❌ ' + (data.error || 'Error'), 'error');
+    })
+    .catch(() => finShowToast('Error de conexión', 'error'));
+}
+
+/* ── Init ────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function() {
+    finCargarCuotas();
+});
+</script>

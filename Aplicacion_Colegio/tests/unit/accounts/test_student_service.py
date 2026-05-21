@@ -1,4 +1,4 @@
-﻿"""Tests unitarios alineados al contrato actual de StudentService."""
+"""Tests unitarios alineados al contrato actual de StudentService."""
 
 from unittest.mock import Mock, patch
 
@@ -33,15 +33,6 @@ class TestStudentServicePermissions:
 
 
 class TestStudentServicePasswordGeneration:
-<<<<<<< HEAD
-    def test_generate_temp_password_with_rut(self):
-        pwd = StudentService.generate_temp_password('12.345.678-9')
-        assert isinstance(pwd, str) and len(pwd) > 0
-
-    def test_generate_temp_password_without_rut(self):
-        pwd = StudentService.generate_temp_password(None)
-        assert isinstance(pwd, str) and len(pwd) > 0
-=======
     def test_generate_temp_password_is_random(self):
         """generate_temp_password ahora genera contraseñas aleatorias seguras."""
         p1 = StudentService.generate_temp_password('12.345.678-9')
@@ -57,7 +48,6 @@ class TestStudentServicePasswordGeneration:
         p = StudentService.generate_temp_password(None)
         assert len(p) == 14
         assert p.isalnum()
->>>>>>> fceac4d (WIP local antes de sincronizar main)
 
 
 class TestStudentServiceValidations:
@@ -128,11 +118,7 @@ class TestStudentServiceCrud:
 
         assert success is True
         assert 'creado exitosamente' in message
-<<<<<<< HEAD
-        assert isinstance(password, str) and len(password) > 0
-=======
         assert isinstance(password, str) and len(password) == 14
->>>>>>> fceac4d (WIP local antes de sincronizar main)
 
     def test_create_student_email_duplicate(self, admin_user_mock):
         User = Mock()
@@ -235,11 +221,7 @@ class TestStudentServiceCrud:
 
         assert success is True
         assert 'reseteada' in message.lower()
-<<<<<<< HEAD
-        assert isinstance(password, str) and len(password) > 0
-=======
         assert isinstance(password, str) and len(password) == 14
->>>>>>> fceac4d (WIP local antes de sincronizar main)
 
     def test_deactivate_student_blocked_with_active_enrollments(self, admin_user_mock):
         User = Mock()
