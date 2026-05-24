@@ -8,8 +8,14 @@
         </div>
 
         <div class="alumno-sidebar__profile">
-            <div class="alumno-sidebar__avatar" aria-hidden="true">{{ nombre_usuario|first|upper }}</div>
-            <p class="alumno-sidebar__name">{{ nombre_usuario }}</p>
+            {% if foto_perfil_url %}
+            <img src="{{ foto_perfil_url }}" alt="" class="alumno-sidebar__avatar alumno-sidebar__avatar--photo">
+            {% elif user.perfil_estudiante and user.perfil_estudiante.foto_perfil %}
+            <img src="{{ user.perfil_estudiante.foto_perfil.url }}" alt="" class="alumno-sidebar__avatar alumno-sidebar__avatar--photo">
+            {% else %}
+            <div class="alumno-sidebar__avatar" aria-hidden="true">{% if iniciales %}{{ iniciales }}{% else %}{{ user.nombre|first|upper }}{{ user.apellido_paterno|first|upper }}{% endif %}</div>
+            {% endif %}
+            <p class="alumno-sidebar__name">{{ nombre_usuario|default:user.get_full_name }}</p>
             <p class="alumno-sidebar__course">
                 {% if user.perfil_estudiante.curso_actual %}
                     {{ user.perfil_estudiante.curso_actual.nombre }}
@@ -104,7 +110,7 @@
         <p class="alumno-sidebar__section-label">Comunicación</p>
         <ul class="alumno-sidebar__list">
             {% if menu_access.comunicados %}
-            <li class="alumno-sidebar__item">
+            <li class="alumno-sidebar__item{% if pagina_actual == 'comunicados' %} alumno-sidebar__item--active{% endif %}">
                 <a href="{% url 'comunicados:lista' %}">
                     <span class="alumno-sidebar__emoji" aria-hidden="true">📣</span>
                     <span>Comunicados</span>

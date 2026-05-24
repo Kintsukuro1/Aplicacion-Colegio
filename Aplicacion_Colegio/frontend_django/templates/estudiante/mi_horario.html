@@ -1,269 +1,1262 @@
 {% load static %}
 {% include 'estudiante/_alumno_wrap_start.html' %}
 
-<div class="schedule-container">
-    <div class="schedule-header">
-        <div class="header-content">
-            <a href="{% url 'dashboard' %}" class="back-link">
-                <span class="back-icon">←</span> Volver al Dashboard
-            </a>
-            <h1 class="page-title">🗓️ Mi Horario Semanal</h1>
-            <p class="page-subtitle">
+<div class="mh-page">
+    <section class="alumno-hero mh-hero" aria-label="Mi Horario">
+        <div class="mh-hero__top">
+            <a href="{% url 'dashboard' %}?pagina=inicio" class="mh-hero__back">← Volver a Inicio</a>
+        </div>
+        <div class="alumno-hero__content">
+            <h1 class="alumno-hero__title">Mi Horario</h1>
+            <p class="alumno-hero__meta">
                 {% if curso_actual %}
-                {{ curso_actual.nombre }} — Horario de clases semanal
+                    {{ curso_actual.nombre }} · Organiza tu semana académica
                 {% else %}
-                No tienes un curso asignado actualmente
+                    Consulta tu horario de clases semanal
                 {% endif %}
             </p>
         </div>
-    </div>
+        <div class="alumno-hero__metrics" aria-label="Resumen del horario">
+            <article class="alumno-hero-metric alumno-hero-metric--clases">
+                <p class="alumno-hero-metric__value" id="mhMetricClasesHoy">0</p>
+                <p class="alumno-hero-metric__label">Clases hoy</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--tareas">
+                <p class="alumno-hero-metric__value mh-hero-metric__value--sm" id="mhMetricProxima">—</p>
+                <p class="alumno-hero-metric__label">Próxima clase</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--promedio">
+                <p class="alumno-hero-metric__value" id="mhMetricBloques">0</p>
+                <p class="alumno-hero-metric__label">Bloques semanales</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--asistencia">
+                <p class="alumno-hero-metric__value mh-hero-metric__value--sm">
+                    <a href="{% url 'dashboard' %}?pagina=asistencia" class="mh-hero-asist-link">Ver registro</a>
+                </p>
+                <p class="alumno-hero-metric__label">Asistencia</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+        </div>
+    </section>
 
-    {% if horario_grid %}
-    <div class="schedule-table-wrapper">
-        <table class="schedule-table" id="scheduleTable">
-            <thead>
-                <tr>
-                    <th class="time-col">Bloque</th>
-                    <th class="time-col">Hora</th>
-                    {% for dia in dias_semana %}
-                    <th class="day-col">{{ dia }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in horario_grid %}
-                <tr>
-                    <td class="block-number">{{ row.bloque_numero }}</td>
-                    <td class="block-time">
-                        {% if row.hora_inicio %}
-                        {{ row.hora_inicio }}<br><small>{{ row.hora_fin }}</small>
+    <div class="mh-layout">
+        <div class="mh-main">
+            <section class="alumno-section-card mh-card mh-card--table" aria-label="Horario semanal">
+                <header class="mh-card__head mh-card__head--bordered">
+                    <div class="mh-card__head-left">
+                        <h2 class="alumno-section-title mh-card__title">
+                            <span class="alumno-section-title__icon" aria-hidden="true">📅</span>
+                            Horario semanal
+                        </h2>
+                        <span class="mh-card__hint" id="mhWeekHint"></span>
+                    </div>
+                </header>
+                {% if horario_grid %}
+                <div class="mh-table-wrap">
+                    <table class="mh-table" id="mhScheduleTable">
+                        <thead>
+                            <tr>
+                                <th class="mh-th mh-th--hora">Hora</th>
+                                {% for dia in dias_semana %}
+                                <th class="mh-th {% if dia_actual_idx and forloop.counter == dia_actual_idx %}mh-th--today{% endif %}">
+                                    <span class="mh-th__day">{{ dia }}</span>
+                                    {% if dia_actual_idx and forloop.counter == dia_actual_idx %}
+                                    <span class="mh-today-badge">hoy</span>
+                                    {% endif %}
+                                </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in horario_grid %}
+                            <tr class="mh-tr">
+                                <td class="mh-td mh-td--hora">
+                                    <span class="mh-time__start">{{ row.hora_inicio|default:"—" }}</span>
+                                    {% if row.hora_fin %}
+                                    <span class="mh-time__end">{{ row.hora_fin }}</span>
+                                    {% endif %}
+                                </td>
+                                {% for celda in row.celdas %}
+                                <td class="mh-td {% if dia_actual_idx and forloop.counter == dia_actual_idx %}mh-td--today{% endif %}">
+                                    {% if celda %}
+                                    <div class="mh-cell" data-subject="{{ celda.asignatura|lower }}" title="{{ celda.asignatura }} — {{ celda.profesor }}">
+                                        <span class="mh-cell__name">{{ celda.asignatura|slice:":4" }}.</span>
+                                        <span class="mh-cell__prof">{{ celda.profesor|slice:":14" }}</span>
+                                    </div>
+                                    {% else %}
+                                    <span class="mh-td__empty" aria-hidden="true"></span>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="mh-empty-state">
+                    <span class="mh-empty-state__icon" aria-hidden="true">📅</span>
+                    <p class="mh-empty-state__text">
+                        {% if not curso_actual %}
+                        No tienes un curso asignado. Contacta con la administración.
                         {% else %}
-                        —
+                        Aún no se han asignado bloques horarios para tus clases.
                         {% endif %}
-                    </td>
-                    {% for celda in row.celdas %}
-                    <td class="schedule-cell {% if celda %}has-class{% else %}empty-cell{% endif %}">
-                        {% if celda %}
-                        <div class="class-block" style="border-left: 4px solid {{ celda.color }};">
-                            <span class="class-name">{{ celda.asignatura }}</span>
-                            <span class="class-teacher">{{ celda.profesor }}</span>
-                            <span class="class-time">{{ celda.hora_inicio }} - {{ celda.hora_fin }}</span>
+                    </p>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="alumno-section-card mh-card mh-card--timeline" aria-label="Clases de hoy">
+                <header class="mh-card__head mh-card__head--bordered">
+                    <div class="mh-card__head-left">
+                        <h2 class="alumno-section-title mh-card__title">
+                            <span class="alumno-section-title__icon" aria-hidden="true">🕐</span>
+                            Clases de hoy
+                        </h2>
+                        <span class="mh-day-label" id="mhDayLabel"></span>
+                    </div>
+                    <span class="mh-timeline-count" id="mhTimelineCount" hidden></span>
+                </header>
+                <div class="mh-timeline" id="mhTimeline"></div>
+            </section>
+        </div>
+
+        <aside class="mh-sidebar" aria-label="Información rápida">
+            <section class="alumno-section-card mh-side-card mh-side-card--next mh-side-card--featured" aria-label="Próxima clase">
+                <h3 class="mh-side-card__title mh-side-card__title--featured">
+                    <span class="mh-side-card__title-icon" aria-hidden="true">⏭</span>
+                    Próxima clase
+                </h3>
+                <div class="mh-next-class" id="mhNextClass">
+                    <p class="mh-side-empty__text">Cargando…</p>
+                </div>
+                <div class="mh-day-status" aria-label="Estado del día">
+                    <div class="mh-stat-chip">
+                        <span class="mh-stat-chip__value" id="mhStatClasesHoy">0</span>
+                        <span class="mh-stat-chip__label">Clases hoy</span>
+                    </div>
+                    <div class="mh-stat-chip">
+                        <span class="mh-stat-chip__value" id="mhStatBloques">0</span>
+                        <span class="mh-stat-chip__label">Bloques</span>
+                    </div>
+                    <div class="mh-stat-chip">
+                        <span class="mh-stat-chip__value" id="mhStatTareas">{{ tareas_pendientes_lista|length }}</span>
+                        <span class="mh-stat-chip__label">Tareas</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="alumno-section-card mh-side-card">
+                <h3 class="mh-side-card__title">
+                    <span class="mh-side-card__title-icon" aria-hidden="true">📋</span>
+                    Próximas evaluaciones
+                </h3>
+                {% if evaluaciones_proximas %}
+                <ul class="mh-side-list">
+                    {% for eval in evaluaciones_proximas %}
+                    <li class="mh-eval-item" data-subject="{{ eval.clase.asignatura.nombre|lower }}">
+                        <div class="mh-eval-dot"></div>
+                        <div class="mh-eval-body">
+                            <p class="mh-eval-name">{{ eval.nombre }}</p>
+                            <p class="mh-eval-meta">
+                                {{ eval.clase.asignatura.nombre }} · {{ eval.fecha_evaluacion|date:"d/m/Y" }}
+                            </p>
                         </div>
-                        {% endif %}
-                    </td>
+                    </li>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </ul>
+                {% else %}
+                <div class="mh-side-empty">
+                    <p class="mh-side-empty__title">Sin evaluaciones próximas</p>
+                    <p class="mh-side-empty__text">Cuando el profesor programe una, aparecerá aquí.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="alumno-section-card mh-side-card">
+                <h3 class="mh-side-card__title">
+                    <span class="mh-side-card__title-icon" aria-hidden="true">📝</span>
+                    Tareas pendientes
+                </h3>
+                {% if tareas_pendientes_lista %}
+                <ul class="mh-side-list">
+                    {% for tarea in tareas_pendientes_lista %}
+                    <li class="mh-task-item" data-subject="{{ tarea.clase.asignatura.nombre|lower }}">
+                        <div class="mh-task-dot"></div>
+                        <div class="mh-task-info">
+                            <p class="mh-task-name">{{ tarea.titulo }}</p>
+                            <p class="mh-task-due">
+                                {% if tarea.fecha_entrega %}Vence {{ tarea.fecha_entrega|date:"d M" }}{% else %}Sin fecha{% endif %}
+                            </p>
+                        </div>
+                        <span class="mh-task-pill">Pendiente</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="mh-side-empty">
+                    <p class="mh-side-empty__title">Sin tareas pendientes</p>
+                    <p class="mh-side-empty__text">¡Buen trabajo! Estás al día con tus entregas.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="alumno-section-card mh-side-card mh-side-card--links">
+                <h3 class="mh-side-card__title">Accesos rápidos</h3>
+                <nav class="mh-quick-links" aria-label="Enlaces">
+                    <a href="{% url 'dashboard' %}?pagina=mis_clases" class="mh-quick-link">Mis Clases</a>
+                    <a href="{% url 'dashboard' %}?pagina=asistencia" class="mh-quick-link">Asistencia</a>
+                    <a href="{% url 'dashboard' %}?pagina=calendario_tareas" class="mh-quick-link">Calendario</a>
+                </nav>
+            </section>
+        </aside>
     </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-icon">📅</div>
-        <h3 class="empty-title">No hay horario disponible</h3>
-        <p class="empty-text">
-            {% if not curso_actual %}
-            No tienes un curso asignado. Contacta con la administración.
-            {% else %}
-            Aún no se han asignado bloques horarios para tus clases.
-            {% endif %}
-        </p>
-    </div>
-    {% endif %}
 </div>
 
+<script>
+window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
+</script>
+
 <style>
-    .schedule-container {
-        padding: 24px;
-        max-width: 1200px;
-        margin: 0 auto;
+/* Mi Horario — refinamiento visual (alineado a Inicio / Mis Clases) */
+.mh-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 0 2.5rem;
+}
+
+.mh-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.mh-hero::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -8%;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+}
+
+.mh-hero__top {
+    margin-bottom: 0.35rem;
+}
+
+.mh-hero__back {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.mh-hero__back:hover {
+    color: #ffffff;
+}
+
+.mh-hero-metric__value--sm {
+    font-size: 1.05rem !important;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+.mh-hero-asist-link {
+    color: #8b5cf6;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.mh-hero-asist-link:hover {
+    text-decoration: underline;
+}
+
+.mh-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+    gap: 1.35rem;
+    align-items: start;
+}
+
+.mh-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+}
+
+.mh-card {
+    margin-bottom: 1.35rem !important;
+    padding: 0 !important;
+    overflow: hidden;
+    border: 0.5px solid rgba(15, 23, 42, 0.07) !important;
+    box-shadow: 0 4px 18px rgba(12, 35, 64, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    transition: box-shadow 0.2s ease;
+}
+
+.mh-card:hover {
+    box-shadow: 0 8px 28px rgba(12, 35, 64, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+.mh-card:last-child {
+    margin-bottom: 0 !important;
+}
+
+.mh-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 1.25rem 1.5rem 0;
+    margin-bottom: 0;
+}
+
+.mh-card__head--bordered {
+    padding-bottom: 1rem;
+    margin-bottom: 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.mh-card__head-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mh-card__title {
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+    color: #1e3a5f !important;
+}
+
+.mh-card__hint {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.mh-day-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: capitalize;
+}
+
+.mh-timeline-count {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #e8f4fc;
+    color: #1a4d7a;
+}
+
+/* Tabla horario — estilo dashboard moderno */
+.mh-card--table .mh-table-wrap {
+    margin: 0 1.25rem 1.35rem;
+}
+
+.mh-table-wrap {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid #e8eef4;
+    background: linear-gradient(180deg, #fafbfd 0%, #f4f7fb 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.mh-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    table-layout: fixed;
+    min-width: 680px;
+}
+
+.mh-th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #eef3f9;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 16px 10px;
+    text-align: center;
+    border-bottom: 1px solid #dde4ee;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.mh-th__day {
+    display: block;
+    font-size: 0.7rem;
+}
+
+.mh-th--hora {
+    width: 72px;
+    background: #e8eef6;
+    color: #64748b;
+    text-transform: none;
+    font-size: 0.6875rem;
+}
+
+.mh-th--today {
+    background: linear-gradient(180deg, #0c2340 0%, #1a4d7a 100%);
+    color: #ffffff;
+    box-shadow: inset 0 -3px 0 #5ba8d4;
+}
+
+.mh-th--today .mh-today-badge {
+    background: rgba(255, 255, 255, 0.95);
+    color: #0c2340;
+}
+
+.mh-today-badge {
+    display: inline-block;
+    margin-top: 6px;
+    background: #10b981;
+    color: #fff;
+    font-size: 0.5625rem;
+    font-weight: 800;
+    border-radius: 999px;
+    padding: 3px 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.mh-tr {
+    transition: background 0.15s ease;
+}
+
+.mh-tr:hover .mh-td--hora {
+    background: #f1f5f9;
+}
+
+.mh-td {
+    padding: 10px 8px;
+    vertical-align: middle;
+    text-align: center;
+    min-height: 68px;
+    border-bottom: 1px solid #eef2f7;
+    background: #ffffff;
+}
+
+.mh-td--hora {
+    background: #f8fafc;
+    font-size: 0.6875rem;
+    color: #64748b;
+    padding: 14px 10px;
+    border-right: 1px solid #eef2f7;
+}
+
+.mh-time__start {
+    display: block;
+    font-weight: 700;
+    color: #334155;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.mh-time__end {
+    display: block;
+    font-size: 0.625rem;
+    color: #94a3b8;
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+}
+
+.mh-td--today {
+    background: linear-gradient(180deg, rgba(12, 35, 64, 0.03) 0%, rgba(91, 168, 212, 0.06) 100%);
+    box-shadow: inset 3px 0 0 #1a4d7a;
+}
+
+.mh-td__empty {
+    display: block;
+    min-height: 56px;
+    border-radius: 8px;
+    margin: 4px;
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 4px,
+        rgba(148, 163, 184, 0.06) 4px,
+        rgba(148, 163, 184, 0.06) 8px
+    );
+}
+
+.mh-cell {
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-left-width: 4px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: left;
+    background: #ffffff;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(12, 35, 64, 0.05);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s ease,
+                border-color 0.2s ease;
+    cursor: default;
+    margin: 2px;
+}
+
+.mh-cell:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(12, 35, 64, 0.12);
+    z-index: 1;
+    position: relative;
+}
+
+.mh-cell__name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+}
+
+.mh-cell__prof {
+    font-size: 0.6875rem;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #64748b;
+}
+
+/* Timeline — agenda del día */
+.mh-card--timeline .mh-timeline {
+    padding: 0 1.35rem 1.35rem;
+}
+
+.mh-timeline {
+    position: relative;
+    padding: 0.5rem 0 0.25rem 0;
+    min-height: 80px;
+}
+
+.mh-timeline--active {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mh-timeline--active::before {
+    content: '';
+    position: absolute;
+    left: 52px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: linear-gradient(180deg, #1a4d7a 0%, #cbd5e1 100%);
+    border-radius: 2px;
+    opacity: 0.35;
+}
+
+.mh-tl-item {
+    display: flex;
+    gap: 16px;
+    position: relative;
+    align-items: stretch;
+}
+
+.mh-tl-time {
+    width: 48px;
+    flex-shrink: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #1e3a5f;
+    padding-top: 18px;
+    text-align: right;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.mh-tl-marker {
+    position: absolute;
+    left: 44px;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px currentColor, 0 2px 6px rgba(12, 35, 64, 0.15);
+    z-index: 2;
+}
+
+.mh-tl-block {
+    flex: 1;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-left-width: 4px;
+    border-radius: 12px;
+    padding: 14px 18px;
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(12, 35, 64, 0.07);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.mh-tl-block:hover {
+    box-shadow: 0 12px 28px rgba(12, 35, 64, 0.12);
+    transform: translateX(4px);
+}
+
+.mh-tl-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+}
+
+.mh-tl-prof {
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.mh-timeline__empty {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+    padding: 1.75rem 1.25rem;
+    text-align: center;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    border: 1px dashed #cbd5e1;
+}
+
+.mh-card--table .mh-empty-state {
+    margin: 0 1.25rem 1.35rem;
+}
+
+.mh-empty-state {
+    text-align: center;
+    padding: 2.75rem 1.5rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 14px;
+    border: 1px dashed #cbd5e1;
+}
+
+.mh-empty-state__icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.mh-empty-state__text {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+/* Sidebar */
+.mh-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.mh-side-card {
+    margin-bottom: 1rem !important;
+    padding: 1.15rem 1.25rem !important;
+    border: 0.5px solid rgba(15, 23, 42, 0.07) !important;
+    box-shadow: 0 2px 12px rgba(12, 35, 64, 0.05) !important;
+}
+
+.mh-side-card:last-child {
+    margin-bottom: 0 !important;
+}
+
+.mh-side-card--featured {
+    border: 1px solid rgba(26, 77, 122, 0.22) !important;
+    box-shadow: 0 8px 28px rgba(12, 35, 64, 0.1), 0 0 0 1px rgba(91, 168, 212, 0.15) !important;
+    background: linear-gradient(165deg, #ffffff 0%, #f0f7fc 100%) !important;
+    padding: 1.25rem 1.3rem !important;
+}
+
+.mh-side-card__title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin: 0 0 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+}
+
+.mh-side-card__title--featured {
+    font-size: 0.875rem;
+    color: #0c2340;
+}
+
+.mh-side-card__title-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.mh-side-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mh-eval-item,
+.mh-task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 10px;
+    margin: 0 -10px;
+    border-radius: 10px;
+    border-bottom: none;
+    transition: background 0.15s ease;
+}
+
+.mh-eval-item:hover,
+.mh-task-item:hover {
+    background: #f8fafc;
+}
+
+.mh-side-list .mh-eval-item + .mh-eval-item,
+.mh-side-list .mh-task-item + .mh-task-item {
+    margin-top: 2px;
+}
+
+.mh-task-item {
+    align-items: center;
+}
+
+.mh-eval-dot,
+.mh-task-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+    background: #94a3b8;
+}
+
+.mh-task-dot {
+    margin-top: 0;
+}
+
+.mh-eval-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.mh-eval-name,
+.mh-task-name {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.35;
+}
+
+.mh-eval-meta,
+.mh-task-due {
+    margin: 2px 0 0;
+    font-size: 0.6875rem;
+    color: #64748b;
+}
+
+.mh-task-pill {
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.mh-side-empty {
+    padding: 0.75rem 0;
+    text-align: center;
+}
+
+.mh-side-empty__title {
+    margin: 0 0 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.mh-side-empty__text {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.mh-next-class {
+    margin-bottom: 1rem;
+}
+
+.mh-next-class__card {
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-left-width: 5px;
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #ffffff;
+    box-shadow: 0 4px 16px rgba(12, 35, 64, 0.08);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.mh-next-class__card:hover {
+    box-shadow: 0 10px 24px rgba(12, 35, 64, 0.12);
+    transform: translateY(-2px);
+}
+
+.mh-next-class__when {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #0369a1;
+    margin-bottom: 8px;
+}
+
+.mh-next-class__when--today {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.mh-next-class__time {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0c2340;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+}
+
+.mh-next-class__time small {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.mh-next-class__subject {
+    margin: 0 0 2px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.mh-next-class__prof {
+    margin: 0 0 10px;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.mh-next-class__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1a4d7a;
+    text-decoration: none;
+}
+
+.mh-next-class__link:hover {
+    text-decoration: underline;
+}
+
+.mh-day-status {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding-top: 0.85rem;
+    border-top: 0.5px solid #e2e8f0;
+}
+
+.mh-stat-chip {
+    text-align: center;
+    padding: 10px 6px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.mh-stat-chip:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+}
+
+.mh-stat-chip__value {
+    display: block;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: #0c2340;
+    line-height: 1.2;
+}
+
+.mh-stat-chip__label {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #94a3b8;
+    line-height: 1.2;
+}
+
+.mh-quick-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mh-quick-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 14px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #475569;
+    text-decoration: none;
+    background: #f8fafc;
+    border: 1px solid #e8eef4;
+    border-radius: 10px;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.mh-quick-link::after {
+    content: '→';
+    opacity: 0.4;
+    font-size: 0.9rem;
+}
+
+.mh-quick-link:hover {
+    background: #ffffff;
+    color: #1a4d7a;
+    border-color: #b8d4eb;
+    transform: translateX(2px);
+}
+
+.mh-quick-link:hover::after {
+    opacity: 1;
+}
+
+@media (max-width: 1024px) {
+    .mh-layout {
+        grid-template-columns: 1fr;
     }
 
-    .schedule-header {
-        margin-bottom: 24px;
+    .mh-sidebar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
     }
 
-    .header-content {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+    .mh-side-card {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 520px) {
+    .mh-card {
+        padding: 1rem !important;
     }
 
-    .back-link {
-        color: #6b7280;
-        text-decoration: none;
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        transition: color 0.2s;
+    .mh-table {
+        min-width: 520px;
     }
-
-    .back-link:hover {
-        color: #3b82f6;
-    }
-
-    .page-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    .page-subtitle {
-        color: #64748b;
-        font-size: 0.95rem;
-        margin: 0;
-    }
-
-    .schedule-table-wrapper {
-        overflow-x: auto;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-        background: #fff;
-    }
-
-    .schedule-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9rem;
-    }
-
-    .schedule-table thead th {
-        background: linear-gradient(135deg, #1e40af, #3b82f6);
-        color: white;
-        padding: 14px 12px;
-        text-align: center;
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .schedule-table thead th.time-col {
-        width: 60px;
-    }
-
-    .schedule-table thead th.day-col {
-        min-width: 150px;
-    }
-
-    .schedule-table tbody tr {
-        border-bottom: 1px solid #e5e7eb;
-        transition: background-color 0.15s;
-    }
-
-    .schedule-table tbody tr:hover {
-        background-color: #f8fafc;
-    }
-
-    .block-number {
-        text-align: center;
-        font-weight: 700;
-        color: #3b82f6;
-        font-size: 1rem;
-        padding: 12px 8px;
-        background: #eff6ff;
-    }
-
-    .block-time {
-        text-align: center;
-        color: #64748b;
-        font-size: 0.8rem;
-        padding: 8px;
-        white-space: nowrap;
-    }
-
-    .block-time small {
-        color: #94a3b8;
-    }
-
-    .schedule-cell {
-        padding: 6px;
-        vertical-align: top;
-        min-height: 60px;
-    }
-
-    .schedule-cell.empty-cell {
-        background: #fafafa;
-    }
-
-    .class-block {
-        background: #eff6ff;
-        border-radius: 8px;
-        padding: 10px 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-        transition: transform 0.15s, box-shadow 0.15s;
-        cursor: default;
-    }
-
-    .class-block:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
-    }
-
-    .class-name {
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 0.85rem;
-    }
-
-    .class-teacher {
-        color: #64748b;
-        font-size: 0.75rem;
-    }
-
-    .class-time {
-        color: #94a3b8;
-        font-size: 0.7rem;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .empty-icon {
-        font-size: 3rem;
-        margin-bottom: 16px;
-    }
-
-    .empty-title {
-        font-size: 1.2rem;
-        color: #374151;
-        margin: 0 0 8px;
-    }
-
-    .empty-text {
-        color: #6b7280;
-        margin: 0;
-    }
-
-    @media (max-width: 768px) {
-        .schedule-container {
-            padding: 12px;
-        }
-
-        .page-title {
-            font-size: 1.4rem;
-        }
-
-        .schedule-table thead th.day-col {
-            min-width: 100px;
-        }
-
-        .class-block {
-            padding: 6px 8px;
-        }
-
-        .class-name {
-            font-size: 0.75rem;
-        }
-    }
+}
 </style>
+
+<script>
+(function () {
+    function resolveAccent(name) {
+        var s = (name || '').toLowerCase();
+        if (s.indexOf('matem') !== -1) return { accent: '#3B82F6', bg: '#E6F1FB', text: '#0C447C', sub: '#185FA5' };
+        if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1 || s.indexOf('castellano') !== -1)
+            return { accent: '#EF4444', bg: '#FCEBEB', text: '#791F1F', sub: '#A32D2D' };
+        if (s.indexOf('cienc') !== -1 || s.indexOf('natur') !== -1)
+            return { accent: '#10B981', bg: '#E1F5EE', text: '#085041', sub: '#0F6E56' };
+        if (s.indexOf('histor') !== -1 || s.indexOf('geograf') !== -1)
+            return { accent: '#8B5CF6', bg: '#EEEDFE', text: '#3C3489', sub: '#534AB7' };
+        if (s.indexOf('ingl') !== -1) return { accent: '#F59E0B', bg: '#FAEEDA', text: '#633806', sub: '#854F0B' };
+        if (s.indexOf('educ') !== -1 || s.indexOf('f\u00edsica') !== -1 || s.indexOf('edfis') !== -1 || s.indexOf('deport') !== -1)
+            return { accent: '#06B6D4', bg: '#E0F7FA', text: '#164E63', sub: '#0E7490' };
+        if (s.indexOf('arte') !== -1 || s.indexOf('visual') !== -1)
+            return { accent: '#EC4899', bg: '#FBEAF0', text: '#72243E', sub: '#993556' };
+        if (s.indexOf('m\u00fasic') !== -1 || s.indexOf('music') !== -1)
+            return { accent: '#F97316', bg: '#FFEDD5', text: '#7C2D12', sub: '#9A3412' };
+        if (s.indexOf('tecno') !== -1 || s.indexOf('comput') !== -1)
+            return { accent: '#6B7280', bg: '#F1EFE8', text: '#444441', sub: '#5F5E5A' };
+        return { accent: '#94A3B8', bg: '#F8FAFC', text: '#1E293B', sub: '#64748B' };
+    }
+
+    var dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    var hoy = new Date();
+    var dowJS = hoy.getDay();
+    var colIdx = dowJS >= 1 && dowJS <= 5 ? dowJS - 1 : -1;
+
+    function updateHeroMetrics() {
+        var clasesHoy = 0;
+        var proxima = '—';
+        var bloques = 0;
+        var hoyItems = [];
+
+        if (window.MH_GRID && window.MH_GRID.length) {
+            window.MH_GRID.forEach(function (row) {
+                row.celdas.forEach(function (c) {
+                    if (c) bloques += 1;
+                });
+                if (colIdx >= 0) {
+                    var celda = row.celdas[colIdx];
+                    if (celda) {
+                        clasesHoy += 1;
+                        hoyItems.push({
+                            hora: row.hora_inicio || '',
+                            asignatura: celda.asignatura || '',
+                            sortKey: (row.hora_inicio || '99:99').replace(':', '')
+                        });
+                    }
+                }
+            });
+
+            hoyItems.sort(function (a, b) {
+                return a.sortKey.localeCompare(b.sortKey);
+            });
+
+            if (hoyItems.length) {
+                var p = hoyItems[0];
+                var shortName = p.asignatura.length > 10 ? p.asignatura.slice(0, 10) + '…' : p.asignatura;
+                proxima = (p.hora || '—') + ' · ' + shortName;
+            }
+        }
+
+        var elClases = document.getElementById('mhMetricClasesHoy');
+        var elProx = document.getElementById('mhMetricProxima');
+        var elBloques = document.getElementById('mhMetricBloques');
+        var elStatHoy = document.getElementById('mhStatClasesHoy');
+        var elStatBloques = document.getElementById('mhStatBloques');
+        if (elClases) elClases.textContent = String(clasesHoy);
+        if (elProx) elProx.textContent = proxima;
+        if (elBloques) elBloques.textContent = String(bloques);
+        if (elStatHoy) elStatHoy.textContent = String(clasesHoy);
+        if (elStatBloques) elStatBloques.textContent = String(bloques);
+
+        var hint = document.getElementById('mhWeekHint');
+        if (hint) hint.textContent = bloques + ' bloque' + (bloques === 1 ? '' : 's') + ' esta semana';
+    }
+
+    function parseTimeMins(t) {
+        var p = (t || '00:00').split(':');
+        return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+    }
+
+    function findNextClassSlot() {
+        if (!window.MH_GRID || !window.MH_GRID.length) return null;
+
+        var now = new Date();
+        var nowMins = now.getHours() * 60 + now.getMinutes();
+        var candidates = [];
+
+        for (var d = 0; d < 8; d++) {
+            var check = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
+            var dow = check.getDay();
+            if (dow === 0 || dow === 6) continue;
+            var dayCol = dow - 1;
+
+            window.MH_GRID.forEach(function (row) {
+                var celda = row.celdas[dayCol];
+                if (!celda) return;
+                var startMins = parseTimeMins(row.hora_inicio);
+                if (d === 0 && startMins <= nowMins) return;
+                candidates.push({
+                    daysUntil: d,
+                    date: check,
+                    hora: row.hora_inicio,
+                    horaFin: row.hora_fin,
+                    asignatura: celda.asignatura,
+                    profesor: celda.profesor,
+                    claseId: celda.clase_id,
+                    startMins: startMins
+                });
+            });
+        }
+
+        candidates.sort(function (a, b) {
+            if (a.daysUntil !== b.daysUntil) return a.daysUntil - b.daysUntil;
+            return a.startMins - b.startMins;
+        });
+
+        return candidates.length ? candidates[0] : null;
+    }
+
+    function renderNextClass() {
+        var container = document.getElementById('mhNextClass');
+        if (!container) return;
+
+        var slot = findNextClassSlot();
+        if (!slot) {
+            container.innerHTML =
+                '<div class="mh-side-empty">' +
+                '<p class="mh-side-empty__title">Sin clases próximas</p>' +
+                '<p class="mh-side-empty__text">No hay más bloques programados en los próximos días.</p>' +
+                '</div>';
+            return;
+        }
+
+        var c = resolveAccent((slot.asignatura || '').toLowerCase());
+        var whenLabel = 'Próximamente';
+        var whenClass = '';
+
+        if (slot.daysUntil === 0) {
+            whenLabel = 'Hoy';
+            whenClass = ' mh-next-class__when--today';
+        } else if (slot.daysUntil === 1) {
+            whenLabel = 'Mañana';
+        } else {
+            whenLabel = dias[slot.date.getDay()];
+        }
+
+        var timeHtml = slot.hora || '—';
+        if (slot.horaFin) {
+            timeHtml += ' <small>– ' + slot.horaFin + '</small>';
+        }
+
+        var detailUrl = slot.claseId
+            ? '/estudiante/clase/' + slot.claseId + '/'
+            : '';
+
+        container.innerHTML =
+            '<div class="mh-next-class__card" style="border-left-color:' + c.accent + ';background:' + c.bg + '">' +
+                '<span class="mh-next-class__when' + whenClass + '">' + whenLabel + '</span>' +
+                '<p class="mh-next-class__time" style="color:' + c.text + '">' + timeHtml + '</p>' +
+                '<p class="mh-next-class__subject">' + slot.asignatura + '</p>' +
+                '<p class="mh-next-class__prof">' + (slot.profesor || '') + '</p>' +
+                (detailUrl
+                    ? '<a href="' + detailUrl + '" class="mh-next-class__link">Ver asignatura ↗</a>'
+                    : '') +
+            '</div>';
+    }
+
+    document.querySelectorAll('.mh-cell').forEach(function (el) {
+        var c = resolveAccent(el.getAttribute('data-subject') || '');
+        el.style.borderLeftColor = c.accent;
+        el.style.background = c.bg;
+        var nameEl = el.querySelector('.mh-cell__name');
+        var profEl = el.querySelector('.mh-cell__prof');
+        if (nameEl) nameEl.style.color = c.text;
+        if (profEl) profEl.style.color = c.sub;
+    });
+
+    document.querySelectorAll('.mh-eval-item').forEach(function (el) {
+        var c = resolveAccent(el.getAttribute('data-subject') || '');
+        var dot = el.querySelector('.mh-eval-dot');
+        if (dot) dot.style.background = c.accent;
+    });
+
+    document.querySelectorAll('.mh-task-item').forEach(function (el) {
+        var c = resolveAccent(el.getAttribute('data-subject') || '');
+        var dot = el.querySelector('.mh-task-dot');
+        var pill = el.querySelector('.mh-task-pill');
+        if (dot) dot.style.background = c.accent;
+        if (pill) {
+            pill.style.background = c.bg;
+            pill.style.color = c.text;
+        }
+    });
+
+    var label = document.getElementById('mhDayLabel');
+    if (label) {
+        label.textContent = dias[dowJS] + ' ' + hoy.getDate() + ' de '
+            + hoy.toLocaleString('es-CL', { month: 'long' });
+    }
+
+    var container = document.getElementById('mhTimeline');
+    if (container) {
+        container.innerHTML = '';
+        var items = [];
+
+        if (window.MH_GRID) {
+            window.MH_GRID.forEach(function (row) {
+                if (colIdx < 0) return;
+                var celda = row.celdas[colIdx];
+                if (celda) {
+                    items.push({
+                        hora: row.hora_inicio,
+                        asignatura: celda.asignatura,
+                        profesor: celda.profesor,
+                        sortKey: (row.hora_inicio || '99:99').replace(':', '')
+                    });
+                }
+            });
+        }
+
+        items.sort(function (a, b) {
+            return a.sortKey.localeCompare(b.sortKey);
+        });
+
+        var countEl = document.getElementById('mhTimelineCount');
+
+        if (items.length === 0) {
+            container.classList.remove('mh-timeline--active');
+            container.innerHTML = '<p class="mh-timeline__empty">No tienes clases programadas para hoy.</p>';
+            if (countEl) countEl.hidden = true;
+        } else {
+            container.classList.add('mh-timeline--active');
+            container.innerHTML = '';
+            if (countEl) {
+                countEl.hidden = false;
+                countEl.textContent = items.length + ' clase' + (items.length === 1 ? '' : 's');
+            }
+            items.forEach(function (item) {
+                var c = resolveAccent((item.asignatura || '').toLowerCase());
+                var div = document.createElement('div');
+                div.className = 'mh-tl-item';
+                div.innerHTML =
+                    '<div class="mh-tl-time">' + (item.hora || '') + '</div>' +
+                    '<span class="mh-tl-marker" style="color:' + c.accent + ';background:' + c.accent + '"></span>' +
+                    '<div class="mh-tl-block" style="border-left-color:' + c.accent + ';background:' + c.bg + '">' +
+                        '<p class="mh-tl-name" style="color:' + c.text + '">' + item.asignatura + '</p>' +
+                        '<p class="mh-tl-prof" style="color:' + c.sub + '">' + (item.profesor || '') + '</p>' +
+                    '</div>';
+                container.appendChild(div);
+            });
+        }
+    }
+
+    updateHeroMetrics();
+    renderNextClass();
+})();
+</script>
+
 {% include 'estudiante/_alumno_wrap_end.html' %}

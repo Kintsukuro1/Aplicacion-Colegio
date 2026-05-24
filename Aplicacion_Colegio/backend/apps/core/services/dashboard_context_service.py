@@ -124,6 +124,8 @@ class DashboardContextService:
             context.update(DashboardContextService._get_estudiante_tareas_context(user))
         elif pagina_solicitada == 'mis_anotaciones':
             context.update(DashboardContextService._get_estudiante_anotaciones_context(user))
+        elif pagina_solicitada == 'mis_evaluaciones':
+            context.update(DashboardContextService._get_estudiante_evaluaciones_context(user))
 
         return context
 
@@ -141,6 +143,11 @@ class DashboardContextService:
                 'horario_grid': [],
                 'dias_semana': [],
                 'curso_actual': None,
+                'evaluaciones_proximas': [],
+                'tareas_pendientes_lista': [],
+                'horario_grid_json': '[]',
+                'dia_actual': '',
+                'dia_actual_idx': 0,
             }
 
         # Get all active schedule blocks for the student's enrolled classes
@@ -224,10 +231,65 @@ class DashboardContextService:
 
             horario_grid.append(row)
 
+        from backend.apps.academico.models import Evaluacion, Tarea, EntregaTarea
+        import json
+
+        evaluaciones_proximas = list(
+            Evaluacion.objects.filter(
+                clase__curso=curso_actual,
+                activa=True,
+                fecha_evaluacion__gte=date.today()
+            ).select_related('clase__asignatura')
+            .order_by('fecha_evaluacion')[:5]
+        )
+
+        tareas_del_curso = Tarea.objects.filter(
+            clase__curso=curso_actual,
+            activa=True,
+            es_publica=True
+        )
+        tareas_con_entrega = EntregaTarea.objects.filter(
+            estudiante=user,
+            tarea__in=tareas_del_curso
+        ).values_list('tarea', flat=True)
+
+        tareas_pendientes_lista = list(
+            tareas_del_curso
+            .exclude(id_tarea__in=tareas_con_entrega)
+            .select_related('clase__asignatura')
+            .order_by('fecha_entrega')[:5]
+        )
+
+        horario_grid_json = json.dumps([
+            {
+                'bloque_numero': row['bloque_numero'],
+                'hora_inicio': row.get('hora_inicio', ''),
+                'hora_fin': row.get('hora_fin', ''),
+                'celdas': [
+                    {
+                        'asignatura': c['asignatura'],
+                        'profesor': c['profesor'],
+                        'clase_id': c['clase_id'],
+                    } if c else None
+                    for c in row['celdas']
+                ],
+            }
+            for row in horario_grid
+        ], ensure_ascii=False)
+
+        today_weekday = date.today().weekday()
+        dia_actual_idx = today_weekday + 1 if today_weekday < 5 else 0
+        dia_actual = dias_semana[today_weekday] if today_weekday < 5 else ''
+
         return {
             'horario_grid': horario_grid,
             'dias_semana': dias_semana,
             'curso_actual': curso_actual,
+            'evaluaciones_proximas': evaluaciones_proximas,
+            'tareas_pendientes_lista': tareas_pendientes_lista,
+            'horario_grid_json': horario_grid_json,
+            'dia_actual': dia_actual,
+            'dia_actual_idx': dia_actual_idx,
         }
 
     @staticmethod
@@ -400,103 +462,255 @@ class DashboardContextService:
     def _get_estudiante_perfil_context(user, escuela_rbd):
         """Get perfil context for estudiante"""
         from backend.apps.accounts.models import PerfilEstudiante
+        from backend.apps.academico.models import Calificacion, Asistencia
+        from backend.apps.cursos.models import Clase, ClaseEstudiante
+        from django.db.models import Avg, Count
+
+        inicio_ctx = DashboardContextService._get_estudiante_inicio_context(user, escuela_rbd)
 
         try:
             perfil = PerfilEstudiante.objects.select_related(
-                'user', 'ciclo_actual'
+                'user', 'user__role', 'ciclo_actual',
             ).get(user=user)
-
-            return {
-                'perfil': perfil,
-                'curso_actual': perfil.curso_actual,
-                'colegio': perfil.user.colegio,
-            }
         except PerfilEstudiante.DoesNotExist:
-            return {}
+            return {
+                'sin_perfil': True,
+                **inicio_ctx,
+            }
+
+        curso_actual = perfil.curso_actual
+        total_calificaciones = Calificacion.objects.filter(
+            estudiante=user,
+            colegio_id=escuela_rbd,
+        ).count()
+        total_asignaturas = ClaseEstudiante.objects.filter(
+            estudiante=user,
+            activo=True,
+            clase__activo=True,
+        ).values('clase__asignatura').distinct().count()
+
+        foto_display = None
+        if perfil.foto_perfil:
+            foto_display = perfil.foto_perfil.url
+        elif perfil.foto_url:
+            foto_display = perfil.foto_url
+
+        edad = None
+        if perfil.fecha_nacimiento:
+            hoy = date.today()
+            edad = hoy.year - perfil.fecha_nacimiento.year
+            if (hoy.month, hoy.day) < (
+                perfil.fecha_nacimiento.month,
+                perfil.fecha_nacimiento.day,
+            ):
+                edad -= 1
+
+        promedio = inicio_ctx.get('promedio_general', 0)
+        asistencia_pct = inicio_ctx.get('porcentaje_asistencia', 0)
+
+        return {
+            'perfil': perfil,
+            'estudiante': perfil,
+            'curso_actual': curso_actual,
+            'colegio': perfil.user.colegio,
+            'foto_perfil_url': foto_display,
+            'edad': edad,
+            'iniciales': (
+                (user.nombre[:1] if user.nombre else '')
+                + (user.apellido_paterno[:1] if user.apellido_paterno else '')
+            ).upper() or '?',
+            'promedio_display': f'{promedio:.1f}' if promedio else '—',
+            'promedio_progress': min(100, max(0, int((promedio or 0) * 10))),
+            'asistencia_display': f'{asistencia_pct}%',
+            'asistencia_progress': min(100, max(0, int(asistencia_pct or 0))),
+            'total_calificaciones': total_calificaciones,
+            'total_asignaturas': total_asignaturas,
+            'estadisticas': {
+                'promedio_general': promedio,
+                'total_calificaciones': total_calificaciones,
+                'total_asignaturas': total_asignaturas,
+                'porcentaje_asistencia': asistencia_pct,
+            },
+            'hero_subtitle_perfil': (
+                f'{curso_actual.nombre} · {perfil.estado_academico}'
+                if curso_actual else perfil.estado_academico
+            ),
+            'sin_perfil': False,
+        }
+
+    @staticmethod
+    def _dedupe_asistencias_por_materia_dia(asistencias_qs):
+        """Un registro por fecha y asignatura (evita inflar por clases duplicadas en BD)."""
+        estado_map = {
+            'P': 'Presente',
+            'A': 'Ausente',
+            'T': 'Atraso',
+            'J': 'Justificado',
+        }
+        latest = {}
+        for asist in asistencias_qs.order_by(
+            'fecha', 'clase__asignatura__nombre', '-fecha_actualizacion'
+        ):
+            asignatura = (
+                asist.clase.asignatura.nombre
+                if asist.clase and asist.clase.asignatura
+                else 'N/A'
+            )
+            key = (asist.fecha, asignatura.lower())
+            latest[key] = {
+                'fecha': asist.fecha,
+                'asignatura': asignatura,
+                'asignatura_key': asignatura.lower(),
+                'estado': asist.estado,
+                'estado_texto': estado_map.get(asist.estado, asist.estado),
+                'observaciones': asist.observaciones or '',
+            }
+        return list(latest.values())
 
     @staticmethod
     def _get_estudiante_asistencia_context(user, request_get_params):
         """Get asistencia context for estudiante"""
         from backend.apps.academico.models import Asistencia
         from backend.apps.cursos.models import Clase, ClaseEstudiante
-        from datetime import timedelta
         import logging
         logger = logging.getLogger(__name__)
 
-        # Filtros
-        mes_filtro = request_get_params.get('mes') if request_get_params else None
-        
-        # Base query - todas las asistencias del estudiante
-        asistencias_query = Asistencia.objects.filter(estudiante=user).select_related('clase', 'clase__asignatura')
-        
-        # Log diagnóstico
-        total_asistencias = asistencias_query.count()
-        logger.info(f"Estudiante {user.email}: Total asistencias en BD = {total_asistencias}")
-        
-        # Aplicar filtro de mes si existe
-        if mes_filtro:
-            try:
-                anio, mes = mes_filtro.split('-')
-                asistencias_query = asistencias_query.filter(fecha__year=int(anio), fecha__month=int(mes))
-                logger.info(f"Filtro mes aplicado: {mes_filtro}")
-            except (ValueError, AttributeError):
-                mes_filtro = None
-        
-        # Calcular estadísticas
-        resumen = asistencias_query.aggregate(
-            total=Count('pk'),
-            presentes=Count('pk', filter=Q(estado='P')),
-            ausentes=Count('pk', filter=Q(estado='A')),
-            tardanzas=Count('pk', filter=Q(estado='T')),
-        )
-        presentes = resumen['presentes'] or 0
-        ausentes = resumen['ausentes'] or 0
-        tardanzas = resumen['tardanzas'] or 0
+        mes_nombres = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+        ]
 
-        # Porcentaje de asistencia (evitar división por 0)
-        total_registros = resumen['total'] or 0
+        # Base query - todas las asistencias del estudiante
+        asistencias_totales = Asistencia.objects.filter(estudiante=user)
+        total_historico = asistencias_totales.count()
+        logger.info(f"Estudiante {user.email}: Total asistencias en BD = {total_historico}")
+
+        meses_disponibles = []
+        ultima_fecha = asistencias_totales.order_by('-fecha').values_list('fecha', flat=True).first()
+        for row in (
+            asistencias_totales.values('fecha__year', 'fecha__month')
+            .annotate(total=Count('pk'))
+            .order_by('-fecha__year', '-fecha__month')
+        ):
+            y, m = row['fecha__year'], row['fecha__month']
+            mes_qs = asistencias_totales.filter(fecha__year=y, fecha__month=m)
+            total_dedup = len(
+                DashboardContextService._dedupe_asistencias_por_materia_dia(mes_qs)
+            )
+            meses_disponibles.append({
+                'value': f'{y:04d}-{m:02d}',
+                'label': f"{mes_nombres[m - 1]} {y}",
+                'total': total_dedup,
+            })
+
+        mes_filtro_solicitado = request_get_params.get('mes') if request_get_params else None
+        mes_filtro = mes_filtro_solicitado or date.today().strftime('%Y-%m')
+        mes_auto_ajustado = False
+
+        def _conteo_mes(mes_key):
+            try:
+                y, m = mes_key.split('-')
+                return asistencias_totales.filter(
+                    fecha__year=int(y), fecha__month=int(m)
+                ).count()
+            except (ValueError, AttributeError):
+                return 0
+
+        if total_historico > 0 and _conteo_mes(mes_filtro) == 0:
+            if ultima_fecha:
+                mes_filtro = ultima_fecha.strftime('%Y-%m')
+                mes_auto_ajustado = bool(mes_filtro_solicitado)
+
+        periodo_label = mes_filtro
+        anio_str, mes_str = None, None
+        try:
+            anio_str, mes_str = mes_filtro.split('-')
+            periodo_label = f"{mes_nombres[int(mes_str) - 1]} {anio_str}"
+        except (ValueError, IndexError):
+            mes_filtro = date.today().strftime('%Y-%m')
+
+        asistencias_query = asistencias_totales.select_related('clase', 'clase__asignatura')
+        if anio_str and mes_str:
+            asistencias_query = asistencias_query.filter(
+                fecha__year=int(anio_str),
+                fecha__month=int(mes_str),
+            )
+
+        registros_periodo = DashboardContextService._dedupe_asistencias_por_materia_dia(
+            asistencias_query
+        )
+        presentes = sum(1 for r in registros_periodo if r['estado'] == 'P')
+        ausentes = sum(1 for r in registros_periodo if r['estado'] == 'A')
+        tardanzas = sum(1 for r in registros_periodo if r['estado'] == 'T')
+        justificados = sum(1 for r in registros_periodo if r['estado'] == 'J')
+
+        total_registros = len(registros_periodo)
         if total_registros > 0:
             porcentaje_asistencia = round((presentes / total_registros) * 100, 1)
         else:
             porcentaje_asistencia = 0
-            logger.warning(f"Estudiante {user.email}: NO tiene registros de asistencia")
-        
-        # Registros recientes (últimos 30 días)
-        fecha_limite = date.today() - timedelta(days=30)
-        registros_recientes_query = asistencias_query.filter(fecha__gte=fecha_limite).order_by('-fecha')[:30]
-        
-        registros_recientes = []
-        for asist in registros_recientes_query:
-            estado_map = {
-                'P': 'Presente',
-                'A': 'Ausente',
-                'T': 'Tarde',
-                'J': 'Justificado'
-            }
-            registros_recientes.append({
-                'fecha': asist.fecha,
-                'asignatura': asist.clase.asignatura.nombre if asist.clase and asist.clase.asignatura else 'N/A',
-                'estado': asist.estado,
-                'estado_texto': estado_map.get(asist.estado, asist.estado),
-                'observaciones': asist.observaciones or ''
+            if total_historico == 0:
+                logger.warning(f"Estudiante {user.email}: NO tiene registros de asistencia")
+
+        asistencia_progress = min(100, max(0, int(round(porcentaje_asistencia))))
+
+        dias_semana = [
+            'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo',
+        ]
+
+        from collections import defaultdict
+
+        por_fecha = defaultdict(list)
+        for registro in registros_periodo:
+            por_fecha[registro['fecha']].append(registro)
+
+        dias_asistencia = []
+        for fecha in sorted(por_fecha.keys(), reverse=True):
+            registros_dia = sorted(
+                por_fecha[fecha],
+                key=lambda r: r['asignatura'],
+            )
+            dias_asistencia.append({
+                'fecha': fecha,
+                'fecha_display': fecha.strftime('%d/%m/%Y'),
+                'dia_semana': dias_semana[fecha.weekday()],
+                'dia': fecha.day,
+                'mes_corto': mes_nombres[fecha.month - 1][:3],
+                'registros': registros_dia,
+                'total_materias': len(registros_dia),
             })
-        
-        # Clases para filtro
-        clases = Clase.objects.filter(
-            estudiantes__estudiante=user,
-            estudiantes__activo=True,
-            activo=True
-        ).select_related('asignatura').order_by('asignatura__nombre')
+
+        total_dias_periodo = len(dias_asistencia)
+
+        asignaturas_periodo = []
+        seen_asig = set()
+        for reg in sorted(registros_periodo, key=lambda r: r['asignatura']):
+            if reg['asignatura_key'] in seen_asig:
+                continue
+            seen_asig.add(reg['asignatura_key'])
+            asignaturas_periodo.append({
+                'nombre': reg['asignatura'],
+                'key': reg['asignatura_key'],
+            })
         
         return {
             'presentes': presentes,
             'ausentes': ausentes,
             'tardanzas': tardanzas,
+            'justificados': justificados,
             'porcentaje_asistencia': porcentaje_asistencia,
-            'registros_recientes': registros_recientes,
-            'mes_filtro': mes_filtro or '',
-            'clases': clases,
-            'sin_datos_asistencia': total_asistencias == 0,  # Flag explícito
+            'promedio_display': f'{porcentaje_asistencia}%',
+            'asistencia_progress': asistencia_progress,
+            'total_registros_periodo': total_registros,
+            'total_dias_periodo': total_dias_periodo,
+            'dias_asistencia': dias_asistencia,
+            'mes_filtro': mes_filtro,
+            'periodo_label': periodo_label,
+            'meses_disponibles': meses_disponibles,
+            'mes_auto_ajustado': mes_auto_ajustado,
+            'ultima_fecha_asistencia': ultima_fecha,
+            'asignaturas_periodo': asignaturas_periodo,
+            'sin_datos_asistencia': total_historico == 0,
         }
 
     @staticmethod
@@ -626,6 +840,117 @@ class DashboardContextService:
         }
 
     @staticmethod
+    def _get_estudiante_evaluaciones_context(user):
+        """Evaluaciones del estudiante: próximas, sin nota y completadas."""
+        from datetime import timedelta
+        from backend.apps.academico.models import Evaluacion, Calificacion
+        from backend.apps.cursos.models import Clase
+
+        curso_actual = DashboardContextService._resolve_estudiante_curso_actual(user)
+        empty = {
+            'evaluaciones_proximas_lista': [],
+            'evaluaciones_pendientes': [],
+            'evaluaciones_completadas': [],
+            'eval_proxima_destacada': None,
+            'total_eval_pendientes': 0,
+            'total_eval_completadas': 0,
+            'total_eval_proximas': 0,
+            'total_evaluaciones': 0,
+            'promedio_ultimas_eval': None,
+            'curso_actual': curso_actual,
+        }
+        if not curso_actual:
+            return empty
+
+        clases_ids = list(
+            Clase.objects.filter(
+                estudiantes__estudiante=user,
+                estudiantes__activo=True,
+                activo=True,
+            ).values_list('id', flat=True)
+        )
+        if not clases_ids:
+            clases_ids = list(
+                Clase.objects.filter(curso=curso_actual, activo=True).values_list('id', flat=True)
+            )
+
+        evaluaciones_qs = Evaluacion.objects.filter(
+            clase_id__in=clases_ids,
+            activa=True,
+        ).select_related('clase__asignatura').order_by('fecha_evaluacion')
+
+        calif_map = {
+            c.evaluacion_id: c
+            for c in Calificacion.objects.filter(
+                estudiante=user,
+                evaluacion__in=evaluaciones_qs,
+            )
+        }
+
+        hoy = date.today()
+        limite_proxima = hoy + timedelta(days=7)
+
+        proximas_lista = []
+        pendientes = []
+        completadas = []
+
+        for ev in evaluaciones_qs:
+            asignatura = ev.clase.asignatura.nombre if ev.clase.asignatura else 'Sin asignatura'
+            calif = calif_map.get(ev.id_evaluacion)
+            dias = (ev.fecha_evaluacion - hoy).days if ev.fecha_evaluacion else None
+
+            item = {
+                'id': ev.id_evaluacion,
+                'nombre': ev.nombre,
+                'asignatura': asignatura,
+                'asignatura_key': asignatura.lower(),
+                'clase_id': ev.clase_id,
+                'fecha': ev.fecha_evaluacion,
+                'tipo': ev.get_tipo_evaluacion_display(),
+                'tipo_key': ev.tipo_evaluacion,
+                'ponderacion': ev.ponderacion,
+                'dias_restantes': dias,
+                'es_hoy': dias == 0,
+                'es_manana': dias == 1,
+                'nota': float(calif.nota) if calif else None,
+                'fecha_nota': calif.fecha_creacion.date() if calif else None,
+            }
+
+            if calif:
+                completadas.append(item)
+            else:
+                item['es_proxima'] = bool(
+                    ev.fecha_evaluacion and hoy <= ev.fecha_evaluacion <= limite_proxima
+                )
+                pendientes.append(item)
+                if item['es_proxima']:
+                    proximas_lista.append(item)
+
+        completadas.sort(key=lambda x: x['fecha'] or hoy, reverse=True)
+        pendientes.sort(key=lambda x: x['fecha'] or hoy)
+        proximas_lista.sort(key=lambda x: x['fecha'] or hoy)
+
+        promedio_ultimas = None
+        if completadas:
+            ultimas = completadas[:5]
+            promedio_ultimas = round(sum(e['nota'] for e in ultimas if e['nota'] is not None) / len(ultimas), 1)
+
+        eval_proxima_destacada = proximas_lista[0] if proximas_lista else (pendientes[0] if pendientes else None)
+
+        return {
+            'evaluaciones_proximas_lista': proximas_lista,
+            'evaluaciones_pendientes': pendientes,
+            'evaluaciones_completadas': completadas,
+            'eval_proxima_destacada': eval_proxima_destacada,
+            'total_eval_pendientes': len(pendientes),
+            'total_eval_completadas': len(completadas),
+            'total_eval_proximas': len(proximas_lista),
+            'total_evaluaciones': evaluaciones_qs.count(),
+            'promedio_ultimas_eval': promedio_ultimas,
+            'curso_actual': curso_actual,
+        }
+
+    @staticmethod
     def _get_estudiante_notas_context(user):
         """Get notas context for estudiante"""
         from backend.apps.academico.models import Calificacion, Evaluacion
@@ -643,6 +968,11 @@ class DashboardContextService:
                 'total_notas': 0,
                 'curso_actual': None,
             }
+
+        from backend.common.utils.grade_scale import get_escala, es_aprobado
+
+        escala = get_escala(getattr(user, 'colegio', None))
+        nota_aprobacion = float(escala['nota_aprobacion'])
 
         # Calificaciones por asignatura
         calificaciones = Calificacion.objects.filter(
@@ -667,15 +997,18 @@ class DashboardContextService:
             if asignatura_key not in asignaturas_data:
                 asignaturas_data[asignatura_key] = {
                     'asignatura': asignatura.nombre,
+                    'asignatura_key': asignatura_key.lower(),
                     'profesor': calif.evaluacion.clase.profesor.get_full_name() if calif.evaluacion.clase.profesor else 'Sin asignar',
                     'evaluaciones': [],
                     'promedio': 0.0,
                     'estado': 'Aprobado',  # Default
                 }
 
+            nota_val = float(calif.nota)
             asignaturas_data[asignatura_key]['evaluaciones'].append({
                 'nombre': calif.evaluacion.nombre,
                 'nota': calif.nota,
+                'aprobada': es_aprobado(nota_val, getattr(user, 'colegio', None)),
                 'fecha': calif.evaluacion.fecha_evaluacion,
                 'ponderacion': calif.evaluacion.ponderacion,
             })
@@ -685,26 +1018,45 @@ class DashboardContextService:
 
         # Calcular promedios y estados
         notas_por_asignatura = []
+        total_reforzar = 0
         for data in asignaturas_data.values():
             if data['evaluaciones']:
-                notas = [e['nota'] for e in data['evaluaciones']]
+                notas = [float(e['nota']) for e in data['evaluaciones']]
                 data['promedio'] = round(sum(notas) / len(notas), 1)
                 from backend.common.utils.grade_scale import estado_nota as _estado_nota
                 data['estado'] = _estado_nota(data['promedio'], user.colegio)
+                data['total_evaluaciones'] = len(data['evaluaciones'])
+                data['nota_min'] = round(min(notas), 1)
+                data['nota_max'] = round(max(notas), 1)
+                if data['estado'] == 'Reprobado':
+                    total_reforzar += 1
             else:
                 data['promedio'] = 0.0
                 data['estado'] = 'Sin evaluaciones'
-            
+                data['total_evaluaciones'] = 0
+                data['nota_min'] = None
+                data['nota_max'] = None
+
             notas_por_asignatura.append(data)
+
+        notas_por_asignatura.sort(key=lambda x: x['asignatura'])
 
         # Calcular promedio general
         promedio_general = round(suma_notas / total_notas, 1) if total_notas > 0 else 0.0
+        promedio_progress = 0
+        if promedio_general > 0:
+            promedio_progress = min(100, max(0, int(((float(promedio_general) - 1.0) / 6.0) * 100)))
 
         return {
             'notas_por_asignatura': notas_por_asignatura,
             'promedio_general': promedio_general,
+            'promedio_progress': promedio_progress,
             'total_notas': total_notas,
+            'total_asignaturas': len(notas_por_asignatura),
+            'total_reforzar': total_reforzar,
             'curso_actual': curso_actual,
+            'nota_aprobacion': nota_aprobacion,
+            'promedio_general_aprobado': es_aprobado(promedio_general, getattr(user, 'colegio', None)) if total_notas else True,
         }
 
     @staticmethod

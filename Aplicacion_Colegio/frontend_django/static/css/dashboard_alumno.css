@@ -21,6 +21,43 @@ body.vista-alumno,
     --alumno-metric-promedio: #22c55e;
     --alumno-metric-asistencia: #8b5cf6;
     --alumno-section-title: #1e3a5f;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Tipografía unificada (misma que Inicio / dashboard) */
+body.vista-alumno,
+body:has(.perfil-alumno),
+body.vista-alumno .perfil-alumno,
+body.vista-alumno .estudiante-dashboard,
+body.vista-alumno .alumno-main,
+body.vista-alumno .alumno-main__body,
+body.vista-alumno .alumno-page-content,
+body.vista-alumno .content-wrapper,
+body.vista-alumno .comunicados-container,
+body.vista-alumno .asistencia-container,
+body.vista-alumno .alumno-hero {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body.vista-alumno .alumno-page-content table,
+body.vista-alumno .alumno-page-content th,
+body.vista-alumno .alumno-page-content td,
+body.vista-alumno .alumno-page-content label,
+body.vista-alumno .alumno-page-content select,
+body.vista-alumno .alumno-page-content input,
+body.vista-alumno .alumno-page-content button,
+body.vista-alumno .alumno-page-content h1,
+body.vista-alumno .alumno-page-content h2,
+body.vista-alumno .alumno-page-content h3,
+body.vista-alumno .alumno-page-content p,
+body.vista-alumno .alumno-page-content .empty-state,
+body.vista-alumno .alumno-page-content .filtros-grupo,
+body.vista-alumno .mc-page,
+body.vista-alumno .mc-detail__content,
+body.vista-alumno .mc-detail__content p {
+    font-family: inherit;
 }
 
 /* ── 1. Ocultar navbar superior (no borrar HTML en base/dashboard) ── */
@@ -176,6 +213,13 @@ body.pagina-inicio:has(.perfil-alumno) {
     color: var(--alumno-surface);
     font-size: 1.3rem;
     font-weight: 700;
+}
+
+.alumno-sidebar__avatar--photo {
+    display: block;
+    object-fit: cover;
+    border: 2px solid var(--alumno-border);
+    background: var(--alumno-surface);
 }
 
 .alumno-sidebar__name {
@@ -1294,9 +1338,12 @@ body.pagina-inicio:has(.perfil-alumno) {
 .alumno-page-content .schedule-container,
 .alumno-page-content .content-wrapper,
 .alumno-page-content .tareas-container,
-.alumno-page-content .academic-schedule-container {
+.alumno-page-content .academic-schedule-container,
+.alumno-page-content .comunicados-container {
     max-width: none;
     width: 100%;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 @media (max-width: 900px) {

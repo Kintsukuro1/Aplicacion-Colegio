@@ -1,211 +1,398 @@
 {% load static %}
 {% include 'estudiante/_alumno_wrap_start.html' %}
-<div class="content-wrapper">
-    <div class="page-header">
-        <h1>📝 Mis Tareas</h1>
-        <p class="subtitle">Administra tus entregas y trabajos pendientes</p>
-    </div>
+<link rel="stylesheet" href="{% static 'css/estudiante/tareas.css' %}?v=20260603">
+<link rel="stylesheet" href="{% static 'css/estudiante/mis_tareas.css' %}?v=20260606">
 
-    <!-- Estadísticas -->
-    <div class="estadisticas-tareas"
-        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-        <div class="stat-box pendientes kpi-card"
-           >
-            <div class="stat-icon icon-lg">⏳</div>
-            <div class="stat-info d-flex flex-col">
-                <span class="stat-numero title-accent">{{ total_pendientes }}</span>
-                <span class="stat-label text-muted">Pendientes</span>
+<div class="content-wrapper mt-page">
+    {% with entregadas_n=tareas_entregadas|length %}
+    {% with total_all=total_pendientes|default:0|add:entregadas_n %}
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Mis Tareas" hero_subtitle="Administra tus entregas y trabajos pendientes" hero_aria="Mis Tareas" metrics_aria="Resumen de tareas" m1_value=total_pendientes|default:"0" m1_label="Pendientes" m1_mod="tareas" m2_value=entregadas_n m2_label="Entregadas" m2_mod="clases" m3_value="0" m3_label="Vencidas" m3_mod="promedio" m4_value=total_all m4_label="Tareas totales" m4_mod="asistencia" %}
+    {% endwith %}
+    {% endwith %}
+
+    <section class="mt-refine" aria-label="Refinar listado de tareas">
+        <div class="mt-refine__head">
+            <h2 class="mt-refine__title">Refinar listado</h2>
+            <button type="button" class="mt-refine__clear" id="mtClearFilters" hidden>Limpiar filtros</button>
+        </div>
+        <div class="mt-refine__grid">
+            <div class="mt-refine__field">
+                <label class="mt-refine__label" for="mtSubjectFilter">Asignatura</label>
+                <select class="mt-refine__control" id="mtSubjectFilter">
+                    <option value="">Todas las asignaturas</option>
+                </select>
+            </div>
+            <div class="mt-refine__field">
+                <label class="mt-refine__label" for="mtMonthFilter">Mes de entrega</label>
+                <input type="month" class="mt-refine__control" id="mtMonthFilter" aria-label="Filtrar por mes de fecha de entrega">
+            </div>
+            <div class="mt-refine__field">
+                <label class="mt-refine__label" for="mtSortFilter">Ordenar por fecha</label>
+                <select class="mt-refine__control" id="mtSortFilter">
+                    <option value="due-asc">Más próximas primero</option>
+                    <option value="due-desc">Más lejanas primero</option>
+                    <option value="title-asc">Título (A → Z)</option>
+                </select>
+            </div>
+            <div class="mt-refine__field mt-refine__field--grow">
+                <label class="mt-refine__label" for="mtTitleSearch">Buscar por nombre</label>
+                <input type="search" class="mt-refine__control" id="mtTitleSearch" placeholder="Ej: Tarea 2, ensayo..." autocomplete="off">
             </div>
         </div>
-        <div class="stat-box entregadas kpi-card"
-           >
-            <div class="stat-icon icon-lg">✅</div>
-            <div class="stat-info d-flex flex-col">
-                <span class="stat-numero title-accent">{{ tareas_entregadas|length }}</span>
-                <span class="stat-label text-muted">Entregadas</span>
+        <p class="mt-refine__hint" id="mtFilterHint" hidden></p>
+    </section>
+
+    <section class="alumno-section-card mt-section" id="mtSectionPending" aria-label="Tareas pendientes" data-mt-section="pending">
+        <div class="mt-section__toolbar">
+            <div class="mt-section__toolbar-left">
+                <h2 class="alumno-section-title">
+                    <span class="alumno-section-title__icon" aria-hidden="true">⏳</span>
+                    Tareas pendientes
+                </h2>
+                <span class="mt-count-badge" id="mtCountPending">{{ tareas_pendientes|length }}</span>
             </div>
         </div>
-    </div>
 
-    <!-- Tareas Pendientes -->
-    <h2 class="text-primary-dark">Tareas Pendientes</h2>
-    <div class="tareas-lista" style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 3rem;">
-        {% for tarea in tareas_pendientes %}
-        <div class="tarea-card {% if tarea.vencida %}vencida{% endif %} card-accent"
-           >
-            <div class="tarea-header header-flex"
-               >
-                <div class="tarea-badge pill-gradient"
-                   >
-                    {{ tarea.asignatura }}</div>
-                {% if tarea.vencida %}
-                <span class="badge-vencida pill-danger"
-                   >Vencida</span>
-                {% else %}
-                <span class="badge-proximo"
-                    style="padding: 0.3rem 0.7rem; background: #fef3c7; color: #d97706; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">Pendiente</span>
-                {% endif %}
-            </div>
-
-            <h3 class="title-primary">{{ tarea.titulo }}</h3>
-
-            <div class="tarea-meta filter-bar"
-               >
-                <span class="meta-item meta-info"
-                   >
-                    <span class="icon">📅</span>
-                    Vence: {{ tarea.fecha_entrega|date:"d/m/Y H:i" }}
-                </span>
-            </div>
-
-            <div class="tarea-acciones" style="display: flex; gap: 1rem; padding-top: 1rem;">
-                <button class="btn-accion btn-entregar"
-                    onclick="abrirModalEntrega({{ tarea.id }}, '{{ tarea.titulo|escapejs }}')"
-                    style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">Subir
-                    Entrega</button>
-            </div>
-        </div>
-        {% empty %}
-        <div class="empty-state-sm">
-            <p>¡No tienes tareas pendientes! Estás al día. 🎉</p>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Tareas Entregadas -->
-    <h2 class="text-primary-dark">Tareas Entregadas</h2>
-    <div class="tareas-lista d-flex flex-col gap-md">
-        {% for tarea in tareas_entregadas %}
-        <div class="tarea-card card-accent"
-           >
-            <div class="tarea-header header-flex"
-               >
-                <div class="tarea-badge pill-gradient"
-                   >
-                    {{ tarea.asignatura }}</div>
-                <span class="badge-entregada pill-gradient tag-info"
-                   >{{ tarea.estado_entrega }}</span>
-            </div>
-
-            <h3 class="title-primary">{{ tarea.titulo }}</h3>
-
-            <div class="tarea-meta filter-bar"
-               >
-                <span class="meta-item meta-info"
-                   >
-                    <span class="icon">📅</span>
-                    Vencimiento: {{ tarea.fecha_entrega|date:"d/m/Y H:i" }}
-                </span>
-            </div>
-
-            {% if tarea.calificacion %}
-            <div class="calificacion-box"
-                style="display: flex; gap: 1.5rem; padding: 1rem; background: #f0fdf4; border-radius: 8px; margin: 1rem 0;">
-                <div class="nota"
-                    style="font-size: 2.5rem; font-weight: 700; color: #16a34a; min-width: 80px; display: flex; align-items: center; justify-content: center;">
-                    {{ tarea.calificacion }}</div>
-                <div class="retroalimentacion flex-1">
-                    <strong style="color: #16a34a; display: block; margin-bottom: 0.5rem;">Retroalimentación:</strong>
-                    <p style="margin: 0; color: #475569; line-height: 1.6;">{{ tarea.retroalimentacion }}</p>
+        <div class="tk-task-list" id="mtListPending">
+            {% for tarea in tareas_pendientes %}
+            <article class="tk-task-card mt-task-card {% if tarea.vencida %}vencida{% endif %}"
+                data-subject="{{ tarea.asignatura|lower }}"
+                data-mt-bucket="pending"
+                data-mt-status="{% if tarea.vencida %}overdue{% else %}on-time{% endif %}"
+                data-mt-month="{{ tarea.fecha_entrega|date:'Y-m' }}"
+                data-mt-due="{{ tarea.fecha_entrega|date:'U' }}"
+                data-mt-title="{{ tarea.titulo|lower }}">
+                <div class="tk-task-card__body">
+                    <div class="tk-task-card__row">
+                        <div class="tk-task-card__info">
+                            <h3 class="tk-task-card__title">{{ tarea.titulo }}</h3>
+                            <div class="tk-task-card__meta">
+                                <span class="tk-meta-item">{{ tarea.asignatura }}</span>
+                                <span class="tk-meta-sep" aria-hidden="true">·</span>
+                                <span class="tk-meta-item">Vence {{ tarea.fecha_entrega|date:"d/m/Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="tk-task-card__status">
+                            {% if tarea.vencida %}
+                            <span class="tk-badge tk-badge--overdue">Vencida</span>
+                            {% else %}
+                            <span class="tk-badge tk-badge--pending">Pendiente</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="tk-task-card__footer">
+                        <span class="tk-task-card__time">
+                            {% if tarea.vencida %}Plazo de entrega vencido{% else %}Aún puedes entregar{% endif %}
+                        </span>
+                        <div class="tk-task-card__actions">
+                            <button type="button" class="tk-btn-primary" onclick="abrirModalEntrega({{ tarea.id }}, '{{ tarea.titulo|escapejs }}', '{{ tarea.asignatura|escapejs }}')">
+                                Subir entrega
+                            </button>
+                        </div>
+                    </div>
                 </div>
+            </article>
+            {% empty %}
+            <div class="tk-empty-state mt-empty-static">
+                <span class="tk-empty-state__icon" aria-hidden="true">🎉</span>
+                <h3>¡Estás al día!</h3>
+                <p>No tienes tareas pendientes por entregar.</p>
             </div>
-            {% endif %}
+            {% endfor %}
+            <div class="tk-empty-state mt-empty-filter" id="mtEmptyPending" hidden>
+                <span class="tk-empty-state__icon" aria-hidden="true">🔎</span>
+                <h3>Sin coincidencias</h3>
+                <p>No hay tareas pendientes con los filtros actuales.</p>
+            </div>
         </div>
-        {% empty %}
-        <div class="empty-state-sm">
-            <p>Aún no tienes tareas entregadas.</p>
+    </section>
+
+    <section class="alumno-section-card mt-section" id="mtSectionDone" aria-label="Tareas entregadas" data-mt-section="done">
+        <div class="mt-section__toolbar">
+            <div class="mt-section__toolbar-left">
+                <h2 class="alumno-section-title">
+                    <span class="alumno-section-title__icon" aria-hidden="true">✅</span>
+                    Tareas entregadas
+                </h2>
+                <span class="mt-count-badge mt-count-badge--done" id="mtCountDone">{{ tareas_entregadas|length }}</span>
+            </div>
         </div>
-        {% endfor %}
-    </div>
+
+        <div class="tk-task-list" id="mtListDone">
+            {% for tarea in tareas_entregadas %}
+            <article class="tk-task-card mt-task-card mt-task-card--done"
+                data-subject="{{ tarea.asignatura|lower }}"
+                data-mt-bucket="done"
+                data-mt-status="done"
+                data-mt-month="{{ tarea.fecha_entrega|date:'Y-m' }}"
+                data-mt-due="{{ tarea.fecha_entrega|date:'U' }}"
+                data-mt-title="{{ tarea.titulo|lower }}">
+                <div class="tk-task-card__body">
+                    <div class="tk-task-card__row">
+                        <div class="tk-task-card__info">
+                            <h3 class="tk-task-card__title">{{ tarea.titulo }}</h3>
+                            <div class="tk-task-card__meta">
+                                <span class="tk-meta-item">{{ tarea.asignatura }}</span>
+                                <span class="tk-meta-sep" aria-hidden="true">·</span>
+                                <span class="tk-meta-item">Vencía {{ tarea.fecha_entrega|date:"d/m/Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <div class="tk-task-card__status">
+                            <span class="tk-badge tk-badge--submitted">{{ tarea.estado_entrega }}</span>
+                            {% if tarea.calificacion %}
+                            <span class="tk-grade-pill">{{ tarea.calificacion }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if tarea.retroalimentacion %}
+                    <div class="mt-feedback">
+                        <span class="mt-feedback__label">Retroalimentación del profesor</span>
+                        <p class="mt-feedback__text">{{ tarea.retroalimentacion }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </article>
+            {% empty %}
+            <div class="tk-empty-state mt-empty-static">
+                <span class="tk-empty-state__icon" aria-hidden="true">📤</span>
+                <h3>Sin entregas aún</h3>
+                <p>Cuando entregues una tarea, aparecerá en esta lista.</p>
+            </div>
+            {% endfor %}
+            <div class="tk-empty-state mt-empty-filter" id="mtEmptyDone" hidden>
+                <span class="tk-empty-state__icon" aria-hidden="true">🔎</span>
+                <h3>Sin coincidencias</h3>
+                <p>No hay tareas entregadas con los filtros actuales.</p>
+            </div>
+        </div>
+    </section>
 </div>
 
-<!-- Modal Entrega -->
-<div id="modalEntrega"
-    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div
-        style="background: white; width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-        <div
-            style="padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; color: #1e293b;">Entregar Tarea</h3>
-            <span onclick="cerrarModal()" style="font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</span>
+<div id="modalEntrega" class="mt-modal modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Entregar tarea</h3>
+            <span class="close" onclick="cerrarModal()" aria-label="Cerrar">&times;</span>
         </div>
         <form id="formEntrega" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" id="tarea_id" name="tarea_id">
-            <p id="tareaTituloMuestra" style="margin: 0; padding: 16px 24px 0; font-weight: 600; color: #3b82f6;"></p>
-
-            <div class="p-4">
-                <label class="form-label-light">Archivo
-                    adjunto</label>
-                <input type="file" name="archivo" required
-                    class="form-control-bordered">
+            <p id="tareaTituloMuestra" class="mt-modal__task-name"></p>
+            <div class="form-group">
+                <label for="archivoEntrega">Archivo adjunto</label>
+                <input type="file" id="archivoEntrega" name="archivo" required>
             </div>
-
-            <div class="p-4">
-                <label class="form-label-light">Comentario
-                    (opcional)</label>
-                <textarea name="comentario" rows="3" placeholder="Añade un comentario..."
-                    class="form-control-bordered"></textarea>
+            <div class="form-group">
+                <label for="comentarioEntrega">Comentario (opcional)</label>
+                <textarea id="comentarioEntrega" name="comentario" rows="3" placeholder="Añade un comentario sobre tu entrega..."></textarea>
             </div>
-
-            <div style="padding: 24px; display: flex; justify-content: flex-end; gap: 12px;">
-                <button type="button" onclick="cerrarModal()"
-                    style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">Cancelar</button>
-                <button type="submit" id="btnEnviar"
-                    style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">Subir
-                    Entrega</button>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" class="btn-primary" id="btnEnviar">Subir entrega</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    const modal = document.getElementById('modalEntrega');
-
-    function abrirModalEntrega(id, titulo) {
-        document.getElementById('tarea_id').value = id;
-        document.getElementById('tareaTituloMuestra').textContent = 'Tarea: ' + titulo;
-        modal.style.display = 'flex';
+(function () {
+    function resolveAccent(name) {
+        var s = (name || '').toLowerCase();
+        if (s.indexOf('matem') !== -1) return '#3B82F6';
+        if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1 || s.indexOf('castellano') !== -1) return '#EF4444';
+        if (s.indexOf('cienc') !== -1 || s.indexOf('natur') !== -1) return '#10B981';
+        if (s.indexOf('histor') !== -1 || s.indexOf('geograf') !== -1) return '#8B5CF6';
+        if (s.indexOf('ingl') !== -1) return '#F59E0B';
+        if (s.indexOf('educ') !== -1 || s.indexOf('f\u00edsica') !== -1 || s.indexOf('edfis') !== -1) return '#06B6D4';
+        if (s.indexOf('arte') !== -1 || s.indexOf('visual') !== -1) return '#EC4899';
+        if (s.indexOf('m\u00fasic') !== -1 || s.indexOf('music') !== -1) return '#F97316';
+        if (s.indexOf('tecno') !== -1 || s.indexOf('comput') !== -1) return '#6B7280';
+        return '#94A3B8';
     }
 
-    function cerrarModal() {
+    var vencidas = document.querySelectorAll('.mt-task-card[data-mt-status="overdue"]').length;
+    var metricVencidas = document.querySelector('.alumno-hero-metric--promedio .alumno-hero-metric__value');
+    if (metricVencidas) {
+        metricVencidas.textContent = String(vencidas);
+    }
+
+    var subjectSelect = document.getElementById('mtSubjectFilter');
+    var monthInput = document.getElementById('mtMonthFilter');
+    var sortSelect = document.getElementById('mtSortFilter');
+    var titleSearch = document.getElementById('mtTitleSearch');
+    var filterHint = document.getElementById('mtFilterHint');
+    var clearBtn = document.getElementById('mtClearFilters');
+    var sectionPending = document.getElementById('mtSectionPending');
+    var sectionDone = document.getElementById('mtSectionDone');
+    var listPending = document.getElementById('mtListPending');
+    var listDone = document.getElementById('mtListDone');
+    var emptyPending = document.getElementById('mtEmptyPending');
+    var emptyDone = document.getElementById('mtEmptyDone');
+    var countPending = document.getElementById('mtCountPending');
+    var countDone = document.getElementById('mtCountDone');
+
+    var subjects = {};
+    document.querySelectorAll('.mt-task-card[data-mt-bucket]').forEach(function (card) {
+        var key = card.getAttribute('data-subject') || '';
+        if (!key) return;
+        var label = card.querySelector('.tk-meta-item');
+        subjects[key] = label ? label.textContent.trim() : key;
+        var accent = resolveAccent(key);
+        card.style.setProperty('--tk-accent', accent);
+    });
+    Object.keys(subjects).sort().forEach(function (key) {
+        var opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = subjects[key];
+        subjectSelect.appendChild(opt);
+    });
+
+    function cardMatches(card) {
+        var subject = subjectSelect.value;
+        var month = monthInput.value;
+        var query = (titleSearch.value || '').trim().toLowerCase();
+        if (subject && card.getAttribute('data-subject') !== subject) return false;
+        if (month && card.getAttribute('data-mt-month') !== month) return false;
+        if (query && (card.getAttribute('data-mt-title') || '').indexOf(query) === -1) return false;
+        return true;
+    }
+
+    function sortCards(listEl) {
+        if (!listEl) return;
+        var cards = Array.prototype.slice.call(listEl.querySelectorAll('.mt-task-card[data-mt-bucket]'));
+        var mode = sortSelect.value;
+        cards.sort(function (a, b) {
+            if (mode === 'title-asc') {
+                return (a.getAttribute('data-mt-title') || '').localeCompare(b.getAttribute('data-mt-title') || '');
+            }
+            var da = parseInt(a.getAttribute('data-mt-due') || '0', 10);
+            var db = parseInt(b.getAttribute('data-mt-due') || '0', 10);
+            return mode === 'due-desc' ? db - da : da - db;
+        });
+        cards.forEach(function (card) { listEl.appendChild(card); });
+    }
+
+    function updateList(listEl, emptyEl, countEl, bucket) {
+        var visible = 0;
+        if (!listEl) return 0;
+        listEl.querySelectorAll('.mt-task-card[data-mt-bucket="' + bucket + '"]').forEach(function (card) {
+            var show = cardMatches(card);
+            card.style.display = show ? '' : 'none';
+            if (show) visible += 1;
+        });
+        var hasAny = listEl.querySelectorAll('.mt-task-card[data-mt-bucket="' + bucket + '"]').length > 0;
+        var filtering = Boolean(subjectSelect.value || monthInput.value || titleSearch.value.trim());
+        if (emptyEl) {
+            emptyEl.hidden = !(hasAny && visible === 0 && filtering);
+        }
+        var staticEmpty = listEl.querySelector('.mt-empty-static');
+        if (staticEmpty) staticEmpty.style.display = hasAny ? 'none' : '';
+        if (countEl) countEl.textContent = String(visible);
+        return visible;
+    }
+
+    function applyFilters() {
+        sortCards(listPending);
+        sortCards(listDone);
+        var visiblePending = updateList(listPending, emptyPending, countPending, 'pending');
+        var visibleDone = updateList(listDone, emptyDone, countDone, 'done');
+
+        var filtering = Boolean(subjectSelect.value || monthInput.value || titleSearch.value.trim());
+        clearBtn.hidden = !filtering;
+
+        var parts = [];
+        if (subjectSelect.value && subjects[subjectSelect.value]) {
+            parts.push('Asignatura: ' + subjects[subjectSelect.value]);
+        }
+        if (monthInput.value) {
+            var p = monthInput.value.split('-');
+            parts.push('Mes: ' + p[1] + '/' + p[0]);
+        }
+        if (titleSearch.value.trim()) {
+            parts.push('Nombre: “' + titleSearch.value.trim() + '”');
+        }
+        if (parts.length) {
+            filterHint.textContent = 'Mostrando ' + (visiblePending + visibleDone) + ' tarea(s) · ' + parts.join(' · ');
+            filterHint.hidden = false;
+        } else {
+            filterHint.hidden = true;
+        }
+    }
+
+    function clearFilters() {
+        subjectSelect.value = '';
+        monthInput.value = '';
+        titleSearch.value = '';
+        sortSelect.value = 'due-asc';
+        applyFilters();
+    }
+
+    subjectSelect.addEventListener('change', applyFilters);
+    monthInput.addEventListener('change', applyFilters);
+    sortSelect.addEventListener('change', applyFilters);
+    titleSearch.addEventListener('input', applyFilters);
+    clearBtn.addEventListener('click', clearFilters);
+
+    applyFilters();
+
+    var modal = document.getElementById('modalEntrega');
+
+    function applyModalAccent(subjectName) {
+        var accent = resolveAccent(subjectName || '');
+        modal.style.setProperty('--mt-modal-accent', accent);
+        document.getElementById('tareaTituloMuestra').style.color = accent;
+    }
+
+    window.abrirModalEntrega = function (id, titulo, asignatura) {
+        document.getElementById('tarea_id').value = id;
+        document.getElementById('tareaTituloMuestra').textContent = titulo;
+        applyModalAccent(asignatura);
+        modal.style.display = 'flex';
+    };
+
+    window.cerrarModal = function () {
         modal.style.display = 'none';
         document.getElementById('formEntrega').reset();
-    }
+        modal.style.removeProperty('--mt-modal-accent');
+        document.getElementById('tareaTituloMuestra').style.color = '';
+    };
 
     window.onclick = function (event) {
-        if (event.target == modal) { cerrarModal(); }
-    }
+        if (event.target === modal) {
+            cerrarModal();
+        }
+    };
 
     document.getElementById('formEntrega').addEventListener('submit', function (e) {
         e.preventDefault();
-        const btn = document.getElementById('btnEnviar');
+        var btn = document.getElementById('btnEnviar');
         btn.disabled = true;
         btn.textContent = 'Enviando...';
 
-        const formData = new FormData(this);
+        var formData = new FormData(this);
 
-        // Endpoint a crear
         fetch('{% url "api_estudiante_entregar_tarea" %}', {
             method: 'POST',
             headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') },
             body: formData
         })
-            .then(r => r.json())
-            .then(data => {
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
                 if (data.success || data.status === 'success') {
                     window.location.reload();
                 } else {
                     alert(data.error || 'Error al enviar la tarea');
                     btn.disabled = false;
-                    btn.textContent = 'Subir Entrega';
+                    btn.textContent = 'Subir entrega';
                 }
             })
-            .catch(() => {
+            .catch(function () {
                 alert('Error de red');
                 btn.disabled = false;
-                btn.textContent = 'Subir Entrega';
+                btn.textContent = 'Subir entrega';
             });
     });
+})();
 </script>
+
 {% include 'estudiante/_alumno_wrap_end.html' %}

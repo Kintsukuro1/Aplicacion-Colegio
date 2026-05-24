@@ -331,6 +331,12 @@ class PerfilEstudiante(models.Model):
     # Información adicional
     observaciones = models.TextField(null=True, blank=True)
     foto_url = models.CharField(max_length=255, null=True, blank=True)
+    foto_perfil = models.ImageField(
+        upload_to='perfiles/estudiantes/%Y/%m/',
+        null=True,
+        blank=True,
+        help_text='Fotografía de perfil del estudiante',
+    )
     
     # Metadata
     fecha_creacion = models.DateTimeField(auto_now_add=True)

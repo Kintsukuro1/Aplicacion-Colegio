@@ -63,21 +63,31 @@ def lista_comunicados(request):
     # Obtener comunicados usando el service
     comunicados = ComunicadosService.get_comunicados_for_user(request.user)
 
-    # Aplicar filtros
+    shell_context = _build_dashboard_shell_context(request)
+    rol_normalizado = str(shell_context.get('rol', '')).lower()
+
+    if rol_normalizado == 'estudiante':
+        alumno_ctx = ComunicadosService.get_alumno_comunicados_context(
+            request.user,
+            request.GET,
+        )
+        context = {
+            'tipos': Comunicado.TIPOS,
+            **alumno_ctx,
+            **shell_context,
+        }
+        return render(request, 'comunicados/lista_comunicados_alumno.html', context)
+
     tipo_filtro = request.GET.get('tipo')
     comunicados = ComunicadosService.filter_comunicados_by_type(comunicados, tipo_filtro)
-
-    # Marcar como leídos si requieren confirmación
     ComunicadosService.mark_comunicados_as_read_for_user(request.user, comunicados)
 
-    # Dashboard context variables (required by dashboard.html template)
     context = {
         'comunicados': comunicados,
         'tipo_filtro': tipo_filtro,
         'tipos': Comunicado.TIPOS,
-        **_build_dashboard_shell_context(request),
+        **shell_context,
     }
-
     return render(request, 'comunicados/lista_comunicados.html', context)
 
 
@@ -112,19 +122,34 @@ def detalle_comunicado(request, comunicado_id):
         try:
             ComunicadosService.confirm_attendance_to_comunicado(request.user, comunicado)
             messages.success(request, '✓ Asistencia confirmada.')
-            return redirect('detalle_comunicado', comunicado_id=comunicado_id)
+            return redirect('comunicados:detalle', comunicado_id=comunicado_id)
         except Exception as e:
             messages.error(request, f'Error al confirmar asistencia: {str(e)}')
 
     # Obtener confirmación del usuario usando el service
     confirmacion = ComunicadosService.get_user_confirmacion_for_comunicado(request.user, comunicado)
 
+    shell_context = _build_dashboard_shell_context(request)
+    rol_normalizado = str(shell_context.get('rol', '')).lower()
+
+    if rol_normalizado == 'estudiante':
+        alumno_ctx = ComunicadosService.get_alumno_comunicados_context(
+            request.user,
+            request.GET,
+        )
+        context = {
+            'comunicado': comunicado,
+            'confirmacion': confirmacion,
+            **alumno_ctx,
+            **shell_context,
+        }
+        return render(request, 'comunicados/detalle_comunicado_alumno.html', context)
+
     context = {
         'comunicado': comunicado,
         'confirmacion': confirmacion,
-        **_build_dashboard_shell_context(request),
+        **shell_context,
     }
-
     return render(request, 'comunicados/detalle_comunicado.html', context)
 
 

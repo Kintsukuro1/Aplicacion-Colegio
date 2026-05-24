@@ -167,6 +167,9 @@ Inicio, Mis Clases, Mi Horario, Tareas Pendientes (`tareas.html`), Calendario, M
 ### Cache busting
 - `dashboard_alumno.css?v=20260523`
 
+### Mis Clases alineada a Inicio (2026-05-26)
+- `estudiante/mis_clases.html` + `estudiante/mis_clases.css`: hero, grid 70/30, cards compactas con franja de color fija, panel evaluaciones y horario de hoy.
+
 ### Ajustes inicio (2026-05-23)
 - Timeline sin texto `{% cycle %}` suelto; solo badges CLASE/TAREA/etc.
 - Métricas con colores #5ba8d4 / #f97316 / #22c55e / #8b5cf6 y barras de progreso
@@ -177,3 +180,118 @@ Inicio, Mis Clases, Mi Horario, Tareas Pendientes (`tareas.html`), Calendario, M
 1. Login como estudiante → `?pagina=inicio`
 2. Navegar por el menú lateral en cada sección
 3. Ctrl+F5 si no carga el CSS
+
+---
+
+## Portal estudiante — vistas recientes (2026-05-24)
+
+> Bloque de trabajo del portal alumno: **HTML/CSS + backend** en perfil y comunicados. Otras páginas del mismo estilo (hero `mc-` / `ma-` / `mm-`) se hicieron en la misma línea visual.
+
+### Resumen en una línea
+
+Inicio, Mis Clases, **Mi Asistencia**, **Comunicados** (lista y detalle), **Mensajes** y **Mi Perfil** comparten sidebar celeste, hero con métricas reales y datos desde la BD (no placeholders).
+
+### Otras páginas ya alineadas (misma sesión / línea visual)
+
+| Vista | Plantilla / CSS | Nota breve |
+|-------|-----------------|------------|
+| Mi Asistencia | `asistencia.html`, `asistencia.css` (`ma-`) | Filtros mes/materia/estado; métricas y registros reales |
+| Mensajes | `mensajeria.html`, `mensajeria.css` (`mm-`) | Bandeja 3 columnas; colores por asignatura; envío desde detalle de clase |
+| Mis Clases | `mis_clases.html`, `mis_clases.css` (`mc-` clases) | Ya documentado arriba (2026-05-26) |
+
+---
+
+## Mi Perfil + Comunicados + sidebar (detalle 2026-05-24)
+
+> Esta parte **sí tocó backend** (perfil, comunicados, migración).
+
+### Mi Perfil (`?pagina=perfil`)
+
+| Qué | Detalle |
+|-----|---------|
+| Plantilla nueva | `estudiante/mi_perfil.html` + `estudiante/perfil_estudiante.css` (prefijo `mp-`) |
+| Hero | Promedio, asistencia, total calificaciones y asignaturas **desde BD** (no números fijos) |
+| Foto | El alumno puede subir/quitar foto (JPG/PNG/WebP, máx. 5 MB) |
+| Editable | Email, teléfonos, dirección, contacto de emergencia, contraseña |
+| Solo lectura | RUT, apoderado, curso, ciclo, datos académicos del colegio |
+| Backend | Campo `foto_perfil` en `PerfilEstudiante` + migración `accounts.0012` |
+| Servicios | `ProfileService`: `update_own_student_profile`, `upload_student_photo`, `change_own_student_password` (sin permiso admin) |
+
+**Migración obligatoria en cada máquina:** `python manage.py migrate accounts`
+
+**Media en desarrollo:** fotos en `/media/` (`core/urls.py` solo con `DEBUG=True`).
+
+---
+
+### Comunicados — lista (`/comunicados/`)
+
+| Qué | Detalle |
+|-----|---------|
+| Plantilla | `comunicados/lista_comunicados_alumno.html` + `estudiante/comunicados.css` (`mc-`) |
+| Métricas hero | Sin leer / Leídos / Urgentes / Total **reales** por alumno |
+| Lista “Todos” | Muestra siempre los comunicados (antes, si todo estaba leído, solo salía el mensaje verde) |
+| Chips | Siempre visible **Sin leer (N)** aunque N sea 0 |
+| Secciones | Urgentes → Sin leer → Leídos (sin filtros activos) |
+| Lectura | Al abrir el detalle se marca como leído |
+
+---
+
+### Comunicados — detalle (`/comunicados/<id>/`)
+
+| Qué | Detalle |
+|-----|---------|
+| Problema corregido | Antes usaba `detalle_comunicado.html` del dashboard → fondo rojo y otra tipografía |
+| Plantilla alumno | `comunicados/detalle_comunicado_alumno.html` — mismo layout que lista (sidebar + hero) |
+| Contexto | Incluye `nombre_usuario` y menú (antes el sidebar quedaba sin nombre) |
+| Navegación | Hero + breadcrumb `← Comunicados / Detalle` |
+| Confirmación | Caja para confirmar asistencia si el comunicado lo pide |
+
+Profesor/admin siguen con `comunicados/detalle_comunicado.html` (sin cambio de layout).
+
+---
+
+### Sidebar alumno (`_sidebar.html`)
+
+- Muestra **nombre** aunque falte variable de contexto (`user.get_full_name` de respaldo).
+- Muestra **foto de perfil** si existe (`foto_perfil` o `foto_perfil_url`).
+- Estilos foto: `dashboard_alumno.css` → `.alumno-sidebar__avatar--photo`.
+
+---
+
+### Archivos clave (para revisar en Git)
+
+**Frontend**
+- `templates/estudiante/mi_perfil.html`
+- `static/css/estudiante/perfil_estudiante.css`
+- `templates/comunicados/lista_comunicados_alumno.html`
+- `templates/comunicados/detalle_comunicado_alumno.html`
+- `templates/comunicados/_comunicado_alumno_item.html`
+- `static/css/estudiante/comunicados.css`
+- `templates/estudiante/_sidebar.html`
+
+**Backend**
+- `backend/common/utils/permissions.py` → estudiante `perfil` → `mi_perfil.html`
+- `backend/apps/core/services/dashboard_context_service.py` → contexto perfil alumno
+- `backend/apps/accounts/services/profile_service.py` + `views/profile.py`
+- `backend/apps/comunicados/views/comunicados.py` + `services/comunicados_service.py`
+- `backend/apps/accounts/models.py` + migración `0012`
+
+---
+
+### Cómo probar (estudiante demo)
+
+1. `python manage.py migrate` (si falta `0012`).
+2. Login alumno (ej. `alumno1@colegio.cl`).
+3. **Mi Perfil:** `dashboard/?pagina=perfil` — subir foto, guardar contacto.
+4. **Comunicados:** menú Comunicados → ver lista en “Todos” → abrir uno → volver; contadores deben cuadrar.
+5. **Ctrl+F5** si no se ven estilos (`comunicados.css?v=20260621`, `perfil_estudiante.css`).
+
+---
+
+### Coordinación con el equipo
+
+- Posibles conflictos de merge: `dashboard_context_service.py`, `permissions.py`, `comunicados/views/comunicados.py`.
+- La plantilla vieja `compartido/perfil.html` **sigue** para otros roles; no se borró.
+- `estudiante/perfil.html` antigua sigue en el repo (no es la del dashboard actual).
+
+

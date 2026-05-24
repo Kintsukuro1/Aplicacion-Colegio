@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from backend.apps.mensajeria.services import MensajeriaService
-from backend.common.utils.auth_helpers import normalizar_rol
+from backend.apps.mensajeria.views.bandeja import _get_clases_for_user
 from backend.common.utils.dashboard_helpers import build_dashboard_context
 
 
@@ -52,16 +52,28 @@ def ver_conversacion(request, id_conversacion: int):
         return redirect_response
 
     otro = conversacion.get_otro_participante(request.user)
+    is_estudiante = hasattr(request.user, 'perfil_estudiante')
 
-    context.update(
-        {
+    if is_estudiante:
+        context.update(
+            MensajeriaService.get_alumno_bandeja_context(
+                request.user,
+                request.GET,
+                conversacion_activa_id=conversacion.id_conversacion,
+            ),
+        )
+    else:
+        context.update({
             'conversaciones': MensajeriaService.get_conversaciones_data(request.user),
-            'conversacion_actual': {
-                'id': conversacion.id_conversacion,
-                'destinatario': otro,
-                'clase': conversacion.clase,
-            },
-            'mensajes': mensajes,
-        }
-    )
+        })
+
+    context.update({
+        'conversacion_actual': {
+            'id': conversacion.id_conversacion,
+            'destinatario': otro,
+            'clase': conversacion.clase,
+        },
+        'mensajes': mensajes,
+        'clases': list(_get_clases_for_user(request.user)) if is_estudiante else context.get('clases', []),
+    })
     return render(request, 'dashboard.html', context)

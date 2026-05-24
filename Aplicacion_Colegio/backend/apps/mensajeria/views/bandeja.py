@@ -106,12 +106,23 @@ def bandeja_mensajes(request):
     else:
         clases_list = list(Clase.objects.filter(id__in=clases).order_by('nombre'))
 
-    context.update(
-        {
+    clases = list(_get_clases_for_user(request.user))
+    is_estudiante = hasattr(request.user, 'perfil_estudiante')
+
+    if is_estudiante:
+        context.update(
+            MensajeriaService.get_alumno_bandeja_context(request.user, request.GET),
+        )
+        context.update({
+            'conversacion_actual': None,
+            'mensajes': [],
+            'clases': clases,
+        })
+    else:
+        context.update({
             'conversaciones': MensajeriaService.get_conversaciones_data(request.user),
             'conversacion_actual': None,
             'mensajes': [],
-            'clases': list(_get_clases_for_user(request.user)),
-        }
-    )
+            'clases': clases,
+        })
     return render(request, 'dashboard.html', context)

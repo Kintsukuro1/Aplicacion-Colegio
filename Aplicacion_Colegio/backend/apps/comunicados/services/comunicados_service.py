@@ -177,6 +177,124 @@ class ComunicadosService:
         return comunicados
 
     @staticmethod
+    def _comunicado_es_urgente(comunicado) -> bool:
+        return comunicado.tipo == 'urgente' or comunicado.es_prioritario
+
+    @staticmethod
+    def _get_leidos_ids_for_user(user, comunicado_ids) -> set:
+        from ..models import ConfirmacionLectura
+
+        if not comunicado_ids:
+            return set()
+        return set(
+            ConfirmacionLectura.objects.filter(
+                usuario=user,
+                comunicado_id__in=comunicado_ids,
+                leido=True,
+            ).values_list('comunicado_id', flat=True)
+        )
+
+    @staticmethod
+    def get_alumno_comunicados_context(user, query_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Contexto para la lista de comunicados del estudiante: métricas, secciones y filtros.
+        """
+        query_params = query_params or {}
+        tipo_filtro = (query_params.get('tipo') or '').strip()
+        estado_filtro = (query_params.get('estado') or '').strip()
+        busqueda = (query_params.get('q') or '').strip()
+
+        comunicados_qs = ComunicadosService.get_comunicados_for_user(user)
+        comunicados_tipo = ComunicadosService.filter_comunicados_by_type(comunicados_qs, tipo_filtro)
+        comunicados_list = list(comunicados_tipo)
+        comunicado_ids = [c.id_comunicado for c in comunicados_list]
+        leidos_ids = ComunicadosService._get_leidos_ids_for_user(user, comunicado_ids)
+
+        def _item_dict(comunicado):
+            esta_leido = comunicado.id_comunicado in leidos_ids
+            return {
+                'comunicado': comunicado,
+                'esta_leido': esta_leido,
+                'es_urgente': ComunicadosService._comunicado_es_urgente(comunicado),
+            }
+
+        todos_items = [_item_dict(c) for c in comunicados_list]
+
+        sin_leer_total = sum(1 for i in todos_items if not i['esta_leido'])
+        leidos_total = sum(1 for i in todos_items if i['esta_leido'])
+        urgentes_total = sum(1 for i in todos_items if i['es_urgente'])
+        total = len(todos_items)
+
+        items_filtrados = todos_items
+        if estado_filtro == 'sin_leer':
+            items_filtrados = [i for i in items_filtrados if not i['esta_leido']]
+        elif estado_filtro == 'leidos':
+            items_filtrados = [i for i in items_filtrados if i['esta_leido']]
+
+        if busqueda:
+            q_lower = busqueda.lower()
+            items_filtrados = [
+                i for i in items_filtrados
+                if q_lower in i['comunicado'].titulo.lower()
+                or q_lower in (i['comunicado'].contenido or '').lower()
+            ]
+
+        usar_secciones = not estado_filtro and not busqueda
+        comunicados_prioritarios = []
+        comunicados_sin_leer = []
+        comunicados_leidos = []
+
+        if usar_secciones:
+            for item in items_filtrados:
+                if item['esta_leido']:
+                    comunicados_leidos.append(item)
+                elif item['es_urgente']:
+                    comunicados_prioritarios.append(item)
+                else:
+                    comunicados_sin_leer.append(item)
+        else:
+            comunicados_filtrados = items_filtrados
+
+        filtros_activos = bool(tipo_filtro or estado_filtro or busqueda)
+        todo_leido = total > 0 and sin_leer_total == 0
+
+        eventos_proximos = sorted(
+            [i for i in todos_items if i['comunicado'].fecha_evento],
+            key=lambda i: i['comunicado'].fecha_evento,
+        )[:5]
+
+        hero_subtitle = 'Información oficial, circulares y avisos del colegio'
+        if sin_leer_total:
+            hero_subtitle = f'Tienes {sin_leer_total} comunicado(s) pendiente(s) de revisar'
+
+        return {
+            'hero_subtitle_comunicados': hero_subtitle,
+            'eventos_proximos': eventos_proximos,
+            'comunicados_stats': {
+                'sin_leer': sin_leer_total,
+                'leidos': leidos_total,
+                'urgentes': urgentes_total,
+                'total': total,
+            },
+            'sin_leer_count': sin_leer_total,
+            'leidos_count': leidos_total,
+            'urgentes_count': urgentes_total,
+            'total_comunicados': total,
+            'tipo_filtro': tipo_filtro,
+            'estado_filtro': estado_filtro,
+            'busqueda': busqueda,
+            'filtros_activos': filtros_activos,
+            'usar_secciones': usar_secciones,
+            'todo_leido': todo_leido,
+            'comunicados_prioritarios': comunicados_prioritarios,
+            'comunicados_sin_leer': comunicados_sin_leer,
+            'comunicados_leidos': comunicados_leidos,
+            'comunicados_filtrados': items_filtrados if not usar_secciones else [],
+            'tiene_comunicados': total > 0,
+            'hay_resultados': len(items_filtrados) > 0,
+        }
+
+    @staticmethod
     def mark_comunicados_as_read_for_user(user, comunicados):
         """
         Marca comunicados como leídos para un usuario (si requieren confirmación)
@@ -409,12 +527,11 @@ class ComunicadosService:
         ):
             return  # Admins no marcan como leídos
 
-        if comunicado.requiere_confirmacion:
-            conf, created = ConfirmacionLectura.objects.get_or_create(
-                comunicado=comunicado,
-                usuario=user
-            )
-            conf.marcar_como_leido()
+        conf, created = ConfirmacionLectura.objects.get_or_create(
+            comunicado=comunicado,
+            usuario=user,
+        )
+        conf.marcar_como_leido()
 
     @staticmethod
     def confirm_attendance_to_comunicado(user, comunicado) -> bool:
