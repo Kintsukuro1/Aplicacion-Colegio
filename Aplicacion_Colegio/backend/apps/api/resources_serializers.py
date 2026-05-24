@@ -240,6 +240,7 @@ class EvaluationCompactSerializer(serializers.ModelSerializer):
 
 class GradeSerializer(serializers.ModelSerializer):
     colegio_id = serializers.IntegerField(read_only=True)
+    evaluacion_nombre = serializers.CharField(source='evaluacion.nombre', read_only=True)
     estudiante_nombre = serializers.CharField(source='estudiante.get_full_name', read_only=True)
 
     class Meta:
@@ -248,6 +249,7 @@ class GradeSerializer(serializers.ModelSerializer):
             'id_calificacion',
             'colegio_id',
             'evaluacion',
+            'evaluacion_nombre',
             'estudiante',
             'estudiante_nombre',
             'nota',
@@ -259,6 +261,7 @@ class GradeSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id_calificacion',
             'colegio_id',
+            'evaluacion_nombre',
             'estudiante_nombre',
             'registrado_por',
             'actualizado_por',

@@ -1285,6 +1285,7 @@ class DashboardContextService:
         from backend.apps.cursos.models import Clase, ClaseEstudiante
         from backend.apps.academico.models import Evaluacion, Calificacion
         from django.db.models import Avg, Count
+        from datetime import date
 
         clases = Clase.objects.filter(
             profesor=user,
@@ -1299,14 +1300,14 @@ class DashboardContextService:
             activa=True
         ).count()
 
-        total_calificaciones = Calificacion.objects.filter(
+        total_calificaciones_general = Calificacion.objects.filter(
             evaluacion__clase__profesor=user,
             evaluacion__clase__colegio=colegio
         ).count()
 
         # Calcular promedio general
         promedio_general = 0
-        if total_calificaciones > 0:
+        if total_calificaciones_general > 0:
             avg_result = Calificacion.objects.filter(
                 evaluacion__clase__profesor=user,
                 evaluacion__clase__colegio=colegio
@@ -1314,11 +1315,17 @@ class DashboardContextService:
             promedio_general = round(avg_result['avg_nota'] or 0, 1)
 
         filtro_clase_id = request_get_params.get('clase_id', '')
+        modo = request_get_params.get('modo', 'evaluaciones')
+        evaluacion_filtro_id = request_get_params.get('evaluacion_id', 'all')
         if not filtro_clase_id and clases.exists():
             filtro_clase_id = str(clases.first().id)
 
         evaluaciones = []
         estudiantes_con_notas = []
+        calificaciones_matriz = []
+        calificaciones_listado = []
+        evaluacion_seleccionada = None
+        evaluaciones_resumen = ''
         clase_seleccionada = None
 
         if filtro_clase_id:
@@ -1336,54 +1343,120 @@ class DashboardContextService:
                 for evaluacion in evaluaciones_qs:
                     # Calcular promedio y contar calificaciones
                     califs = Calificacion.objects.filter(evaluacion=evaluacion)
-                    total_calificaciones = califs.count()
+                    total_calificaciones_evaluacion = califs.count()
                     
                     promedio_evaluacion = 0
-                    if total_calificaciones > 0:
+                    if total_calificaciones_evaluacion > 0:
                         avg_result = califs.aggregate(avg_nota=Avg('nota'))
                         promedio_evaluacion = round(avg_result['avg_nota'] or 0, 1)
                     
                     # Agregar atributos calculados a la evaluación
-                    evaluacion.total_calificaciones = total_calificaciones
+                    evaluacion.total_calificaciones = total_calificaciones_evaluacion
                     evaluacion.promedio_calculado = promedio_evaluacion
                     evaluaciones.append(evaluacion)
 
+                evaluaciones_resumen = ', '.join(evaluacion.nombre for evaluacion in evaluaciones)
+                evaluaciones_by_id = {str(evaluacion.id_evaluacion): evaluacion for evaluacion in evaluaciones}
+                if evaluacion_filtro_id != 'all':
+                    evaluacion_seleccionada = evaluaciones_by_id.get(str(evaluacion_filtro_id))
+
                 # Obtener estudiantes de la clase
                 estudiantes_rel = ClaseEstudiante.objects.filter(
-                    clase=clase_seleccionada
-                ).select_related('estudiante')
+                    clase=clase_seleccionada,
+                    activo=True
+                ).select_related('estudiante').order_by(
+                    'estudiante__apellido_paterno',
+                    'estudiante__apellido_materno',
+                    'estudiante__nombre'
+                )
+
+                calificaciones = Calificacion.objects.filter(
+                    evaluacion__in=evaluaciones
+                ).select_related('evaluacion', 'estudiante')
+                calificaciones_map = {
+                    (calificacion.evaluacion_id, calificacion.estudiante_id): calificacion
+                    for calificacion in calificaciones
+                }
 
                 # Para cada estudiante, obtener calificaciones
                 for estudiante_rel in estudiantes_rel:
                     estudiante = estudiante_rel.estudiante
                     calificaciones_estudiante = []
+                    tiene_calificaciones = False
+                    fecha_ultima = None
 
                     for evaluacion in evaluaciones:
-                        calif = Calificacion.objects.filter(
-                            evaluacion=evaluacion,
-                            estudiante=estudiante
-                        ).first()
+                        calif = calificaciones_map.get((evaluacion.id_evaluacion, estudiante.id))
+                        nota = calif.nota if calif else None
+                        if calif:
+                            tiene_calificaciones = True
+                            if fecha_ultima is None or calif.fecha_creacion > fecha_ultima:
+                                fecha_ultima = calif.fecha_creacion
                         calificaciones_estudiante.append({
                             'evaluacion': evaluacion,
-                            'nota': calif.nota if calif else None
+                            'calificacion': calif,
+                            'nota': nota,
+                            'fecha': calif.fecha_creacion if calif else None,
+                            'es_baja': nota is not None and nota < 4
                         })
 
-                    estudiantes_con_notas.append({
+                    fila_estudiante = {
                         'estudiante': estudiante,
-                        'calificaciones': calificaciones_estudiante
-                    })
+                        'calificaciones': calificaciones_estudiante,
+                        'tiene_calificaciones': tiene_calificaciones,
+                        'fecha_ultima': fecha_ultima
+                    }
+                    calificaciones_matriz.append(fila_estudiante)
+
+                    if evaluacion_seleccionada:
+                        calificacion_seleccionada = calificaciones_map.get(
+                            (evaluacion_seleccionada.id_evaluacion, estudiante.id)
+                        )
+                        nota_seleccionada = calificacion_seleccionada.nota if calificacion_seleccionada else None
+                        fila_calificar = {
+                            'estudiante': estudiante,
+                            'calificacion': calificacion_seleccionada,
+                            'nota': nota_seleccionada,
+                            'fecha_registro': calificacion_seleccionada.fecha_creacion if calificacion_seleccionada else None,
+                            'es_baja': nota_seleccionada is not None and nota_seleccionada < 4
+                        }
+                        estudiantes_con_notas.append(fila_calificar)
+                        calificaciones_listado.append({
+                            **fila_calificar,
+                            'evaluacion': evaluacion_seleccionada,
+                        })
+
+                if evaluacion_filtro_id == 'all':
+                    for fila in calificaciones_matriz:
+                        for item in fila['calificaciones']:
+                            if item['calificacion']:
+                                calificaciones_listado.append({
+                                    'estudiante': fila['estudiante'],
+                                    'evaluacion': item['evaluacion'],
+                                    'calificacion': item['calificacion'],
+                                    'nota': item['nota'],
+                                    'fecha_registro': item['fecha'],
+                                    'es_baja': item['es_baja'],
+                                })
             except Exception:
                 pass
 
         return {
             'clases': clases,
             'filtro_clase_id': filtro_clase_id,
+            'modo': modo,
+            'evaluacion_filtro_id': evaluacion_filtro_id,
             'evaluaciones': evaluaciones,
+            'evaluaciones_resumen': evaluaciones_resumen,
             'estudiantes_con_notas': estudiantes_con_notas,
+            'calificaciones_matriz': calificaciones_matriz,
+            'calificaciones_listado': calificaciones_listado,
+            'evaluacion_seleccionada': evaluacion_seleccionada,
             'clase_seleccionada': clase_seleccionada,
+            'fecha_hoy': date.today().strftime('%Y-%m-%d'),
             # Estadísticas generales para dashboard
             'total_evaluaciones': total_evaluaciones,
-            'total_calificaciones': total_calificaciones,
+            'total_calificaciones': total_calificaciones_general,
             'promedio_general': promedio_general,
         }
 

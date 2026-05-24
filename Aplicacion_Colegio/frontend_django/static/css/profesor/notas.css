@@ -176,6 +176,44 @@
     gap: 10px;
 }
 
+.filtro-evaluacion {
+    min-width: min(100%, 520px);
+}
+
+.evaluation-filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.evaluation-filter-buttons a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.evaluation-filter-buttons a:hover {
+    border-color: #6366f1;
+    background: #eef2ff;
+    color: #4338ca;
+}
+
+.evaluation-filter-buttons a.active,
+.evaluation-filter-buttons a[aria-pressed="true"] {
+    border-color: #6366f1;
+    background: #6366f1;
+    color: #fff;
+}
+
 .btn-filtrar,
 .btn-limpiar,
 .btn-nueva-evaluacion {
@@ -322,6 +360,61 @@
     color: #1e293b;
 }
 
+.tabla-scroll {
+    overflow-x: auto;
+}
+
+.tabla-calificaciones-resumen {
+    margin-top: 24px;
+}
+
+.section-card-head {
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.section-card-head h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.15rem;
+}
+
+.section-card-head p {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 0.92rem;
+}
+
+.tabla-calificaciones-matriz {
+    min-width: 920px;
+}
+
+.gradebook-note-head {
+    display: grid;
+    gap: 2px;
+    min-width: 88px;
+}
+
+.gradebook-note-head small {
+    max-width: 140px;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 0.68rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    text-transform: none;
+    white-space: nowrap;
+}
+
+.evaluaciones-cell {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* ===========================
    EVALUACIÓN NOMBRE
    =========================== */
@@ -406,6 +499,20 @@
     color: #dc2626;
 }
 
+.nota-valor {
+    font-weight: 700;
+}
+
+.nota-baja {
+    color: #dc2626 !important;
+    font-weight: 800;
+}
+
+.nota-vacia {
+    color: #94a3b8;
+    font-weight: 700;
+}
+
 .badge-estado {
     display: inline-block;
     padding: 6px 12px;
@@ -456,6 +563,31 @@
 .input-nota.input-error {
     border-color: #ef4444;
     background: #fee2e2;
+}
+
+.input-nota.nota-baja {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.btn-accion-texto {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: #ddd6fe;
+    color: #6d28d9;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-accion-texto:hover {
+    background: #6d28d9;
+    color: #fff;
 }
 
 /* ===========================

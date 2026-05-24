@@ -687,6 +687,43 @@ main {
   align-items: center;
 }
 
+.evaluation-filter-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.evaluation-filter-group > span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.evaluation-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.evaluation-filter-buttons button {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.evaluation-filter-buttons button:hover {
+  border-color: var(--brand);
+  background: var(--brand-muted);
+  color: var(--brand-strong);
+}
+
+.evaluation-filter-buttons button.active,
+.evaluation-filter-buttons button[aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
 .secondary {
   background: var(--bg-subtle);
   color: var(--ink);
@@ -759,6 +796,24 @@ tbody tr:last-child td {
 .actions-cell {
   display: flex;
   gap: 0.4rem;
+}
+
+.gradebook-note-head {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 5.5rem;
+}
+
+.gradebook-note-head small {
+  max-width: 9rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
 }
 
 .small {
@@ -1075,7 +1130,7 @@ tbody tr:last-child td {
 }
 
 .grade-low {
-  color: var(--danger);
+  color: #dc2626;
   font-weight: 700;
 }
 

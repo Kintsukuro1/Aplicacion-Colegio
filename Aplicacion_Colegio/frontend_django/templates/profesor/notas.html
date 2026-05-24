@@ -87,6 +87,34 @@
                 </a>
             </div>
         </form>
+
+        {% if clase_seleccionada and evaluaciones %}
+        <div class="filtro-group filtro-evaluacion">
+            <label>
+                <i class="fas fa-list-check"></i> EvaluaciÃ³n
+            </label>
+            <div class="evaluation-filter-buttons">
+                <a
+                    href="{% url 'dashboard' %}?pagina=notas&clase_id={{ clase_seleccionada.id }}&evaluacion_id=all"
+                    class="{% if evaluacion_filtro_id == 'all' %}active{% endif %}"
+                    aria-pressed="{% if evaluacion_filtro_id == 'all' %}true{% else %}false{% endif %}"
+                >
+                    Todas
+                </a>
+                {% for evaluacion in evaluaciones %}
+                    {% with eval_id=evaluacion.id_evaluacion|stringformat:"s" %}
+                    <a
+                        href="{% url 'dashboard' %}?pagina=notas&clase_id={{ clase_seleccionada.id }}&evaluacion_id={{ evaluacion.id_evaluacion }}"
+                        class="{% if evaluacion_filtro_id == eval_id %}active{% endif %}"
+                        aria-pressed="{% if evaluacion_filtro_id == eval_id %}true{% else %}false{% endif %}"
+                    >
+                        {{ evaluacion.nombre }} ({{ evaluacion.fecha_evaluacion|date:"d/m" }}){% if evaluacion_filtro_id == 'all' %} - {{ evaluacion.total_calificaciones }}{% endif %}
+                    </a>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
         
         {% if clase_seleccionada %}
         <button onclick="abrirModalCrearEvaluacion()" class="btn-nueva-evaluacion">
@@ -153,7 +181,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td>{{ evaluacion.fecha_evaluacion|date:"d/m/Y" }}</td>
+                        <td>{{ evaluacion.fecha_evaluacion|date:"d/m" }}</td>
                         <td>
                             <span class="badge-ponderacion">{{ evaluacion.ponderacion }}%</span>
                         </td>
@@ -219,6 +247,113 @@
             </div>
             {% endif %}
         </div>
+
+        {% if evaluaciones %}
+        <div class="tabla-container tabla-calificaciones-resumen">
+            <div class="section-card-head">
+                <div>
+                    <h3>Listado de Calificaciones</h3>
+                    <p>
+                        {% if evaluacion_filtro_id == 'all' %}
+                            Vista agrupada por estudiante con todas las evaluaciones de la clase.
+                        {% else %}
+                            Vista de calificaciones para la evaluaciÃ³n seleccionada.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            {% if evaluacion_filtro_id == 'all' %}
+            <div class="tabla-scroll">
+                <table class="tabla-calificaciones tabla-calificaciones-matriz">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Evaluaciones</th>
+                            <th>Estudiante</th>
+                            {% for evaluacion in evaluaciones %}
+                            <th title="{{ evaluacion.nombre }} {{ evaluacion.fecha_evaluacion|date:'d/m' }}">
+                                <span class="gradebook-note-head">
+                                    {% if forloop.first %}Nota{% else %}Nota {{ forloop.counter }}{% endif %}
+                                    <small>{{ evaluacion.nombre }}</small>
+                                </span>
+                            </th>
+                            {% endfor %}
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in calificaciones_matriz %}
+                        <tr>
+                            <td>{{ fila.estudiante.id }}</td>
+                            <td class="evaluaciones-cell" title="{{ evaluaciones_resumen }}">{{ evaluaciones_resumen|default:"-" }}</td>
+                            <td>{{ fila.estudiante.get_full_name }}</td>
+                            {% for item in fila.calificaciones %}
+                            <td class="col-nota">
+                                {% if item.nota %}
+                                    <span class="nota-valor {% if item.es_baja %}nota-baja{% endif %}">{{ item.nota }}</span>
+                                {% else %}
+                                    <span class="nota-vacia">-</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                            <td>{{ fila.fecha_ultima|date:"d/m"|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ evaluaciones|length|add:'4' }}">Sin registros</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="tabla-scroll">
+                <table class="tabla-calificaciones">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>EvaluaciÃ³n</th>
+                            <th>Estudiante</th>
+                            <th>Nota</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in calificaciones_listado %}
+                        <tr>
+                            <td>{% if item.calificacion %}{{ item.calificacion.id_calificacion }}{% else %}-{% endif %}</td>
+                            <td>{{ item.evaluacion.nombre }}</td>
+                            <td>{{ item.estudiante.get_full_name }}</td>
+                            <td>
+                                {% if item.nota %}
+                                    <span class="nota-valor {% if item.es_baja %}nota-baja{% endif %}">{{ item.nota }}</span>
+                                {% else %}
+                                    <span class="nota-vacia">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.fecha_registro|date:"d/m"|default:"-" }}</td>
+                            <td>
+                                <a
+                                    class="btn-accion-texto"
+                                    href="{% url 'dashboard' %}?pagina=notas&modo=calificar&clase_id={{ clase_seleccionada.id }}&evaluacion_id={{ item.evaluacion.id_evaluacion }}"
+                                >
+                                    Calificar
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">Sin registros</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
         
         {% elif modo == 'calificar' %}
         <!-- MODO: INGRESAR CALIFICACIONES -->
@@ -226,7 +361,7 @@
         <div class="info-evaluacion">
             <h3>📝 {{ evaluacion_seleccionada.nombre }}</h3>
             <p>
-                <strong>Fecha:</strong> {{ evaluacion_seleccionada.fecha_evaluacion|date:"d/m/Y" }}
+                <strong>Fecha:</strong> {{ evaluacion_seleccionada.fecha_evaluacion|date:"d/m" }}
                 <span class="separador">|</span>
                 <strong>Ponderación:</strong> {{ evaluacion_seleccionada.ponderacion }}%
                 <span class="separador">|</span>
@@ -277,7 +412,7 @@
                                 <input 
                                     type="number" 
                                     name="nota_{{ item.estudiante.id }}" 
-                                    class="input-nota"
+                                    class="input-nota {% if item.es_baja %}nota-baja{% endif %}"
                                     value="{% if item.nota %}{{ item.nota }}{% endif %}"
                                     min="1.0" 
                                     max="7.0" 
@@ -505,12 +640,15 @@ function actualizarEstadoNota(input) {
     
     if (!isNaN(nota) && nota >= 1.0 && nota <= 7.0) {
         if (nota >= 4.0) {
+            input.classList.remove('nota-baja');
             colEstado.innerHTML = '<span class="badge-estado estado-aprobado">✅ Aprobado</span>';
         } else {
+            input.classList.add('nota-baja');
             colEstado.innerHTML = '<span class="badge-estado estado-reprobado">❌ Reprobado</span>';
         }
         input.classList.remove('input-error');
     } else if (input.value === '') {
+        input.classList.remove('nota-baja');
         colEstado.innerHTML = '<span class="badge-estado estado-pendiente">⏳ Pendiente</span>';
         input.classList.remove('input-error');
     } else {

@@ -604,6 +604,10 @@ class TeacherGradeViewSet(CapabilityModelViewSet):
         if evaluacion_id:
             base_qs = base_qs.filter(evaluacion_id=evaluacion_id)
 
+        clase_id = self.request.query_params.get('clase_id')
+        if clase_id:
+            base_qs = base_qs.filter(evaluacion__clase_id=clase_id)
+
         estudiante_id = self.request.query_params.get('estudiante_id')
         if estudiante_id:
             base_qs = base_qs.filter(estudiante_id=estudiante_id)
