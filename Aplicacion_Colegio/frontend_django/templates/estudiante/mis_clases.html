@@ -1,199 +1,264 @@
 {% load static %}
 {% include 'estudiante/_alumno_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/estudiante/mis_clases.css' %}">
+<link rel="stylesheet" href="{% static 'css/estudiante/mis_clases.css' %}?v=20260527">
 
-<div class="courses-container">
-    {# Header Section #}
-    <div class="courses-header">
-        <div class="header-content">
-            <a href="{% url 'dashboard' %}" class="back-link">
-                <span class="back-icon">←</span> Volver al Dashboard
-            </a>
-            <h1 class="page-title">Mis Clases</h1>
-            <p class="page-subtitle">Administra tus asignaturas inscritas, accede a materiales de clase y revisa el progreso de tu semestre</p>
+    <!-- Hero (mismo bloque que Inicio; solo título y subtítulo de página) -->
+    <section class="alumno-hero" aria-label="Mis Clases">
+        <div class="alumno-hero__content">
+            <h1 class="alumno-hero__title">Mis Clases</h1>
+            <p class="alumno-hero__meta">
+                {% if curso_actual %}
+                    {{ curso_actual.nombre }} · {{ total_clases|default:"0" }} asignatura{{ total_clases|pluralize:"s" }} inscrita{{ total_clases|pluralize:"s" }}
+                {% else %}
+                    Consulta tus asignaturas, docentes y avance del semestre
+                {% endif %}
+            </p>
         </div>
-        <div class="search-container">
-            <input 
-                type="text" 
-                class="search-input" 
-                id="searchCourses" 
-                placeholder="Buscar cursos..."
-            >
-            <span class="search-icon">🔍</span>
-        </div>
-    </div>
-
-    <div class="courses-layout">
-        {# Sidebar Filters #}
-        <aside class="filters-sidebar">
-            <div class="filter-section">
-                <h3 class="filter-title">📅 SEMESTRE</h3>
-                <div class="filter-options">
-                    <label class="filter-option">
-                        <input type="radio" name="semester" value="current" checked>
-                        <span class="option-label">{{ curso_actual.nombre|default:"Semestre Actual" }} (Actual)</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <h3 class="filter-title">📚 DEPARTAMENTO</h3>
-                <div class="filter-options">
-                    <label class="filter-option">
-                        <input type="checkbox" name="dept" value="all" checked>
-                        <span class="option-label">Todas las Asignaturas</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <h3 class="filter-title">📊 PROGRESO</h3>
-                <div class="filter-options">
-                    <label class="filter-option">
-                        <input type="radio" name="progress" value="all" checked>
-                        <span class="option-label">Todos</span>
-                    </label>
-                    <label class="filter-option">
-                        <input type="radio" name="progress" value="in-progress">
-                        <span class="option-label">En Progreso</span>
-                    </label>
-                    <label class="filter-option">
-                        <input type="radio" name="progress" value="completed">
-                        <span class="option-label">Completado</span>
-                    </label>
-                </div>
-            </div>
-
-            <button class="reset-filters-btn" id="resetFilters">
-                🔄 Restablecer Filtros
-            </button>
-        </aside>
-
-        {# Main Content - Course Grid #}
-        <main class="courses-main">
-            {% if mis_clases %}
-                <div class="courses-grid" id="coursesGrid">
-                    {% for clase in mis_clases %}
-                    <div class="course-card" data-progress="{{ clase.progreso }}">
-                        {# Card Image with Gradient #}
-                        <div class="course-image {{ clase.gradiente }}">
-                            <span class="course-code">{{ clase.codigo }}</span>
-                        </div>
-
-                        {# Card Body #}
-                        <div class="course-body">
-                            <h3 class="course-title">{{ clase.asignatura }}</h3>
-                            <p class="course-instructor">
-                                <span class="instructor-icon">👨‍🏫</span>
-                                {{ clase.profesor_nombre }}
-                            </p>
-
-                            {# Schedule Section #}
-                            {% if clase.horarios_por_dia %}
-                            <div class="course-schedule">
-                                <div class="schedule-header">
-                                    <span class="schedule-icon">📅</span>
-                                    <span class="schedule-label">Horarios</span>
-                                </div>
-                                <div class="schedule-days">
-                                    {% for dia, info in clase.horarios_por_dia.items %}
-                                    <div class="schedule-day">
-                                        <span class="day-name">{{ dia|slice:":3" }}</span>
-                                        <span class="day-time">{{ info.hora_inicio }} - {{ info.hora_fin }}</span>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            {# Progress Bar #}
-                            <div class="progress-section">
-                                <div class="progress-header">
-                                    <span class="progress-label">PROGRESO DEL CURSO</span>
-                                    <span class="progress-percentage">{{ clase.progreso }}%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill {{ clase.color_progreso }}" style="width: {{ clase.progreso }}%;"></div>
-                                </div>
-                            </div>
-
-                            {# Action Button #}
-                            <a href="{% url 'ver_detalle_clase' clase.id_clase %}" class="course-btn">
-                                {% if clase.progreso < 15 %}
-                                    Comenzar Clase
-                                {% elif clase.progreso >= 90 %}
-                                    Revisar Materiales
-                                {% else %}
-                                    Continuar Aprendiendo
-                                {% endif %}
-                            </a>
-                        </div>
+        <div class="alumno-hero__metrics" aria-label="Resumen académico">
+            <article class="alumno-hero-metric alumno-hero-metric--clases">
+                <p class="alumno-hero-metric__value">{{ clases_hoy|default:"0" }}</p>
+                <p class="alumno-hero-metric__label">Clases Hoy</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--tareas">
+                <p class="alumno-hero-metric__value">{{ tareas_pendientes|default:"0" }}</p>
+                <p class="alumno-hero-metric__label">Tareas Pendientes</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--promedio">
+                <p class="alumno-hero-metric__value">{{ promedio_general|default:"0.0"|floatformat:1 }}</p>
+                <p class="alumno-hero-metric__label">Nota General</p>
+                <div class="alumno-hero-metric__foot">
+                    <div class="alumno-hero-metric__progress" role="presentation">
+                        <div class="alumno-hero-metric__progress-bar" style="width: {% widthratio promedio_general|default:0 7 100 %}%;"></div>
                     </div>
-                    {% endfor %}
                 </div>
-            {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">📚</div>
-                    <h3 class="empty-title">No hay clases disponibles</h3>
-                    <p class="empty-text">No se encontraron asignaturas activas para tu curso.</p>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--asistencia">
+                <p class="alumno-hero-metric__value">{{ porcentaje_asistencia|default:"100"|floatformat:0 }}%</p>
+                <p class="alumno-hero-metric__label">Asistencia</p>
+                <div class="alumno-hero-metric__foot">
+                    <div class="alumno-hero-metric__progress" role="presentation">
+                        <div class="alumno-hero-metric__progress-bar" style="width: {{ porcentaje_asistencia|default:100 }}%;"></div>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <div class="mc-layout">
+        <div class="mc-main">
+            <section class="alumno-section-card mc-panel" aria-label="Listado de asignaturas">
+                <div class="mc-toolbar">
+                    <div class="mc-toolbar__left">
+                        <h2 class="alumno-section-title mc-toolbar__title">
+                            <span class="alumno-section-title__icon" aria-hidden="true">📚</span>
+                            Mis asignaturas
+                        </h2>
+                        <span class="mc-count-badge">{{ total_clases|default:"0" }}</span>
+                    </div>
+                    <div class="mc-toolbar__actions">
+                        <div class="mc-search">
+                            <span class="mc-search__icon" aria-hidden="true">🔍</span>
+                            <input type="search" class="mc-search__input" id="mcSearchInput" placeholder="Buscar asignatura o profesor..." autocomplete="off">
+                        </div>
+                        <select class="mc-filter-select" id="mcAvanceFilter" aria-label="Filtrar por avance">
+                            <option value="all">Todos</option>
+                            <option value="in-progress">En curso</option>
+                            <option value="completed">Terminado</option>
+                        </select>
+                    </div>
+                </div>
+
+                {% if mis_clases %}
+                <div class="mc-table-wrap">
+                    <table class="mc-table" id="mcSubjectsTable">
+                        <thead>
+                            <tr>
+                                <th scope="col">Asignatura</th>
+                                <th scope="col">Profesor/a</th>
+                                <th scope="col">Nota</th>
+                                <th scope="col">Avance</th>
+                                <th scope="col"><span class="mc-sr-only">Acción</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for clase in mis_clases %}
+                            {% with asig=clase.asignatura|lower %}
+                            <tr class="mc-table__row"
+                                data-progress="{{ clase.progreso }}"
+                                data-search="{{ clase.asignatura|lower }} {{ clase.profesor_nombre|lower }} {{ clase.codigo|lower }}"
+                                {% if 'matem' in asig %}data-accent="#3B82F6"
+                                {% elif 'lengua' in asig or 'comunicación' in asig or 'comunicacion' in asig or 'castellano' in asig %}data-accent="#EF4444"
+                                {% elif 'educación física' in asig or 'educacion fisica' in asig or 'edfis' in asig or 'deport' in asig %}data-accent="#06B6D4"
+                                {% elif 'cienc' in asig or 'biolog' in asig or 'naturales' in asig %}data-accent="#10B981"
+                                {% elif 'histor' in asig or 'geograf' in asig %}data-accent="#8B5CF6"
+                                {% elif 'ingl' in asig or 'english' in asig %}data-accent="#F59E0B"
+                                {% elif 'músic' in asig or 'music' in asig %}data-accent="#F97316"
+                                {% elif 'arte' in asig or 'visuales' in asig %}data-accent="#EC4899"
+                                {% elif 'tecno' in asig or 'comput' in asig or 'inform' in asig %}data-accent="#6B7280"
+                                {% else %}data-accent="#94A3B8"{% endif %}>
+                                <td class="mc-table__subject">
+                                    <div class="mc-subject">
+                                        <span class="mc-subject__accent" aria-hidden="true"></span>
+                                        <div class="mc-subject__text">
+                                            <span class="mc-subject__name">{{ clase.asignatura }}</span>
+                                            <span class="mc-subject__code">{% if clase.codigo %}{{ clase.codigo|slice:":3"|upper }}{% else %}{{ clase.asignatura|slice:":3"|upper }}{% endif %}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="mc-table__teacher">
+                                    <div class="mc-teacher">
+                                        <span class="mc-teacher__avatar" aria-hidden="true">{{ clase.profesor_nombre|first|upper }}</span>
+                                        <span class="mc-teacher__name">{{ clase.profesor_nombre }}</span>
+                                    </div>
+                                </td>
+                                <td class="mc-table__nota">
+                                    {% if clase.nota %}
+                                    <span class="mc-nota mc-nota--{% if clase.nota >= 6.0 %}ok{% elif clase.nota >= 5.0 %}warn{% else %}low{% endif %}">{{ clase.nota|floatformat:1 }}</span>
+                                    {% else %}
+                                    <span class="mc-nota mc-nota--na">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="mc-table__avance">
+                                    <div class="mc-avance">
+                                        <div class="mc-avance__track">
+                                            <div class="mc-avance__bar" style="width: {{ clase.progreso }}%;"></div>
+                                        </div>
+                                        <span class="mc-avance__pct">{{ clase.progreso }}%</span>
+                                    </div>
+                                </td>
+                                <td class="mc-table__action">
+                                    <a href="{% url 'ver_detalle_clase' clase.id_clase %}" class="mc-detail-btn">Ver detalle ↗</a>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="mc-empty">
+                    <span class="mc-empty__icon" aria-hidden="true">📚</span>
+                    <h3 class="mc-empty__title">No hay clases disponibles</h3>
+                    <p class="mc-empty__text">No se encontraron asignaturas activas para tu curso.</p>
                     {% if not curso_actual %}
-                    <p class="empty-warning">⚠️ No tienes un curso asignado. Contacta con la administración.</p>
+                    <p class="mc-empty__warn">No tienes un curso asignado. Contacta con la administración.</p>
                     {% endif %}
                 </div>
-            {% endif %}
-        </main>
+                {% endif %}
+            </section>
+        </div>
+
+        <aside class="mc-aside" aria-label="Información rápida">
+            <section class="alumno-section-card mc-side-panel">
+                <h2 class="alumno-section-title">
+                    <span class="alumno-section-title__icon" aria-hidden="true">📅</span>
+                    Próximas evaluaciones
+                </h2>
+                {% if evaluaciones_proximas %}
+                <ul class="mc-eval-list">
+                    {% for evaluacion in evaluaciones_proximas|slice:":3" %}
+                    <li class="mc-eval-item">
+                        <time class="mc-eval-item__date">{{ evaluacion.fecha_evaluacion|date:"d/m" }}</time>
+                        <div class="mc-eval-item__body">
+                            <p class="mc-eval-item__title">{{ evaluacion.titulo }}</p>
+                            {% if evaluacion.clase.asignatura %}
+                            <span class="mc-eval-item__badge" data-subject="{{ evaluacion.clase.asignatura.nombre|lower }}">{{ evaluacion.clase.asignatura.nombre }}</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% empty %}
+                    <p class="mc-side-empty">No hay evaluaciones próximas</p>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="mc-side-empty">No hay evaluaciones próximas</p>
+                {% endif %}
+            </section>
+
+            <section class="alumno-section-card mc-side-panel">
+                <h2 class="alumno-section-title">
+                    <span class="alumno-section-title__icon" aria-hidden="true">🕐</span>
+                    Horario de hoy
+                </h2>
+                {% now "w" as wday %}
+                {% if mis_clases %}
+                <ul class="mc-today-list" id="mcTodayList">
+                    {% for clase in mis_clases %}
+                        {% for dia, info in clase.horarios_por_dia.items %}
+                            {% if wday == "1" and dia == "Lunes" or wday == "2" and dia == "Martes" or wday == "3" and dia == "Miércoles" or wday == "4" and dia == "Jueves" or wday == "5" and dia == "Viernes" or wday == "6" and dia == "Sábado" or wday == "0" and dia == "Domingo" %}
+                            <li class="mc-today-item">
+                                <span class="mc-today-item__time">{{ info.hora_inicio }} – {{ info.hora_fin }}</span>
+                                <span class="mc-today-item__name">{{ clase.asignatura }}</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+                <p class="mc-side-empty mc-side-empty--hidden" id="mcTodayEmpty">No tienes clases programadas para hoy</p>
+                {% else %}
+                <p class="mc-side-empty">No tienes clases programadas para hoy</p>
+                {% endif %}
+            </section>
+        </aside>
     </div>
-</div>
 
 <script>
-// Búsqueda de cursos
-document.getElementById('searchCourses')?.addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const courseCards = document.querySelectorAll('.course-card');
-    
-    courseCards.forEach(card => {
-        const title = card.querySelector('.course-title').textContent.toLowerCase();
-        const instructor = card.querySelector('.course-instructor').textContent.toLowerCase();
-        const code = card.querySelector('.course-code').textContent.toLowerCase();
-        
-        if (title.includes(searchTerm) || instructor.includes(searchTerm) || code.includes(searchTerm)) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
+(function () {
+    document.querySelectorAll('.mc-table__row').forEach(function (row) {
+        var accent = row.getAttribute('data-accent');
+        if (accent) {
+            row.style.setProperty('--mc-accent', accent);
         }
     });
-});
 
-// Filtro por progreso
-document.querySelectorAll('input[name="progress"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        const filter = this.value;
-        const courseCards = document.querySelectorAll('.course-card');
-        
-        courseCards.forEach(card => {
-            const progress = parseInt(card.dataset.progress);
-            let show = false;
-            
-            if (filter === 'all') show = true;
-            else if (filter === 'in-progress' && progress > 0 && progress < 100) show = true;
-            else if (filter === 'completed' && progress === 100) show = true;
-            
-            card.style.display = show ? 'flex' : 'none';
+    document.querySelectorAll('.mc-eval-item__badge[data-subject]').forEach(function (badge) {
+        var s = (badge.getAttribute('data-subject') || '').toLowerCase();
+        var color = '#94A3B8';
+        if (s.indexOf('matem') !== -1) color = '#3B82F6';
+        else if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1) color = '#EF4444';
+        else if (s.indexOf('cienc') !== -1 || s.indexOf('naturales') !== -1) color = '#10B981';
+        else if (s.indexOf('histor') !== -1 || s.indexOf('geograf') !== -1) color = '#8B5CF6';
+        else if (s.indexOf('ingl') !== -1) color = '#F59E0B';
+        else if (s.indexOf('educación física') !== -1 || s.indexOf('edfis') !== -1 || s.indexOf('deport') !== -1) color = '#06B6D4';
+        else if (s.indexOf('músic') !== -1 || s.indexOf('music') !== -1) color = '#F97316';
+        else if (s.indexOf('arte') !== -1 || s.indexOf('visuales') !== -1) color = '#EC4899';
+        else if (s.indexOf('tecno') !== -1) color = '#6B7280';
+        badge.style.setProperty('--mc-accent', color);
+        badge.style.color = color;
+    });
+
+    var searchInput = document.getElementById('mcSearchInput');
+    var avanceFilter = document.getElementById('mcAvanceFilter');
+    var table = document.getElementById('mcSubjectsTable');
+
+    function applyFilters() {
+        if (!table) return;
+        var term = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
+        var avance = avanceFilter ? avanceFilter.value : 'all';
+        table.querySelectorAll('.mc-table__row').forEach(function (row) {
+            var haystack = row.getAttribute('data-search') || '';
+            var p = parseInt(row.getAttribute('data-progress'), 10) || 0;
+            var matchSearch = !term || haystack.indexOf(term) !== -1;
+            var matchAvance = avance === 'all'
+                || (avance === 'in-progress' && p < 100)
+                || (avance === 'completed' && p >= 100);
+            row.hidden = !(matchSearch && matchAvance);
         });
-    });
-});
+    }
 
-// Reset filtros
-document.getElementById('resetFilters')?.addEventListener('click', function() {
-    document.getElementById('searchCourses').value = '';
-    document.querySelectorAll('input[name="semester"], input[name="dept"], input[name="progress"]').forEach(input => {
-        if (input.value === 'all' || input.value === 'current') {
-            input.checked = true;
-        }
-    });
-    document.querySelectorAll('.course-card').forEach(card => {
-        card.style.display = 'flex';
-    });
-});
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    if (avanceFilter) avanceFilter.addEventListener('change', applyFilters);
+
+    var todayList = document.getElementById('mcTodayList');
+    var todayEmpty = document.getElementById('mcTodayEmpty');
+    if (todayList && todayEmpty) {
+        var hasItems = todayList.querySelectorAll('.mc-today-item').length > 0;
+        todayEmpty.classList.toggle('mc-side-empty--hidden', hasItems);
+        todayList.classList.toggle('mc-today-list--hidden', !hasItems);
+    }
+})();
 </script>
+
 {% include 'estudiante/_alumno_wrap_end.html' %}
