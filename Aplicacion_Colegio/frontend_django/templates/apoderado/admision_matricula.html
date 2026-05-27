@@ -1,0 +1,971 @@
+{% load static %}
+
+<div class="admision-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
+            <h1 class="page-title">🏫 Proceso de Admisión y Matrícula</h1>
+            <p class="page-subtitle">Postula a tus pupilos, gestiona listas de espera y firma contratos en línea</p>
+        </div>
+        <button class="btn-primary" id="btnNuevaPostulacion" onclick="toggleFormulario()">
+            ✨ Nueva Postulación
+        </button>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card stat-total">
+            <span class="stat-icon">📋</span>
+            <div>
+                <span class="stat-number">{{ total_solicitudes }}</span>
+                <span class="stat-label">Postulaciones</span>
+            </div>
+        </div>
+        <div class="stat-card stat-waiting">
+            <span class="stat-icon">⏳</span>
+            <div>
+                <span class="stat-number" id="stats-espera">
+                    {% regroup solicitudes_admision by estado as estado_list %}
+                    {% for group in estado_list %}
+                        {% if group.grouper == 'EN_LISTA_ESPERA' %}{{ group.list|length }}{% endif %}
+                    {% empty %}0{% endfor %}
+                </span>
+                <span class="stat-label">En Lista de Espera</span>
+            </div>
+        </div>
+        <div class="stat-card stat-accepted">
+            <span class="stat-icon">✍️</span>
+            <div>
+                <span class="stat-number">
+                    {% regroup solicitudes_admision by estado as estado_list %}
+                    {% for group in estado_list %}
+                        {% if group.grouper == 'ACEPTADA' %}{{ group.list|length }}{% endif %}
+                    {% empty %}0{% endfor %}
+                </span>
+                <span class="stat-label">Por Firmar</span>
+            </div>
+        </div>
+        <div class="stat-card stat-completed">
+            <span class="stat-icon">✅</span>
+            <div>
+                <span class="stat-number">
+                    {% regroup solicitudes_admision by estado as estado_list %}
+                    {% for group in estado_list %}
+                        {% if group.grouper == 'FIRMADA' %}{{ group.list|length }}{% endif %}
+                    {% empty %}0{% endfor %}
+                </span>
+                <span class="stat-label">Matriculados</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario nuevo justificativo (Glassmorphic) -->
+    <div class="form-card d-none" id="formPostulacion">
+        <div class="form-header-row">
+            <h3 class="form-title">📝 Formulario de Postulación de Admisión</h3>
+            <span class="ciclo-badge">Ciclo: {{ ciclo_activo.nombre|default:"N/A" }}</span>
+        </div>
+        
+        <form id="admisionForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="ciclo_id" value="{{ ciclo_activo.id|default:'' }}">
+            
+            <div class="steps-nav">
+                <div class="step-nav-item active" data-step="1" onclick="showStep(1)">1. Datos del Alumno</div>
+                <div class="step-nav-item" data-step="2" onclick="showStep(2)">2. Ficha Familiar</div>
+                <div class="step-nav-item" data-step="3" onclick="showStep(3)">3. Documentación</div>
+            </div>
+
+            <!-- Paso 1: Datos del Alumno -->
+            <div class="form-step active" id="step-1">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombre_estudiante">Nombres</label>
+                        <input type="text" name="nombre_estudiante" id="nombre_estudiante" required placeholder="Ej: Juan Andrés">
+                    </div>
+                    <div class="form-group">
+                        <label for="apellido_paterno_estudiante">Apellido Paterno</label>
+                        <input type="text" name="apellido_paterno_estudiante" id="apellido_paterno_estudiante" required placeholder="Ej: Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label for="apellido_materno_estudiante">Apellido Materno</label>
+                        <input type="text" name="apellido_materno_estudiante" id="apellido_materno_estudiante" required placeholder="Ej: Muñoz">
+                    </div>
+                    <div class="form-group">
+                        <label for="rut_estudiante">RUT del Estudiante</label>
+                        <input type="text" name="rut_estudiante" id="rut_estudiante" required placeholder="Ej: 22.333.444-K">
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha_nacimiento_estudiante">Fecha de Nacimiento</label>
+                        <input type="date" name="fecha_nacimiento_estudiante" id="fecha_nacimiento_estudiante" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="genero_estudiante">Género</label>
+                        <select name="genero_estudiante" id="genero_estudiante">
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                            <option value="O" selected>Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group form-full">
+                        <label for="curso_id">Curso al que Postula</label>
+                        <select name="curso_id" id="curso_id" required>
+                            <option value="">Seleccione un curso disponible</option>
+                            {% for curso in cursos_disponibles %}
+                            <option value="{{ curso.id_curso }}">{{ curso.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="help-text">La asignación de vacantes es en orden de llegada. Si el curso está lleno, entrará en lista de espera.</small>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="toggleFormulario()">Cancelar</button>
+                    <button type="button" class="btn-primary" onclick="showStep(2)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- Paso 2: Ficha Familiar -->
+            <div class="form-step" id="step-2">
+                <div class="form-grid">
+                    <div class="form-group form-full">
+                        <label for="direccion_hogar">Dirección Familiar Completa</label>
+                        <input type="text" name="direccion_hogar" id="direccion_hogar" required placeholder="Calle, Número, Departamento, Comuna" value="{{ apoderado.perfil_apoderado.direccion|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefono_contacto">Teléfono de Contacto</label>
+                        <input type="text" name="telefono_contacto" id="telefono_contacto" required placeholder="Ej: +56 9 1234 5678" value="{{ apoderado.perfil_apoderado.telefono|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="parentesco">Relación / Parentesco con el postulante</label>
+                        <select name="parentesco" id="parentesco" required>
+                            <option value="PADRE">Padre</option>
+                            <option value="MADRE">Madre</option>
+                            <option value="ABUELO">Abuelo/a</option>
+                            <option value="TIO">Tío/a</option>
+                            <option value="TUTOR_LEGAL">Tutor Legal</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="showStep(1)">← Anterior</button>
+                    <button type="button" class="btn-primary" onclick="showStep(3)">Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- Paso 3: Documentación -->
+            <div class="form-step" id="step-3">
+                <div class="upload-zone-wrapper">
+                    <div class="upload-group">
+                        <label class="upload-label">📄 Certificado de Nacimiento (Requerido)</label>
+                        <div class="upload-area" onclick="document.getElementById('certificado_nacimiento').click()">
+                            <span class="upload-icon">📁</span>
+                            <span class="upload-text" id="lbl-nacimiento">Seleccionar archivo (.pdf, .jpg, .png)</span>
+                            <input type="file" name="certificado_nacimiento" id="certificado_nacimiento" accept=".pdf,.jpg,.jpeg,.png" required style="display:none" onchange="updateFileLabel('certificado_nacimiento', 'lbl-nacimiento')">
+                        </div>
+                    </div>
+                    <div class="upload-group">
+                        <label class="upload-label">🏥 Certificado Médico / Ficha de Salud (Requerido)</label>
+                        <div class="upload-area" onclick="document.getElementById('certificado_medico').click()">
+                            <span class="upload-icon">🩺</span>
+                            <span class="upload-text" id="lbl-medico">Seleccionar archivo (.pdf, .jpg, .png)</span>
+                            <input type="file" name="certificado_medico" id="certificado_medico" accept=".pdf,.jpg,.jpeg,.png" required style="display:none" onchange="updateFileLabel('certificado_medico', 'lbl-medico')">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="showStep(2)">← Anterior</button>
+                    <button type="submit" class="btn-primary-success" id="btnEnviar">🚀 Enviar Postulación</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Postulaciones -->
+    <h2 class="section-title">📋 Estado de tus Postulaciones</h2>
+    {% if solicitudes_admision %}
+    <div class="solicitudes-list">
+        {% for s in solicitudes_admision %}
+        <div class="solicitud-card card-{{ s.estado|lower }}">
+            <div class="card-left">
+                <div class="student-avatar">👤</div>
+                <div class="student-info">
+                    <h4 class="student-name">{{ s.nombre_estudiante }}</h4>
+                    <div class="postulation-meta">
+                        <span><strong>Curso:</strong> {{ s.curso_nombre }}</span>
+                        <span><strong>RUT:</strong> {{ s.rut_estudiante }}</span>
+                        <span><strong>Ciclo:</strong> {{ s.ciclo_nombre }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-right">
+                <span class="status-badge badge-{{ s.estado|lower }}">{{ s.estado_display }}</span>
+                {% if s.estado == 'EN_LISTA_ESPERA' %}
+                    <span class="waitlist-position">Fila: <strong>#{{ s.posicion_lista_espera }}</strong></span>
+                {% elif s.estado == 'ACEPTADA' %}
+                    <button class="btn-action btn-sign" onclick="openSignatureModal('{{ s.id }}', '{{ s.nombre_estudiante }}', '{{ s.curso_nombre }}')">✍️ Firmar Contrato</button>
+                {% elif s.estado == 'FIRMADA' %}
+                    <span class="matricula-success">🎓 ¡Matriculado!</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🏫</div>
+        <h3 class="empty-title">Sin postulaciones activas</h3>
+        <p class="empty-text">Aún no has iniciado un proceso de admisión. Haz clic en "Nueva Postulación" para comenzar.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Firma Electrónica Simple -->
+<div class="modal d-none" id="signatureModal">
+    <div class="modal-backdrop" onclick="closeSignatureModal()"></div>
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>✍️ Firma Electrónica Simple de Matrícula</h3>
+            <button class="close-btn" onclick="closeSignatureModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-intro">Estás a punto de formalizar la matrícula del estudiante <strong id="modal-student-name">Juan</strong> en el curso <strong id="modal-course-name">1 Básico</strong>. Por favor lee atentamente el contrato de adhesión:</p>
+            
+            <div class="contract-box">
+                <h4>CONTRATO DE PRESTACIÓN DE SERVICIOS EDUCACIONALES</h4>
+                <p><strong>PRIMERO:</strong> El Establecimiento Educacional se compromete a impartir educación regular durante el ciclo académico escolar para el alumno individualizado en la solicitud de admisión correspondiente.</p>
+                <p><strong>SEGUNDO:</strong> El Apoderado se obliga a cumplir el reglamento interno de convivencia escolar y a pagar los aranceles estipulados de incorporación: Matrícula de $150.000 y Arancel Anual de $2.500.000 pagaderos en 10 mensualidades sucesivas.</p>
+                <p><strong>TERCERO:</strong> Las partes acuerdan que la firma del presente instrumento se realiza mediante mecanismos digitales de **Firma Electrónica Simple** regulados por la Ley 19.799 en Chile, aceptando su total validez y fuerza probatoria, registrándose la dirección IP, el RUT de verificación y la hora exacta de la firma.</p>
+            </div>
+            
+            <form id="signatureForm">
+                {% csrf_token %}
+                <input type="hidden" id="modal-solicitud-id" name="solicitud_id">
+                <div class="form-group">
+                    <label for="rut_firmante">Ingresa tu RUT Firmante (Apoderado)</label>
+                    <input type="text" id="rut_firmante" required placeholder="Ej: 15.666.777-8">
+                    <small>Este acto constituye firma digital simple voluntaria de adhesión contractual.</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeSignatureModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary-success" id="btnConfirmarFirma">📝 Firmar y Completar Matrícula</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --hsl-primary: 220 90% 56%;
+        --hsl-success: 142 70% 45%;
+        --hsl-background: 210 40% 98%;
+        --hsl-card: 0 0% 100%;
+        --hsl-text: 215 28% 17%;
+        --hsl-muted: 215 16% 47%;
+    }
+
+    .admision-container {
+        padding: 24px;
+        max-width: 960px;
+        margin: 0 auto;
+        font-family: 'Outfit', 'Inter', sans-serif;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .header-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .back-link {
+        color: hsl(var(--hsl-muted));
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover {
+        color: hsl(var(--hsl-primary));
+    }
+
+    .page-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: hsl(var(--hsl-text));
+        margin: 0;
+    }
+
+    .page-subtitle {
+        color: hsl(var(--hsl-muted));
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, hsl(var(--hsl-primary)), #1d4ed8);
+        color: white;
+        border: none;
+        padding: 10px 22px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+    }
+
+    .btn-primary-success {
+        background: linear-gradient(135deg, hsl(var(--hsl-success)), #15803d);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+    }
+
+    .btn-primary-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f1f5f9;
+        transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+    }
+
+    .stat-number {
+        font-size: 1.8rem;
+        font-weight: 800;
+        display: block;
+        line-height: 1.1;
+        color: hsl(var(--hsl-text));
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: hsl(var(--hsl-muted));
+        font-weight: 500;
+    }
+
+    .stat-waiting .stat-number {
+        color: #d97706;
+    }
+
+    .stat-accepted .stat-number {
+        color: #2563eb;
+    }
+
+    .stat-completed .stat-number {
+        color: #16a34a;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 28px;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border-left: 5px solid hsl(var(--hsl-primary));
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .form-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: hsl(var(--hsl-text));
+    }
+
+    .ciclo-badge {
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 12px;
+    }
+
+    .steps-nav {
+        display: flex;
+        border-bottom: 2px solid #f1f5f9;
+        margin-bottom: 24px;
+        gap: 8px;
+    }
+
+    .step-nav-item {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: hsl(var(--hsl-muted));
+        cursor: pointer;
+        position: relative;
+        transition: color 0.2s;
+    }
+
+    .step-nav-item.active {
+        color: hsl(var(--hsl-primary));
+    }
+
+    .step-nav-item.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: hsl(var(--hsl-primary));
+    }
+
+    .form-step {
+        display: none;
+    }
+
+    .form-step.active {
+        display: block;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-full {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+        font-size: 0.85rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: hsl(var(--hsl-primary));
+        outline: none;
+    }
+
+    .help-text {
+        color: hsl(var(--hsl-muted));
+        font-size: 0.75rem;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .upload-zone-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .upload-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .upload-label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.85rem;
+    }
+
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 30px 20px;
+        text-align: center;
+        cursor: pointer;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .upload-area:hover {
+        background: #f1f5f9;
+        border-color: hsl(var(--hsl-primary));
+    }
+
+    .upload-icon {
+        font-size: 2.2rem;
+    }
+
+    .upload-text {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #475569;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .section-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: hsl(var(--hsl-text));
+        margin: 28px 0 16px;
+    }
+
+    .solicitudes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .solicitud-card {
+        background: white;
+        border-radius: 14px;
+        padding: 18px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+        border: 1px solid #f1f5f9;
+        border-left: 6px solid #94a3b8;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .solicitud-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-left {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .student-avatar {
+        font-size: 1.8rem;
+        background: #f1f5f9;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .student-name {
+        margin: 0 0 4px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: hsl(var(--hsl-text));
+    }
+
+    .postulation-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 0.8rem;
+        color: hsl(var(--hsl-muted));
+    }
+
+    .card-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 12px;
+        text-transform: uppercase;
+    }
+
+    .badge-pendiente { background: #fef3c7; color: #b45309; }
+    .badge-en_lista_espera { background: #ffedd5; color: #ea580c; }
+    .badge-aceptada { background: #dbeafe; color: #1d4ed8; }
+    .badge-firmada { background: #d1fae5; color: #15803d; }
+    .badge-rechazada { background: #fee2e2; color: #b91c1c; }
+    .badge-cancelada { background: #f1f5f9; color: #475569; }
+
+    .card-pendiente { border-left-color: #f59e0b; }
+    .card-en_lista_espera { border-left-color: #f97316; }
+    .card-aceptada { border-left-color: #3b82f6; }
+    .card-firmada { border-left-color: #10b981; }
+
+    .waitlist-position {
+        font-size: 0.8rem;
+        color: #ea580c;
+    }
+
+    .btn-action {
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-sign {
+        background: #2563eb;
+        color: white;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-sign:hover {
+        background: #1d4ed8;
+        transform: scale(1.02);
+    }
+
+    .matricula-success {
+        font-size: 0.85rem;
+        color: #16a34a;
+        font-weight: 700;
+    }
+
+    /* Modal Styling (Glassmorphism backdrop) */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-backdrop {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.35);
+        backdrop-filter: blur(8px);
+    }
+
+    .modal-container {
+        position: relative;
+        background: white;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 580px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        animation: modalShow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    @keyframes modalShow {
+        from { opacity: 0; transform: scale(0.95) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: hsl(var(--hsl-text));
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.6rem;
+        color: hsl(var(--hsl-muted));
+        cursor: pointer;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-intro {
+        font-size: 0.9rem;
+        color: #475569;
+        margin: 0 0 16px;
+    }
+
+    .contract-box {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 16px;
+        height: 180px;
+        overflow-y: scroll;
+        font-size: 0.8rem;
+        color: #334155;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    .contract-box h4 {
+        margin: 0 0 10px;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 20px;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 16px;
+    }
+
+    .d-none {
+        display: none !important;
+    }
+
+    @media (max-width: 768px) {
+        .stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .upload-zone-wrapper {
+            grid-template-columns: 1fr;
+        }
+        .solicitud-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 14px;
+        }
+        .card-right {
+            align-items: flex-start;
+            width: 100%;
+        }
+        .btn-action {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+
+<script>
+    function toggleFormulario() {
+        const form = document.getElementById('formPostulacion');
+        const btn = document.getElementById('btnNuevaPostulacion');
+        if (form.classList.contains('d-none')) {
+            form.classList.remove('d-none');
+            btn.textContent = '❌ Cerrar Formulario';
+        } else {
+            form.classList.add('d-none');
+            btn.textContent = '✨ Nueva Postulación';
+        }
+    }
+
+    function showStep(stepNumber) {
+        // Ocultar todos los pasos
+        document.querySelectorAll('.form-step').forEach(step => step.classList.remove('active'));
+        // Quitar active de navs
+        document.querySelectorAll('.step-nav-item').forEach(nav => nav.classList.remove('active'));
+        
+        // Mostrar paso
+        document.getElementById('step-' + stepNumber).classList.add('active');
+        // Activar nav
+        document.querySelector(`.step-nav-item[data-step="${stepNumber}"]`).classList.add('active');
+    }
+
+    function updateFileLabel(inputId, labelId) {
+        const input = document.getElementById(inputId);
+        const label = document.getElementById(labelId);
+        if (input.files && input.files.length > 0) {
+            label.textContent = "✅ " + input.files[0].name;
+            label.style.color = "#16a34a";
+        }
+    }
+
+    // Manejo de envío de postulación
+    document.getElementById('admisionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        const formData = new FormData(form);
+        const btn = document.getElementById('btnEnviar');
+        btn.disabled = true;
+        btn.textContent = 'Procesando postulación...';
+
+        fetch('{% url "api_apoderado_crear_solicitud" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Postulación enviada correctamente.');
+                window.location.reload();
+            } else {
+                alert(data.error || 'Error al procesar la postulación.');
+                btn.disabled = false;
+                btn.textContent = '🚀 Enviar Postulación';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error de conexión con el servidor.');
+            btn.disabled = false;
+            btn.textContent = '🚀 Enviar Postulación';
+        });
+    });
+
+    // Control del Modal de Firma
+    function openSignatureModal(solicitudId, studentName, courseName) {
+        document.getElementById('modal-solicitud-id').value = solicitudId;
+        document.getElementById('modal-student-name').textContent = studentName;
+        document.getElementById('modal-course-name').textContent = courseName;
+        document.getElementById('signatureModal').classList.remove('d-none');
+    }
+
+    function closeSignatureModal() {
+        document.getElementById('signatureModal').classList.add('d-none');
+        document.getElementById('rut_firmante').value = '';
+    }
+
+    // Envío de la Firma
+    document.getElementById('signatureForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const solicitudId = document.getElementById('modal-solicitud-id').value;
+        const rut = document.getElementById('rut_firmante').value.trim();
+        const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+        const btn = document.getElementById('btnConfirmarFirma');
+
+        if (!rut) {
+            alert('El RUT del firmante es obligatorio.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Verificando y Firmando...';
+
+        fetch('{% url "api_apoderado_firmar_contrato" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                solicitud_id: solicitudId,
+                rut_firmante: rut
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message + "\n\nHash de integridad: " + data.hash + "\nToken de validación: " + data.token);
+                closeSignatureModal();
+                window.location.reload();
+            } else {
+                alert(data.error || 'Error al firmar el contrato.');
+                btn.disabled = false;
+                btn.textContent = '📝 Firmar y Completar Matrícula';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error al conectar con el servidor.');
+            btn.disabled = false;
+            btn.textContent = '📝 Firmar y Completar Matrícula';
+        });
+    });
+</script>

@@ -550,6 +550,132 @@ class Boleta(models.Model):
         return f"Boleta N° {self.numero_boleta} - {self.estudiante.get_full_name()}"
 
 
+class SolicitudAdmision(models.Model):
+    """Solicitud de admisión para un alumno (nuevo o existente)"""
+    ESTADOS = [
+        ('PENDIENTE', 'Pendiente de Revisión'),
+        ('DOCUMENTOS_RECHAZADOS', 'Documentos Rechazados'),
+        ('EN_LISTA_ESPERA', 'En Lista de Espera'),
+        ('ACEPTADA', 'Aceptada (Cupo Reservado)'),
+        ('FIRMADA', 'Contrato Firmado / Matriculado'),
+        ('RECHAZADA', 'Rechazada'),
+        ('CANCELADA', 'Cancelada por el Apoderado'),
+    ]
+    
+    id_solicitud = models.AutoField(primary_key=True)
+    colegio = models.ForeignKey(Colegio, on_delete=models.CASCADE, related_name='solicitudes_admision')
+    apoderado = models.ForeignKey(User, on_delete=models.CASCADE, related_name='solicitudes_admision_apoderado')
+    ciclo_academico = models.ForeignKey(CicloAcademico, on_delete=models.CASCADE, related_name='solicitudes_admision_ciclo')
+    curso_postulado = models.ForeignKey('cursos.Curso', on_delete=models.CASCADE, related_name='solicitudes_admision_curso')
+    
+    # Datos del estudiante
+    estudiante = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='solicitudes_admision_estudiante'
+    )
+    nombre_estudiante = models.CharField(max_length=100)
+    apellido_paterno_estudiante = models.CharField(max_length=100)
+    apellido_materno_estudiante = models.CharField(max_length=100)
+    rut_estudiante = models.CharField(max_length=20, null=True, blank=True)
+    fecha_nacimiento_estudiante = models.DateField(null=True, blank=True)
+    genero_estudiante = models.CharField(
+        max_length=20,
+        choices=[('M', 'Masculino'), ('F', 'Femenino'), ('O', 'Otro')],
+        default='O'
+    )
+    
+    # Ficha familiar / Contacto
+    direccion_hogar = models.CharField(max_length=255, blank=True, default='')
+    telefono_contacto = models.CharField(max_length=50, blank=True, default='')
+    parentesco = models.CharField(
+        max_length=50,
+        choices=[
+            ('PADRE', 'Padre'),
+            ('MADRE', 'Madre'),
+            ('ABUELO', 'Abuelo/a'),
+            ('TIO', 'Tío/a'),
+            ('TUTOR_LEGAL', 'Tutor Legal'),
+            ('OTRO', 'Otro')
+        ],
+        default='OTRO'
+    )
+    
+    # Certificados adjuntos
+    certificado_nacimiento = models.FileField(
+        upload_to='admisiones/certificados_nacimiento/%Y/%m/',
+        blank=True,
+        null=True
+    )
+    certificado_medico = models.FileField(
+        upload_to='admisiones/certificados_medicos/%Y/%m/',
+        blank=True,
+        null=True
+    )
+    
+    # Estado del trámite y cola
+    estado = models.CharField(max_length=30, choices=ESTADOS, default='PENDIENTE')
+    posicion_lista_espera = models.IntegerField(null=True, blank=True)
+    
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    observaciones = models.TextField(blank=True, default='')
+    
+    objects = TenantManager(school_field='colegio_id')
+    
+    class Meta:
+        db_table = 'solicitud_admision'
+        verbose_name = 'Solicitud de Admisión'
+        verbose_name_plural = 'Solicitudes de Admisión'
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f"Solicitud {self.nombre_estudiante} - {self.curso_postulado.nombre} ({self.estado})"
+
+
+class ContratoServicioEducacional(models.Model):
+    """Contrato de prestación de servicios educacionales y su firma electrónica"""
+    id_contrato = models.AutoField(primary_key=True)
+    solicitud = models.OneToOneField(SolicitudAdmision, on_delete=models.CASCADE, related_name='contrato')
+    colegio = models.ForeignKey(Colegio, on_delete=models.CASCADE, related_name='contratos_admision')
+    apoderado = models.ForeignKey(User, on_delete=models.CASCADE, related_name='contratos_apoderado')
+    ciclo_academico = models.ForeignKey(CicloAcademico, on_delete=models.CASCADE, related_name='contratos_ciclo')
+    
+    # Datos financieros
+    valor_arancel_anual = models.DecimalField(max_digits=10, decimal_places=0, default=Decimal('2500000'))
+    valor_matricula = models.DecimalField(max_digits=10, decimal_places=0, default=Decimal('150000'))
+    numero_cuotas = models.IntegerField(default=10)
+    
+    # Cuerpo legal
+    titulo_contrato = models.CharField(max_length=200, default='Contrato de Prestación de Servicios Educacionales')
+    cuerpo_contrato = models.TextField()
+    
+    # Auditoría Firma Electrónica Simple
+    firmado = models.BooleanField(default=False)
+    fecha_firma = models.DateTimeField(null=True, blank=True)
+    ip_firma = models.GenericIPAddressField(null=True, blank=True)
+    user_agent_firma = models.TextField(null=True, blank=True)
+    rut_firmante = models.CharField(max_length=20, null=True, blank=True)
+    firma_hash = models.CharField(max_length=64, null=True, blank=True)
+    firma_token = models.CharField(max_length=100, null=True, blank=True)
+    
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    objects = TenantManager(school_field='colegio_id')
+    
+    class Meta:
+        db_table = 'contrato_servicio_educacional'
+        verbose_name = 'Contrato de Servicio Educacional'
+        verbose_name_plural = 'Contratos de Servicio Educacional'
+        
+    def __str__(self):
+        estado_str = "FIRMADO" if self.firmado else "PENDIENTE"
+        return f"Contrato {self.solicitud.nombre_estudiante} ({estado_str})"
+
+
 # Fase 3 (Domain Redesign): modelos avanzados expuestos desde el módulo de matrículas
 from backend.apps.core.models import (  # noqa: E402,F401
     EstadoMatricula,

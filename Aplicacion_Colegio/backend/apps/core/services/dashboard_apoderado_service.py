@@ -131,6 +131,11 @@ class DashboardApoderadoService:
                 context_firmas = DashboardApoderadoService._get_apoderado_firmas_context(user)
                 context.update(context_firmas)
 
+            # Admisión y Matrícula page
+            elif pagina_solicitada == 'admision_matricula':
+                context_admision = DashboardApoderadoService._get_apoderado_admision_context(user)
+                context.update(context_admision)
+
             # Calendario del pupilo
             elif pagina_solicitada == 'calendario_pupilo':
                 context_cal = DashboardApoderadoService._get_apoderado_calendario_context(
@@ -504,4 +509,67 @@ class DashboardApoderadoService:
             'estudiante_seleccionado': estudiante_seleccionado,
             'eventos_calendario': eventos,
             'total_eventos': len(eventos),
+        }
+
+    @staticmethod
+    def _get_apoderado_admision_context(user):
+        """Get admissions and enrollment context for apoderado."""
+        from backend.apps.matriculas.models import SolicitudAdmision
+        from backend.apps.cursos.models import Curso
+        from backend.apps.institucion.models import CicloAcademico
+        
+        rbd = getattr(user, 'rbd_colegio', None)
+        solicitudes = []
+        cursos_disponibles = []
+        ciclo_activo = None
+        
+        if rbd:
+            # 1. Obtener solicitudes históricas
+            solicitudes_qs = SolicitudAdmision.objects.filter(
+                apoderado=user,
+                colegio_id=rbd
+            ).select_related('curso_postulado', 'ciclo_academico').prefetch_related('contrato').order_by('-fecha_creacion')
+            
+            for sol in solicitudes_qs:
+                contrato_data = None
+                try:
+                    if sol.estado == 'ACEPTADA' and hasattr(sol, 'contrato'):
+                        contrato_data = sol.contrato
+                except Exception:
+                    pass
+                
+                solicitudes.append({
+                    'id': sol.id_solicitud,
+                    'nombre_estudiante': f"{sol.nombre_estudiante} {sol.apellido_paterno_estudiante} {sol.apellido_materno_estudiante}",
+                    'rut_estudiante': sol.rut_estudiante or '',
+                    'curso_nombre': sol.curso_postulado.nombre if sol.curso_postulado else '',
+                    'curso_id': sol.curso_postulado.id_curso if sol.curso_postulado else None,
+                    'ciclo_nombre': sol.ciclo_academico.nombre if sol.ciclo_academico else '',
+                    'estado': sol.estado,
+                    'estado_display': sol.get_estado_display(),
+                    'posicion_lista_espera': sol.posicion_lista_espera,
+                    'fecha_creacion': sol.fecha_creacion,
+                    'tiene_contrato': contrato_data is not None,
+                    'contrato': contrato_data,
+                })
+            
+            # 2. Obtener ciclo académico activo
+            ciclo_activo = CicloAcademico.objects.filter(
+                colegio_id=rbd,
+                activo=True
+            ).first()
+            
+            # 3. Obtener cursos disponibles
+            if ciclo_activo:
+                cursos_disponibles = list(Curso.objects.filter(
+                    colegio_id=rbd,
+                    ciclo_academico=ciclo_activo,
+                    activo=True
+                ).order_by('nombre'))
+                
+        return {
+            'solicitudes_admision': solicitudes,
+            'total_solicitudes': len(solicitudes),
+            'cursos_disponibles': cursos_disponibles,
+            'ciclo_activo': ciclo_activo,
         }

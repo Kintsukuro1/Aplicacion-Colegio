@@ -109,6 +109,8 @@ from backend.apps.core.views.apoderado.api import (
     crear_justificativo as apoderado_crear_justificativo,
     listar_documentos_firma as apoderado_listar_firmas,
     firmar_documento as apoderado_firmar_documento,
+    crear_solicitud_admision as apoderado_crear_solicitud_admision,
+    firmar_contrato as apoderado_firmar_contrato,
 )
 from backend.apps.core.views.estudiante.api import (
     entregar_tarea as estudiante_entregar_tarea
@@ -119,6 +121,10 @@ from backend.apps.core.views.psicologo_orientador.api import (
     crear_derivacion,
     actualizar_derivacion,
     toggle_pie_status,
+    listar_crear_citaciones,
+    actualizar_citacion,
+    listar_crear_casos_convivencia,
+    actualizar_caso_convivencia,
 )
 from backend.apps.core.views.soporte_tecnico.api import (
     crear_ticket,
@@ -350,6 +356,8 @@ urlpatterns = [
     path('api/apoderado/justificativos/crear/', apoderado_crear_justificativo, name='api_apoderado_crear_justificativo'),
     path('api/apoderado/firmas/', apoderado_listar_firmas, name='api_apoderado_listar_firmas'),
     path('api/apoderado/firmas/firmar/', apoderado_firmar_documento, name='api_apoderado_firmar_documento'),
+    path('api/apoderado/admisiones/solicitar/', apoderado_crear_solicitud_admision, name='api_apoderado_crear_solicitud'),
+    path('api/apoderado/admisiones/firmar-contrato/', apoderado_firmar_contrato, name='api_apoderado_firmar_contrato'),
 
     # -------------------------------------------------------------------
     # Psicólogo Orientador — APIs
@@ -359,6 +367,10 @@ urlpatterns = [
     path('api/psicologo/entrevistas/crear/', crear_entrevista, name='api_psicologo_crear_entrevista'),
     path('api/psicologo/derivaciones/crear/', crear_derivacion, name='api_psicologo_crear_derivacion'),
     path('api/psicologo/derivaciones/<int:derivacion_id>/', actualizar_derivacion, name='api_psicologo_actualizar_derivacion'),
+    path('api/psicologo/citaciones/', listar_crear_citaciones, name='api_psicologo_citaciones'),
+    path('api/psicologo/citaciones/<int:citacion_id>/actualizar/', actualizar_citacion, name='api_psicologo_actualizar_citacion'),
+    path('api/psicologo/casos-convivencia/', listar_crear_casos_convivencia, name='api_psicologo_casos_convivencia'),
+    path('api/psicologo/casos-convivencia/<int:caso_id>/actualizar/', actualizar_caso_convivencia, name='api_psicologo_actualizar_caso'),
 
     # -------------------------------------------------------------------
     # Coordinador Académico — APIs

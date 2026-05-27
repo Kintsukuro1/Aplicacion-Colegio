@@ -128,7 +128,7 @@
         </div>
     </div>
 
-    <div class="module-card">
+    <div class="module-card mb-3">
         <div class="module-card-header">
             <h3>🔄 Derivaciones externas</h3>
         </div>
@@ -153,6 +153,84 @@
                     {% empty %}
                     <tr>
                         <td colspan="4">Sin derivaciones registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="module-card mb-3">
+        <div class="module-card-header" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+            <h3>👥 Citaciones a Apoderados</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Motivo</th>
+                        <th>Estado</th>
+                        <th>Notas / Acuerdos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cit in ficha.citaciones %}
+                    <tr>
+                        <td>{{ cit.fecha_citacion|date:"d/m/Y H:i" }}</td>
+                        <td>{{ cit.motivo }}</td>
+                        <td>
+                            <span class="badge {% if cit.estado == 'PENDIENTE' %}badge-warning{% elif cit.estado == 'ASISTIO' %}badge-success{% else %}badge-danger{% endif %}">
+                                {{ cit.get_estado_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if cit.observaciones %}<strong>Acta:</strong> {{ cit.observaciones }}<br>{% endif %}
+                            {% if cit.acuerdos %}<strong>Acuerdos:</strong> {{ cit.acuerdos }}{% endif %}
+                            {% if not cit.observaciones and not cit.acuerdos %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">Sin citaciones agendadas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="module-card mb-3">
+        <div class="module-card-header" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+            <h3>⚖️ Casos Convivencia / Aula Segura</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Falta</th>
+                        <th>Descripción</th>
+                        <th>Estado</th>
+                        <th>Medidas Aplicadas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for caso in ficha.casos_bullying %}
+                    <tr>
+                        <td>{{ caso.fecha_registro|date:"d/m/Y" }}</td>
+                        <td><span class="badge badge-danger">{{ caso.get_tipo_falta_display }}</span></td>
+                        <td>{{ caso.descripcion_hechos }}</td>
+                        <td>
+                            <span class="badge {% if caso.estado == 'ABIERTO' %}badge-danger{% elif caso.estado == 'EN_INVESTIGACION' %}badge-warning{% elif caso.estado == 'MEDIDAS_APLICADAS' %}badge-info{% else %}badge-success{% endif %}">
+                                {{ caso.get_estado_display }}
+                            </span>
+                        </td>
+                        <td>{{ caso.medidas_tomadas|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">Sin incidentes de convivencia registrados</td>
                     </tr>
                     {% endfor %}
                 </tbody>

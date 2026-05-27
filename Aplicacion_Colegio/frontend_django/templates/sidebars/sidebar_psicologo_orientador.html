@@ -36,6 +36,14 @@
                 </a>
             </li>
             {% endif %}
+            {% if 'citaciones_casos' in paginas_habilitadas %}
+            <li {% if pagina_actual == 'citaciones_casos' %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=citaciones_casos">
+                    <span class="icon">👥</span>
+                    <span>Citaciones y Casos</span>
+                </a>
+            </li>
+            {% endif %}
             {% if 'ficha_estudiante' in paginas_habilitadas %}
             <li {% if pagina_actual == 'ficha_estudiante' %}class="active" {% endif %}>
                 <a href="{% url 'dashboard' %}?pagina=ficha_estudiante">

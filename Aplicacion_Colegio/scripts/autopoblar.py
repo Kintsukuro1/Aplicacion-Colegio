@@ -106,6 +106,7 @@ from backend.apps.accounts.models import (
     Role, User, DisponibilidadProfesor, PerfilProfesor, PerfilEstudiante,
     Apoderado, RelacionApoderadoEstudiante, FirmaDigitalApoderado, PerfilAsesorFinanciero
 )
+from backend.apps.accounts.services.capability_seed_service import seed_role_capabilities
 from backend.apps.institucion.models import (
     Region, Comuna, TipoEstablecimiento, DependenciaAdministrativa,
     NivelEducativo, TipoInfraestructura, Colegio, ColegioInfraestructura,
@@ -317,6 +318,15 @@ def poblar_roles():
             print(f"  ⏭️  Rol ya existe: {nombre}")
 
     print("✅ Roles creados\n")
+
+def poblar_role_capabilities():
+    """Crear capabilities y permisos base para cada rol."""
+    print("Creando RoleCapability base...")
+    summary = seed_role_capabilities()
+    print(f"  Capabilities nuevas: {summary['capabilities_created']}")
+    print(f"  RoleCapability nuevas: {summary['role_capabilities_created']}")
+    print(f"  RoleCapability existentes: {summary['role_capabilities_existing']}")
+    print("RoleCapability base creado\n")
 
 def poblar_regiones_comunas():
     """Crear regiones y comunas de Chile"""
@@ -3275,6 +3285,7 @@ def main():
     try:
         limpiar_base_datos()
         poblar_roles()
+        poblar_role_capabilities()
         poblar_regiones_comunas()
         poblar_catalogos()
         poblar_estados_matricula()  # NUEVO: Fase 3

@@ -234,3 +234,177 @@
     .welcome-content h1 { font-size: 1.6em; }
     .psicologo-dashboard { padding: 10px; }
 }
+
+/* ── Interactive Modals & Banners (Ley Aula Segura & Citaciones) ── */
+.quick-actions-bar {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.btn-action-banner {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid white;
+    color: white;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-action-banner:hover {
+    background: white;
+    color: #00b894;
+    transform: translateY(-2px);
+}
+
+.btn-danger-banner {
+    background: rgba(245, 101, 101, 0.2);
+    border-color: #f56565;
+}
+
+.btn-danger-banner:hover {
+    background: #f56565;
+    color: white;
+}
+
+/* Riesgo Crítico */
+.critico-card {
+    border: 2px solid #fed7d7 !important;
+    border-radius: 12px;
+}
+
+.critico-card .data-table thead th {
+    background: #fff5f5;
+    border-bottom: 2px solid #feb2b2;
+}
+
+.row-warning:hover {
+    background: #fff5f5 !important;
+}
+
+.btn-action-small {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #00b894;
+    color: white !important;
+    font-size: 0.85em;
+    font-weight: 600;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-action-small:hover {
+    background: #00a381;
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.btn-action-small.btn-secondary {
+    background: #718096;
+}
+
+.btn-action-small.btn-secondary:hover {
+    background: #4a5568;
+}
+
+/* Modales */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content-wrapper {
+    background: white;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 14px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #edf2f7;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.35em;
+    color: #2d3748;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.8em;
+    color: #a0aec0;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #2d3748;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    outline: none;
+    font-size: 0.95em;
+    color: #2d3748;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: #00b894;
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+

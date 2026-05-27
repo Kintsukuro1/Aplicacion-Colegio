@@ -56,11 +56,11 @@ PAGE_CAPABILITIES_ANY = {
     'gestionar_cursos': {'COURSE_VIEW'},
     'gestionar_ciclos': {'COURSE_VIEW'},
     'gestionar_asignaturas': {'COURSE_VIEW'},
-    'gestionar_finanzas': {'SYSTEM_CONFIGURE', 'FINANCE_VIEW'},
     'gestionar_profesores': {'TEACHER_VIEW'},
     'mis_pupilos': {'STUDENT_VIEW'},
     'justificativos': {'STUDENT_VIEW', 'JUSTIFICATION_VIEW'},
     'firmas_pendientes': {'STUDENT_VIEW'},
+    'admision_matricula': {'STUDENT_VIEW'},
     'calendario_pupilo': {'STUDENT_VIEW', 'CLASS_VIEW'},
     'calendario_eventos': {'ANNOUNCEMENT_VIEW', 'ANNOUNCEMENT_CREATE', 'ANNOUNCEMENT_EDIT', 'ANNOUNCEMENT_DELETE'},
     'solicitud_reuniones': {'CLASS_VIEW', 'SYSTEM_CONFIGURE', 'SYSTEM_ADMIN'},
@@ -86,6 +86,7 @@ PAGE_CAPABILITIES_ANY = {
     'entrevistas': {'COUNSELING_VIEW', 'COUNSELING_CREATE'},
     'derivaciones': {'REFERRAL_VIEW', 'REFERRAL_CREATE'},
     'ficha_estudiante': {'STUDENT_VIEW_CONFIDENTIAL'},
+    'citaciones_casos': {'COUNSELING_VIEW', 'COUNSELING_CREATE'},
 
     # Soporte Técnico
     'tickets': {'SUPPORT_VIEW_TICKETS', 'SUPPORT_RESOLVE_TICKET'},

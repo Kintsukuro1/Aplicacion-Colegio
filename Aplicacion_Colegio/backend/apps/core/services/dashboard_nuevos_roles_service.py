@@ -293,6 +293,7 @@ class DashboardPsicologoService:
             'entrevistas': DashboardPsicologoService._get_entrevistas_context,
             'derivaciones': DashboardPsicologoService._get_derivaciones_context,
             'ficha_estudiante': DashboardPsicologoService._get_ficha_estudiante_context,
+            'citaciones_casos': DashboardPsicologoService._get_citaciones_casos_context,
         }
         handler = handlers.get(pagina_solicitada, DashboardPsicologoService._get_inicio_context)
         try:
@@ -307,8 +308,10 @@ class DashboardPsicologoService:
     def _get_inicio_context(user, escuela_rbd):
         from backend.apps.core.models import (
             EntrevistaOrientacion, DerivacionExterna, AnotacionConvivencia,
+            CitacionApoderado, CasoBullyingConvivencia,
         )
-        from backend.apps.academico.models import Asistencia
+        from backend.apps.academico.models import Asistencia, Calificacion
+        from backend.apps.accounts.models import User
 
         hoy = date.today()
         mes_atras = hoy - timedelta(days=30)
@@ -325,6 +328,14 @@ class DashboardPsicologoService:
             colegio_id=escuela_rbd,
             estado__in=['PENDIENTE', 'EN_PROCESO'],
         ).count()
+        citaciones_pendientes = CitacionApoderado.objects.filter(
+            colegio_id=escuela_rbd,
+            estado='PENDIENTE',
+        ).count()
+        casos_bullying_abiertos = CasoBullyingConvivencia.objects.filter(
+            colegio_id=escuela_rbd,
+            estado__in=['ABIERTO', 'EN_INVESTIGACION'],
+        ).count()
 
         # Alertas tempranas: alumnos con muchas inasistencias en el último mes
         alumnos_inasistencia = Asistencia.objects.filter(
@@ -338,7 +349,21 @@ class DashboardPsicologoService:
             'estudiante__apellido_materno',
         ).annotate(
             ausencias=Count('id_asistencia'),
-        ).filter(ausencias__gte=3).order_by('-ausencias')[:10]
+        ).filter(ausencias__gte=3).order_by('-ausencias')
+
+        # Alertas: alumnos con atrasos reiterados en el último mes
+        alumnos_atrasos = Asistencia.objects.filter(
+            colegio_id=escuela_rbd,
+            fecha__gte=mes_atras,
+            estado='T',
+        ).values(
+            'estudiante',
+            'estudiante__nombre',
+            'estudiante__apellido_paterno',
+            'estudiante__apellido_materno',
+        ).annotate(
+            atrasos=Count('id_asistencia'),
+        ).filter(atrasos__gte=3).order_by('-atrasos')
 
         # Alertas: alumnos con anotaciones negativas recientes
         alumnos_anotaciones = AnotacionConvivencia.objects.filter(
@@ -352,16 +377,67 @@ class DashboardPsicologoService:
             'estudiante__apellido_materno',
         ).annotate(
             negativas=Count('id_anotacion'),
-        ).filter(negativas__gte=2).order_by('-negativas')[:10]
+        ).filter(negativas__gte=2).order_by('-negativas')
+
+        # Rendimiento académico: promedio de notas y reprobadas por estudiante
+        alumnos_rendimiento = Calificacion.objects.filter(
+            colegio_id=escuela_rbd,
+        ).values(
+            'estudiante',
+        ).annotate(
+            promedio=Avg('nota'),
+            reprobadas=Count('id_calificacion', filter=Q(nota__lt=4.0)),
+        ).filter(Q(promedio__lt=4.5) | Q(reprobadas__gte=2))
+
+        rendimiento_dict = {
+            r['estudiante']: {
+                'promedio': round(r['promedio'], 1) if r['promedio'] else None,
+                'reprobadas': r['reprobadas']
+            } for r in alumnos_rendimiento
+        }
+
+        # Cruzar para obtener Riesgo Crítico (Bajo rendimiento Y alta inasistencia/atrasos)
+        estudiantes_inasistencia_set = {a['estudiante'] for a in alumnos_inasistencia}
+        estudiantes_atrasos_set = {a['estudiante'] for a in alumnos_atrasos}
+        estudiantes_asistencia_atrasos_set = estudiantes_inasistencia_set.union(estudiantes_atrasos_set)
+
+        alumnos_riesgo_critico = []
+        estudiantes_criticos_ids = estudiantes_asistencia_atrasos_set.intersection(rendimiento_dict.keys())
+        
+        if estudiantes_criticos_ids:
+            usuarios_criticos = User.objects.filter(id__in=estudiantes_criticos_ids).values(
+                'id', 'nombre', 'apellido_paterno', 'apellido_materno'
+            )
+            for u in usuarios_criticos:
+                est_id = u['id']
+                ausencias = next((a['ausencias'] for a in alumnos_inasistencia if a['estudiante'] == est_id), 0)
+                atrasos = next((a['atrasos'] for a in alumnos_atrasos if a['estudiante'] == est_id), 0)
+                
+                alumnos_riesgo_critico.append({
+                    'estudiante_id': est_id,
+                    'nombre_completo': f"{u['apellido_paterno']} {u['apellido_materno'] or ''}, {u['nombre']}".strip(),
+                    'ausencias': ausencias,
+                    'atrasos': atrasos,
+                    'promedio': rendimiento_dict[est_id]['promedio'],
+                    'reprobadas': rendimiento_dict[est_id]['reprobadas']
+                })
+        
+        # Ordenar alumnos en riesgo por promedio de forma ascendente
+        alumnos_riesgo_critico.sort(key=lambda x: x['promedio'] if x['promedio'] is not None else 7.0)
 
         return {
             'entrevistas_semana': entrevistas_semana,
             'seguimientos_pendientes': seguimientos_pendientes,
             'derivaciones_activas': derivaciones_activas,
-            'alumnos_inasistencia': list(alumnos_inasistencia),
-            'alumnos_anotaciones': list(alumnos_anotaciones),
-            'total_alertas': len(alumnos_inasistencia) + len(alumnos_anotaciones),
+            'citaciones_pendientes': citaciones_pendientes,
+            'casos_bullying_abiertos': casos_bullying_abiertos,
+            'alumnos_inasistencia': list(alumnos_inasistencia[:10]),
+            'alumnos_atrasos': list(alumnos_atrasos[:10]),
+            'alumnos_anotaciones': list(alumnos_anotaciones[:10]),
+            'alumnos_riesgo_critico': alumnos_riesgo_critico[:10],
+            'total_alertas': len(alumnos_inasistencia) + len(alumnos_anotaciones) + len(alumnos_atrasos),
         }
+
 
     @staticmethod
     def _get_entrevistas_context(user, escuela_rbd):
@@ -389,6 +465,35 @@ class DashboardPsicologoService:
         return {
             'derivaciones': derivaciones,
             'derivaciones_activas': activas,
+        }
+
+    @staticmethod
+    def _get_citaciones_casos_context(user, escuela_rbd):
+        from backend.apps.core.models import CitacionApoderado, CasoBullyingConvivencia
+        from backend.apps.accounts.models import User
+
+        # Lista de estudiantes activos del colegio para el selector
+        estudiantes = User.objects.filter(
+            rbd_colegio=escuela_rbd,
+            role__nombre__in=['Alumno', 'Estudiante'],
+            is_active=True,
+        ).order_by('apellido_paterno', 'nombre')[:200]
+
+        citaciones = CitacionApoderado.objects.filter(
+            colegio_id=escuela_rbd,
+        ).select_related('estudiante', 'solicitado_por').order_by('-fecha_citacion')[:50]
+
+        casos = CasoBullyingConvivencia.objects.filter(
+            colegio_id=escuela_rbd,
+        ).select_related('estudiante_implicado', 'registrado_por').order_by('-fecha_registro')[:50]
+
+        return {
+            'estudiantes': estudiantes,
+            'citaciones': citaciones,
+            'casos': casos,
+            'tipos_falta_choices': CasoBullyingConvivencia.TIPOS,
+            'estados_caso_choices': CasoBullyingConvivencia.ESTADOS,
+            'estados_citacion_choices': CitacionApoderado.ESTADOS,
         }
 
     @staticmethod
@@ -438,6 +543,8 @@ class DashboardPsicologoService:
                 tasa_asistencia = round(presentes / total_clases * 100, 1) if total_clases > 0 else 0
 
                 # Registros psicológicos
+                from backend.apps.core.models import CitacionApoderado, CasoBullyingConvivencia
+
                 anotaciones = AnotacionConvivencia.objects.filter(
                     estudiante=estudiante_seleccionado,
                     colegio_id=escuela_rbd,
@@ -453,6 +560,16 @@ class DashboardPsicologoService:
                     colegio_id=escuela_rbd,
                 ).order_by('-fecha_derivacion')[:20]
 
+                citaciones = CitacionApoderado.objects.filter(
+                    estudiante=estudiante_seleccionado,
+                    colegio_id=escuela_rbd,
+                ).order_by('-fecha_citacion')[:20]
+
+                casos = CasoBullyingConvivencia.objects.filter(
+                    estudiante_implicado=estudiante_seleccionado,
+                    colegio_id=escuela_rbd,
+                ).order_by('-fecha_registro')[:20]
+
                 ficha = {
                     'total_notas': total_notas,
                     'promedio': promedio,
@@ -462,6 +579,8 @@ class DashboardPsicologoService:
                     'anotaciones': anotaciones,
                     'entrevistas': entrevistas,
                     'derivaciones': derivaciones,
+                    'citaciones': citaciones,
+                    'casos_bullying': casos,
                     'es_pie': getattr(estudiante_seleccionado, 'perfil_estudiante', None) and estudiante_seleccionado.perfil_estudiante.requiere_pie,
                 }
             except User.DoesNotExist:
