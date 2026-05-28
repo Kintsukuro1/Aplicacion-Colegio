@@ -207,7 +207,8 @@
     margin-bottom: 8px;
 }
 
-.mm-conv-panel__head .alumno-section-title {
+.mm-conv-panel__head .alumno-section-title,
+.mm-conv-panel__head .apod-section-title {
     margin: 0;
 }
 

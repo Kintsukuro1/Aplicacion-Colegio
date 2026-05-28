@@ -1,7 +1,7 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
 {% include 'apoderado/_apoderado_hero.html' with hero_title="Admisión y Matrícula" hero_subtitle="Procesos de matrícula y admisión." hero_aria="Admisión y Matrícula" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/admision_matricula.css' %}?v=20260613">
+<link rel="stylesheet" href="{% static 'css/apoderado/admision_matricula.css' %}?v=20260614">
 
 <div class="am-page">
   <section class="apod-section-card am-panel" aria-label="Admisión y matrícula">
@@ -355,8 +355,10 @@
         <span class="am-empty__icon" aria-hidden="true">🏫</span>
         <h3 class="am-empty__title">Sin postulaciones activas</h3>
         <p class="am-empty__text">Aún no has iniciado un proceso de admisión. Usa «Nueva postulación» para enviar datos del alumno y la documentación requerida.</p>
-        <button type="button" class="am-btn am-btn--primary" id="amShowDemo">Ver ejemplo de diseño</button>
-        <button type="button" class="am-btn am-btn--secondary" onclick="toggleFormulario(true)" style="margin-left:0.5rem;">Iniciar postulación real</button>
+        <div class="am-empty__actions">
+          <button type="button" class="am-btn am-btn--primary" id="amShowDemo">Ver ejemplo de diseño</button>
+          <button type="button" class="am-btn am-btn--secondary" onclick="toggleFormulario(true)">Iniciar postulación real</button>
+        </div>
       </div>
       {% endif %}
     </section>
@@ -409,6 +411,16 @@
 
 <script>
 (function () {
+  function debounce(fn, wait) {
+    var timer;
+    return function () {
+      var ctx = this;
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait);
+    };
+  }
+
   function amGetCards() {
     var real = document.querySelectorAll('#amSolicitudesList .am-solicitud-card');
     if (real.length) return real;
@@ -465,9 +477,7 @@
     if (noResults) {
       noResults.classList.toggle('am-hidden', visible > 0 || cards.length === 0);
     }
-    if (clearBtn) {
-      clearBtn.hidden = !estadoVal && !q;
-    }
+    if (clearBtn) clearBtn.hidden = !estadoVal && !q;
   }
 
   window.toggleFormulario = function (forceOpen) {
@@ -564,9 +574,9 @@
     var showDemo = document.getElementById('amShowDemo');
 
     if (estadoFilter) estadoFilter.addEventListener('change', applyAmFilters);
-    if (searchFilter) searchFilter.addEventListener('input', applyAmFilters);
+    if (searchFilter) searchFilter.addEventListener('input', debounce(applyAmFilters, 180));
     if (demoEstado) demoEstado.addEventListener('change', applyAmFilters);
-    if (demoSearch) demoSearch.addEventListener('input', applyAmFilters);
+    if (demoSearch) demoSearch.addEventListener('input', debounce(applyAmFilters, 180));
     if (hideDemo) hideDemo.addEventListener('click', amHideDemo);
     if (showDemo) showDemo.addEventListener('click', amShowDemo);
 

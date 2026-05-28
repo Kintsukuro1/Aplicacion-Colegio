@@ -41,9 +41,12 @@
   <section class="aco-refine" aria-label="Filtrar comunicados">
     <div class="aco-refine__head">
       <h2 class="aco-refine__title">Refinar vista</h2>
-      {% if tipo_filtro %}
-      <a href="{% url 'comunicados:lista' %}" class="aco-refine__clear">Limpiar filtros</a>
-      {% endif %}
+      <div class="aco-refine__actions">
+        {% if tipo_filtro %}
+        <a href="{% url 'comunicados:lista' %}" class="aco-refine__clear">Limpiar tipo</a>
+        {% endif %}
+        <button type="button" class="aco-refine__clear aco-hidden" id="acoClearSearch">Limpiar búsqueda</button>
+      </div>
     </div>
     <form method="get" class="aco-refine__grid" id="acoFilterForm">
       <div class="aco-refine__field">
@@ -83,7 +86,7 @@
         {% include 'comunicados/_comunicado_apoderado_item.html' %}
         {% endfor %}
       </div>
-      <p class="aco-section__title aco-hidden" id="acoNoResults" role="status" style="font-size:0.84rem;color:#64748b;margin-top:0.5rem;">Ningún comunicado coincide con la búsqueda.</p>
+      <p class="aco-no-results aco-hidden" id="acoNoResults" role="status">Ningún comunicado coincide con la búsqueda.</p>
 
       {% else %}
       <div class="aco-section__head" id="acoDemoHead">
@@ -193,13 +196,38 @@
 
 <script>
 (function () {
+  function debounce(fn, wait) {
+    var timer;
+    return function () {
+      var ctx = this;
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait);
+    };
+  }
+
+  function acoFilterList(listEl, query) {
+    if (!listEl) return 0;
+    var visible = 0;
+    listEl.querySelectorAll('.aco-item').forEach(function (el) {
+      var hay = el.getAttribute('data-aco-search') || '';
+      var show = !query || hay.indexOf(query) !== -1;
+      el.classList.toggle('aco-hidden', !show);
+      if (show) visible++;
+    });
+    return visible;
+  }
+
   function acoVisibleItems() {
-    var list = document.getElementById('acoList') || document.getElementById('acoDemoList');
-    if (!list) return [];
-    return Array.prototype.filter.call(
-      list.querySelectorAll('.aco-item'),
-      function (el) { return !el.classList.contains('aco-hidden'); }
-    );
+    var items = [];
+    ['acoList', 'acoDemoList'].forEach(function (id) {
+      var list = document.getElementById(id);
+      if (!list || list.classList.contains('aco-hidden')) return;
+      list.querySelectorAll('.aco-item').forEach(function (el) {
+        if (!el.classList.contains('aco-hidden')) items.push(el);
+      });
+    });
+    return items;
   }
 
   function acoUpdateMetrics() {
@@ -237,23 +265,30 @@
     }
 
     var meta = document.getElementById('acoListMeta');
-    if (meta) meta.textContent = String(total);
+    if (meta) {
+      var list = document.getElementById('acoList');
+      var searchEl = document.getElementById('acoSearchFilter');
+      var hasSearch = searchEl && searchEl.value.trim();
+      if (list && hasSearch) {
+        meta.textContent = total + ' de ' + list.querySelectorAll('.aco-item').length;
+      } else if (!list && total) {
+        meta.textContent = total + (total === 1 ? ' ejemplo' : ' ejemplos');
+      } else {
+        meta.textContent = String(total);
+      }
+    }
   }
 
   function acoApplySearch() {
-    var q = (document.getElementById('acoSearchFilter') || {}).value;
-    q = q ? q.trim().toLowerCase() : '';
-    var list = document.getElementById('acoList');
-    if (!list) return;
+    var searchEl = document.getElementById('acoSearchFilter');
+    var q = searchEl ? searchEl.value.trim().toLowerCase() : '';
     var visible = 0;
-    list.querySelectorAll('.aco-item').forEach(function (el) {
-      var hay = el.getAttribute('data-aco-search') || '';
-      var show = !q || hay.indexOf(q) !== -1;
-      el.classList.toggle('aco-hidden', !show);
-      if (show) visible++;
-    });
+    visible += acoFilterList(document.getElementById('acoList'), q);
+    visible += acoFilterList(document.getElementById('acoDemoList'), q);
     var noRes = document.getElementById('acoNoResults');
-    if (noRes) noRes.classList.toggle('aco-hidden', visible > 0);
+    if (noRes) noRes.classList.toggle('aco-hidden', visible > 0 || !q);
+    var clearSearch = document.getElementById('acoClearSearch');
+    if (clearSearch) clearSearch.classList.toggle('aco-hidden', !q);
     acoUpdateMetrics();
   }
 
@@ -277,7 +312,7 @@
     acoUpdateMetrics();
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function acoBootstrap() {
     var tipo = document.getElementById('acoTipoFilter');
     if (tipo) {
       tipo.addEventListener('change', function () {
@@ -287,7 +322,15 @@
     }
 
     var search = document.getElementById('acoSearchFilter');
-    if (search) search.addEventListener('input', acoApplySearch);
+    if (search) search.addEventListener('input', debounce(acoApplySearch, 180));
+
+    var clearSearch = document.getElementById('acoClearSearch');
+    if (clearSearch) {
+      clearSearch.addEventListener('click', function () {
+        if (search) search.value = '';
+        acoApplySearch();
+      });
+    }
 
     var showDemo = document.getElementById('acoShowDemo');
     var hideDemo = document.getElementById('acoHideDemo');
@@ -295,6 +338,12 @@
     if (hideDemo) hideDemo.addEventListener('click', acoHideDemoMode);
 
     acoUpdateMetrics();
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', acoBootstrap);
+  } else {
+    acoBootstrap();
+  }
 })();
 </script>

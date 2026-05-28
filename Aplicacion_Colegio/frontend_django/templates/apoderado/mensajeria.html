@@ -1,0 +1,435 @@
+{% load static %}
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/apoderado/mensajeria.css' %}?v=20260618">
+
+<div class="amm-page" id="ammPage">
+    {% include 'apoderado/_apoderado_hero.html' with hero_title="Mensajería Institucional" hero_subtitle="Comunicación directa con profesores y administración de tus pupilos." hero_aria="Mensajería apoderado" metrics_aria="Resumen de mensajería" m1_value=no_leidos_count|default:"0" m1_label="No leídos" m1_mod="firmas" m2_value=conversaciones_count|default:"0" m2_label="Conversaciones" m2_mod="comunicados" m3_value=con_profesores_count|default:"0" m3_label="Con docentes" m3_mod="pupilos" m4_value=total_mensajes_count|default:"0" m4_label="Mensajes" m4_mod="cuotas" %}
+
+    <nav class="amm-chips" aria-label="Accesos rápidos">
+        <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="amm-chips__chip{% if not estado_filtro %} amm-chips__chip--active{% endif %}">Todas ({{ conversaciones_count|default:"0" }})</a>
+        {% if no_leidos_count %}
+        <a href="{% url 'mensajeria:bandeja_mensajes' %}?estado=sin_leer" class="amm-chips__chip{% if estado_filtro == 'sin_leer' %} amm-chips__chip--active{% endif %}">No leídos ({{ no_leidos_count }})</a>
+        {% endif %}
+        <a href="{% url 'mensajeria:bandeja_mensajes' %}?estado=profesores" class="amm-chips__chip{% if estado_filtro == 'profesores' %} amm-chips__chip--active{% endif %}">Docentes ({{ con_profesores_count|default:"0" }})</a>
+    </nav>
+
+    {% if clases_contacto and not tiene_conversaciones %}
+    <p class="amm-notice amm-notice--info" role="status">
+        Puedes escribir a los docentes de las <strong>{{ clases_contacto|length }}</strong> materia{{ clases_contacto|length|pluralize:"s" }} de tus pupilos. Elige una en el panel lateral o usa <strong>Nuevo mensaje</strong>.
+    </p>
+    {% endif %}
+
+    <section class="amm-refine" aria-label="Filtrar conversaciones">
+        <div class="amm-refine__head">
+            <h2 class="amm-refine__title">Refinar vista</h2>
+            {% if filtros_activos %}
+            <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="amm-refine__clear">Limpiar filtros</a>
+            {% endif %}
+        </div>
+        <form method="get" class="amm-refine__grid" id="ammFilterForm" action="{% url 'mensajeria:bandeja_mensajes' %}">
+            <div class="amm-refine__field">
+                <label class="amm-refine__label" for="ammEstadoFilter">Estado</label>
+                <select class="amm-refine__control" id="ammEstadoFilter" name="estado">
+                    <option value="">Todos</option>
+                    <option value="sin_leer" {% if estado_filtro == 'sin_leer' %}selected{% endif %}>Con mensajes no leídos</option>
+                    <option value="profesores" {% if estado_filtro == 'profesores' %}selected{% endif %}>Solo docentes</option>
+                </select>
+            </div>
+            <div class="amm-refine__field amm-refine__field--grow">
+                <label class="amm-refine__label" for="ammSearch">Buscar</label>
+                <input type="search" class="amm-refine__control" id="ammSearch" name="q" value="{{ busqueda }}" placeholder="Docente, pupilo, asignatura…" autocomplete="off">
+            </div>
+            <div class="amm-refine__field">
+                <label class="amm-refine__label" aria-hidden="true">&nbsp;</label>
+                <button type="submit" class="amm-btn amm-btn--primary">Buscar</button>
+            </div>
+        </form>
+    </section>
+
+    <div class="amm-layout{% if clases_contacto and not conversacion_actual %} amm-layout--with-aside{% endif %}">
+        <section class="apod-section-card amm-panel" aria-label="Lista de conversaciones">
+            <header class="amm-panel__head">
+                <h2 class="apod-section-title">
+                    <span class="apod-section-title__icon" aria-hidden="true">💬</span>
+                    Conversaciones
+                </h2>
+                <button type="button" class="amm-btn amm-btn--primary amm-btn--sm" id="ammBtnNuevo">+ Nuevo mensaje</button>
+            </header>
+
+            <div class="amm-conv-list" id="ammConvList">
+                {% if not tiene_conversaciones %}
+                <div id="ammDemoNotice" class="amm-notice amm-notice--demo" role="status">
+                    <span><strong>Vista de ejemplo:</strong> conversaciones ilustrativas. Al escribir a un docente aparecerán aquí tus chats reales.</span>
+                    <button type="button" class="amm-notice__dismiss" id="ammHideDemo">Ocultar ejemplo</button>
+                </div>
+                <div id="ammDemoConvs">
+                    <article class="amm-conv-item amm-demo-conv amm-themed" data-subject="lenguaje" data-model-color="">
+                        <span class="amm-conv-item__accent" aria-hidden="true"></span>
+                        <span class="amm-conv-item__avatar" aria-hidden="true">LR</span>
+                        <span class="amm-conv-item__body">
+                            <span class="amm-conv-item__row">
+                                <span class="amm-conv-item__name">Lucía Ramírez</span>
+                                <span class="amm-conv-item__time">Ejemplo</span>
+                            </span>
+                            <span class="amm-conv-item__tags">
+                                <span class="amm-pill amm-pill--subject">Lenguaje</span>
+                                <span class="amm-pill amm-pill--pupil">Pupilo/a</span>
+                            </span>
+                            <span class="amm-conv-item__preview">Consulta sobre evaluación de lectura…</span>
+                        </span>
+                    </article>
+                    <article class="amm-conv-item amm-demo-conv amm-themed" data-subject="matematica" data-model-color="">
+                        <span class="amm-conv-item__accent" aria-hidden="true"></span>
+                        <span class="amm-conv-item__avatar" aria-hidden="true">DM</span>
+                        <span class="amm-conv-item__body">
+                            <span class="amm-conv-item__row">
+                                <span class="amm-conv-item__name">Diego Morales</span>
+                                <span class="amm-conv-item__time">Ejemplo</span>
+                            </span>
+                            <span class="amm-conv-item__tags">
+                                <span class="amm-pill amm-pill--subject">Matemática</span>
+                                <span class="amm-pill amm-pill--pupil">Pupilo/a</span>
+                            </span>
+                            <span class="amm-conv-item__preview">Reunión de apoderados — confirmación…</span>
+                        </span>
+                    </article>
+                </div>
+                <div class="amm-empty amm-empty--compact" id="ammEmptyReal">
+                    <div class="amm-empty__icon" aria-hidden="true">📭</div>
+                    <p class="amm-empty__title">Sin conversaciones aún</p>
+                    <p class="amm-empty__text">Escríbele a un docente desde el panel lateral o con el botón Nuevo mensaje.</p>
+                    <a href="{% url 'dashboard' %}?pagina=mis_pupilos" class="amm-btn amm-btn--outline">Ver mis pupilos</a>
+                </div>
+                {% elif not hay_resultados %}
+                <div class="amm-empty amm-empty--compact">
+                    <div class="amm-empty__icon" aria-hidden="true">🔍</div>
+                    <p class="amm-empty__title">Sin coincidencias</p>
+                    <p class="amm-empty__text"><a href="{% url 'mensajeria:bandeja_mensajes' %}">Limpia los filtros</a> para ver todas.</p>
+                </div>
+                {% else %}
+                    {% for conv in conversaciones %}
+                    <a href="{% url 'mensajeria:ver_conversacion' conv.conversacion.id_conversacion %}"
+                       class="amm-conv-item amm-themed {% if conv.no_leidos %}amm-conv-item--unread{% endif %} {% if conv.activa %}amm-conv-item--active{% endif %}"
+                       data-subject="{{ conv.asignatura_key }}"
+                       data-model-color="{{ conv.asignatura_color|default:'' }}">
+                        <span class="amm-conv-item__accent" aria-hidden="true"></span>
+                        <span class="amm-conv-item__avatar" aria-hidden="true">{{ conv.iniciales }}</span>
+                        <span class="amm-conv-item__body">
+                            <span class="amm-conv-item__row">
+                                <span class="amm-conv-item__name">{{ conv.destinatario.get_full_name }}</span>
+                                <span class="amm-conv-item__time">{% if conv.ultimo_mensaje %}{{ conv.ultimo_mensaje.fecha_envio|date:"d/m H:i" }}{% else %}—{% endif %}</span>
+                            </span>
+                            <span class="amm-conv-item__tags">
+                                <span class="amm-pill amm-pill--subject">{{ conv.asignatura }}</span>
+                                <span class="amm-pill amm-pill--course">{{ conv.curso }}</span>
+                                {% if conv.pupilo_nombre %}
+                                <span class="amm-pill amm-pill--pupil">{{ conv.pupilo_nombre }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="amm-conv-item__preview">{% if conv.ultimo_mensaje %}{{ conv.ultimo_mensaje.contenido|truncatewords:12 }}{% else %}<em>Sin mensajes</em>{% endif %}</span>
+                        </span>
+                        {% if conv.no_leidos %}
+                        <span class="amm-conv-item__badge" aria-label="{{ conv.no_leidos }} no leídos">{{ conv.no_leidos }}</span>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="apod-section-card amm-panel" aria-label="Mensajes de la conversación">
+            <header class="amm-chat-head{% if conversacion_actual %} amm-chat-head--themed{% endif %}"
+                {% if conversacion_actual %}
+                data-subject="{{ conversacion_actual.clase.asignatura.nombre|lower }}"
+                data-model-color="{{ conversacion_actual.clase.asignatura.color|default:'' }}"
+                {% endif %}>
+                {% if conversacion_actual %}
+                <span class="amm-chat-head__accent" aria-hidden="true"></span>
+                <div class="amm-chat-head__who">
+                    <span class="amm-chat-head__avatar" aria-hidden="true">{{ conversacion_actual.destinatario.nombre|first }}{{ conversacion_actual.destinatario.apellido_paterno|first }}</span>
+                    <div>
+                        <h2 class="amm-chat-head__title">{{ conversacion_actual.destinatario.get_full_name }}</h2>
+                        <p class="amm-chat-head__meta">
+                            <span class="amm-pill amm-pill--subject">{{ conversacion_actual.clase.asignatura.nombre }}</span>
+                            <span class="amm-pill amm-pill--course">{{ conversacion_actual.clase.curso.nombre }}</span>
+                            {% if pupilo_nombre_actual %}
+                            <span class="amm-pill amm-pill--pupil">Pupilo: {{ pupilo_nombre_actual }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="amm-chat-head__who">
+                    <span class="amm-chat-head__avatar amm-chat-head__avatar--placeholder" aria-hidden="true">💬</span>
+                    <div>
+                        <h2 class="amm-chat-head__title">Selecciona una conversación</h2>
+                        <p class="amm-chat-head__meta">o inicia un mensaje con el docente de un pupilo</p>
+                    </div>
+                </div>
+                {% endif %}
+            </header>
+
+            <div class="amm-chat-thread" id="ammChatThread">
+                {% if conversacion_actual %}
+                    {% if mensajes %}
+                        {% for m in mensajes %}
+                        <div class="amm-bubble-row {% if m.emisor_id == request.user.id %}amm-bubble-row--out{% endif %}">
+                            <div class="amm-bubble">
+                                {% if m.contenido %}<p class="amm-bubble__text">{{ m.contenido }}</p>{% endif %}
+                                {% if m.archivo_adjunto %}
+                                <p class="amm-bubble__file"><a href="{{ m.archivo_adjunto.url }}" target="_blank" rel="noopener">📎 Archivo adjunto</a></p>
+                                {% endif %}
+                                <time class="amm-bubble__time" datetime="{{ m.fecha_envio|date:'c' }}">{{ m.fecha_envio|date:"d/m H:i" }}</time>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="amm-empty amm-empty--chat">
+                        <p class="amm-empty__title">Sin mensajes en esta conversación</p>
+                        <p class="amm-empty__text">Envía el primero con el cuadro de abajo.</p>
+                    </div>
+                    {% endif %}
+                {% else %}
+                <div class="amm-empty amm-empty--chat">
+                    <div class="amm-empty__illus" aria-hidden="true"></div>
+                    <p class="amm-empty__title">Bandeja de mensajes</p>
+                    <p class="amm-empty__text">Elige una conversación de la lista o contacta a un docente desde el panel lateral.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if conversacion_actual %}
+            <footer class="amm-compose">
+                <form method="post" action="{% url 'mensajeria:ver_conversacion' conversacion_actual.id %}" enctype="multipart/form-data" class="amm-compose__form">
+                    {% csrf_token %}
+                    <textarea name="contenido" class="amm-compose__input" placeholder="Escribe tu mensaje al docente…" rows="2" required></textarea>
+                    <label class="amm-compose__file">
+                        <span class="amm-btn amm-btn--outline amm-btn--sm">Adjuntar</span>
+                        <input type="file" name="archivo" hidden>
+                    </label>
+                    <button type="submit" class="amm-btn amm-btn--primary">Enviar</button>
+                </form>
+            </footer>
+            {% endif %}
+        </section>
+
+        {% if clases_contacto and not conversacion_actual %}
+        <aside class="amm-aside" aria-label="Contactar docente">
+            <section class="apod-section-card amm-panel">
+                <h3 class="amm-aside-card__title">Contactar docente</h3>
+                <p class="amm-aside-card__hint">Materias de tus pupilos. Al elegir una se abre el chat con su profesor.</p>
+                <ul class="amm-doc-list">
+                    {% for item in clases_contacto %}
+                    {% with clase=item.clase %}
+                    {% if clase.profesor %}
+                    <li>
+                        <a href="{% url 'mensajeria:bandeja_mensajes' %}?clase_id={{ clase.id }}&amp;destinatario_id={{ clase.profesor_id }}"
+                           class="amm-doc-link amm-themed"
+                           data-subject="{{ clase.asignatura.nombre|lower }}"
+                           data-model-color="{{ clase.asignatura.color|default:'' }}">
+                            <span class="amm-doc-link__accent" aria-hidden="true"></span>
+                            <span class="amm-doc-link__body">
+                                <span class="amm-pill amm-pill--subject">{{ clase.asignatura.nombre }}</span>
+                                <span class="amm-doc-link__teacher">{{ clase.profesor.get_full_name }}</span>
+                                <span class="amm-pill amm-pill--course">{{ clase.curso.nombre }}</span>
+                                {% if item.pupilo_nombre %}
+                                <span class="amm-pill amm-pill--pupil">{{ item.pupilo_nombre }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="amm-doc-link__arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endwith %}
+                    {% endfor %}
+                </ul>
+            </section>
+        </aside>
+        {% endif %}
+    </div>
+</div>
+
+<div class="amm-modal" id="ammModalNuevo" hidden>
+    <div class="amm-modal__backdrop" data-amm-dismiss></div>
+    <div class="amm-modal__dialog" role="dialog" aria-labelledby="ammModalTitle" aria-modal="true">
+        <header class="amm-modal__head">
+            <h3 class="amm-modal__title" id="ammModalTitle">Nuevo mensaje al docente</h3>
+            <button type="button" class="amm-modal__close" data-amm-dismiss aria-label="Cerrar">×</button>
+        </header>
+        <form id="ammFormNuevo" class="amm-modal__body">
+            {% csrf_token %}
+            <div class="amm-refine__field">
+                <label class="amm-refine__label" for="ammClaseSelect">Materia y pupilo</label>
+                <select class="amm-refine__control" id="ammClaseSelect" name="clase_id" required>
+                    <option value="">Selecciona materia y curso</option>
+                    {% for item in clases_contacto %}
+                    {% with clase=item.clase %}
+                    {% if clase.profesor %}
+                    <option value="{{ clase.id }}"
+                        data-destinatario-id="{{ clase.profesor_id }}"
+                        data-destinatario-nombre="{{ clase.profesor.get_full_name }}"
+                        data-subject="{{ clase.asignatura.nombre|lower }}"
+                        data-model-color="{{ clase.asignatura.color|default:'' }}">
+                        {{ clase.asignatura.nombre }} — {{ clase.curso.nombre }}{% if item.pupilo_nombre %} ({{ item.pupilo_nombre }}){% endif %}
+                    </option>
+                    {% endif %}
+                    {% endwith %}
+                    {% endfor %}
+                </select>
+            </div>
+            <input type="hidden" id="ammDestinatarioId" name="destinatario_id" value="">
+            <div class="amm-refine__field">
+                <label class="amm-refine__label">Para</label>
+                <div class="amm-modal__preview amm-themed" id="ammDestPreviewWrap" data-subject="" data-model-color="">
+                    <p class="amm-modal__preview-text" id="ammDestinatarioPreview">Selecciona una materia</p>
+                </div>
+            </div>
+            <div class="amm-refine__field">
+                <label class="amm-refine__label" for="ammMensajeNuevo">Mensaje</label>
+                <textarea class="amm-refine__control" id="ammMensajeNuevo" name="contenido" rows="4" required placeholder="Escribe tu mensaje…"></textarea>
+            </div>
+        </form>
+        <footer class="amm-modal__foot">
+            <button type="button" class="amm-btn amm-btn--outline" data-amm-dismiss>Cancelar</button>
+            <button type="button" class="amm-btn amm-btn--primary" id="ammBtnEnviarNuevo">Enviar</button>
+        </footer>
+    </div>
+</div>
+
+<script>
+(function () {
+    function parseHex(hex) {
+        var h = (hex || '').replace('#', '').trim();
+        if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+        if (h.length !== 6) return { r: 16, g: 163, b: 74 };
+        return {
+            r: parseInt(h.slice(0, 2), 16),
+            g: parseInt(h.slice(2, 4), 16),
+            b: parseInt(h.slice(4, 6), 16)
+        };
+    }
+
+    function resolveAccent(name, modelColor) {
+        var s = (name || '').toLowerCase();
+        var accent = '#10b981';
+        var text = '#166534';
+        if (s.indexOf('matem') !== -1) { accent = '#3B82F6'; text = '#1E3A8A'; }
+        else if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1 || s.indexOf('castellano') !== -1) { accent = '#EF4444'; text = '#991B1B'; }
+        else if (s.indexOf('cienc') !== -1 || s.indexOf('naturales') !== -1) { accent = '#10B981'; text = '#065F46'; }
+        else if (s.indexOf('histor') !== -1 || s.indexOf('geograf') !== -1) { accent = '#8B5CF6'; text = '#5B21B6'; }
+        else if (s.indexOf('ingl') !== -1) { accent = '#F59E0B'; text = '#92400E'; }
+        else if (s.indexOf('edfis') !== -1 || s.indexOf('educacion fisica') !== -1) { accent = '#06B6D4'; text = '#155E75'; }
+        else if (s.indexOf('arte') !== -1 || s.indexOf('visuales') !== -1) { accent = '#EC4899'; text = '#9D174D'; }
+        else if (modelColor) { accent = modelColor; text = '#166534'; }
+        return { accent: accent, text: text };
+    }
+
+    function applyTheme(el) {
+        if (!el) return;
+        var theme = resolveAccent(el.getAttribute('data-subject') || '', (el.getAttribute('data-model-color') || '').trim());
+        var rgb = parseHex(theme.accent);
+        el.style.setProperty('--amm-accent', theme.accent);
+        el.style.setProperty('--amm-accent-rgb', rgb.r + ', ' + rgb.g + ', ' + rgb.b);
+        el.style.setProperty('--amm-accent-text', theme.text);
+    }
+
+    document.querySelectorAll('.amm-themed').forEach(applyTheme);
+
+    var hideDemo = document.getElementById('ammHideDemo');
+    var demoNotice = document.getElementById('ammDemoNotice');
+    var demoConvs = document.getElementById('ammDemoConvs');
+    if (hideDemo) {
+        hideDemo.addEventListener('click', function () {
+            if (demoNotice) demoNotice.classList.add('amm-hidden');
+            if (demoConvs) demoConvs.classList.add('amm-hidden');
+        });
+    }
+
+    var modal = document.getElementById('ammModalNuevo');
+    var btnNuevo = document.getElementById('ammBtnNuevo');
+    var btnEnviar = document.getElementById('ammBtnEnviarNuevo');
+    var form = document.getElementById('ammFormNuevo');
+    var selectClase = document.getElementById('ammClaseSelect');
+    var destInput = document.getElementById('ammDestinatarioId');
+    var destPreview = document.getElementById('ammDestinatarioPreview');
+    var destPreviewWrap = document.getElementById('ammDestPreviewWrap');
+    var estadoFilter = document.getElementById('ammEstadoFilter');
+    var filterForm = document.getElementById('ammFilterForm');
+    var searchInput = document.getElementById('ammSearch');
+    var thread = document.getElementById('ammChatThread');
+    var chatHead = document.querySelector('.amm-chat-head--themed');
+
+    function openModal() {
+        if (modal) { modal.hidden = false; document.body.style.overflow = 'hidden'; }
+    }
+    function closeModal() {
+        if (modal) { modal.hidden = true; document.body.style.overflow = ''; }
+    }
+    function updateDestinatario() {
+        if (!selectClase || !destInput || !destPreview) return;
+        var opt = selectClase.options[selectClase.selectedIndex];
+        if (!opt || !opt.value) {
+            destInput.value = '';
+            destPreview.textContent = 'Selecciona una materia';
+            if (destPreviewWrap) {
+                destPreviewWrap.setAttribute('data-subject', '');
+                destPreviewWrap.setAttribute('data-model-color', '');
+                applyTheme(destPreviewWrap);
+            }
+            return;
+        }
+        destInput.value = opt.dataset.destinatarioId || '';
+        destPreview.textContent = opt.dataset.destinatarioNombre || 'Docente';
+        if (destPreviewWrap) {
+            destPreviewWrap.setAttribute('data-subject', opt.dataset.subject || '');
+            destPreviewWrap.setAttribute('data-model-color', opt.dataset.modelColor || '');
+            applyTheme(destPreviewWrap);
+        }
+    }
+    function enviarNuevo() {
+        if (!form) return;
+        var fd = new FormData(form);
+        if (!fd.get('clase_id') || !fd.get('destinatario_id') || !(fd.get('contenido') || '').trim()) {
+            alert('Completa materia y mensaje');
+            return;
+        }
+        fetch('{% url "mensajeria:crear_nueva_conversacion" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': fd.get('csrfmiddlewaretoken') },
+            body: fd
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                window.location.href = '/mensajeria/conversacion/' + data.conversacion_id + '/';
+            } else {
+                alert(data.message || 'No se pudo enviar');
+            }
+        })
+        .catch(function () { alert('Error de conexión'); });
+    }
+
+    if (btnNuevo) btnNuevo.addEventListener('click', openModal);
+    if (selectClase) selectClase.addEventListener('change', updateDestinatario);
+    if (btnEnviar) btnEnviar.addEventListener('click', enviarNuevo);
+    if (modal) {
+        modal.querySelectorAll('[data-amm-dismiss]').forEach(function (el) {
+            el.addEventListener('click', closeModal);
+        });
+    }
+    if (estadoFilter && filterForm) {
+        estadoFilter.addEventListener('change', function () { filterForm.submit(); });
+    }
+    if (searchInput && filterForm) {
+        var debounceTimer;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () { filterForm.submit(); }, 180);
+        });
+    }
+    if (thread) thread.scrollTop = thread.scrollHeight;
+    if (chatHead) applyTheme(chatHead);
+})();
+</script>
+
+{% include 'apoderado/_apoderado_wrap_end.html' %}

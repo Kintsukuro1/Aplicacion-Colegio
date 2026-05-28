@@ -1,7 +1,7 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
 {% include 'apoderado/_apoderado_hero.html' with hero_title="Calendario" hero_subtitle="Eventos y fechas importantes de tus pupilos." hero_aria="Calendario" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/calendario_pupilo.css' %}?v=20260609">
+<link rel="stylesheet" href="{% static 'css/apoderado/calendario_pupilo.css' %}?v=20260614">
 
 <div class="acal-page">
   <section class="apod-section-card acal-panel" aria-label="Calendario por pupilo">
@@ -167,6 +167,16 @@
 {% if eventos_calendario %}
 <script>
 (function () {
+  function debounce(fn, wait) {
+    var timer;
+    return function () {
+      var ctx = this;
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait);
+    };
+  }
+
   var SUBJECT_COLORS = {
     matem: '#3B82F6', lengua: '#EF4444', comunic: '#EF4444', castellano: '#EF4444',
     cienc: '#10B981', natur: '#10B981', histor: '#8B5CF6', geograf: '#8B5CF6',
@@ -496,7 +506,7 @@
   }
 
   if (typeFilter) typeFilter.addEventListener('change', applyListFilters);
-  if (searchEl) searchEl.addEventListener('input', applyListFilters);
+  if (searchEl) searchEl.addEventListener('input', debounce(applyListFilters, 180));
 
   if (clearBtn) {
     clearBtn.addEventListener('click', function () {

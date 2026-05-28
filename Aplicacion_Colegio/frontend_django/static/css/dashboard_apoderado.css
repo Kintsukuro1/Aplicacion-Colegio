@@ -35,6 +35,12 @@ body.vista-apoderado .apod-page-content,
 body.vista-apoderado .content-wrapper,
 body.vista-apoderado .comunicados-container,
 body.vista-apoderado .asistencia-container,
+body.vista-apoderado .aco-page,
+body.vista-apoderado .aa-page,
+body.vista-apoderado .af-page,
+body.vista-apoderado .am-page,
+body.vista-apoderado .acal-page,
+body.vista-apoderado .amm-page,
 body.vista-apoderado .apod-hero {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -1852,7 +1858,12 @@ body.pagina-inicio:has(.perfil-apoderado) {
 .apod-page-content .content-wrapper,
 .apod-page-content .tareas-container,
 .apod-page-content .academic-schedule-container,
-.apod-page-content .comunicados-container {
+.apod-page-content .comunicados-container,
+.apod-page-content .aco-page,
+.apod-page-content .aa-page,
+.apod-page-content .af-page,
+.apod-page-content .am-page,
+.apod-page-content .amm-page {
     max-width: none;
     width: 100%;
     padding: 0;

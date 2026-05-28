@@ -7,9 +7,62 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 
-from backend.apps.cursos.models import Clase
+from backend.apps.cursos.models import Clase, ClaseEstudiante
 from backend.apps.mensajeria.services import MensajeriaService
 from backend.common.utils.dashboard_helpers import build_dashboard_context
+
+
+def _mensajeria_content_template(user) -> str:
+    if hasattr(user, 'perfil_apoderado'):
+        return 'apoderado/mensajeria.html'
+    return 'estudiante/mensajeria.html'
+
+
+def _pupilo_nombre_por_clase(user, clase_id) -> str:
+    ce = (
+        ClaseEstudiante.objects.filter(
+            clase_id=clase_id,
+            activo=True,
+            estudiante__apoderados__user=user,
+        )
+        .select_related('estudiante')
+        .first()
+    )
+    if ce and ce.estudiante:
+        return ce.estudiante.get_full_name()
+    return ''
+
+
+def _clases_con_pupilo(user, clases) -> list[dict]:
+    return [
+        {
+            'clase': clase,
+            'pupilo_nombre': _pupilo_nombre_por_clase(user, clase.id),
+        }
+        for clase in clases
+    ]
+
+
+def enrich_apoderado_mensajeria_context(user, context: dict) -> None:
+    if not hasattr(user, 'perfil_apoderado'):
+        return
+    clases = context.get('clases') or []
+    context['clases_contacto'] = _clases_con_pupilo(user, clases)
+    for key in ('conversaciones', 'conversaciones_todas'):
+        items = context.get(key)
+        if not items:
+            continue
+        for item in items:
+            item['pupilo_nombre'] = _pupilo_nombre_por_clase(
+                user,
+                item['conversacion'].clase_id,
+            )
+    conv_actual = context.get('conversacion_actual')
+    if conv_actual and conv_actual.get('clase'):
+        context['pupilo_nombre_actual'] = _pupilo_nombre_por_clase(
+            user,
+            conv_actual['clase'].id,
+        )
 
 
 def _get_clases_for_user(user):
@@ -91,25 +144,18 @@ def bandeja_mensajes(request):
     context, redirect_response = build_dashboard_context(
         request,
         pagina_actual='mensajes',
-        content_template='estudiante/mensajeria.html',
+        content_template=_mensajeria_content_template(request.user),
     )
     if redirect_response:
         return redirect_response
 
-    # Obtener clases del usuario
-    clases = _get_clases_for_user(request.user)
-    
-    # Obtener lista de clases ordenada por nombre
-    from backend.apps.cursos.models import Clase
-    if isinstance(clases, Clase.objects.none().__class__):
-        clases_list = list(clases)
-    else:
-        clases_list = list(Clase.objects.filter(id__in=clases).order_by('nombre'))
-
     clases = list(_get_clases_for_user(request.user))
-    is_estudiante = hasattr(request.user, 'perfil_estudiante')
+    uses_mm_bandeja = (
+        hasattr(request.user, 'perfil_estudiante')
+        or hasattr(request.user, 'perfil_apoderado')
+    )
 
-    if is_estudiante:
+    if uses_mm_bandeja:
         context.update(
             MensajeriaService.get_alumno_bandeja_context(request.user, request.GET),
         )
@@ -118,6 +164,7 @@ def bandeja_mensajes(request):
             'mensajes': [],
             'clases': clases,
         })
+        enrich_apoderado_mensajeria_context(request.user, context)
     else:
         context.update({
             'conversaciones': MensajeriaService.get_conversaciones_data(request.user),

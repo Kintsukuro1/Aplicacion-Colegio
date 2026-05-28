@@ -4,7 +4,7 @@
 {% else %}
 {% include 'estudiante/_alumno_wrap_start.html' %}
 {% endif %}
-<link rel="stylesheet" href="{% static 'css/estudiante/mensajeria.css' %}?v=20260617">
+<link rel="stylesheet" href="{% static 'css/estudiante/mensajeria.css' %}?v=20260618">
 
 <div class="mm-page" id="mmPage">
     {% if rol == 'apoderado' %}
@@ -48,10 +48,10 @@
     </section>
 
     <div class="mm-layout{% if clases and not conversacion_actual %} mm-layout--with-aside{% endif %}">
-        <section class="alumno-section-card mm-conv-panel" aria-label="Lista de conversaciones">
+        <section class="{% if rol == 'apoderado' %}apod-section-card{% else %}alumno-section-card{% endif %} mm-conv-panel" aria-label="Lista de conversaciones">
             <header class="mm-conv-panel__head">
-                <h2 class="alumno-section-title">
-                    <span class="alumno-section-title__icon" aria-hidden="true">💬</span>
+                <h2 class="{% if rol == 'apoderado' %}apod-section-title{% else %}alumno-section-title{% endif %}">
+                    <span class="{% if rol == 'apoderado' %}apod-section-title__icon{% else %}alumno-section-title__icon{% endif %}" aria-hidden="true">💬</span>
                     Conversaciones
                 </h2>
                 <button type="button" class="mm-btn mm-btn--primary mm-btn--sm" id="mmBtnNuevo">+ Nuevo mensaje</button>
@@ -62,8 +62,13 @@
                 <div class="mm-empty mm-empty--compact">
                     <div class="mm-empty__icon" aria-hidden="true">📭</div>
                     <p class="mm-empty__title">Sin conversaciones aún</p>
+                    {% if rol == 'apoderado' %}
+                    <p class="mm-empty__text">Escríbele a un profesor de tus pupilos desde aquí o elige una materia en el panel lateral.</p>
+                    <a href="{% url 'dashboard' %}?pagina=mis_pupilos" class="mm-btn mm-btn--outline">Ver mis pupilos</a>
+                    {% else %}
                     <p class="mm-empty__text">Escríbele a un profesor desde aquí o desde el detalle de una clase.</p>
                     <a href="{% url 'dashboard' %}?pagina=mis_clases" class="mm-btn mm-btn--outline">Ir a Mis Clases</a>
+                    {% endif %}
                 </div>
                 {% elif not hay_resultados %}
                 <div class="mm-empty mm-empty--compact">
@@ -99,7 +104,7 @@
             </div>
         </section>
 
-        <section class="alumno-section-card mm-chat-panel" aria-label="Mensajes de la conversación">
+        <section class="{% if rol == 'apoderado' %}apod-section-card{% else %}alumno-section-card{% endif %} mm-chat-panel" aria-label="Mensajes de la conversación">
             <header class="mm-chat-panel__head{% if conversacion_actual %} mm-themed{% endif %}"
                 {% if conversacion_actual %}
                 data-subject="{{ conversacion_actual.clase.asignatura.nombre|lower }}"
@@ -152,7 +157,11 @@
                 <div class="mm-empty mm-empty--chat">
                     <div class="mm-empty__illus" aria-hidden="true"></div>
                     <p class="mm-empty__title">Bandeja de mensajes</p>
+                    {% if rol == 'apoderado' %}
+                    <p class="mm-empty__text">Elige una conversación de la lista o inicia un chat con el profesor de un pupilo.</p>
+                    {% else %}
                     <p class="mm-empty__text">Elige una conversación de la lista o inicia una con tu profesor.</p>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -174,9 +183,9 @@
 
         {% if clases and not conversacion_actual %}
         <aside class="mm-aside" aria-label="Iniciar conversación">
-            <section class="alumno-section-card mm-aside-card">
-                <h3 class="mm-aside-card__title">Escribir a un profesor</h3>
-                <p class="mm-aside-card__hint">Toca una materia para abrir el chat con su profesor.</p>
+            <section class="{% if rol == 'apoderado' %}apod-section-card{% else %}alumno-section-card{% endif %} mm-aside-card">
+                <h3 class="mm-aside-card__title">{% if rol == 'apoderado' %}Contactar docente{% else %}Escribir a un profesor{% endif %}</h3>
+                <p class="mm-aside-card__hint">{% if rol == 'apoderado' %}Elige la materia y curso de tu pupilo para abrir el chat con su profesor.{% else %}Toca una materia para abrir el chat con su profesor.{% endif %}</p>
                 <ul class="mm-class-quick">
                     {% for clase in clases %}
                     {% if clase.profesor %}
@@ -207,15 +216,15 @@
     <div class="mm-modal__backdrop" data-mm-dismiss></div>
     <div class="mm-modal__dialog" role="dialog" aria-labelledby="mmModalTitle" aria-modal="true">
         <header class="mm-modal__head">
-            <h3 class="mm-modal__title" id="mmModalTitle">Nuevo mensaje</h3>
+            <h3 class="mm-modal__title" id="mmModalTitle">{% if rol == 'apoderado' %}Nuevo mensaje al docente{% else %}Nuevo mensaje{% endif %}</h3>
             <button type="button" class="mm-modal__close" data-mm-dismiss aria-label="Cerrar">×</button>
         </header>
         <form id="mmFormNuevo" class="mm-modal__body">
             {% csrf_token %}
             <div class="mm-refine__field">
-                <label class="mm-refine__label" for="mmClaseSelect">Clase</label>
+                <label class="mm-refine__label" for="mmClaseSelect">{% if rol == 'apoderado' %}Materia y curso del pupilo{% else %}Clase{% endif %}</label>
                 <select class="mm-refine__control" id="mmClaseSelect" name="clase_id" required>
-                    <option value="">Selecciona una clase</option>
+                    <option value="">{% if rol == 'apoderado' %}Selecciona materia y curso{% else %}Selecciona una clase{% endif %}</option>
                     {% for clase in clases %}
                     {% if clase.profesor %}
                     <option value="{{ clase.id }}"

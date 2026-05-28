@@ -5,7 +5,7 @@
 
 {% block content %}
 {% if rol == 'apoderado' %}
-<link rel="stylesheet" href="{% static 'css/apoderado/comunicados.css' %}?v=20260612">
+<link rel="stylesheet" href="{% static 'css/apoderado/comunicados.css' %}?v=20260615">
 
 <div class="aco-page">
     {% include 'apoderado/_apoderado_hero.html' with hero_title="Comunicados y Circulares" hero_subtitle="Información oficial y avisos importantes del colegio." hero_aria="Comunicados" metrics_aria="Resumen de comunicados" m1_value=comunicados|length m1_label="En bandeja" m1_mod="comunicados" m2_value=0 m2_label="Urgentes" m2_mod="firmas" m3_value=0 m3_label="Citaciones" m3_mod="pupilos" m4_value=0 m4_label="Prioritarios" m4_mod="cuotas" %}

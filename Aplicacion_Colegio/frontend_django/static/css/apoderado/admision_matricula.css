@@ -608,6 +608,13 @@
     line-height: 1.45;
 }
 
+.am-empty__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
 .am-notice--demo {
     display: flex;
     flex-wrap: wrap;

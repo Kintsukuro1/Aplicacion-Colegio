@@ -1,7 +1,7 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
 {% include 'apoderado/_apoderado_hero.html' with hero_title="Firmas Pendientes" hero_subtitle="Documentos que requieren tu firma y historial de firmas digitales." hero_aria="Firmas Pendientes" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/firmas_pendientes.css' %}?v=20260613">
+<link rel="stylesheet" href="{% static 'css/apoderado/firmas_pendientes.css' %}?v=20260614">
 
 <div class="af-page">
   <section class="apod-section-card af-panel" aria-label="Firmas y documentos">
@@ -287,7 +287,17 @@
 {% if firmados %}
 <script>
 (function () {
-  var cards = document.querySelectorAll('.af-signature-card');
+  function debounce(fn, wait) {
+    var timer;
+    return function () {
+      var ctx = this;
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait);
+    };
+  }
+
+  var cards = document.querySelectorAll('#afSignaturesList .af-signature-card');
   var typeFilter = document.getElementById('afTypeFilter');
   var statusFilter = document.getElementById('afStatusFilter');
   var searchEl = document.getElementById('afSearch');
@@ -353,7 +363,7 @@
 
   if (typeFilter) typeFilter.addEventListener('change', applyFilters);
   if (statusFilter) statusFilter.addEventListener('change', applyFilters);
-  if (searchEl) searchEl.addEventListener('input', applyFilters);
+  if (searchEl) searchEl.addEventListener('input', debounce(applyFilters, 180));
   if (clearBtn) {
     clearBtn.addEventListener('click', function () {
       if (typeFilter) typeFilter.value = '';

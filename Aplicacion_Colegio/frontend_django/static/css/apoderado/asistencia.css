@@ -289,6 +289,7 @@
     padding: 0.65rem 0.85rem;
     background: #fff;
     border: 1px solid #e8f0ec;
+    border-left: 3px solid var(--aa-accent, #94a3b8);
     border-radius: 10px;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -333,7 +334,7 @@
     margin: 0;
     font-size: 0.88rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--aa-accent, #0f172a);
     line-height: 1.25;
 }
 
