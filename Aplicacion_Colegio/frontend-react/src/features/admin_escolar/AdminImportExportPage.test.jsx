@@ -1,30 +1,13 @@
 import { screen, waitFor, act } from '@testing-library/react';
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, getMock } from '../../test/test-utils';
-import { useAuthStore } from '../../lib/store/useAuthStore';
-
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderWithProviders, getMock, setupUser, clearUser, createDeferred } from '../../test/test-utils';
 import AdminImportExportPage from './AdminImportExportPage';
-
-function createDeferred() {
-  let resolve;
-  let reject;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-}
 
 describe('AdminImportExportPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    useAuthStore.getState().setUser({ capabilities: ['SYSTEM_ADMIN'] });
+    setupUser(['SYSTEM_ADMIN']);
   });
-
-  afterEach(() => {
-    useAuthStore.getState().setUser(null);
-  });
-
   it('renders deferred loading and dashboard data', async () => {
     const dashboardDeferred = createDeferred();
 
@@ -64,7 +47,7 @@ describe('AdminImportExportPage', () => {
   });
 
   it('shows read-only permissions notice for configuration-only users', () => {
-    useAuthStore.getState().setUser({ capabilities: ['SYSTEM_CONFIGURE'] });
+    setupUser(['SYSTEM_CONFIGURE']);
 
     getMock.mockImplementation((url) => {
       if (url.includes('/api/v1/importacion/dashboard/')) {
@@ -79,7 +62,7 @@ describe('AdminImportExportPage', () => {
     renderWithProviders(<AdminImportExportPage />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Vista de consulta');
-    expect(screen.getByText('La importacion masiva solo esta disponible para administradores del sistema.')).toBeInTheDocument();
+    expect(screen.getByText(/Tu rol puede ver el resumen del colegio/)).toBeInTheDocument();
     expect(screen.getByText('Las exportaciones masivas requieren rol de administrador del sistema.')).toBeInTheDocument();
   });
 });

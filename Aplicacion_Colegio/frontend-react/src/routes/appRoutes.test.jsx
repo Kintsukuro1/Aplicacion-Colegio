@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { canAccessRoute } from '../lib/capabilities';
+import { canAccessRoute } from '../utils/capabilities';
 import { APP_ROUTES } from './appRoutes';
 
 const DEFAULT_CAPABILITIES_BY_ROLE = {

@@ -1,14 +1,14 @@
-﻿import { useRef, useState } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useRef, useState } from 'react';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { useSearchParams } from 'react-router-dom';
 
 import PaginationControls from '../../components/tables/PaginationControls';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { usePagination } from '../../lib/hooks';
-import { formatNumber } from '../../lib/formatters';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { usePagination } from '../../hooks';
+import { formatNumber } from '../../utils/formatters';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 
 function isBatchEndpointUnavailable(error) {
   return error?.status === 404 || error?.status === 405;
@@ -156,7 +156,7 @@ export default function AdminEvaluationsPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Admin Escolar: Evaluaciones</h2>
+            <h2 data-testid="admin-evaluations-title">Admin Escolar: Evaluaciones</h2>
             <p>No tienes permisos para ver evaluaciones.</p>
           </div>
         </header>
@@ -168,15 +168,15 @@ export default function AdminEvaluationsPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Admin Escolar: Evaluaciones</h2>
+          <h2 data-testid="admin-evaluations-title">Admin Escolar: Evaluaciones</h2>
           <p>Lectura desde `GET /api/v1/profesor/evaluaciones/`.</p>
         </div>
       </header>
 
-      {apiError ? <div className="error-box" role="alert" aria-live="assertive">{apiError}</div> : null}
+      {apiError ? <div className="error-box" data-testid="admin-evaluations-error" role="alert" aria-live="assertive">{apiError}</div> : null}
       {!canEdit ? <p>Modo restringido: falta capability `GRADE_EDIT` para edicion masiva.</p> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="admin-evaluations-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

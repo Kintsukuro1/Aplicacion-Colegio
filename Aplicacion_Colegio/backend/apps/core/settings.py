@@ -209,7 +209,7 @@ else:
 # Database
 # Usar PostgreSQL en producción, SQLite en desarrollo
 DATABASE_URL = config('DATABASE_URL', default=None)
-DB_ENGINE = config('DB_ENGINE', default='sqlite')
+DB_ENGINE = config('DB_ENGINE', default='postgresql')
 
 if DATABASE_URL:
     # Producción: Usar DATABASE_URL (formato: postgresql://user:pass@host:port/dbname)

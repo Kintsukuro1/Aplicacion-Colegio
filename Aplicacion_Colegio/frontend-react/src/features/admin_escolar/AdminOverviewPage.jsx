@@ -1,10 +1,10 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { apiClient } from '../../lib/apiClient';
-import { useFetch } from '../../lib/hooks';
+import { apiClient } from '../../services/apiClient';
+import { useFetch } from '../../hooks';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
-import { formatNumber, formatGrade } from '../../lib/formatters';
+import { formatNumber, formatGrade } from '../../utils/formatters';
 
 const SCOPES = ['school', 'analytics'];
 
@@ -115,7 +115,7 @@ export default function AdminOverviewPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Panel Administrativo</h2>
+          <h2 data-testid="admin-overview-title">Panel Administrativo</h2>
           <p>Resumen general del colegio y gestión de ciclos académicos.</p>
         </div>
         <label>
@@ -130,9 +130,9 @@ export default function AdminOverviewPage() {
         </label>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="admin-overview-error" role="alert" aria-live="assertive">{error}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="admin-overview-summary">
         {loading
           ? Array.from({ length: scope === 'school' ? 6 : 5 }).map((_, index) => (
               <SummarySkeleton key={index} />

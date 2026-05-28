@@ -4,9 +4,9 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import App from './App';
-import { TenantProvider } from './lib/tenantContext';
-import { queryClient } from './lib/queryClient';
-import { initMultiTabSync } from './lib/authStore';
+import { TenantProvider } from './utils/tenantContext';
+import { queryClient } from './services/queryClient';
+import { initMultiTabSync } from './stores/authStore';
 import './styles.css';
 
 // Initialize multi-tab token synchronization

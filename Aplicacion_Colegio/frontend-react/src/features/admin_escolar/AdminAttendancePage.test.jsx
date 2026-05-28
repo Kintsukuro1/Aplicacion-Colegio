@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, paginated, getMock, postMock, patchMock, deleteMock } from '../../test/test-utils';
+import { renderWithProviders, paginated, getMock, postMock, patchMock, deleteMock , setupUser } from '../../test/test-utils';
 
 import AdminAttendancePage from './AdminAttendancePage';
 
@@ -12,7 +12,8 @@ describe('AdminAttendancePage', () => {
       .mockResolvedValueOnce({ results: [{ id: 31, curso_nombre: '6A', asignatura_nombre: 'Historia' }] })
       .mockResolvedValue(paginated([]));
 
-    renderWithProviders(<AdminAttendancePage me={{ capabilities: ['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE'] }} />, {
+    setupUser(['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE']);
+    renderWithProviders(<AdminAttendancePage />, {
       route: '/admin/asistencias',
       path: '/admin/asistencias'
     });
@@ -24,7 +25,7 @@ describe('AdminAttendancePage', () => {
 
     // Just wait a moment for any effects to settle
     await waitFor(() => {
-      expect(screen.getByText(/Admin Escolar: Asistencias/)).toBeInTheDocument();
+      expect(screen.getByTestId('admin-attendance-title')).toBeInTheDocument();
     }, { timeout: 5000 });
   });
 
@@ -37,7 +38,8 @@ describe('AdminAttendancePage', () => {
 
     postMock.mockResolvedValue({ id_asistencia: 77 });
 
-    renderWithProviders(<AdminAttendancePage me={{ capabilities: ['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE'] }} />, {
+    setupUser(['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE']);
+    renderWithProviders(<AdminAttendancePage />, {
       route: '/admin/asistencias?clase_id=31',
       path: '/admin/asistencias'
     });
@@ -90,7 +92,8 @@ describe('AdminAttendancePage', () => {
     patchMock.mockResolvedValue({ id_asistencia: 77, estado: 'P' });
     deleteMock.mockResolvedValue(null);
 
-    renderWithProviders(<AdminAttendancePage me={{ capabilities: ['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE'] }} />, {
+    setupUser(['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE']);
+    renderWithProviders(<AdminAttendancePage />, {
       route: '/admin/asistencias?clase_id=31',
       path: '/admin/asistencias'
     });
@@ -126,7 +129,8 @@ describe('AdminAttendancePage', () => {
       .mockResolvedValueOnce({ results: [{ id: 31, curso_nombre: '6A', asignatura_nombre: 'Historia' }] })
       .mockResolvedValue(paginated([]));
 
-    renderWithProviders(<AdminAttendancePage me={{ capabilities: ['CLASS_VIEW_ATTENDANCE'] }} />, {
+    setupUser(['CLASS_VIEW_ATTENDANCE']);
+    renderWithProviders(<AdminAttendancePage />, {
       route: '/admin/asistencias?clase_id=31',
       path: '/admin/asistencias'
     });
@@ -157,7 +161,8 @@ describe('AdminAttendancePage', () => {
         ],
       });
 
-    renderWithProviders(<AdminAttendancePage me={{ capabilities: ['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE'] }} />, {
+    setupUser(['CLASS_VIEW_ATTENDANCE', 'CLASS_TAKE_ATTENDANCE']);
+    renderWithProviders(<AdminAttendancePage />, {
       route: '/admin/asistencias?clase_id=31&page=2',
       path: '/admin/asistencias'
     });

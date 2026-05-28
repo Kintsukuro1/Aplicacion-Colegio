@@ -1,11 +1,11 @@
 import { useMemo, useReducer } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { formatNumber } from '../../utils/formatters';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 
 import { AnotacionForm } from './AnotacionForm';
@@ -222,14 +222,14 @@ export default function InspectorConvivenciaPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Inspector Convivencia</h2>
+          <h2 data-testid="inspector-convivencia-title">Inspector Convivencia</h2>
           <p>Registro rapido de anotaciones sobre estudiantes.</p>
         </div>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="inspector-convivencia-error" role="alert" aria-live="assertive">{error}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="inspector-convivencia-summary">
         {loading
           ? Array.from({ length: 3 }).map((_, index) => (
               <SummarySkeleton key={index} />

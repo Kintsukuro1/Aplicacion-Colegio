@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { asResults } from '../../lib/httpHelpers';
+import { asResults } from '../../utils/httpHelpers';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { formatNumber } from '../../utils/formatters';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 
 import { TeacherAttendanceForm } from './TeacherAttendanceForm';
@@ -174,15 +174,15 @@ export default function TeacherAttendancePage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Profesor: Asistencias</h2>
+          <h2 data-testid="teacher-attendance-title">Profesor: Asistencias</h2>
           <p>Registro de asistencia con filtros por clase y fecha, más permisos por acción.</p>
         </div>
       </header>
 
-      {apiError ? <div className="error-box" role="alert" aria-live="assertive">{apiError}</div> : null}
+      {apiError ? <div className="error-box" data-testid="teacher-attendance-error" role="alert" aria-live="assertive">{apiError}</div> : null}
       {!canTakeAttendance ? <p>Modo solo lectura: falta capability `CLASS_TAKE_ATTENDANCE`.</p> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="teacher-attendance-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

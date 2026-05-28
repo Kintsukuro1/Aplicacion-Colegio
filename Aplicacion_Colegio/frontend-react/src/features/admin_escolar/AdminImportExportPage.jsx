@@ -1,12 +1,12 @@
 import { useMemo, useReducer, useRef } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-import { apiClient } from '../../lib/apiClient';
-import { useFetch } from '../../lib/hooks';
-import { usePermissions } from '../../lib/hooks/usePermissions';
-import { getAccessToken } from '../../lib/authStore';
+import { apiClient } from '../../services/apiClient';
+import { useFetch } from '../../hooks';
+import { usePermissions } from '../../hooks/usePermissions';
+import { getAccessToken } from '../../stores/authStore';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber } from '../../utils/formatters';
 import { useToast } from '../../components/feedback/Toast';
 
 import { ImportSection } from './ImportSection';
@@ -223,7 +223,7 @@ export default function AdminImportExportPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Admin Escolar: Importacion y Exportacion</h2>
+            <h2 data-testid="admin-import-export-title">Admin Escolar: Importacion y Exportacion</h2>
             <p>No tienes permisos para acceder a este modulo.</p>
           </div>
         </header>
@@ -249,7 +249,7 @@ export default function AdminImportExportPage() {
         </div>
       ) : null}
 
-      {dashboardError ? <div className="error-box" role="alert" aria-live="assertive">{dashboardError}</div> : null}
+      {dashboardError ? <div className="error-box" data-testid="admin-import-export-error" role="alert" aria-live="assertive">{dashboardError}</div> : null}
 
       <div className="grid-2">
         <article className="card">

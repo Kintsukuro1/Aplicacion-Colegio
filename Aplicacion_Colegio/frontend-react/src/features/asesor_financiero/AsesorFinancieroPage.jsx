@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber } from '../../utils/formatters';
 
 const CLP_FORMATTER = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -77,7 +77,7 @@ export default function AsesorFinancieroPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Asesor Financiero</h2>
+          <h2 data-testid="asesor-financiero-title">Asesor Financiero</h2>
           <p>Dashboard financiero consolidado y reporte de morosos.</p>
         </div>
         <div className="actions">
@@ -108,10 +108,10 @@ export default function AsesorFinancieroPage() {
         </div>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="asesor-financiero-error" role="alert" aria-live="assertive">{error}</div> : null}
 
       <div>
-        <div className="summary-grid">
+        <div className="summary-grid" data-testid="asesor-financiero-summary">
           {loading
             ? Array.from({ length: 4 }).map((_, index) => (
                 <SummarySkeleton key={index} />

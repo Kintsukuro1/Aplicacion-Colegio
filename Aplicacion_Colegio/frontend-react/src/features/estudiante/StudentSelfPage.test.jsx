@@ -1,20 +1,10 @@
 import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { renderWithProviders, getMock } from '../../test/test-utils';
+import { renderWithProviders, getMock, createDeferred } from '../../test/test-utils';
 
 import StudentSelfPage from './StudentSelfPage';
 
-function createDeferred() {
-  let resolve;
-  let reject;
 
-  const promise = new Promise((promiseResolve, promiseReject) => {
-    resolve = promiseResolve;
-    reject = promiseReject;
-  });
-
-  return { promise, resolve, reject };
-}
 
 
 
@@ -73,7 +63,16 @@ describe('StudentSelfPage', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Mi Perfil' })).toBeInTheDocument();
-    expect(screen.getByText('Cargando historial académico')).toBeInTheDocument();
+
+    // Navigate to the history tab to see its loading state
+    const historyTabButton = screen.getByRole('button', { name: 'Historial Académico' });
+    await act(async () => {
+      historyTabButton.click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Cargando historial')).toBeInTheDocument();
+    });
 
     await act(async () => {
       historyDeferred.resolve({

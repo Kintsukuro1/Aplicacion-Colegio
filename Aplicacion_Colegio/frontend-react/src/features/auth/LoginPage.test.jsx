@@ -18,7 +18,7 @@ vi.mock('react-router-dom', async () => {
 
 
 
-vi.mock('../../lib/authStore', () => ({
+vi.mock('../../stores/authStore', () => ({
   setTokens: (...args) => setTokensMock(...args),
 }));
 

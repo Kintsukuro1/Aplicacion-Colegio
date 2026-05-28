@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, getMock } from '../../test/test-utils';
+import { renderWithProviders, getMock , setupUser } from '../../test/test-utils';
 
 import PasswordHistoryPage from './PasswordHistoryPage';
 
@@ -52,12 +52,14 @@ describe('PasswordHistoryPage', () => {
   });
 
   it('shows access denied without capabilities', async () => {
-    renderWithProviders(<PasswordHistoryPage me={{ capabilities: [] }} />);
+    setupUser([]);
+    renderWithProviders(<PasswordHistoryPage />);
     expect(await screen.findByText('No tienes permisos para ver esta pagina.')).toBeInTheDocument();
   });
 
   it('loads password history and sensitive audit on mount', async () => {
-    renderWithProviders(<PasswordHistoryPage me={{ capabilities: ['AUDIT_VIEW'] }} />);
+    setupUser(['AUDIT_VIEW']);
+    renderWithProviders(<PasswordHistoryPage />);
 
     await waitFor(() => {
       expect(getMock).toHaveBeenCalledWith('/api/v1/seguridad/password-history/');
@@ -72,7 +74,8 @@ describe('PasswordHistoryPage', () => {
 
   it('applies audit filters and requests filtered endpoint', async () => {
     const user = userEvent.setup();
-    renderWithProviders(<PasswordHistoryPage me={{ capabilities: ['SYSTEM_ADMIN'] }} />);
+    setupUser(['SYSTEM_ADMIN']);
+    renderWithProviders(<PasswordHistoryPage />);
 
     const diasInput = await screen.findByLabelText('Dias');
     await user.clear(diasInput);

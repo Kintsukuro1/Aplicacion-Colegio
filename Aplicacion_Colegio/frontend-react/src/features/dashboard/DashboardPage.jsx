@@ -3,9 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
 import { Card, CardHeader, CardBody, Badge, Button } from '@/components/ui';
-import { useTenant } from '@/lib/tenantContext';
+import { useTenant } from '@/utils/tenantContext';
 import { EXECUTIVE_SCOPES, fetchDashboardExecutive, fetchDashboardResumen, fetchDashboardSchools, formatDateTime, formatValue } from './dashboardHelpers';
-import { formatGrade } from '../../lib/formatters';
+import { formatGrade } from '../../utils/formatters';
 
 export default function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();

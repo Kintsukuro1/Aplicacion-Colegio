@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
 
@@ -123,14 +123,14 @@ export default function CoordinadorAcademicoPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Coordinador Academico</h2>
+          <h2 data-testid="coordinador-academico-title">Coordinador Academico</h2>
           <p>Aprobacion/rechazo rapido de planificaciones por ID.</p>
         </div>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="coordinador-academico-error" role="alert" aria-live="assertive">{error}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="coordinador-academico-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

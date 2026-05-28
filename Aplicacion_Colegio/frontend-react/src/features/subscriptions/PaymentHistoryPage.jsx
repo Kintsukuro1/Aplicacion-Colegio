@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer } from 'react';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 
 function statusLabel(status) {
   if (status === 'approved') return 'Aprobado';
@@ -108,7 +108,7 @@ export default function PaymentHistoryPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Historial de Pagos</h2>
+          <h2 data-testid="payment-history-title">Historial de Pagos</h2>
           <p>Revisa los pagos registrados para tu colegio.</p>
         </div>
         <div className="subscription-section-actions">
@@ -144,7 +144,7 @@ export default function PaymentHistoryPage() {
       ) : null}
 
       {loading ? <div className="loading-dot" role="status" aria-live="polite" aria-label="Cargando"><span /><span /><span /></div> : null}
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="payment-history-error" role="alert" aria-live="assertive">{error}</div> : null}
 
       {!loading && filteredPayments.length > 0 ? (
         <div className="table-wrap">

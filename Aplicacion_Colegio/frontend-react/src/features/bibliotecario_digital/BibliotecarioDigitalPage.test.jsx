@@ -1,8 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, getMock, postMock } from '../../test/test-utils';
-
+import { renderWithProviders, getMock, postMock, setupUser, clearUser } from '../../test/test-utils';
 import BibliotecarioDigitalPage from './BibliotecarioDigitalPage';
 
 describe('BibliotecarioDigitalPage', () => {
@@ -22,34 +21,37 @@ describe('BibliotecarioDigitalPage', () => {
       return {};
     });
   });
-
   it('loads resources and users', async () => {
-    renderWithProviders(<BibliotecarioDigitalPage me={{ capabilities: ['LIBRARY_VIEW'] }} />);
+    setupUser(['LIBRARY_VIEW']);
+    renderWithProviders(<BibliotecarioDigitalPage />);
 
     await waitFor(() => {
       expect(getMock).toHaveBeenCalledWith('/api/bibliotecario/recursos/');
       expect(getMock).toHaveBeenCalledWith('/api/bibliotecario/usuarios/');
     });
 
-    expect(screen.getByText(/Recursos \(1\)/)).toBeInTheDocument();
+    await screen.findByText(/Recursos \(1\)/);
     expect(screen.getByText('Préstamos activos')).toBeInTheDocument();
     expect(screen.getByText('Usuarios')).toBeInTheDocument();
   });
 
   it('shows loading state before the catalog is ready', () => {
+    setupUser(['LIBRARY_VIEW']);
     getMock.mockImplementation(() => new Promise(() => {}));
 
-    renderWithProviders(<BibliotecarioDigitalPage me={{ capabilities: ['LIBRARY_VIEW'] }} />);
+    renderWithProviders(<BibliotecarioDigitalPage />);
 
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Crear recurso' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('status').length).toBeGreaterThan(0);
+    // The button is always rendered but disabled when canCreate is false
+    expect(screen.getByRole('button', { name: 'Crear recurso' })).toBeDisabled();
   });
 
   it('submits create resource with LIBRARY_CREATE', async () => {
-    const user = userEvent.setup();
+    setupUser(['LIBRARY_CREATE']);
+    const user = userEvent.setup({ delay: null });
     postMock.mockResolvedValueOnce({ message: 'Recurso creado.' });
 
-    renderWithProviders(<BibliotecarioDigitalPage me={{ capabilities: ['LIBRARY_CREATE'] }} />);
+    renderWithProviders(<BibliotecarioDigitalPage />);
 
     await screen.findByText(/Recursos \(1\)/);
 
@@ -69,7 +71,8 @@ describe('BibliotecarioDigitalPage', () => {
   });
 
   it('disables loan action without LIBRARY_MANAGE_LOANS', async () => {
-    renderWithProviders(<BibliotecarioDigitalPage me={{ capabilities: ['LIBRARY_VIEW'] }} />);
+    setupUser(['LIBRARY_VIEW']);
+    renderWithProviders(<BibliotecarioDigitalPage />);
 
     await screen.findByText(/Recursos \(1\)/);
     const button = screen.getByRole('button', { name: 'Registrar prestamo' });
@@ -77,10 +80,11 @@ describe('BibliotecarioDigitalPage', () => {
   });
 
   it('shows backend error when create resource fails', async () => {
-    const user = userEvent.setup();
+    setupUser(['LIBRARY_CREATE']);
+    const user = userEvent.setup({ delay: null });
     postMock.mockRejectedValueOnce({ payload: { error: 'No se pudo crear recurso' } });
 
-    renderWithProviders(<BibliotecarioDigitalPage me={{ capabilities: ['LIBRARY_CREATE'] }} />);
+    renderWithProviders(<BibliotecarioDigitalPage />);
 
     await screen.findByText(/Recursos \(1\)/);
 
@@ -93,10 +97,11 @@ describe('BibliotecarioDigitalPage', () => {
   });
 
   it('shows saving state while creating resource', async () => {
-    const user = userEvent.setup();
+    setupUser(['LIBRARY_CREATE']);
+    const user = userEvent.setup({ delay: null });
     postMock.mockReturnValueOnce(new Promise(() => {}));
 
-    renderWithProviders(<BibliotecarioDigitalPage me={{ capabilities: ['LIBRARY_CREATE'] }} />);
+    renderWithProviders(<BibliotecarioDigitalPage />);
 
     await screen.findByText(/Recursos \(1\)/);
 
@@ -107,10 +112,11 @@ describe('BibliotecarioDigitalPage', () => {
   });
 
   it('submits toggle publish using resource selector', async () => {
-    const user = userEvent.setup();
+    setupUser(['LIBRARY_EDIT']);
+    const user = userEvent.setup({ delay: null });
     postMock.mockResolvedValueOnce({ message: 'Publicacion actualizada.' });
 
-    renderWithProviders(<BibliotecarioDigitalPage me={{ capabilities: ['LIBRARY_EDIT'] }} />);
+    renderWithProviders(<BibliotecarioDigitalPage />);
 
     await screen.findByText(/Recursos \(1\)/);
 

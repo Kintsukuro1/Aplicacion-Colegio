@@ -6,7 +6,7 @@ import ProtectedRoute from './ProtectedRoute';
 
 const isAuthenticatedMock = vi.fn();
 
-vi.mock('../../lib/authStore', () => ({
+vi.mock('../../stores/authStore', () => ({
   isAuthenticated: () => isAuthenticatedMock(),
 }));
 

@@ -1,14 +1,12 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { renderWithProviders, getMock } from '../../test/test-utils';
-import { useAuthStore } from '../../lib/store/useAuthStore';
-
+import { renderWithProviders, getMock, setupUser, clearUser } from '../../test/test-utils';
 import TeacherEvaluationsPage from './TeacherEvaluationsPage';
 
 describe('TeacherEvaluationsPage', () => {
   beforeEach(() => {
-    useAuthStore.getState().setUser({ capabilities: ['GRADE_CREATE', 'GRADE_EDIT', 'GRADE_DELETE'] });
+    setupUser(['GRADE_CREATE', 'GRADE_EDIT', 'GRADE_DELETE']);
 
     getMock.mockImplementation(async (path) => {
       if (path === '/api/v1/profesor/clases/') {
@@ -50,18 +48,13 @@ describe('TeacherEvaluationsPage', () => {
       return { results: [] };
     });
   });
-
-  afterEach(() => {
-    useAuthStore.getState().setUser(null);
-  });
-
   it('renders summaries and evaluations, then reloads when class changes', async () => {
     const user = userEvent.setup();
 
     renderWithProviders(<TeacherEvaluationsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Profesor: Evaluaciones')).toBeInTheDocument();
+      expect(screen.getByTestId('teacher-evaluations-title')).toBeInTheDocument();
     });
 
     expect(screen.queryByText('Modo restringido: falta capability `GRADE_CREATE` para crear.')).not.toBeInTheDocument();

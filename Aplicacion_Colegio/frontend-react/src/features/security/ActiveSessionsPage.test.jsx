@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, getMock, postMock } from '../../test/test-utils';
+import { renderWithProviders, getMock, postMock , setupUser } from '../../test/test-utils';
 
 import ActiveSessionsPage from './ActiveSessionsPage';
 
@@ -42,7 +42,8 @@ describe('ActiveSessionsPage', () => {
   });
 
   it('shows access denied without capabilities', async () => {
-    renderWithProviders(<ActiveSessionsPage me={{ capabilities: [] }} />);
+    setupUser([]);
+    renderWithProviders(<ActiveSessionsPage />);
     expect(await screen.findByText('No tienes permisos para ver esta pagina.')).toBeInTheDocument();
   });
 
@@ -51,7 +52,8 @@ describe('ActiveSessionsPage', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     postMock.mockResolvedValue({ detail: 'Sesion revocada exitosamente.' });
 
-    renderWithProviders(<ActiveSessionsPage me={{ capabilities: ['AUDIT_VIEW'] }} />);
+    setupUser(['AUDIT_VIEW']);
+    renderWithProviders(<ActiveSessionsPage />);
 
     await waitFor(() => {
       expect(getMock).toHaveBeenCalledWith('/api/v1/seguridad/sesiones-activas/');
@@ -74,7 +76,8 @@ describe('ActiveSessionsPage', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     postMock.mockResolvedValue({ detail: 'IP desbloqueada correctamente.' });
 
-    renderWithProviders(<ActiveSessionsPage me={{ capabilities: ['SYSTEM_ADMIN'] }} />);
+    setupUser(['SYSTEM_ADMIN']);
+    renderWithProviders(<ActiveSessionsPage />);
 
     const unblockButton = await screen.findByRole('button', { name: 'Desbloquear' });
     await user.click(unblockButton);

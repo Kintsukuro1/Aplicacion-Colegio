@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
-import { formatNumber, formatGrade } from '../../lib/formatters';
+import { formatNumber, formatGrade } from '../../utils/formatters';
 
 function formatPercentage(value) {
   if (value === null || value === undefined || value === '') {
@@ -84,14 +84,14 @@ export default function TeacherClassesPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Profesor: Mis Clases</h2>
+          <h2 data-testid="teacher-classes-title">Profesor: Mis Clases</h2>
           <p>Vista operativa de clases, tendencias y horario semanal.</p>
         </div>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="teacher-classes-error" role="alert" aria-live="assertive">{error}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="teacher-classes-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

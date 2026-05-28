@@ -1,14 +1,12 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, beforeEach } from 'vitest';
-import { renderWithProviders, getMock } from '../../test/test-utils';
-import { useAuthStore } from '../../lib/store/useAuthStore';
-
+import { renderWithProviders, getMock, setupUser, clearUser } from '../../test/test-utils';
 import TeacherAttendancePage from './TeacherAttendancePage';
 
 describe('TeacherAttendancePage', () => {
   beforeEach(() => {
-    useAuthStore.getState().setUser({ capabilities: ['CLASS_TAKE_ATTENDANCE'] });
+    setupUser(['CLASS_TAKE_ATTENDANCE']);
 
     getMock.mockImplementation(async (path) => {
       if (path === '/api/v1/profesor/clases/') {
@@ -73,11 +71,6 @@ describe('TeacherAttendancePage', () => {
       return { results: [] };
     });
   });
-
-  afterEach(() => {
-    useAuthStore.getState().setUser(null);
-  });
-
   it('renders summaries and reloads attendance when class changes', async () => {
     const user = userEvent.setup();
 

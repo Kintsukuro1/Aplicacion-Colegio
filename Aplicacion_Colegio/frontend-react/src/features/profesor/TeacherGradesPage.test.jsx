@@ -1,14 +1,12 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { renderWithProviders, getMock } from '../../test/test-utils';
-import { useAuthStore } from '../../lib/store/useAuthStore';
-
+import { renderWithProviders, getMock, setupUser, clearUser } from '../../test/test-utils';
 import TeacherGradesPage from './TeacherGradesPage';
 
 describe('TeacherGradesPage', () => {
   beforeEach(() => {
-    useAuthStore.getState().setUser({ capabilities: ['GRADE_CREATE', 'GRADE_EDIT', 'GRADE_DELETE'] });
+    setupUser(['GRADE_CREATE', 'GRADE_EDIT', 'GRADE_DELETE']);
 
     getMock.mockImplementation(async (path) => {
       if (path === '/api/v1/profesor/clases/') {
@@ -102,18 +100,13 @@ describe('TeacherGradesPage', () => {
       return { results: [] };
     });
   });
-
-  afterEach(() => {
-    useAuthStore.getState().setUser(null);
-  });
-
   it('renders summaries and reloads grades when the class filter changes', async () => {
     const user = userEvent.setup();
 
     renderWithProviders(<TeacherGradesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Profesor: Calificaciones')).toBeInTheDocument();
+      expect(screen.getByTestId('teacher-grades-title')).toBeInTheDocument();
       expect(screen.getByText('Listado de Calificaciones')).toBeInTheDocument();
       expect(screen.getByText('Calificaciones')).toBeInTheDocument();
       expect(screen.getByText('Promedio')).toBeInTheDocument();

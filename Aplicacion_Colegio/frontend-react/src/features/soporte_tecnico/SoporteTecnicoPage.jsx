@@ -1,8 +1,8 @@
 import { useMemo, useReducer } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-import { apiClient } from '../../lib/apiClient';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { apiClient } from '../../services/apiClient';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 
 function resolveError(err, fallback) {
@@ -310,12 +310,12 @@ export default function SoporteTecnicoPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Soporte Tecnico</h2>
+          <h2 data-testid="soporte-tecnico-title">Soporte Tecnico</h2>
           <p>Flujo operativo para tickets, estados y restablecimiento de contraseñas.</p>
         </div>
       </header>
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="soporte-tecnico-summary">
         {summaryCards.map((item) => (
           <article key={item.title} className="summary-tile">
             <small>{item.title}</small>

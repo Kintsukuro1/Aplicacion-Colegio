@@ -2,9 +2,9 @@ import { useMemo, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
-import { formatNumber, formatGrade, normalizeGrade } from '../../lib/formatters';
+import { formatNumber, formatGrade, normalizeGrade } from '../../utils/formatters';
 
 function formatPercentage(value) {
   if (value === null || value === undefined || value === '') {
@@ -192,7 +192,7 @@ export default function StudentSelfPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Estudiante: Mi Panel</h2>
+          <h2 data-testid="student-self-title">Estudiante: Mi Panel</h2>
           <p>Resumen personal con perfil, clases, notas, asistencia e historial académico.</p>
         </div>
       </header>

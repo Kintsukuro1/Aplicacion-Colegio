@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, getMock, postMock } from '../../test/test-utils';
+import { renderWithProviders, getMock, postMock , setupUser } from '../../test/test-utils';
 
 import PsicologoOrientadorPage from './PsicologoOrientadorPage';
 
@@ -12,11 +12,12 @@ describe('PsicologoOrientadorPage', () => {
   });
 
   it('loads students on mount', async () => {
-    renderWithProviders(<PsicologoOrientadorPage me={{ capabilities: ['COUNSELING_CREATE'] }} />);
+    setupUser(['COUNSELING_CREATE']);
+    renderWithProviders(<PsicologoOrientadorPage />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
 
-    await screen.findByText('Nina Soto');
+    await screen.findAllByText('Nina Soto');
     expect(getMock).toHaveBeenCalledWith('/api/psicologo/estudiantes/');
   });
 
@@ -24,7 +25,8 @@ describe('PsicologoOrientadorPage', () => {
     const user = userEvent.setup();
     postMock.mockResolvedValueOnce({ message: 'Entrevista creada.' });
 
-    renderWithProviders(<PsicologoOrientadorPage me={{ capabilities: ['COUNSELING_CREATE'] }} />);
+    setupUser(['COUNSELING_CREATE']);
+    renderWithProviders(<PsicologoOrientadorPage />);
 
     // Wait for students to load before interacting with the select
     await screen.findAllByText('Nina Soto');
@@ -48,7 +50,8 @@ describe('PsicologoOrientadorPage', () => {
   });
 
   it('disables update derivacion action without REFERRAL_EDIT', async () => {
-    renderWithProviders(<PsicologoOrientadorPage me={{ capabilities: ['COUNSELING_CREATE'] }} />);
+    setupUser(['COUNSELING_CREATE']);
+    renderWithProviders(<PsicologoOrientadorPage />);
 
     await screen.findAllByText('Nina Soto');
 
@@ -60,8 +63,10 @@ describe('PsicologoOrientadorPage', () => {
     const user = userEvent.setup();
     postMock.mockRejectedValueOnce({ payload: { error: 'Error de validacion' } });
 
-    renderWithProviders(<PsicologoOrientadorPage me={{ capabilities: ['COUNSELING_CREATE'] }} />);
+    setupUser(['COUNSELING_CREATE']);
+    renderWithProviders(<PsicologoOrientadorPage />);
 
+    await screen.findAllByText('Nina Soto');
     const studentSelects = await screen.findAllByLabelText('Estudiante');
     await user.selectOptions(studentSelects[0], '11');
     await user.type(screen.getByLabelText('Fecha'), '2026-03-06');
@@ -77,8 +82,10 @@ describe('PsicologoOrientadorPage', () => {
     const user = userEvent.setup();
     postMock.mockReturnValueOnce(new Promise(() => {}));
 
-    renderWithProviders(<PsicologoOrientadorPage me={{ capabilities: ['COUNSELING_CREATE'] }} />);
+    setupUser(['COUNSELING_CREATE']);
+    renderWithProviders(<PsicologoOrientadorPage />);
 
+    await screen.findAllByText('Nina Soto');
     const studentSelects = await screen.findAllByLabelText('Estudiante');
     await user.selectOptions(studentSelects[0], '11');
     await user.type(screen.getByLabelText('Fecha'), '2026-03-06');

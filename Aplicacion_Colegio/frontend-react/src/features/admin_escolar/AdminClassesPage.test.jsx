@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { renderWithProviders, getMock } from '../../test/test-utils';
+import { renderWithProviders, getMock , setupUser } from '../../test/test-utils';
 
 import AdminClassesPage from './AdminClassesPage';
 
@@ -38,14 +38,15 @@ describe('AdminClassesPage', () => {
   });
 
   it('renders summary cards and class rows', async () => {
-    renderWithProviders(<AdminClassesPage me={{ capabilities: ['CLASS_VIEW'] }} />);
+    setupUser(['CLASS_VIEW']);
+    renderWithProviders(<AdminClassesPage />);
 
     await waitFor(() => {
       expect(getMock).toHaveBeenCalledWith('/api/v1/profesor/clases/?page=1');
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Admin Escolar: Clases')).toBeInTheDocument();
+      expect(screen.getByTestId('admin-classes-title')).toBeInTheDocument();
       expect(screen.getByText('Listado de Clases')).toBeInTheDocument();
       expect(screen.getByText('Clases visibles')).toBeInTheDocument();
       expect(screen.getByText('Total paginado')).toBeInTheDocument();

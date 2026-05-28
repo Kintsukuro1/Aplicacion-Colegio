@@ -1,13 +1,13 @@
 import { useMemo, useReducer } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { useSearchParams } from 'react-router-dom';
 
 import PaginationControls from '../../components/tables/PaginationControls';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { apiClient } from '../../lib/apiClient';
-import { usePagination } from '../../lib/hooks';
-import { formatNumber, normalizeGrade } from '../../lib/formatters';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { apiClient } from '../../services/apiClient';
+import { usePagination } from '../../hooks';
+import { formatNumber, normalizeGrade } from '../../utils/formatters';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 
 import { AdminGradesForm } from './AdminGradesForm';
@@ -295,7 +295,7 @@ export default function AdminGradesPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Admin Escolar: Calificaciones</h2>
+            <h2 data-testid="admin-grades-title">Admin Escolar: Calificaciones</h2>
             <p>No tienes permisos para ver calificaciones.</p>
           </div>
         </header>
@@ -312,7 +312,7 @@ export default function AdminGradesPage() {
         </div>
       </header>
 
-      {apiError ? <div className="error-box" role="alert" aria-live="assertive">{apiError}</div> : null}
+      {apiError ? <div className="error-box" data-testid="admin-grades-error" role="alert" aria-live="assertive">{apiError}</div> : null}
       {!canCreate ? <p>Modo restringido: falta capability `GRADE_CREATE` para crear.</p> : null}
       {!canDelete ? <p>Modo restringido: falta capability `GRADE_DELETE` para eliminacion masiva.</p> : null}
 
@@ -329,7 +329,7 @@ export default function AdminGradesPage() {
         />
       ) : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="admin-grades-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

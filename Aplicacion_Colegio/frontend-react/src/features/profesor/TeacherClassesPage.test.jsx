@@ -80,14 +80,14 @@ describe('TeacherClassesPage', () => {
   });
 
   it('renders summaries, schedule and class trends from API data', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderWithProviders(<TeacherClassesPage />);
 
+    // Wait for data to load and summaries to render
     await waitFor(() => {
-      expect(screen.getByText('Profesor: Mis Clases')).toBeInTheDocument();
+      expect(screen.getByText('Clases cargadas')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Clases cargadas')).toBeInTheDocument();
     expect(screen.getByText('Clases cargadas').closest('.summary-tile')).toHaveTextContent('2');
     expect(screen.getAllByText('7° Básico A').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Matemática').length).toBeGreaterThan(0);
@@ -112,6 +112,6 @@ describe('TeacherClassesPage', () => {
     expect(skeletons.length).toBeGreaterThan(0);
     
     // Page title should always be visible
-    expect(screen.getByText('Profesor: Mis Clases')).toBeInTheDocument();
+    expect(screen.getByTestId('teacher-classes-title')).toBeInTheDocument();
   });
 });

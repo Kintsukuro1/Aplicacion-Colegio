@@ -1,4 +1,4 @@
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 
 export const EXECUTIVE_SCOPES = new Set(['school', 'analytics', 'global']);
 const NUMBER_FORMATTER = new Intl.NumberFormat('es-CL');

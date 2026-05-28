@@ -1,4 +1,4 @@
-import { normalizeGrade } from '../../lib/formatters';
+import { normalizeGrade } from '../../utils/formatters';
 
 /**
  * Table displaying students with selection and row actions.

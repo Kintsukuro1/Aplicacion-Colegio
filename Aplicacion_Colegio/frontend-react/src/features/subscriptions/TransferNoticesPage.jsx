@@ -1,7 +1,7 @@
 ﻿import { useEffect, useReducer, useState } from 'react';
 
-import { apiClient } from '../../lib/apiClient';
-import { getAccessToken } from '../../lib/authStore';
+import { apiClient } from '../../services/apiClient';
+import { getAccessToken } from '../../stores/authStore';
 
 async function downloadWithAuth(path, fallbackName) {
   const access = getAccessToken();
@@ -114,13 +114,13 @@ export default function TransferNoticesPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Transferencias Bancarias</h2>
+          <h2 data-testid="transfer-notices-title">Transferencias Bancarias</h2>
           <p>Revisa y concilia los comprobantes enviados por los colegios.</p>
         </div>
       </header>
 
       {loading ? <div className="loading-dot" role="status" aria-live="polite" aria-label="Cargando"><span /><span /><span /></div> : null}
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="transfer-notices-error" role="alert" aria-live="assertive">{error}</div> : null}
       {message ? <div className="error-box" role="alert" aria-live="assertive">{message}</div> : null}
 
       <div className="transfer-notices-filters">

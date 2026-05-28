@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { useSearchParams } from 'react-router-dom';
 
 import PaginationControls from '../../components/tables/PaginationControls';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { apiClient } from '../../lib/apiClient';
-import { useFetch, usePagination } from '../../lib/hooks';
-import { formatNumber } from '../../lib/formatters';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { apiClient } from '../../services/apiClient';
+import { useFetch, usePagination } from '../../hooks';
+import { formatNumber } from '../../utils/formatters';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 
 import { AdminAttendanceFilters } from './AdminAttendanceFilters';
@@ -178,7 +178,7 @@ export default function AdminAttendancePage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Admin Escolar: Asistencias</h2>
+            <h2 data-testid="admin-attendance-title">Admin Escolar: Asistencias</h2>
             <p>No tienes permisos para ver asistencias.</p>
           </div>
         </header>
@@ -190,12 +190,12 @@ export default function AdminAttendancePage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Admin Escolar: Asistencias</h2>
+          <h2 data-testid="admin-attendance-title">Admin Escolar: Asistencias</h2>
           <p>CRUD de asistencias sobre API v1 (`/api/v1/profesor/asistencias/`).</p>
         </div>
       </header>
 
-      {classesError || attendanceError ? <div className="error-box" role="alert" aria-live="assertive">{classesError || attendanceError}</div> : null}
+      {classesError || attendanceError ? <div className="error-box" data-testid="admin-attendance-error" role="alert" aria-live="assertive">{classesError || attendanceError}</div> : null}
       {!canEdit ? <p>Modo restringido: falta capability `CLASS_TAKE_ATTENDANCE` para edicion masiva.</p> : null}
 
       <AdminAttendanceFilters
@@ -219,7 +219,7 @@ export default function AdminAttendancePage() {
         />
       ) : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="admin-attendance-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

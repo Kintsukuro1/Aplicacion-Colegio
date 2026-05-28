@@ -1,23 +1,16 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { renderWithProviders, postMock } from '../../test/test-utils';
-import { useAuthStore } from '../../lib/store/useAuthStore';
-
+import { renderWithProviders, postMock, setupUser, clearUser } from '../../test/test-utils';
 import SoporteTecnicoPage from './SoporteTecnicoPage';
 
 describe('SoporteTecnicoPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    useAuthStore.getState().setUser({ capabilities: ['SUPPORT_CREATE_TICKET'] });
+    setupUser(['SUPPORT_CREATE_TICKET']);
   });
-
-  afterEach(() => {
-    useAuthStore.getState().setUser(null);
-  });
-
   it('disables create ticket action without SUPPORT_CREATE_TICKET', () => {
-    useAuthStore.getState().setUser({ capabilities: [] });
+    setupUser([]);
 
     renderWithProviders(<SoporteTecnicoPage />);
 

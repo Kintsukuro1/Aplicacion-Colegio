@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders, getMock } from '../../test/test-utils';
+import { renderWithProviders, getMock , setupUser } from '../../test/test-utils';
 
 import AdminStudentsPage from './AdminStudentsPage';
 
@@ -41,11 +41,12 @@ describe('AdminStudentsPage', () => {
       return { count: 0, next: null, previous: null, results: [] };
     });
 
-    renderWithProviders(<AdminStudentsPage me={{ capabilities: ['STUDENT_VIEW', 'STUDENT_EDIT'] }} />);
+    setupUser(['STUDENT_VIEW', 'STUDENT_EDIT']);
+    renderWithProviders(<AdminStudentsPage />);
 
     // Wait for header
     await waitFor(() => {
-      expect(screen.getByText('Admin Escolar: Estudiantes')).toBeInTheDocument();
+      expect(screen.getByTestId('admin-students-title')).toBeInTheDocument();
     });
 
     // Wait for data to render
@@ -68,7 +69,8 @@ describe('AdminStudentsPage', () => {
       return { count: 0, next: null, previous: null, results: [] };
     });
 
-    renderWithProviders(<AdminStudentsPage me={{ capabilities: ['STUDENT_VIEW', 'STUDENT_EDIT'] }} />);
+    setupUser(['STUDENT_VIEW', 'STUDENT_EDIT']);
+    renderWithProviders(<AdminStudentsPage />);
 
     // Wait for data to render
     expect(await screen.findByText('Ana Lagos')).toBeInTheDocument();

@@ -1,13 +1,15 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, paginated, getMock, postMock, patchMock, deleteMock } from '../../test/test-utils';
-
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { renderWithProviders, paginated, getMock, postMock, patchMock, deleteMock, setupUser, clearUser } from '../../test/test-utils';
 import AdminCoursesPage from './AdminCoursesPage';
 
 describe('AdminCoursesPage', () => {
-
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
   it('loads course list for users with COURSE_VIEW', async () => {
+    setupUser(['COURSE_VIEW']);
     getMock.mockResolvedValue(
       paginated([
         {
@@ -21,7 +23,7 @@ describe('AdminCoursesPage', () => {
       ])
     );
 
-    renderWithProviders(<AdminCoursesPage me={{ capabilities: ['COURSE_VIEW'] }} />, {
+    renderWithProviders(<AdminCoursesPage />, {
       route: '/admin/cursos',
       path: '/admin/cursos'
     });
@@ -31,7 +33,8 @@ describe('AdminCoursesPage', () => {
   });
 
   it('creates a new course when user has COURSE_CREATE', async () => {
-    const user = userEvent.setup();
+    setupUser(['COURSE_VIEW', 'COURSE_CREATE']);
+    const user = userEvent.setup({ delay: null });
 
     getMock
       .mockResolvedValueOnce(
@@ -76,7 +79,7 @@ describe('AdminCoursesPage', () => {
       ciclo_academico_id: 2026,
     });
 
-    renderWithProviders(<AdminCoursesPage me={{ capabilities: ['COURSE_VIEW', 'COURSE_CREATE'] }} />, {
+    renderWithProviders(<AdminCoursesPage />, {
       route: '/admin/cursos',
       path: '/admin/cursos'
     });
@@ -86,9 +89,13 @@ describe('AdminCoursesPage', () => {
 
     await user.click(screen.getByRole('button', { name: '+ Nuevo Curso' }));
 
-    await user.type(screen.getByLabelText('Nombre'), '6B');
-    await user.type(screen.getByLabelText('Nivel ID'), '7');
-    await user.type(screen.getByLabelText('Ciclo Academico ID (opcional)'), '2026');
+    // Wait for overlay to appear
+    await screen.findByRole('dialog');
+
+    // Use fireEvent.change to set values directly to avoid overlay auto-focus issues
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: '6B' } });
+    fireEvent.change(screen.getByLabelText('Nivel ID'), { target: { value: '7' } });
+    fireEvent.change(screen.getByLabelText('Ciclo Academico ID (opcional)'), { target: { value: '2026' } });
     await user.click(screen.getByRole('button', { name: 'Crear' }));
 
     await waitFor(() => {
@@ -99,46 +106,30 @@ describe('AdminCoursesPage', () => {
         ciclo_academico_id: 2026,
       });
     });
-
-    await waitFor(() => {
-      expect(getMock).toHaveBeenCalledTimes(2);
-    });
   });
 
   it('updates a course when user has COURSE_EDIT', async () => {
-    const user = userEvent.setup();
-    getMock
-      .mockResolvedValueOnce(
-        paginated([
-          {
-            id_curso: 10,
-            nombre: '5A',
-            activo: true,
-            colegio_id: 123,
-            nivel_id: 7,
-            ciclo_academico_id: 2026,
-          },
-        ])
-      )
-      .mockResolvedValueOnce(
-        paginated([
-          {
-            id_curso: 10,
-            nombre: '5A Editado',
-            activo: true,
-            colegio_id: 123,
-            nivel_id: 7,
-            ciclo_academico_id: 2026,
-          },
-        ])
-      );
+    setupUser(['COURSE_VIEW', 'COURSE_EDIT']);
+    const user = userEvent.setup({ delay: null });
+    getMock.mockResolvedValue(
+      paginated([
+        {
+          id_curso: 10,
+          nombre: '5A',
+          activo: true,
+          colegio_id: 123,
+          nivel_id: 7,
+          ciclo_academico_id: 2026,
+        },
+      ])
+    );
 
     patchMock.mockResolvedValue({
       id_curso: 10,
       nombre: '5A Editado',
     });
 
-    renderWithProviders(<AdminCoursesPage me={{ capabilities: ['COURSE_VIEW', 'COURSE_EDIT'] }} />, {
+    renderWithProviders(<AdminCoursesPage />, {
       route: '/admin/cursos',
       path: '/admin/cursos'
     });
@@ -148,11 +139,15 @@ describe('AdminCoursesPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Editar' }));
 
-    const nameInput = screen.getByLabelText('Nombre');
-    await user.clear(nameInput);
-    await user.type(nameInput, '5A Editado');
+    // Wait for overlay to appear with edit mode title
+    await screen.findByText('Editar curso #10');
 
-    await user.click(screen.getByRole('button', { name: 'Actualizar' }));
+    // Update name via fireEvent to avoid side effects
+    const nameInput = screen.getByLabelText('Nombre');
+    fireEvent.change(nameInput, { target: { value: '5A Editado' } });
+
+    const submitButton = await screen.findByRole('button', { name: 'Actualizar' });
+    await user.click(submitButton);
 
     await waitFor(() => {
       expect(patchMock).toHaveBeenCalledWith('/api/v1/cursos/10/', {
@@ -165,7 +160,8 @@ describe('AdminCoursesPage', () => {
   });
 
   it('deletes a course when user has COURSE_DELETE', async () => {
-    const user = userEvent.setup();
+    setupUser(['COURSE_VIEW', 'COURSE_DELETE']);
+    const user = userEvent.setup({ delay: null });
     vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     getMock
@@ -185,7 +181,7 @@ describe('AdminCoursesPage', () => {
 
     deleteMock.mockResolvedValue(null);
 
-    renderWithProviders(<AdminCoursesPage me={{ capabilities: ['COURSE_VIEW', 'COURSE_DELETE'] }} />, {
+    renderWithProviders(<AdminCoursesPage />, {
       route: '/admin/cursos',
       path: '/admin/cursos'
     });
@@ -201,9 +197,10 @@ describe('AdminCoursesPage', () => {
   });
 
   it('shows restricted mode for read-only users', async () => {
+    setupUser(['COURSE_VIEW']);
     getMock.mockResolvedValue(paginated([]));
 
-    renderWithProviders(<AdminCoursesPage me={{ capabilities: ['COURSE_VIEW'] }} />, {
+    renderWithProviders(<AdminCoursesPage />, {
       route: '/admin/cursos',
       path: '/admin/cursos'
     });

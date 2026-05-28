@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { apiClient } from '../../lib/apiClient';
-import { formatNumber } from '../../lib/formatters';
-import { asResults } from '../../lib/httpHelpers';
+import { apiClient } from '../../services/apiClient';
+import { formatNumber } from '../../utils/formatters';
+import { asResults } from '../../utils/httpHelpers';
 import FormOverlay from '../../components/forms/FormOverlay';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 
 import { TeacherEvaluationsForm } from './TeacherEvaluationsForm';
@@ -219,7 +219,7 @@ export default function TeacherEvaluationsPage() {
     <section>
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2>Profesor: Evaluaciones</h2>
+          <h2 data-testid="teacher-evaluations-title">Profesor: Evaluaciones</h2>
           <p>Gestión de evaluaciones mediante modales superpuestos y caché avanzado.</p>
         </div>
         {canCreate ? (
@@ -229,10 +229,10 @@ export default function TeacherEvaluationsPage() {
         ) : null}
       </header>
 
-      {apiError ? <div className="error-box" role="alert" aria-live="assertive">{apiError?.message || 'Error en la petición'}</div> : null}
+      {apiError ? <div className="error-box" data-testid="teacher-evaluations-error" role="alert" aria-live="assertive">{apiError?.message || 'Error en la petición'}</div> : null}
       {!canCreate && !canEdit && !canDelete ? <p>Modo lectura.</p> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="teacher-evaluations-summary">
         {loadingClasses
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

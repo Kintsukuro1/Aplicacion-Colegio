@@ -56,7 +56,7 @@ describe('AsesorFinancieroPage', () => {
     renderWithProviders(<AsesorFinancieroPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Asesor Financiero')).toBeInTheDocument();
+      expect(screen.getByTestId('asesor-financiero-title')).toBeInTheDocument();
       expect(screen.getByText('Resumen Financiero')).toBeInTheDocument();
       expect(screen.getByText('Morosidad')).toBeInTheDocument();
       expect(screen.getByText('Pagos recientes')).toBeInTheDocument();

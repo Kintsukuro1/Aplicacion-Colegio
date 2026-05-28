@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, getMock, postMock } from '../../test/test-utils';
+import { renderWithProviders, getMock, postMock , setupUser } from '../../test/test-utils';
 
 import CoordinadorAcademicoPage from './CoordinadorAcademicoPage';
 
@@ -14,31 +14,30 @@ describe('CoordinadorAcademicoPage', () => {
   it('shows loading state while plans are loading', () => {
     getMock.mockReturnValueOnce(new Promise(() => {}));
 
-    renderWithProviders(<CoordinadorAcademicoPage me={{ capabilities: [] }} />);
+    setupUser([]);
+    renderWithProviders(<CoordinadorAcademicoPage />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
   it('disables update button without PLANNING_APPROVE', async () => {
-    renderWithProviders(<CoordinadorAcademicoPage me={{ capabilities: [] }} />);
+    setupUser([]);
+    renderWithProviders(<CoordinadorAcademicoPage />);
 
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await screen.findByText('Sin planificaciones pendientes.');
 
     const button = screen.getByRole('button', { name: 'Actualizar' });
     expect(button).toBeDisabled();
   });
 
   it('submits planning status update with PLANNING_APPROVE', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     postMock.mockResolvedValueOnce({ message: 'Planificacion aprobada correctamente' });
 
-    renderWithProviders(<CoordinadorAcademicoPage me={{ capabilities: ['PLANNING_APPROVE'] }} />);
+    setupUser(['PLANNING_APPROVE']);
+    renderWithProviders(<CoordinadorAcademicoPage />);
 
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await screen.findByText('Sin planificaciones pendientes.');
 
     await user.type(screen.getByLabelText('Planificacion ID'), '9');
     await user.type(screen.getByLabelText('Observaciones'), 'Revision curricular ok');
@@ -53,14 +52,13 @@ describe('CoordinadorAcademicoPage', () => {
   });
 
   it('shows backend error when update fails', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     postMock.mockRejectedValueOnce({ payload: { detail: 'No se pudo actualizar' } });
 
-    renderWithProviders(<CoordinadorAcademicoPage me={{ capabilities: ['PLANNING_APPROVE'] }} />);
+    setupUser(['PLANNING_APPROVE']);
+    renderWithProviders(<CoordinadorAcademicoPage />);
 
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await screen.findByText('Sin planificaciones pendientes.');
 
     await user.type(screen.getByLabelText('Planificacion ID'), '9');
     await user.click(screen.getByRole('button', { name: 'Actualizar' }));
@@ -71,14 +69,13 @@ describe('CoordinadorAcademicoPage', () => {
   });
 
   it('shows saving state while planning update is in progress', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     postMock.mockReturnValueOnce(new Promise(() => {}));
 
-    renderWithProviders(<CoordinadorAcademicoPage me={{ capabilities: ['PLANNING_APPROVE'] }} />);
+    setupUser(['PLANNING_APPROVE']);
+    renderWithProviders(<CoordinadorAcademicoPage />);
 
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await screen.findByText('Sin planificaciones pendientes.');
 
     await user.type(screen.getByLabelText('Planificacion ID'), '9');
     await user.click(screen.getByRole('button', { name: 'Actualizar' }));

@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { renderWithProviders, paginated, getMock, postMock, patchMock, deleteMock } from '../../test/test-utils';
+import { renderWithProviders, paginated, getMock, postMock, patchMock, deleteMock , setupUser } from '../../test/test-utils';
 
 import AdminGradesPage from './AdminGradesPage';
 
@@ -13,7 +13,8 @@ describe('AdminGradesPage', () => {
     getMock.mockResolvedValue(paginated([]));
     postMock.mockResolvedValue({ id_calificacion: 55 });
 
-    renderWithProviders(<AdminGradesPage me={{ capabilities: ['GRADE_VIEW', 'GRADE_CREATE'] }} />, {
+    setupUser(['GRADE_VIEW', 'GRADE_CREATE']);
+    renderWithProviders(<AdminGradesPage />, {
       route: '/admin/calificaciones',
       path: '/admin/calificaciones'
     });
@@ -56,7 +57,8 @@ describe('AdminGradesPage', () => {
 
     patchMock.mockResolvedValue({ id_calificacion: 55, nota: 6.0 });
 
-    renderWithProviders(<AdminGradesPage me={{ capabilities: ['GRADE_VIEW', 'GRADE_EDIT'] }} />, {
+    setupUser(['GRADE_VIEW', 'GRADE_EDIT']);
+    renderWithProviders(<AdminGradesPage />, {
       route: '/admin/calificaciones',
       path: '/admin/calificaciones'
     });
@@ -98,7 +100,8 @@ describe('AdminGradesPage', () => {
 
     deleteMock.mockResolvedValue(null);
 
-    renderWithProviders(<AdminGradesPage me={{ capabilities: ['GRADE_VIEW', 'GRADE_DELETE'] }} />, {
+    setupUser(['GRADE_VIEW', 'GRADE_DELETE']);
+    renderWithProviders(<AdminGradesPage />, {
       route: '/admin/calificaciones',
       path: '/admin/calificaciones'
     });
@@ -117,7 +120,8 @@ describe('AdminGradesPage', () => {
   it('read-only user sees restrictions', async () => {
     getMock.mockResolvedValue(paginated([]));
 
-    renderWithProviders(<AdminGradesPage me={{ capabilities: ['GRADE_VIEW'] }} />, {
+    setupUser(['GRADE_VIEW']);
+    renderWithProviders(<AdminGradesPage />, {
       route: '/admin/calificaciones',
       path: '/admin/calificaciones'
     });

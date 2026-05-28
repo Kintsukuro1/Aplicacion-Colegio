@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { useSearchParams } from 'react-router-dom';
 
 import PaginationControls from '../../components/tables/PaginationControls';
 import SearchBar from '../../components/forms/SearchBar';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
-import { usePagination } from '../../lib/hooks';
-import { usePermissionChecks } from '../../lib/hooks/usePermissionChecks';
-import { useFormCRUD } from '../../lib/hooks/useFormCRUD';
-import { useBulkDeactivate } from '../../lib/hooks/useBulkDeactivate';
+import { formatNumber } from '../../utils/formatters';
+import { usePagination } from '../../hooks';
+import { usePermissionChecks } from '../../hooks/usePermissionChecks';
+import { useFormCRUD } from '../../hooks/useFormCRUD';
+import { useBulkDeactivate } from '../../hooks/useBulkDeactivate';
 
 import { AdminStudentsForm } from './AdminStudentsForm';
 import { AdminStudentsTable } from './AdminStudentsTable';
@@ -141,7 +141,7 @@ export default function AdminStudentsPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Admin Escolar: Estudiantes</h2>
+            <h2 data-testid="admin-students-title">Admin Escolar: Estudiantes</h2>
             <p>No tienes permisos para ver estudiantes.</p>
           </div>
         </header>
@@ -153,7 +153,7 @@ export default function AdminStudentsPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Admin Escolar: Estudiantes</h2>
+          <h2 data-testid="admin-students-title">Admin Escolar: Estudiantes</h2>
           <p>Gestión de estudiantes con búsqueda, edición y desactivación masiva.</p>
         </div>
       </header>
@@ -165,11 +165,11 @@ export default function AdminStudentsPage() {
         label="Buscar estudiantes"
       />
 
-      {paginationError ? <div className="error-box" role="alert" aria-live="assertive">{paginationError}</div> : null}
+      {paginationError ? <div className="error-box" data-testid="admin-students-error" role="alert" aria-live="assertive">{paginationError}</div> : null}
 
       {!canCreate ? <p>Modo restringido: falta capability `STUDENT_EDIT` para crear.</p> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="admin-students-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { formatGrade, formatShortDate, normalizeGrade } from '../../lib/formatters';
+import { formatGrade, formatShortDate, normalizeGrade } from '../../utils/formatters';
 import EditableTableRow from '../../components/tables/EditableTableRow';
 import { TableLoadingState } from '../../components/feedback/TableLoadingState';
 

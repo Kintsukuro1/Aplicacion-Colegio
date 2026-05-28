@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 
 const POLL_INTERVAL_MS = 30_000; // poll every 30s
 const isTestEnvironment = typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test';

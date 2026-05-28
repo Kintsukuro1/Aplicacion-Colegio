@@ -1,12 +1,12 @@
 import { useMemo, useReducer } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber } from '../../utils/formatters';
 
 import { ResourceForm } from './ResourceForm';
 import { PublishForm } from './PublishForm';
@@ -234,14 +234,14 @@ export default function BibliotecarioDigitalPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Bibliotecario Digital</h2>
+          <h2 data-testid="bibliotecario-digital-title">Bibliotecario Digital</h2>
           <p>Catálogo de recursos, publicaciones y préstamos con permisos por acción.</p>
         </div>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="bibliotecario-digital-error" role="alert" aria-live="assertive">{error}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="bibliotecario-digital-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

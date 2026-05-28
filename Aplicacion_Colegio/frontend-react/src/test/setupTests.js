@@ -1,10 +1,10 @@
 import '@testing-library/jest-dom/vitest';
 import { vi, afterEach } from 'vitest';
 import { getMock, postMock, patchMock, deleteMock, clearQueryClients } from './test-utils';
-import { useAuthStore } from '../lib/store/useAuthStore';
+import { useAuthStore } from '../stores/useAuthStore';
 
 // Global mock for API client
-vi.mock('../lib/apiClient', () => ({
+vi.mock('@/services/apiClient', () => ({
   apiClient: {
     get: (...args) => getMock(...args),
     post: (...args) => postMock(...args),

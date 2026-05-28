@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import PaginationControls from '../../components/tables/PaginationControls';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
-import { usePagination } from '../../lib/hooks';
-import { usePermissionChecks } from '../../lib/hooks/usePermissionChecks';
-import { useFormCRUD } from '../../lib/hooks/useFormCRUD';
-import { useEventFilters } from '../../lib/hooks/useEventFilters';
+import { formatNumber } from '../../utils/formatters';
+import { usePagination } from '../../hooks';
+import { usePermissionChecks } from '../../hooks/usePermissionChecks';
+import { useFormCRUD } from '../../hooks/useFormCRUD';
+import { useEventFilters } from '../../hooks/useEventFilters';
 import { useToast } from '../../components/feedback/Toast';
 import { CalendarFilterForm } from './CalendarFilterForm';
 import { CalendarEventForm } from './CalendarEventForm';
@@ -241,7 +241,7 @@ export default function CalendarEventsPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Calendario Escolar</h2>
+            <h2 data-testid="calendar-events-title">Calendario Escolar</h2>
             <p>No tienes permisos para ver eventos del calendario.</p>
           </div>
         </header>
@@ -253,14 +253,14 @@ export default function CalendarEventsPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Calendario Escolar</h2>
+          <h2 data-testid="calendar-events-title">Calendario Escolar</h2>
           <p>Visualiza y administra los eventos académicos y feriados del colegio.</p>
         </div>
       </header>
 
-      {paginationError ? <div className="error-box" role="alert" aria-live="assertive">{paginationError}</div> : null}
+      {paginationError ? <div className="error-box" data-testid="calendar-events-error" role="alert" aria-live="assertive">{paginationError}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="calendar-events-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

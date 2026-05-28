@@ -1,10 +1,10 @@
 import { useMemo, useReducer } from 'react';
 
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { useQuery } from '@tanstack/react-query';
-import { hasCapability } from '../../lib/capabilities';
+import { hasCapability } from '../../utils/capabilities';
 import { useToast } from '../../components/feedback/Toast';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
 import { InterviewForm } from './InterviewForm';
 import { ReferralForm } from './ReferralForm';
@@ -251,16 +251,16 @@ export default function PsicologoOrientadorPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Psicologo Orientador</h2>
+          <h2 data-testid="psicologo-orientador-title">Psicologo Orientador</h2>
           <p>Registro rapido de entrevistas de orientacion.</p>
         </div>
       </header>
 
       {loading ? <PsicologoOrientadorLoadingState /> : null}
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="psicologo-orientador-error" role="alert" aria-live="assertive">{error}</div> : null}
 
       {!loading && !error ? (
-        <div className="summary-grid">
+        <div className="summary-grid" data-testid="psicologo-orientador-summary">
           {summaryCards.map((item) => (
             <article key={item.title} className="summary-tile">
               <small>{item.title}</small>

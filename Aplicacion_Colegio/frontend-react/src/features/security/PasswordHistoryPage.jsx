@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useReducer } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-import { useFetch } from '../../lib/hooks';
-import { apiClient } from '../../lib/apiClient';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { useFetch } from '../../hooks';
+import { apiClient } from '../../services/apiClient';
+import { usePermissions } from '../../hooks/usePermissions';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber } from '../../utils/formatters';
 
 
 
@@ -99,7 +99,7 @@ export default function PasswordHistoryPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Seguridad: Password History</h2>
+            <h2 data-testid="password-history-title">Seguridad: Password History</h2>
             <p>No tienes permisos para ver esta pagina.</p>
           </div>
         </header>
@@ -116,9 +116,9 @@ export default function PasswordHistoryPage() {
         </div>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="password-history-error" role="alert" aria-live="assertive">{error}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="password-history-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

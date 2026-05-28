@@ -1,9 +1,9 @@
 import { useMemo, useReducer } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import { apiClient } from '../../lib/apiClient';
-import { setTokens } from '../../lib/authStore';
-import { useTenant } from '../../lib/tenantContext';
+import { apiClient } from '../../services/apiClient';
+import { setTokens } from '../../stores/authStore';
+import { useTenant } from '../../utils/tenantContext';
 
 const initialState = {
   email: '',
@@ -155,7 +155,7 @@ export default function LoginPage() {
           {passwordError ? <small id="login-password-error" className="field-error">{passwordError}</small> : null}
         </label>
 
-        {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+        {error ? <div className="error-box" data-testid="login-error" role="alert" aria-live="assertive">{error}</div> : null}
 
         <button type="submit" disabled={!canSubmit} aria-busy={loading}>
           {loading ? 'Ingresando...' : 'Ingresar'}

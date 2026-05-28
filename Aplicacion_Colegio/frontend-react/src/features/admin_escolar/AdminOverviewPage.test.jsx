@@ -1,21 +1,11 @@
 import { screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, getMock, postMock } from '../../test/test-utils';
+import { renderWithProviders, getMock, postMock, createDeferred } from '../../test/test-utils';
 
 import AdminOverviewPage from './AdminOverviewPage';
 
-function createDeferred() {
-  let resolve;
-  let reject;
 
-  const promise = new Promise((promiseResolve, promiseReject) => {
-    resolve = promiseResolve;
-    reject = promiseReject;
-  });
-
-  return { promise, resolve, reject };
-}
 
 describe('AdminOverviewPage', () => {
   beforeEach(() => {
@@ -39,7 +29,7 @@ describe('AdminOverviewPage', () => {
     const { container } = renderWithProviders(<AdminOverviewPage />);
 
     // Verify loading state
-    expect(screen.getByText('Panel Administrativo')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-overview-title')).toBeInTheDocument();
     expect(container.querySelectorAll('.summary-skeleton').length).toBeGreaterThan(0);
 
     // Resolve promise

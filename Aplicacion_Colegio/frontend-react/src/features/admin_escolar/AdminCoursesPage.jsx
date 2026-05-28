@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import PaginationControls from '../../components/tables/PaginationControls';
-import { apiClient } from '../../lib/apiClient';
-import { usePagination } from '../../lib/hooks';
-import { formatNumber } from '../../lib/formatters';
+import { apiClient } from '../../services/apiClient';
+import { usePagination } from '../../hooks';
+import { formatNumber } from '../../utils/formatters';
 import FormOverlay from '../../components/forms/FormOverlay';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useToast } from '../../components/feedback/Toast';
 
 import { AdminCoursesForm } from './AdminCoursesForm';
@@ -104,8 +104,8 @@ export default function AdminCoursesPage() {
     skip: !canView,
   });
 
-  const hasNext = pagination.currentPage < Math.max(0, pagination.totalPages - 1);
-  const hasPrevious = pagination.currentPage > 0;
+  const hasNext = pagination.currentPage < pagination.totalPages;
+  const hasPrevious = pagination.currentPage > 1;
 
   // Derive error inline (no useEffect sync needed)
   const error = apiError || '';
@@ -192,7 +192,7 @@ export default function AdminCoursesPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Admin Escolar: Cursos</h2>
+            <h2 data-testid="admin-courses-title">Admin Escolar: Cursos</h2>
             <p>No tienes permisos para ver cursos.</p>
           </div>
         </header>
@@ -214,10 +214,10 @@ export default function AdminCoursesPage() {
         ) : null}
       </header>
 
-      {error && !isFormOpen ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error && !isFormOpen ? <div className="error-box" data-testid="admin-courses-error" role="alert" aria-live="assertive">{error}</div> : null}
       {!canCreate && !canUpdate && !canDelete ? <p>Modo restringido: Solo lectura.</p> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="admin-courses-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
-import { getUserRole } from '../../lib/capabilities';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { getUserRole } from '../../utils/capabilities';
+import { useAuthStore } from '../../stores/useAuthStore';
 
 const MODULE_ORDER = [
   'dashboard',

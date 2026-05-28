@@ -2,8 +2,8 @@ import { useMemo, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import OnboardingWizard from '../../components/utils/OnboardingWizard';
-import { apiClient } from '../../lib/apiClient';
-import { setTokens } from '../../lib/authStore';
+import { apiClient } from '../../services/apiClient';
+import { setTokens } from '../../stores/authStore';
 
 const STEPS = ['Admin', 'Colegio', 'Configuración', 'Confirmar'];
 
@@ -119,7 +119,7 @@ export default function RegisterPage() {
       <div className="auth-card auth-card-wide">
         <header className="page-header">
           <div>
-            <h2>Crear mi colegio</h2>
+            <h2 data-testid="register-title">Crear mi colegio</h2>
             <p>Completa los datos básicos y tendrás tu colegio listo en minutos.</p>
           </div>
         </header>
@@ -208,7 +208,7 @@ export default function RegisterPage() {
           </article>
         ) : null}
 
-        {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+        {error ? <div className="error-box" data-testid="register-error" role="alert" aria-live="assertive">{error}</div> : null}
 
         <div className="subscription-status-actions">
           {currentStep > 0 ? (

@@ -1,15 +1,13 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithProviders, getMock, postMock } from '../../test/test-utils';
-import { useAuthStore } from '../../lib/store/useAuthStore';
-
+import { renderWithProviders, getMock, postMock, setupUser, clearUser } from '../../test/test-utils';
 import InspectorConvivenciaPage from './InspectorConvivenciaPage';
 
 describe('InspectorConvivenciaPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    useAuthStore.getState().setUser({ capabilities: ['DISCIPLINE_CREATE'] });
+    setupUser(['DISCIPLINE_CREATE']);
     getMock.mockImplementation(async (path) => {
       if (path === '/api/inspector/incidentes/') {
         return { incidentes: [] };
@@ -26,11 +24,6 @@ describe('InspectorConvivenciaPage', () => {
       return {};
     });
   });
-
-  afterEach(() => {
-    useAuthStore.getState().setUser(null);
-  });
-
   it('loads students on mount', async () => {
     renderWithProviders(<InspectorConvivenciaPage />);
 

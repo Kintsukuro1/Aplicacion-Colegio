@@ -9,10 +9,10 @@ import NotificationBell from './components/feedback/NotificationBell';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { ToastProvider } from './components/feedback/Toast';
 import { UpdateListener } from './components/utils/UpdateListener';
-import { apiClient } from './lib/apiClient';
-import { clearTokens, getRefreshToken } from './lib/authStore';
-import { canAccessRoute } from './lib/capabilities';
-import { useAuthStore } from './lib/store/useAuthStore';
+import { apiClient } from './services/apiClient';
+import { clearTokens, getRefreshToken } from './stores/authStore';
+import { canAccessRoute } from './utils/capabilities';
+import { useAuthStore } from './stores/useAuthStore';
 import { APP_ROUTES } from './routes/appRoutes';
 
 const ReactQueryDevtools = import.meta.env.DEV

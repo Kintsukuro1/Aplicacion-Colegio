@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef } from 'react';
 
 import SubscriptionStatusCard from '../../components/layout/SubscriptionStatusCard';
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 
 const FEATURE_LABELS = {
   attendance: 'Asistencia',
@@ -252,7 +252,7 @@ export default function PricingPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>💎 Planes y Precios</h2>
+          <h2 data-testid="pricing-title">💎 Planes y Precios</h2>
           <p>Elige el plan que mejor se adapte a tu institución</p>
         </div>
       </header>
@@ -267,7 +267,7 @@ export default function PricingPage() {
       ) : null}
 
       {loading ? <div className="loading-dot" role="status" aria-live="polite" aria-label="Cargando"><span /><span /><span /></div> : null}
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="pricing-error" role="alert" aria-live="assertive">{error}</div> : null}
       {checkoutMessage ? <div className="error-box" role="alert" aria-live="assertive">{checkoutMessage}</div> : null}
 
       {!loading && providers.length > 0 ? (

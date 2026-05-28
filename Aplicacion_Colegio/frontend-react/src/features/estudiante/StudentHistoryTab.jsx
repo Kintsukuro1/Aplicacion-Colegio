@@ -1,5 +1,5 @@
 import { SectionStatus } from './StudentSelfCommon';
-import { formatGrade } from '../../lib/formatters';
+import { formatGrade } from '../../utils/formatters';
 
 export function StudentHistoryTab({ history, loading, error, selectedCycle, onCycleChange, historyAverage, formatPercentage }) {
   return (

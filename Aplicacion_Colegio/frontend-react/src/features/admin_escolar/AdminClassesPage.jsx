@@ -1,12 +1,12 @@
-﻿import { useMemo } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useMemo } from 'react';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { useSearchParams } from 'react-router-dom';
 
 import PaginationControls from '../../components/tables/PaginationControls';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
-import { usePagination } from '../../lib/hooks';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { formatNumber } from '../../utils/formatters';
+import { usePagination } from '../../hooks';
+import { usePermissions } from '../../hooks/usePermissions';
 
 function AdminClassesPage() {
   const me = useAuthStore((state) => state.user);
@@ -63,7 +63,7 @@ function AdminClassesPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Admin Escolar: Clases</h2>
+            <h2 data-testid="admin-classes-title">Admin Escolar: Clases</h2>
             <p>No tienes permisos para ver clases.</p>
           </div>
         </header>
@@ -75,14 +75,14 @@ function AdminClassesPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Admin Escolar: Clases</h2>
+          <h2 data-testid="admin-classes-title">Admin Escolar: Clases</h2>
           <p>Lectura desde `GET /api/v1/profesor/clases/` con paginación.</p>
         </div>
       </header>
 
-      {apiError ? <div className="error-box" role="alert" aria-live="assertive">{apiError}</div> : null}
+      {apiError ? <div className="error-box" data-testid="admin-classes-error" role="alert" aria-live="assertive">{apiError}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="admin-classes-summary">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <SummarySkeleton key={index} />

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../lib/apiClient';
+import { apiClient } from '../../services/apiClient';
 import { useToast } from '../../components/feedback/Toast';
 import { SummarySkeleton, TableLoadingState } from '../../components/feedback/TableLoadingState';
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber } from '../../utils/formatters';
 
 function resolveError(err, fallback) {
   return err?.payload?.error || err?.payload?.detail || fallback;
@@ -92,14 +92,14 @@ export default function ApoderadoPage() {
     <section>
       <header className="page-header">
         <div>
-          <h2>Apoderado Panel</h2>
+          <h2 data-testid="apoderado-title">Apoderado Panel</h2>
           <p>Seguimiento de justificativos y firma digital con estado resumido.</p>
         </div>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="apoderado-error" role="alert" aria-live="assertive">{error}</div> : null}
 
-      <div className="summary-grid">
+      <div className="summary-grid" data-testid="apoderado-summary">
         {loading
           ? Array.from({ length: 3 }).map((_, index) => (
               <SummarySkeleton key={index} />

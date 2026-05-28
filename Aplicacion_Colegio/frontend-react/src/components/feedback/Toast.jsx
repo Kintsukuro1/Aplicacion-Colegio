@@ -1,4 +1,4 @@
-import { useNotificationStore } from '../../lib/store/useNotificationStore';
+import { useNotificationStore } from '../../stores/useNotificationStore';
 
 /**
  * Sistema de notificaciones toast minimalista.

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { SectionStatus, EmptySection } from './StudentSelfCommon';
-import { formatGrade, normalizeGrade } from '../../lib/formatters';
+import { formatGrade, normalizeGrade } from '../../utils/formatters';
 
 const GradesChart = lazy(() => import('./GradesChart'));
 

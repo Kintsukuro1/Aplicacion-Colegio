@@ -1,8 +1,8 @@
 import { useEffect, useReducer } from 'react';
-import { useAuthStore } from '../../lib/store/useAuthStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-import { apiClient } from '../../lib/apiClient';
-import { usePermissions } from '../../lib/hooks/usePermissions';
+import { apiClient } from '../../services/apiClient';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const STATES = ['pendiente', 'confirmada', 'reprogramada', 'rechazada', 'completada', 'cancelada'];
 const TYPES = ['academica', 'conductual', 'orientacion', 'administrativa', 'general'];
@@ -121,7 +121,7 @@ export default function MeetingRequestsPage() {
       <section>
         <header className="page-header">
           <div>
-            <h2>Solicitudes de Reunion</h2>
+            <h2 data-testid="meeting-requests-title">Solicitudes de Reunion</h2>
             <p>No tienes permisos para ver esta bandeja.</p>
           </div>
         </header>
@@ -138,7 +138,7 @@ export default function MeetingRequestsPage() {
         </div>
       </header>
 
-      {error ? <div className="error-box" role="alert" aria-live="assertive">{error}</div> : null}
+      {error ? <div className="error-box" data-testid="meeting-requests-error" role="alert" aria-live="assertive">{error}</div> : null}
 
       <div className="card form-grid">
         <h3 className="full">Filtros</h3>

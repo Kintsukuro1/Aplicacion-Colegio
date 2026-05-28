@@ -1,4 +1,4 @@
-import { formatNumber } from '../../lib/formatters';
+import { formatNumber } from '../../utils/formatters';
 
 /**
  * Table displaying teacher evaluations.
