@@ -1,15 +1,10 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
 {% include 'apoderado/_apoderado_hero.html' with hero_title="Notas y Calificaciones" hero_subtitle="Selecciona un estudiante para ver sus notas." hero_aria="Notas y Calificaciones" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/notas.css' %}">
+<link rel="stylesheet" href="{% static 'css/apoderado/notas.css' %}?v=20260528">
 
 <div class="content-wrapper">
   <div class="page-header">
-    <div>
-      <h2>📊 Notas y Calificaciones</h2>
-      <p class="text-muted">Selecciona un estudiante para ver sus notas.</p>
-    </div>
-
     {% if estudiantes %}
       <form method="get" action="{% url 'dashboard' %}" class="estudiante-selector">
         <input type="hidden" name="pagina" value="notas">
@@ -40,18 +35,19 @@
     </div>
   {% else %}
     {% with nombre_est=estudiante_seleccionado.get_full_name|default:estudiante_seleccionado.email|default:"?" %}
-      <div class="estudiante-info-card">
+      <div class="estudiante-kpi-card">
         <div class="estudiante-avatar">{{ nombre_est|first|upper }}</div>
         <div class="estudiante-datos">
-          <h2>{{ nombre_est }}</h2>
-          <p>Resumen de calificaciones</p>
+          <h2 class="estudiante-kpi-card__name">{{ nombre_est }}</h2>
+          <p class="estudiante-kpi-card__desc">Resumen académico consolidado del período actual.</p>
         </div>
-        <div class="promedio-general">
-          <label>Promedio general</label>
+        <div class="promedio-general-box">
+          <label>Promedio General Actual</label>
           {% if promedio_general %}
-            {% with pg=promedio_general|floatformat:0 %}
-              <div class="promedio-valor promedio-valor-{{ pg }}">{{ promedio_general|floatformat:1 }}</div>
-            {% endwith %}
+            <div class="promedio-valor
+              {% if promedio_general >= 6 %} nota-nivel--alto
+              {% elif promedio_general >= 4 %} nota-nivel--medio
+              {% else %} nota-nivel--bajo{% endif %}">{{ promedio_general|floatformat:1 }}</div>
           {% else %}
             <div class="promedio-valor">-</div>
           {% endif %}
@@ -62,41 +58,59 @@
     {% if notas_por_asignatura %}
       <div class="asignaturas-grid">
         {% for item in notas_por_asignatura %}
-          <div class="asignatura-card">
+          <article class="asignatura-card">
             <div class="asignatura-header">
-              <h3>{{ item.asignatura.nombre|default:item.asignatura }}</h3>
+              <h3 class="asignatura-title">
+                <span class="asignatura-icon" aria-hidden="true">
+                  {% with asign=item.asignatura.nombre|default:item.asignatura|lower %}
+                    {% if 'arte' in asign %}🎨
+                    {% elif 'cien' in asign %}🔬
+                    {% elif 'mate' in asign %}📐
+                    {% elif 'hist' in asign %}🏛️
+                    {% elif 'leng' in asign or 'lit' in asign %}📚
+                    {% elif 'ingl' in asign %}🌍
+                    {% elif 'mús' in asign or 'mus' in asign %}🎵
+                    {% elif 'educación física' in asign or 'fisic' in asign %}🏃
+                    {% else %}📘{% endif %}
+                  {% endwith %}
+                </span>
+                <span>{{ item.asignatura.nombre|default:item.asignatura }}</span>
+              </h3>
               {% if item.asignatura.codigo %}<span class="asignatura-codigo">{{ item.asignatura.codigo }}</span>{% endif %}
             </div>
 
             <div class="asignatura-promedio">
               <label>Promedio</label>
               {% if item.promedio %}
-                {% with pr=item.promedio|floatformat:0 %}
-                  <span class="promedio-valor-{{ pr }}">{{ item.promedio|floatformat:1 }}</span>
-                {% endwith %}
+                <span class="
+                  {% if item.promedio >= 6 %} nota-nivel--alto
+                  {% elif item.promedio >= 4 %} nota-nivel--medio
+                  {% else %} nota-nivel--bajo{% endif %}">{{ item.promedio|floatformat:1 }}</span>
               {% else %}
                 <span>-</span>
               {% endif %}
             </div>
 
             <div class="evaluaciones-lista">
-              <h4>Evaluaciones</h4>
+              <h4>Detalle de evaluaciones</h4>
               {% for ev in item.evaluaciones %}
-                {% with ne=ev.nota|floatformat:0 %}
                   <div class="evaluacion-item">
                     <div class="evaluacion-info">
                       <span class="evaluacion-nombre">{{ ev.nombre }}</span>
-                      <span class="evaluacion-fecha">{{ ev.fecha_evaluacion|date:"d/m/Y" }}</span>
+                      <span class="evaluacion-meta">{{ ev.fecha_evaluacion|date:"d/m/Y" }} · {{ ev.ponderacion|floatformat:0 }}%</span>
                     </div>
-                    <div class="evaluacion-nota nota-{{ ne }}">{{ ev.nota|floatformat:1 }}</div>
-                    <div class="evaluacion-ponderacion">{{ ev.ponderacion|floatformat:0 }}%</div>
+                    <div class="evaluacion-right">
+                      <div class="evaluacion-nota
+                        {% if ev.nota >= 6 %} nota-nivel--alto
+                        {% elif ev.nota >= 4 %} nota-nivel--medio
+                        {% else %} nota-nivel--bajo{% endif %}">{{ ev.nota|floatformat:1 }}</div>
+                    </div>
                   </div>
-                {% endwith %}
               {% empty %}
                 <div class="sin-datos">Sin calificaciones registradas.</div>
               {% endfor %}
             </div>
-          </div>
+          </article>
         {% endfor %}
       </div>
     {% else %}
