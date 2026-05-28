@@ -518,8 +518,10 @@ class DashboardApoderadoService:
     def _get_apoderado_firmas_context(user):
         """Get firmas pendientes context for apoderado."""
         from backend.apps.accounts.models import FirmaDigitalApoderado
+        from backend.apps.comunicados.models import ConfirmacionLectura
 
         firmados = []
+        pendientes_firma = []
 
         if hasattr(user, 'perfil_apoderado'):
             apoderado = user.perfil_apoderado
@@ -528,19 +530,51 @@ class DashboardApoderadoService:
             ).select_related('estudiante').order_by('-timestamp_firma')[:50]
 
             for firma in firmas_qs:
+                hash_doc = firma.hash_documento or ''
                 firmados.append({
                     'id': firma.id,
                     'tipo': firma.get_tipo_documento_display(),
+                    'tipo_raw': firma.tipo_documento,
                     'titulo': firma.titulo_documento,
                     'estudiante_nombre': firma.estudiante.get_full_name() if firma.estudiante else '',
+                    'estudiante_id': firma.estudiante_id,
                     'fecha_firma': firma.timestamp_firma,
                     'valida': firma.firma_valida,
+                    'hash_corto': hash_doc[:12] + '…' if len(hash_doc) > 12 else hash_doc,
                 })
+
+            pendientes_qs = ConfirmacionLectura.objects.filter(
+                usuario=user,
+                comunicado__activo=True,
+                comunicado__requiere_confirmacion=True,
+                confirmado=False,
+            ).select_related('comunicado').order_by('-comunicado__fecha_publicacion')[:30]
+
+            for conf in pendientes_qs:
+                com = conf.comunicado
+                pendientes_firma.append({
+                    'id': conf.id_confirmacion,
+                    'comunicado_id': com.id_comunicado,
+                    'tipo': com.get_tipo_display(),
+                    'tipo_raw': com.tipo,
+                    'titulo': com.titulo,
+                    'fecha': com.fecha_publicacion,
+                    'fecha_evento': com.fecha_evento,
+                    'es_citacion': com.tipo == 'citacion',
+                    'es_urgente': com.es_prioritario or com.tipo == 'urgente',
+                })
+
+        total_pendientes = len(pendientes_firma)
+        firmas_validas = sum(1 for f in firmados if f.get('valida'))
+        firmas_invalidadas = sum(1 for f in firmados if not f.get('valida'))
 
         return {
             'firmados': firmados,
             'total_firmados': len(firmados),
-            'pendientes_firma': [],  # TODO: implement detection of unsigned documents
+            'pendientes_firma': pendientes_firma,
+            'total_pendientes': total_pendientes,
+            'firmas_validas': firmas_validas,
+            'firmas_invalidadas': firmas_invalidadas,
         }
 
     @staticmethod
