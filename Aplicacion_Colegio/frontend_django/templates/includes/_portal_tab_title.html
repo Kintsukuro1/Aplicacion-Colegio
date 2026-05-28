@@ -1,0 +1,18 @@
+{# Título de pestaña. Variables: portal_title_mode ('login'), rol, wrap_title (default True) #}
+{% if portal_title_mode == 'login' %}
+{% if wrap_title != False %}<title>{% endif %}Portal Académico - Iniciar Sesión{% if wrap_title != False %}</title>{% endif %}
+{% else %}
+{% with r=rol|default:''|lower %}
+{% if r == 'estudiante' or r == 'alumno' %}
+{% if wrap_title != False %}<title>{% endif %}Portal Académico - Estudiante{% if wrap_title != False %}</title>{% endif %}
+{% elif r == 'apoderado' %}
+{% if wrap_title != False %}<title>{% endif %}Portal Académico - Apoderado{% if wrap_title != False %}</title>{% endif %}
+{% elif r == 'profesor' %}
+{% if wrap_title != False %}<title>{% endif %}Portal Académico - Profesor{% if wrap_title != False %}</title>{% endif %}
+{% elif r == 'admin_escolar' or r == 'admin' or r == 'admin_general' or r == 'administrador escolar' or r == 'administrador general' or r == 'administrador' or r == 'coordinador_academico' or r == 'jefe_utp' %}
+{% if wrap_title != False %}<title>{% endif %}Portal Académico - Administrador{% if wrap_title != False %}</title>{% endif %}
+{% else %}
+{% if wrap_title != False %}<title>{% endif %}Portal Académico{% if rol %} - {{ rol|title }}{% endif %}{% if wrap_title != False %}</title>{% endif %}
+{% endif %}
+{% endwith %}
+{% endif %}

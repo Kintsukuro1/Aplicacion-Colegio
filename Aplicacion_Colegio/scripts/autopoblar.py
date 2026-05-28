@@ -85,13 +85,20 @@ DATOS DE INICIO DE SESIÓN (USUARIOS DE PRUEBA):
   - ✅ Audit Trails: Trazabilidad completa de cambios
   - ✅ Matrículas Mejoradas: Con ciclo académico y estados
 
-EJECUCIÓN:
-  python autopoblar.py
+EJECUCIÓN (desde la raíz Aplicacion_Colegio, donde está manage.py):
+  python scripts/autopoblar.py
 ============================================================
 """
 
 import os
 import sys
+from pathlib import Path
+
+# Raíz del proyecto (carpeta que contiene manage.py y el paquete backend/)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import django
 import random
 from datetime import datetime, time, timedelta, date

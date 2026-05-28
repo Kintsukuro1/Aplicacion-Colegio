@@ -192,7 +192,11 @@ html {
     color: var(--color-primary);
 }
 
-.login-card__logo {
+.login-card__logo.portal-brand-logo {
+    display: block;
+}
+
+.login-footer__brand .portal-brand-logo {
     display: block;
 }
 
@@ -575,8 +579,7 @@ html {
     color: var(--color-text);
 }
 
-.login-footer__icon {
-    color: var(--color-primary);
+.login-footer__icon.portal-brand-logo {
     flex-shrink: 0;
 }
 

@@ -1,9 +1,10 @@
+{% load static %}
 {% url 'mensajeria:bandeja_mensajes' as mensajes_url %}
 <!-- CATHERINE: Sidebar alumno reutilizable -->
 <aside class="alumno-sidebar" aria-label="Navegación del portal estudiante">
     <div class="alumno-sidebar__top">
         <div class="alumno-sidebar__brand">
-            <span class="alumno-sidebar__brand-icon" aria-hidden="true">🎓</span>
+            {% include 'includes/_portal_brand_logo.html' with logo_alt=escuela_nombre|default:"Portal Académico" extra_class='portal-brand-logo--sidebar' %}
             <span class="alumno-sidebar__brand-text">{{ escuela_nombre|default:"Portal Académico" }}</span>
         </div>
 

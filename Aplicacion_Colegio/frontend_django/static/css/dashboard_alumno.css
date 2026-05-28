@@ -174,9 +174,7 @@ body.pagina-inicio:has(.perfil-alumno) {
     text-align: center;
 }
 
-.alumno-sidebar__brand-icon {
-    font-size: 1.5rem;
-    line-height: 1;
+.alumno-sidebar__brand .portal-brand-logo--sidebar {
     flex-shrink: 0;
 }
 
