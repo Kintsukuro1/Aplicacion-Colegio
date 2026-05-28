@@ -1,7 +1,7 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
 {% include 'apoderado/_apoderado_hero.html' with hero_title="Firmas Pendientes" hero_subtitle="Documentos que requieren tu firma y historial de firmas digitales." hero_aria="Firmas Pendientes" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/firmas_pendientes.css' %}?v=20260610">
+<link rel="stylesheet" href="{% static 'css/apoderado/firmas_pendientes.css' %}?v=20260613">
 
 <div class="af-page">
   <section class="apod-section-card af-panel" aria-label="Firmas y documentos">
@@ -49,6 +49,99 @@
         {% endfor %}
       </div>
     </section>
+    {% elif not firmados %}
+    <div id="afDemoWrap">
+      <div class="af-notice af-notice--demo" id="afDemoNotice" role="status">
+        <span><strong>Vista de ejemplo:</strong> documentos ilustrativos para revisar el diseño. No son firmas reales.</span>
+        <button type="button" class="af-notice__dismiss" id="afHideDemo">Ocultar ejemplo</button>
+      </div>
+
+      <div class="af-status af-status--pending" id="afDemoStatusPending" role="status">
+        <span class="af-status__icon" aria-hidden="true">⏳</span>
+        <p class="af-status__text">Tienes <strong>2</strong> documentos pendientes de firma (ejemplo).</p>
+      </div>
+
+      <section class="af-section" id="afDemoPendingSection" aria-label="Ejemplo pendientes">
+        <div class="af-section__head">
+          <h2 class="af-section__title">Pendientes de firma</h2>
+        </div>
+        <div class="af-pending-list" role="list">
+          <article class="af-pending-card af-pending-card--demo" role="listitem" data-af-demo-pending="1">
+            <span class="af-pending-card__icon" aria-hidden="true">📄</span>
+            <div>
+              <p class="af-pending-card__title">Autorización salida pedagógica</p>
+              <p class="af-pending-card__meta">Autorización · Sofía Silva Muñoz</p>
+            </div>
+            <button type="button" class="af-btn af-btn--primary af-btn--disabled">Ejemplo</button>
+          </article>
+          <article class="af-pending-card af-pending-card--demo" role="listitem" data-af-demo-pending="1">
+            <span class="af-pending-card__icon" aria-hidden="true">📋</span>
+            <div>
+              <p class="af-pending-card__title">Citación reunión apoderados 4° básico</p>
+              <p class="af-pending-card__meta">Citación · Tomás Silva Muñoz</p>
+            </div>
+            <button type="button" class="af-btn af-btn--primary af-btn--disabled">Ejemplo</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="af-section" id="afDemoHistorySection" aria-label="Ejemplo historial">
+        <div class="af-section__head">
+          <h2 class="af-section__title">Historial de firmas</h2>
+          <span class="af-section__meta" id="afDemoListMeta">3 registros</span>
+        </div>
+        <div class="af-signatures" id="afDemoSignaturesList" role="list">
+          <article class="af-signature-card af-signature-card--demo" role="listitem" data-af-tipo="autorización" data-af-valid="valid" data-af-search="protocolo convivencia sofía">
+            <div class="af-signature-card__main">
+              <div class="af-signature-card__head">
+                <span class="af-signature-card__badge">Autorización</span>
+              </div>
+              <p class="af-signature-card__title">Protocolo de convivencia escolar 2026</p>
+              <p class="af-signature-card__meta">Pupilo: Sofía Silva Muñoz</p>
+            </div>
+            <div class="af-signature-card__side">
+              <time class="af-signature-card__date">15/05/2026 10:30</time>
+              <span class="af-signature-card__state af-signature-card__state--valid">Válida</span>
+            </div>
+          </article>
+          <article class="af-signature-card af-signature-card--demo" role="listitem" data-af-tipo="comunicado" data-af-valid="valid" data-af-search="circular pagos matrícula">
+            <div class="af-signature-card__main">
+              <div class="af-signature-card__head">
+                <span class="af-signature-card__badge">Comunicado</span>
+              </div>
+              <p class="af-signature-card__title">Recepción circular de pagos — marzo</p>
+              <p class="af-signature-card__meta">Pupilo: Tomás Silva Muñoz</p>
+            </div>
+            <div class="af-signature-card__side">
+              <time class="af-signature-card__date">02/05/2026 18:45</time>
+              <span class="af-signature-card__state af-signature-card__state--valid">Válida</span>
+            </div>
+          </article>
+          <article class="af-signature-card af-signature-card--demo" role="listitem" data-af-tipo="citación" data-af-valid="invalid" data-af-search="citación entrevista utp">
+            <div class="af-signature-card__main">
+              <div class="af-signature-card__head">
+                <span class="af-signature-card__badge">Citación</span>
+              </div>
+              <p class="af-signature-card__title">Citación entrevista UTP (anulada)</p>
+              <p class="af-signature-card__meta">Pupilo: Sofía Silva Muñoz</p>
+            </div>
+            <div class="af-signature-card__side">
+              <time class="af-signature-card__date">20/04/2026 09:00</time>
+              <span class="af-signature-card__state af-signature-card__state--invalid">Invalidada</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <div class="af-empty af-hidden" id="afEmptyReal">
+        <span class="af-empty__icon" aria-hidden="true">✍️</span>
+        <h3 class="af-empty__title">Sin firmas registradas</h3>
+        <p class="af-empty__text">
+          Cuando el colegio envíe documentos para firma digital (citaciones, autorizaciones, comunicados), aparecerán aquí con fecha y estado de validación.
+        </p>
+        <button type="button" class="af-btn af-btn--primary" id="afShowDemo">Ver ejemplo de diseño</button>
+      </div>
+    </div>
     {% else %}
     <div class="af-status af-status--ok" role="status">
       <span class="af-status__icon" aria-hidden="true">✓</span>
@@ -124,14 +217,6 @@
         <span class="af-empty__text">Ningún registro coincide con el filtro.</span>
       </p>
     </section>
-    {% elif not pendientes_firma %}
-    <div class="af-empty">
-      <span class="af-empty__icon" aria-hidden="true">✍️</span>
-      <h3 class="af-empty__title">Sin firmas registradas</h3>
-      <p class="af-empty__text">
-        Cuando el colegio envíe documentos para firma digital (citaciones, autorizaciones, comunicados), aparecerán aquí con fecha y estado de validación.
-      </p>
-    </div>
     {% endif %}
 
     <p class="af-help-card">
@@ -141,6 +226,63 @@
     </p>
   </section>
 </div>
+
+{% if not pendientes_firma and not firmados %}
+<script>
+(function () {
+  function afDemoUpdateKpis() {
+    var pendingSection = document.getElementById('afDemoPendingSection');
+    var pending = pendingSection && !pendingSection.classList.contains('af-hidden')
+      ? pendingSection.querySelectorAll('.af-pending-card')
+      : [];
+    var cards = document.querySelectorAll('#afDemoSignaturesList .af-signature-card:not(.af-hidden)');
+    var valid = 0;
+    cards.forEach(function (c) {
+      if (c.getAttribute('data-af-valid') === 'valid') valid++;
+    });
+    var elP = document.getElementById('afKpiPending');
+    var elS = document.getElementById('afKpiSigned');
+    var elV = document.getElementById('afKpiValid');
+    if (elP) elP.textContent = String(pending.length);
+    if (elS) elS.textContent = String(cards.length);
+    if (elV) elV.textContent = String(valid);
+  }
+
+  function afHideDemo() {
+    ['afDemoNotice', 'afDemoStatusPending', 'afDemoPendingSection', 'afDemoHistorySection'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.add('af-hidden');
+    });
+    var empty = document.getElementById('afEmptyReal');
+    if (empty) empty.classList.remove('af-hidden');
+    var elP = document.getElementById('afKpiPending');
+    var elS = document.getElementById('afKpiSigned');
+    var elV = document.getElementById('afKpiValid');
+    if (elP) elP.textContent = '0';
+    if (elS) elS.textContent = '0';
+    if (elV) elV.textContent = '0';
+  }
+
+  function afShowDemo() {
+    ['afDemoNotice', 'afDemoStatusPending', 'afDemoPendingSection', 'afDemoHistorySection'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.remove('af-hidden');
+    });
+    var empty = document.getElementById('afEmptyReal');
+    if (empty) empty.classList.add('af-hidden');
+    afDemoUpdateKpis();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var hideBtn = document.getElementById('afHideDemo');
+    var showBtn = document.getElementById('afShowDemo');
+    if (hideBtn) hideBtn.addEventListener('click', afHideDemo);
+    if (showBtn) showBtn.addEventListener('click', afShowDemo);
+    afDemoUpdateKpis();
+  });
+})();
+</script>
+{% endif %}
 
 {% if firmados %}
 <script>

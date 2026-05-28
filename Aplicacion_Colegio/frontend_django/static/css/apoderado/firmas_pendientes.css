@@ -372,6 +372,48 @@
     border: 1px solid #e8d4d4;
 }
 
+.af-hidden {
+    display: none !important;
+}
+
+.af-notice--demo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 0.85rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #854d0e;
+}
+
+.af-notice__dismiss {
+    border: none;
+    background: transparent;
+    color: #854d0e;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.af-pending-card--demo,
+.af-signature-card--demo {
+    border-style: dashed;
+    opacity: 0.94;
+}
+
+.af-btn--disabled {
+    pointer-events: none;
+    opacity: 0.55;
+    cursor: default;
+}
+
 .af-empty {
     text-align: center;
     padding: 2rem 1.25rem;
