@@ -1,309 +1,227 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
-{% include 'apoderado/_apoderado_hero.html' with hero_title="Firmas Pendientes" hero_subtitle="Documentos que requieren tu firma." hero_aria="Firmas Pendientes" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<div class="firmas-container">
-    <div class="page-header">
-        <div class="header-content">
-            <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
-            <h1 class="page-title">✍️ Firmas de Documentos</h1>
-            <p class="page-subtitle">Documentos firmados digitalmente y pendientes de firma</p>
-        </div>
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Firmas Pendientes" hero_subtitle="Documentos que requieren tu firma y historial de firmas digitales." hero_aria="Firmas Pendientes" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
+<link rel="stylesheet" href="{% static 'css/apoderado/firmas_pendientes.css' %}?v=20260610">
+
+<div class="af-page">
+  <section class="apod-section-card af-panel" aria-label="Firmas y documentos">
+
+    <div class="af-kpi-grid" aria-label="Resumen de firmas">
+      <article class="af-kpi-card">
+        <p class="af-kpi-card__label">Pendientes</p>
+        <p class="af-kpi-card__value af-kpi-card__value--pending" id="afKpiPending">{{ pendientes_firma|length }}</p>
+        <p class="af-kpi-card__hint">Por firmar o confirmar</p>
+      </article>
+      <article class="af-kpi-card">
+        <p class="af-kpi-card__label">Firmados</p>
+        <p class="af-kpi-card__value" id="afKpiSigned">{{ total_firmados|default:0 }}</p>
+        <p class="af-kpi-card__hint">Registros en tu historial</p>
+      </article>
+      <article class="af-kpi-card">
+        <p class="af-kpi-card__label">Válidas</p>
+        <p class="af-kpi-card__value af-kpi-card__value--ok" id="afKpiValid">0</p>
+        <p class="af-kpi-card__hint">Firmas vigentes</p>
+      </article>
     </div>
 
-    <!-- Documentos pendientes de firma -->
     {% if pendientes_firma %}
-    <div class="section">
-        <h2 class="section-title">⏳ Pendientes de Firma</h2>
-        <div class="docs-grid">
-            {% for doc in pendientes_firma %}
-            <div class="doc-card doc-pending">
-                <div class="doc-icon">📄</div>
-                <div class="doc-info">
-                    <h4 class="doc-titulo">{{ doc.titulo }}</h4>
-                    <span class="doc-tipo">{{ doc.tipo }}</span>
-                    {% if doc.estudiante_nombre %}<span class="doc-est">👤 {{ doc.estudiante_nombre }}</span>{% endif %}
-                </div>
-                <button class="btn-firma" data-doc-id="{{ doc.id }}">Firmar</button>
-            </div>
-            {% endfor %}
-        </div>
+    <div class="af-status af-status--pending" role="status">
+      <span class="af-status__icon" aria-hidden="true">⏳</span>
+      <p class="af-status__text">Tienes <strong>{{ pendientes_firma|length }}</strong> documento{{ pendientes_firma|length|pluralize:"s" }} pendiente{{ pendientes_firma|length|pluralize:"s" }} de firma o confirmación.</p>
     </div>
+
+    <section class="af-section" aria-label="Documentos pendientes">
+      <div class="af-section__head">
+        <h2 class="af-section__title">Pendientes de firma</h2>
+      </div>
+      <div class="af-pending-list" role="list">
+        {% for doc in pendientes_firma %}
+        <article class="af-pending-card" role="listitem">
+          <span class="af-pending-card__icon" aria-hidden="true">📄</span>
+          <div>
+            <p class="af-pending-card__title">{{ doc.titulo }}</p>
+            <p class="af-pending-card__meta">
+              {{ doc.tipo }}{% if doc.estudiante_nombre %} · {{ doc.estudiante_nombre }}{% endif %}
+            </p>
+          </div>
+          <button type="button" class="af-btn af-btn--primary" data-doc-id="{{ doc.id }}">Firmar</button>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
     {% else %}
-    <div class="info-banner">
-        <span class="info-icon">✅</span>
-        <span>No tienes documentos pendientes de firma. ¡Estás al día!</span>
+    <div class="af-status af-status--ok" role="status">
+      <span class="af-status__icon" aria-hidden="true">✓</span>
+      <p class="af-status__text">No tienes documentos pendientes de firma. Estás al día con lo registrado en el sistema.</p>
     </div>
     {% endif %}
 
-    <!-- Documentos ya firmados -->
     {% if firmados %}
-    <div class="section">
-        <h2 class="section-title">📋 Documentos Firmados ({{ total_firmados }})</h2>
-        <div class="firmas-list">
-            {% for f in firmados %}
-            <div class="firma-card {% if not f.valida %}firma-invalidada{% endif %}">
-                <div class="firma-left">
-                    <span class="firma-tipo-badge">{{ f.tipo }}</span>
-                    <div class="firma-detalles">
-                        <h4 class="firma-titulo">{{ f.titulo }}</h4>
-                        {% if f.estudiante_nombre %}<span class="firma-est">Pupilo: {{ f.estudiante_nombre }}</span>{% endif %}
-                    </div>
-                </div>
-                <div class="firma-right">
-                    <span class="firma-fecha">{{ f.fecha_firma|date:"d/m/Y H:i" }}</span>
-                    {% if f.valida %}
-                    <span class="firma-valida">✅ Válida</span>
-                    {% else %}
-                    <span class="firma-invalida">❌ Invalidada</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
+    <section class="af-section" aria-label="Historial de firmas">
+      <div class="af-section__head">
+        <h2 class="af-section__title">Historial de firmas</h2>
+        <span class="af-section__meta" id="afListMeta">{{ total_firmados }} registro{{ total_firmados|pluralize:"s" }}</span>
+      </div>
+
+      <section class="af-refine" aria-label="Filtrar historial">
+        <div class="af-refine__head">
+          <h3 class="af-refine__title">Filtrar registros</h3>
+          <button type="button" class="af-refine__clear" id="afClearFilters" hidden>Limpiar</button>
         </div>
-    </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-icon">✍️</div>
-        <h3 class="empty-title">Sin firmas registradas</h3>
-        <p class="empty-text">
-            Estimada/o {{ nombre_usuario|default:"Apoderado" }}, aquí encontrará documentos institucionales para firma digital
-            y trazabilidad de validación.
-            Aún no registra firmas; cuando el colegio habilite documentos, se mostrarán en este módulo.
-        </p>
+        <div class="af-refine__grid">
+          <div class="af-refine__field">
+            <label class="af-refine__label" for="afTypeFilter">Tipo de documento</label>
+            <select class="af-refine__control" id="afTypeFilter">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="af-refine__field">
+            <label class="af-refine__label" for="afStatusFilter">Estado</label>
+            <select class="af-refine__control" id="afStatusFilter">
+              <option value="">Todos</option>
+              <option value="valid">Válida</option>
+              <option value="invalid">Invalidada</option>
+            </select>
+          </div>
+          <div class="af-refine__field">
+            <label class="af-refine__label" for="afSearch">Buscar</label>
+            <input type="search" class="af-refine__control" id="afSearch" placeholder="Título o pupilo..." autocomplete="off">
+          </div>
+        </div>
+        <p class="af-refine__hint" id="afFilterHint" hidden></p>
+      </section>
+
+      <div class="af-signatures" id="afSignaturesList" role="list">
+        {% for f in firmados %}
+        <article
+          class="af-signature-card{% if not f.valida %} af-signature-card--invalid{% endif %}"
+          role="listitem"
+          data-af-tipo="{{ f.tipo|lower }}"
+          data-af-valid="{% if f.valida %}valid{% else %}invalid{% endif %}"
+          data-af-search="{{ f.titulo|lower }} {{ f.estudiante_nombre|lower }} {{ f.tipo|lower }}"
+        >
+          <div class="af-signature-card__main">
+            <div class="af-signature-card__head">
+              <span class="af-signature-card__badge">{{ f.tipo }}</span>
+            </div>
+            <p class="af-signature-card__title">{{ f.titulo }}</p>
+            {% if f.estudiante_nombre %}
+            <p class="af-signature-card__meta">Pupilo: {{ f.estudiante_nombre }}</p>
+            {% endif %}
+          </div>
+          <div class="af-signature-card__side">
+            <time class="af-signature-card__date" datetime="{{ f.fecha_firma|date:'c' }}">{{ f.fecha_firma|date:"d/m/Y H:i" }}</time>
+            {% if f.valida %}
+            <span class="af-signature-card__state af-signature-card__state--valid">Válida</span>
+            {% else %}
+            <span class="af-signature-card__state af-signature-card__state--invalid">Invalidada</span>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <p class="af-empty af-empty--compact" id="afSignaturesEmpty" hidden>
+        <span class="af-empty__text">Ningún registro coincide con el filtro.</span>
+      </p>
+    </section>
+    {% elif not pendientes_firma %}
+    <div class="af-empty">
+      <span class="af-empty__icon" aria-hidden="true">✍️</span>
+      <h3 class="af-empty__title">Sin firmas registradas</h3>
+      <p class="af-empty__text">
+        Cuando el colegio envíe documentos para firma digital (citaciones, autorizaciones, comunicados), aparecerán aquí con fecha y estado de validación.
+      </p>
     </div>
     {% endif %}
+
+    <p class="af-help-card">
+      Los comunicados que requieren confirmación se gestionan en
+      <a href="{% url 'comunicados:lista' %}">Comunicados</a>.
+      Este módulo muestra el historial de firmas digitales asociadas a tu cuenta de apoderado.
+    </p>
+  </section>
 </div>
 
-<style>
-    .firmas-container {
-        padding: 24px;
-        max-width: 960px;
-        margin: 0 auto;
-    }
+{% if firmados %}
+<script>
+(function () {
+  var cards = document.querySelectorAll('.af-signature-card');
+  var typeFilter = document.getElementById('afTypeFilter');
+  var statusFilter = document.getElementById('afStatusFilter');
+  var searchEl = document.getElementById('afSearch');
+  var clearBtn = document.getElementById('afClearFilters');
+  var hintEl = document.getElementById('afFilterHint');
+  var listMeta = document.getElementById('afListMeta');
+  var emptyEl = document.getElementById('afSignaturesEmpty');
+  var kpiValid = document.getElementById('afKpiValid');
+  var kpiSigned = document.getElementById('afKpiSigned');
 
-    .page-header {
-        margin-bottom: 24px;
-    }
+  var validCount = 0;
+  cards.forEach(function (card) {
+    if (card.getAttribute('data-af-valid') === 'valid') validCount++;
+  });
+  if (kpiValid) kpiValid.textContent = String(validCount);
+  if (kpiSigned) kpiSigned.textContent = String(cards.length);
 
-    .header-content {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
+  if (typeFilter) {
+    var tipos = {};
+    cards.forEach(function (card) {
+      var t = card.getAttribute('data-af-tipo') || '';
+      if (!t) return;
+      var label = card.querySelector('.af-signature-card__badge');
+      tipos[t] = label ? label.textContent.trim() : t;
+    });
+    Object.keys(tipos).sort().forEach(function (key) {
+      var opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = tipos[key];
+      typeFilter.appendChild(opt);
+    });
+  }
 
-    .back-link {
-        color: #6b7280;
-        text-decoration: none;
-        font-size: 0.9rem;
+  function applyFilters() {
+    var tipo = typeFilter ? typeFilter.value : '';
+    var status = statusFilter ? statusFilter.value : '';
+    var q = (searchEl && searchEl.value || '').trim().toLowerCase();
+    var visible = 0;
+    cards.forEach(function (card) {
+      var matchTipo = !tipo || card.getAttribute('data-af-tipo') === tipo;
+      var matchStatus = !status || card.getAttribute('data-af-valid') === status;
+      var matchSearch = !q || (card.getAttribute('data-af-search') || '').indexOf(q) !== -1;
+      var show = matchTipo && matchStatus && matchSearch;
+      card.hidden = !show;
+      if (show) visible++;
+    });
+    if (clearBtn) clearBtn.hidden = !(tipo || status || q);
+    if (hintEl) {
+      if (tipo || status || q) {
+        hintEl.hidden = false;
+        hintEl.textContent = visible
+          ? visible + ' registro(s) coinciden con el filtro.'
+          : 'Ningún registro coincide. Prueba otros criterios.';
+      } else {
+        hintEl.hidden = true;
+      }
     }
-
-    .back-link:hover {
-        color: #3b82f6;
+    if (listMeta) {
+      listMeta.textContent = visible + ' registro' + (visible === 1 ? '' : 's');
     }
+    if (emptyEl) emptyEl.hidden = visible > 0;
+  }
 
-    .page-title {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0;
-    }
+  if (typeFilter) typeFilter.addEventListener('change', applyFilters);
+  if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+  if (searchEl) searchEl.addEventListener('input', applyFilters);
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () {
+      if (typeFilter) typeFilter.value = '';
+      if (statusFilter) statusFilter.value = '';
+      if (searchEl) searchEl.value = '';
+      applyFilters();
+    });
+  }
+})();
+</script>
+{% endif %}
 
-    .page-subtitle {
-        color: #64748b;
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    .section {
-        margin-bottom: 32px;
-    }
-
-    .section-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin: 0 0 14px;
-    }
-
-    .info-banner {
-        background: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        border-radius: 10px;
-        padding: 16px 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: #065f46;
-        font-weight: 500;
-        margin-bottom: 24px;
-    }
-
-    .info-icon {
-        font-size: 1.2rem;
-    }
-
-    .docs-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .doc-card {
-        background: white;
-        border-radius: 10px;
-        padding: 16px 20px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        border-left: 4px solid #f59e0b;
-    }
-
-    .doc-icon {
-        font-size: 1.8rem;
-    }
-
-    .doc-info {
-        flex: 1;
-    }
-
-    .doc-titulo {
-        margin: 0;
-        font-size: 1rem;
-        color: #1e293b;
-    }
-
-    .doc-tipo {
-        font-size: 0.8rem;
-        color: #64748b;
-    }
-
-    .doc-est {
-        font-size: 0.8rem;
-        color: #64748b;
-        display: block;
-    }
-
-    .btn-firma {
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        color: white;
-        border: none;
-        padding: 8px 20px;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-firma:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    .firmas-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .firma-card {
-        background: white;
-        border-radius: 10px;
-        padding: 16px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    }
-
-    .firma-invalidada {
-        opacity: 0.6;
-    }
-
-    .firma-left {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-    }
-
-    .firma-tipo-badge {
-        background: #eff6ff;
-        color: #1d4ed8;
-        font-size: 0.75rem;
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-weight: 500;
-        white-space: nowrap;
-    }
-
-    .firma-titulo {
-        margin: 0;
-        font-size: 0.95rem;
-        color: #1e293b;
-    }
-
-    .firma-est {
-        font-size: 0.8rem;
-        color: #64748b;
-    }
-
-    .firma-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
-    }
-
-    .firma-fecha {
-        font-size: 0.8rem;
-        color: #9ca3af;
-    }
-
-    .firma-valida {
-        font-size: 0.8rem;
-        color: #059669;
-    }
-
-    .firma-invalida {
-        font-size: 0.8rem;
-        color: #dc2626;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .empty-icon {
-        font-size: 3rem;
-        margin-bottom: 12px;
-    }
-
-    .empty-title {
-        font-size: 1.1rem;
-        color: #374151;
-        margin: 0 0 6px;
-    }
-
-    .empty-text {
-        color: #6b7280;
-        margin: 0;
-        font-size: 0.9rem;
-    }
-
-    @media (max-width: 640px) {
-        .firma-card {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .firma-right {
-            align-items: flex-start;
-        }
-    }
-</style>
 {% include 'apoderado/_apoderado_wrap_end.html' %}
