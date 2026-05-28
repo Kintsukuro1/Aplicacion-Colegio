@@ -7,6 +7,9 @@
 <link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados.css' %}">
 
 <div class="comunicados-container">
+    {% if rol == 'apoderado' %}
+    {% include 'apoderado/_apoderado_hero.html' with hero_title="Comunicados y Circulares" hero_subtitle="Información oficial y avisos importantes del colegio." hero_aria="Comunicados" metrics_aria="Resumen de comunicados" m1_value=sin_leer_count m1_label="Sin leer" m1_mod="comunicados" m2_value=leidos_count m2_label="Leídos" m2_mod="pupilos" m3_value=urgentes_count m3_label="Urgentes" m3_mod="firmas" m4_value=total_comunicados m4_label="Total" m4_mod="cuotas" %}
+    {% endif %}
     <div class="header-comunicados">
         <h1>📢 Comunicados y Circulares</h1>
         {% if user.role == 'admin_escolar' %}

@@ -101,6 +101,13 @@ class DashboardApoderadoService:
                     user, estudiantes, estudiante_id_param
                 )
                 context.update(context_notas)
+
+            # Mis pupilos page
+            elif pagina_solicitada == 'mis_pupilos':
+                context_pupilos = DashboardApoderadoService._get_apoderado_mis_pupilos_context(
+                    estudiantes
+                )
+                context.update(context_pupilos)
             
             # Asistencia page
             elif pagina_solicitada == 'asistencia':
@@ -362,6 +369,50 @@ class DashboardApoderadoService:
             'registros_por_fecha': dict(registros_por_fecha),
             'asignaturas': asignaturas,
         }
+
+    @staticmethod
+    def _get_apoderado_mis_pupilos_context(estudiantes):
+        """Attach promedio general y asistencia acumulada por pupilo."""
+        from django.db.models import Avg, Count, Q
+        from backend.apps.academico.models import Calificacion, Asistencia
+
+        if not estudiantes:
+            return {'estudiantes': estudiantes}
+
+        estudiante_ids = [e.id for e in estudiantes if getattr(e, 'id', None)]
+        if not estudiante_ids:
+            return {'estudiantes': estudiantes}
+
+        promedios_qs = (
+            Calificacion.objects
+            .filter(estudiante_id__in=estudiante_ids, evaluacion__activa=True)
+            .values('estudiante_id')
+            .annotate(promedio=Avg('nota'))
+        )
+        promedios_map = {row['estudiante_id']: row['promedio'] for row in promedios_qs}
+
+        asistencia_qs = (
+            Asistencia.objects
+            .filter(estudiante_id__in=estudiante_ids)
+            .values('estudiante_id')
+            .annotate(
+                total=Count('pk'),
+                presentes=Count('pk', filter=Q(estado='P')),
+            )
+        )
+        asistencia_map = {
+            row['estudiante_id']: (
+                round((row['presentes'] / row['total']) * 100, 1) if row['total'] else None
+            )
+            for row in asistencia_qs
+        }
+
+        for estudiante in estudiantes:
+            promedio_raw = promedios_map.get(estudiante.id)
+            estudiante.promedio_general = round(float(promedio_raw), 1) if promedio_raw is not None else None
+            estudiante.porcentaje_asistencia = asistencia_map.get(estudiante.id)
+
+        return {'estudiantes': estudiantes}
 
     @staticmethod
     def _get_apoderado_justificativos_context(user, estudiantes):

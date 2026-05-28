@@ -59,7 +59,15 @@
     {% else %}
     <div class="empty-state">
         <div class="empty-state-icon">📭</div>
+        {% if rol == 'apoderado' %}
+        <h3>Sin comunicados pendientes</h3>
+        <p>
+            Estimada/o {{ nombre_usuario|default:"Apoderado" }}, aquí verá comunicados, citaciones y circulares dirigidas a sus pupilos.
+            Actualmente no hay publicaciones para los filtros seleccionados.
+        </p>
+        {% else %}
         <h3>No hay comunicados disponibles</h3>
         <p>No se encontraron comunicados con los filtros seleccionados.</p>
+        {% endif %}
     </div>
     {% endif %}

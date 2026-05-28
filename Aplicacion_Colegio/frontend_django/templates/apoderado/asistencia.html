@@ -1,5 +1,6 @@
 {% load static %}
-
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Asistencia" hero_subtitle="Consulta inasistencias y justificativos por pupilo." hero_aria="Asistencia" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
 <link rel="stylesheet" href="{% static 'css/apoderado/asistencia.css' %}">
 
 <div class="content-wrapper">
@@ -128,3 +129,5 @@
 
   {% endif %}
 </div>
+
+{% include 'apoderado/_apoderado_wrap_end.html' %}

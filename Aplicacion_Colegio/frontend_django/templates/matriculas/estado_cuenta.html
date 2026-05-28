@@ -3,26 +3,32 @@
 <link rel="stylesheet" href="{% static 'css/matriculas/estado_cuenta.css' %}">
 
 <div class="content-wrapper">
+  {% if rol == 'apoderado' %}
+  {% include 'apoderado/_apoderado_hero.html' with hero_title="Estado de Cuenta" hero_subtitle="Resumen financiero de cuotas y saldos por estudiante." hero_aria="Estado de cuenta" metrics_aria="Resumen financiero" m1_value=totales.total_a_pagar m1_label="Total a pagar" m1_mod="cuotas" m2_value=totales.total_pagado m2_label="Total pagado" m2_mod="pupilos" m3_value=totales.saldo_pendiente m3_label="Saldo pendiente" m3_mod="firmas" m4_value=totales.cuotas_vencidas m4_label="Cuotas vencidas" m4_mod="comunicados" %}
+  {% endif %}
   <div class="page-header">
+    {% if rol != 'apoderado' %}
     <div>
       <h1>💳 Estado de Cuenta</h1>
       <p class="subtitle">Resumen de cuotas y saldos</p>
     </div>
+    {% endif %}
 
     {% if rol == 'apoderado' and estudiantes %}
-      <form method="get" action="{% url 'matriculas:mi_estado_cuenta' %}" class="estudiante-selector">
-        <label for="estudiante_id">Estudiante</label>
-        <select id="estudiante_id" name="estudiante_id" onchange="this.form.submit()">
-          {% for e in estudiantes %}
-            <option value="{{ e.id }}" {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}selected{% endif %}>
-              {% if e.get_full_name %}{{ e.get_full_name }}{% else %}{{ e.email|default:"-" }}{% endif %}
-            </option>
-          {% endfor %}
-        </select>
-      </form>
+    <form method="get" action="{% url 'matriculas:mi_estado_cuenta' %}" class="estudiante-selector">
+      <label for="estudiante_id">Estudiante</label>
+      <select id="estudiante_id" name="estudiante_id" onchange="this.form.submit()">
+        {% for e in estudiantes %}
+        <option value="{{ e.id }}" {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}selected{% endif %}>
+          {% if e.get_full_name %}{{ e.get_full_name }}{% else %}{{ e.email|default:"-" }}{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
     {% endif %}
   </div>
 
+  {% if rol != 'apoderado' %}
   <div class="row g-3 section-spacing">
     <div class="col-md-3">
       <div class="card"><div class="card-body">
@@ -49,6 +55,7 @@
       </div></div>
     </div>
   </div>
+  {% endif %}
 
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">

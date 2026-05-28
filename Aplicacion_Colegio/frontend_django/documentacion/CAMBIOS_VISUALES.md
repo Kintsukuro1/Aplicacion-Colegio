@@ -295,3 +295,75 @@ Profesor/admin siguen con `comunicados/detalle_comunicado.html` (sin cambio de l
 - `estudiante/perfil.html` antigua sigue en el repo (no es la del dashboard actual).
 
 
+---
+
+## Portal apoderado — resumen simple (2026-05-27)
+
+> Este bloque está escrito en lenguaje simple para revisión rápida de equipo.
+
+### Qué se mejoró
+
+- Se dejó el portal de **Apoderado** con el mismo estilo base moderno del estudiante, pero en color **verde menta**.
+- Se ordenaron pantallas que estaban desalineadas o con elementos repetidos (título/sidebars/metricas duplicadas).
+- Se mejoró la utilidad del inicio para que no sea solo “botones”, sino información accionable.
+
+### Cambios visuales principales
+
+- **Layout nuevo apoderado**
+  - Archivos nuevos:  
+    - `templates/apoderado/_apoderado_wrap_start.html`  
+    - `templates/apoderado/_apoderado_wrap_end.html`  
+    - `templates/apoderado/_apoderado_hero.html`  
+    - `templates/apoderado/_sidebar.html`  
+    - `static/css/dashboard_apoderado.css`
+- **Sidebar unificado**
+  - Se corrigió el problema de doble sidebar.
+  - Se usó el sidebar menta también en vistas donde antes no aplicaba bien.
+- **Inicio apoderado rediseñado**
+  - Hero con métricas reales (pupilos, comunicados, firmas, cuotas).
+  - Bloques útiles: “Prioridades del día”, “Monitoreo familiar”, “Gestión financiera”.
+- **Mis pupilos rediseñado**
+  - Tarjetas limpias por alumno, en grid responsive.
+  - Botones claros: “Ver Notas” y “Detalle Asistencia”.
+  - Se agregaron bloques de valor:
+    - Resumen de rendimiento general.
+    - Próximos hitos del mes.
+  - KPIs con semáforo:
+    - Verde / Ámbar / Rojo para promedio y asistencia.
+
+### Empty states (pantallas sin datos)
+
+- Se eliminaron cajas vacías grandes.
+- Ahora muestran mensajes informativos claros y amigables para el apoderado, manteniendo el diseño del portal.
+- Se aplicó en vistas como calendario, comunicados, firmas y otras del módulo.
+
+### Ajustes de coherencia (importante)
+
+- Se eliminó la duplicación de títulos internos cuando ya existe el Hero arriba.
+- Se corrigieron caídas por variables faltantes en componentes compartidos (hero/sidebar), especialmente en finanzas.
+- Estado de Cuenta y Mis Pagos quedaron estables y visualmente consistentes.
+
+### Cambio funcional puntual (backend mínimo para mostrar datos reales)
+
+- En `dashboard_apoderado_service.py` se agregó contexto para `mis_pupilos`:
+  - `promedio_general` por alumno (desde calificaciones).
+  - `porcentaje_asistencia` por alumno (desde asistencia).
+- Con esto se reemplazó el “N/D” por datos reales en la vista.
+
+### Nota técnica local (entorno)
+
+- Se agregó `psycopg[binary]>=3.3.4` en `requirements.txt` para evitar error de conexión PostgreSQL por encoding en entorno local.
+
+### Archivos más relevantes tocados
+
+- `frontend_django/templates/apoderado/*.html`
+- `frontend_django/templates/sidebars/sidebar_apoderado.html`
+- `frontend_django/templates/comunicados/lista_comunicados.html`
+- `frontend_django/templates/comunicados/_lista_comunicados_contenido.html`
+- `frontend_django/templates/matriculas/estado_cuenta.html`
+- `frontend_django/templates/matriculas/mis_pagos.html`
+- `frontend_django/templates/estudiante/mensajeria.html` (ajuste para rol apoderado)
+- `frontend_django/static/css/dashboard_apoderado.css`
+- `backend/apps/core/services/dashboard_apoderado_service.py`
+- `requirements.txt`
+
