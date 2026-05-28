@@ -1,58 +1,209 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
-{% include 'apoderado/_apoderado_hero.html' with hero_title="Mi Perfil" hero_subtitle="Datos de contacto y cuenta de apoderado." hero_aria="Mi Perfil" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/perfil.css' %}">
+<link rel="stylesheet" href="{% static 'css/apoderado/perfil.css' %}?v=20260621">
 
-<div class="content-wrapper">
-  <div class="profile-container">
-    <div class="profile-card">
-      <h2>👤 Mi Perfil</h2>
+<div class="apf-page">
+  {% include 'apoderado/_apoderado_hero.html' with hero_title="Mi Perfil" hero_subtitle="Tu cuenta, datos de contacto y pupilos vinculados en el colegio." hero_aria="Mi Perfil" %}
 
-      <div class="profile-grid">
-        <div class="profile-field">
-          <label>Nombre</label>
-          <p>{{ nombre_usuario }}</p>
-        </div>
-
-        <div class="profile-field">
-          <label>Email</label>
-          <p>{{ request.user.email|default:"-" }}</p>
-        </div>
-
-        <div class="profile-field">
-          <label>Rol</label>
-          <p>Apoderado</p>
-        </div>
-
-        <div class="profile-field">
-          <label>Escuela</label>
-          <p>{{ escuela_nombre }}</p>
+  {% with pa=request.user.perfil_apoderado %}
+  <section class="apod-section-card apf-identity" aria-label="Identidad">
+    <div class="apf-identity__main">
+      <div class="apf-identity__avatar" aria-hidden="true">
+        {% if foto_perfil_url %}
+        <img src="{{ foto_perfil_url }}" alt="" class="apf-identity__photo">
+        {% else %}
+        <span class="apf-identity__initials">{{ request.user.nombre|first|upper }}{{ request.user.apellido_paterno|first|upper }}</span>
+        {% endif %}
+      </div>
+      <div class="apf-identity__info">
+        <h2 class="apf-identity__name">{{ nombre_usuario|default:request.user.get_full_name }}</h2>
+        <p class="apf-identity__role">Apoderado · {{ escuela_nombre|default:"Colegio" }}</p>
+        <p class="apf-identity__email">{{ request.user.email }}</p>
+        <div class="apf-identity__badges">
+          {% if request.user.is_active %}
+          <span class="apf-badge apf-badge--ok">Cuenta activa</span>
+          {% else %}
+          <span class="apf-badge apf-badge--muted">Cuenta inactiva</span>
+          {% endif %}
+          {% if pa and pa.activo %}
+          <span class="apf-badge apf-badge--ok">Perfil vigente</span>
+          {% elif pa %}
+          <span class="apf-badge apf-badge--warn">Perfil no vigente</span>
+          {% endif %}
         </div>
       </div>
     </div>
-
-    {% if apoderado %}
-      <div class="profile-card">
-        <h2>📞 Contacto</h2>
-
-        <div class="profile-grid">
-          <div class="profile-field">
-            <label>Teléfono</label>
-            <p>{{ apoderado.telefono|default:"-" }}</p>
-          </div>
-
-          <div class="profile-field">
-            <label>Dirección</label>
-            <p>{{ apoderado.direccion|default:"-" }}</p>
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
-    <div>
-      <a class="btn btn-outline-primary" href="{% url 'dashboard' %}?pagina=inicio">Volver al inicio</a>
+    <div class="apf-kpi-strip" aria-label="Resumen rápido">
+      <article class="apf-kpi">
+        <p class="apf-kpi__value">{{ estudiantes|length|default:total_pupilos|default:"0" }}</p>
+        <p class="apf-kpi__label">Pupilos vinculados</p>
+      </article>
+      <article class="apf-kpi">
+        <p class="apf-kpi__value">{% if request.user.rut %}{{ request.user.rut }}{% else %}—{% endif %}</p>
+        <p class="apf-kpi__label">RUT</p>
+      </article>
+      <article class="apf-kpi">
+        <p class="apf-kpi__value">{% if pa and pa.fecha_actualizacion %}{{ pa.fecha_actualizacion|date:"d/m/Y" }}{% else %}—{% endif %}</p>
+        <p class="apf-kpi__label">Última actualización</p>
+      </article>
     </div>
+  </section>
+
+  <div class="apf-grid">
+    <section class="apod-section-card apf-panel" aria-labelledby="apfCuentaTitle">
+      <header class="apf-panel__head">
+        <span class="apf-panel__icon" aria-hidden="true">🔐</span>
+        <div>
+          <h3 class="apf-panel__title" id="apfCuentaTitle">Cuenta de acceso</h3>
+          <p class="apf-panel__hint">Datos con los que ingresas al portal</p>
+        </div>
+      </header>
+      <dl class="apf-dl">
+        <div class="apf-dl__row">
+          <dt>Nombre completo</dt>
+          <dd>{{ request.user.get_full_name }}</dd>
+        </div>
+        <div class="apf-dl__row">
+          <dt>Correo electrónico</dt>
+          <dd>{{ request.user.email|default:"—" }}</dd>
+        </div>
+        <div class="apf-dl__row">
+          <dt>RUT</dt>
+          <dd>{% if request.user.rut %}{{ request.user.rut }}{% else %}<span class="apf-empty-val">Sin registrar</span>{% endif %}</dd>
+        </div>
+        <div class="apf-dl__row">
+          <dt>Colegio</dt>
+          <dd>{{ escuela_nombre|default:"—" }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="apod-section-card apf-panel" aria-labelledby="apfContactoTitle">
+      <header class="apf-panel__head">
+        <span class="apf-panel__icon" aria-hidden="true">📞</span>
+        <div>
+          <h3 class="apf-panel__title" id="apfContactoTitle">Contacto</h3>
+          <p class="apf-panel__hint">Para que el colegio pueda comunicarse contigo</p>
+        </div>
+      </header>
+      {% if pa %}
+      <dl class="apf-dl">
+        <div class="apf-dl__row">
+          <dt>Teléfono</dt>
+          <dd>{% if pa.telefono %}{{ pa.telefono }}{% else %}<span class="apf-empty-val">Sin registrar</span>{% endif %}</dd>
+        </div>
+        <div class="apf-dl__row">
+          <dt>Celular</dt>
+          <dd>{% if pa.telefono_movil %}{{ pa.telefono_movil }}{% else %}<span class="apf-empty-val">Sin registrar</span>{% endif %}</dd>
+        </div>
+        <div class="apf-dl__row">
+          <dt>Dirección</dt>
+          <dd>{% if pa.direccion %}{{ pa.direccion }}{% else %}<span class="apf-empty-val">Sin registrar</span>{% endif %}</dd>
+        </div>
+        <div class="apf-dl__row">
+          <dt>Ocupación</dt>
+          <dd>{% if pa.ocupacion %}{{ pa.ocupacion }}{% else %}<span class="apf-empty-val">—</span>{% endif %}</dd>
+        </div>
+        {% if pa.lugar_trabajo or pa.telefono_trabajo %}
+        <div class="apf-dl__row">
+          <dt>Trabajo</dt>
+          <dd>
+            {% if pa.lugar_trabajo %}{{ pa.lugar_trabajo }}{% endif %}
+            {% if pa.telefono_trabajo %}{% if pa.lugar_trabajo %} · {% endif %}{{ pa.telefono_trabajo }}{% endif %}
+          </dd>
+        </div>
+        {% endif %}
+      </dl>
+      {% else %}
+      <p class="apf-panel__empty">No hay ficha de apoderado asociada a esta cuenta.</p>
+      {% endif %}
+    </section>
   </div>
+
+  {% if pa %}
+  <section class="apod-section-card apf-panel" aria-labelledby="apfPermisosTitle">
+    <header class="apf-panel__head">
+      <span class="apf-panel__icon" aria-hidden="true">✓</span>
+      <div>
+        <h3 class="apf-panel__title" id="apfPermisosTitle">Permisos en el portal</h3>
+        <p class="apf-panel__hint">Qué puedes consultar o hacer como apoderado</p>
+      </div>
+    </header>
+    <ul class="apf-perms">
+      <li class="apf-perms__item{% if pa.puede_ver_notas %} apf-perms__item--on{% endif %}">
+        <span class="apf-perms__dot" aria-hidden="true"></span>
+        Ver notas y calificaciones
+      </li>
+      <li class="apf-perms__item{% if pa.puede_ver_asistencia %} apf-perms__item--on{% endif %}">
+        <span class="apf-perms__dot" aria-hidden="true"></span>
+        Ver asistencia
+      </li>
+      <li class="apf-perms__item{% if pa.puede_recibir_comunicados %} apf-perms__item--on{% endif %}">
+        <span class="apf-perms__dot" aria-hidden="true"></span>
+        Recibir comunicados
+      </li>
+      <li class="apf-perms__item{% if pa.puede_firmar_citaciones %} apf-perms__item--on{% endif %}">
+        <span class="apf-perms__dot" aria-hidden="true"></span>
+        Firmar citaciones
+      </li>
+      <li class="apf-perms__item{% if pa.puede_ver_tareas %} apf-perms__item--on{% endif %}">
+        <span class="apf-perms__dot" aria-hidden="true"></span>
+        Ver tareas
+      </li>
+      <li class="apf-perms__item{% if pa.puede_autorizar_salidas %} apf-perms__item--on{% endif %}">
+        <span class="apf-perms__dot" aria-hidden="true"></span>
+        Autorizar salidas
+      </li>
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="apod-section-card apf-panel" aria-labelledby="apfPupilosTitle">
+    <header class="apf-panel__head apf-panel__head--split">
+      <div class="apf-panel__head-left">
+        <span class="apf-panel__icon" aria-hidden="true">🎓</span>
+        <div>
+          <h3 class="apf-panel__title" id="apfPupilosTitle">Pupilos vinculados</h3>
+          <p class="apf-panel__hint">Estudiantes a tu cargo en este colegio</p>
+        </div>
+      </div>
+      <a href="{% url 'dashboard' %}?pagina=mis_pupilos" class="apf-btn apf-btn--outline">Ver todos</a>
+    </header>
+    {% if estudiantes %}
+    <ul class="apf-pupils">
+      {% for e in estudiantes %}
+      <li class="apf-pupil">
+        <span class="apf-pupil__avatar" aria-hidden="true">{{ e.nombre|first|upper }}</span>
+        <div class="apf-pupil__body">
+          <p class="apf-pupil__name">{{ e.get_full_name|default:e.email }}</p>
+          <p class="apf-pupil__meta">
+            {% if e.perfil_estudiante and e.perfil_estudiante.curso_actual %}
+            {{ e.perfil_estudiante.curso_actual.nombre }}
+            {% else %}
+            Curso no asignado
+            {% endif %}
+          </p>
+        </div>
+        <div class="apf-pupil__links">
+          <a href="{% url 'dashboard' %}?pagina=notas&amp;estudiante_id={{ e.id }}">Notas</a>
+          <a href="{% url 'dashboard' %}?pagina=asistencia&amp;estudiante_id={{ e.id }}">Asistencia</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="apf-panel__empty">Aún no tienes pupilos asociados a tu cuenta.</p>
+    {% endif %}
+  </section>
+
+  <nav class="apf-actions" aria-label="Acciones">
+    <a href="{% url 'dashboard' %}?pagina=inicio" class="apf-btn apf-btn--primary">Volver al inicio</a>
+    <form method="post" action="{% url 'accounts:logout' %}" class="apf-logout-form">
+      {% csrf_token %}
+      <button type="submit" class="apf-btn apf-btn--ghost">Cerrar sesión</button>
+    </form>
+  </nav>
+  {% endwith %}
 </div>
 
 {% include 'apoderado/_apoderado_wrap_end.html' %}

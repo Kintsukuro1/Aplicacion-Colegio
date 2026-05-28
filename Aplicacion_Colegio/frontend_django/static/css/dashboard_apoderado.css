@@ -41,6 +41,9 @@ body.vista-apoderado .af-page,
 body.vista-apoderado .am-page,
 body.vista-apoderado .acal-page,
 body.vista-apoderado .amm-page,
+body.vista-apoderado .aec-page,
+body.vista-apoderado .apg-page,
+body.vista-apoderado .apf-page,
 body.vista-apoderado .apod-hero {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -1863,7 +1866,10 @@ body.pagina-inicio:has(.perfil-apoderado) {
 .apod-page-content .aa-page,
 .apod-page-content .af-page,
 .apod-page-content .am-page,
-.apod-page-content .amm-page {
+.apod-page-content .amm-page,
+.apod-page-content .aec-page,
+.apod-page-content .apg-page,
+.apod-page-content .apf-page {
     max-width: none;
     width: 100%;
     padding: 0;

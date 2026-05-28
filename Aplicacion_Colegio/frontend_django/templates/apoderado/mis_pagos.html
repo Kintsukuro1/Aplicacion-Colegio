@@ -1,0 +1,145 @@
+{% load static custom_filters %}
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/apoderado/mis_pagos.css' %}?v=20260621">
+
+<div class="apg-page">
+  {% include 'apoderado/_apoderado_hero.html' with hero_title="Mis Pagos" hero_subtitle="Registro de cada pago que hiciste: fecha, método y comprobante." hero_aria="Mis pagos" metrics_aria="Resumen de pagos" m1_value=total_pagado|pesos_cl m1_label="Suma de pagos" m1_mod="pupilos" m2_value=pagos|length m2_label="Movimientos" m2_mod="comunicados" m3_value=pagos|count_estado:"PENDIENTE" m3_label="Por confirmar" m3_mod="firmas" m4_value=pagos|count_estado:"APROBADO" m4_label="Confirmados" m4_mod="cuotas" %}
+
+  <aside class="apg-purpose" role="note">
+    <span class="apg-purpose__icon" aria-hidden="true">🧾</span>
+    <div class="apg-purpose__body">
+      <p class="apg-purpose__title">¿Qué ves aquí?</p>
+      <p class="apg-purpose__text">Cada ítem es un <strong>pago concreto</strong> (transferencia, webpay, efectivo, etc.) que el colegio registró. No es el mismo listado que las cuotas mensuales del arancel.</p>
+    </div>
+  </aside>
+  <p class="apg-crosslink">
+    ¿Cuánto debes por mes o qué cuota falta? <a href="{% url 'matriculas:mi_estado_cuenta' %}{% if estudiante_seleccionado %}?estudiante_id={{ estudiante_seleccionado.id }}{% endif %}">Ver plan en Estado de Cuenta →</a>
+  </p>
+
+  <section class="apod-section-card apg-panel" aria-label="Historial de pagos">
+    {% if estudiantes %}
+    <nav class="apg-pupil-tabs" aria-label="Seleccionar pupilo">
+      {% for e in estudiantes %}
+        {% with nombre_tab=e.get_full_name|default:e.email|default:"Pupilo" %}
+        <a
+          href="{% url 'matriculas:mis_pagos' %}?estudiante_id={{ e.id }}"
+          class="apg-pupil-tab{% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %} apg-pupil-tab--active{% endif %}"
+          {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}aria-current="page"{% endif %}
+        >
+          <span class="apg-pupil-tab__avatar" aria-hidden="true">{{ nombre_tab|first|upper }}</span>
+          <span>{{ nombre_tab }}</span>
+        </a>
+        {% endwith %}
+      {% endfor %}
+    </nav>
+    {% endif %}
+
+    {% if pagos|count_estado:"PENDIENTE" %}
+    <p class="apg-notice apg-notice--alert" role="status">
+      <strong>{{ pagos|count_estado:"PENDIENTE" }}</strong> movimiento{{ pagos|count_estado:"PENDIENTE"|pluralize:"s" }} esperando confirmación del colegio.
+    </p>
+    {% endif %}
+
+    <header class="apg-feed-head">
+      <div>
+        <h2 class="apg-feed-head__title">Línea de tiempo de pagos</h2>
+        <p class="apg-feed-head__meta">{{ pagos|length }} movimiento{{ pagos|length|pluralize:"s" }} · {{ total_pagado|pesos_cl }} acumulados</p>
+      </div>
+    </header>
+
+    {% if pagos %}
+    <nav class="apg-chips" aria-label="Filtrar movimientos" id="apgFilterChips">
+      <button type="button" class="apg-chips__chip apg-chips__chip--active" data-apg-filter="">Todos</button>
+      <button type="button" class="apg-chips__chip" data-apg-filter="aprobado">Confirmados</button>
+      <button type="button" class="apg-chips__chip" data-apg-filter="pendiente">Por confirmar</button>
+      <button type="button" class="apg-chips__chip" data-apg-filter="rechazado">Rechazados</button>
+    </nav>
+
+    <div class="apg-feed" id="apgFeed" role="list">
+      {% for p in pagos %}
+      {% with estado_key=p.estado|lower %}
+      <article
+        class="apg-tx apg-tx--{{ estado_key }}"
+        role="listitem"
+        data-apg-estado="{{ estado_key }}"
+      >
+        <div class="apg-tx__date-col">
+          <span class="apg-tx__day">{{ p.fecha_pago|date:"d" }}</span>
+          <span class="apg-tx__month">{{ p.fecha_pago|date:"M Y" }}</span>
+          <span class="apg-tx__time">{{ p.fecha_pago|date:"H:i" }}</span>
+        </div>
+        <span class="apg-tx__method-icon" aria-hidden="true">
+          {% if p.metodo_pago == 'EFECTIVO' %}💵
+          {% elif p.metodo_pago == 'TRANSFERENCIA' %}🏦
+          {% elif p.metodo_pago == 'WEBPAY' %}💳
+          {% elif p.metodo_pago == 'MERCADO_PAGO' %}📱
+          {% elif p.metodo_pago == 'CHEQUE' %}📄
+          {% else %}💰{% endif %}
+        </span>
+        <div class="apg-tx__body">
+          <p class="apg-tx__method">{{ p.get_metodo_pago_display }}</p>
+          <p class="apg-tx__cuota">
+            {% if p.cuota %}Abono a {{ p.cuota.get_mes_display }} {{ p.cuota.anio }}{% else %}Pago registrado{% endif %}
+          </p>
+          {% if p.numero_comprobante or p.numero_transaccion %}
+          <p class="apg-tx__ref">
+            {% if p.numero_comprobante %}Comprobante {{ p.numero_comprobante }}{% endif %}
+            {% if p.numero_transaccion %}{% if p.numero_comprobante %} · {% endif %}Ref. {{ p.numero_transaccion }}{% endif %}
+          </p>
+          {% endif %}
+        </div>
+        <div class="apg-tx__side">
+          <p class="apg-tx__amount">{{ p.monto|pesos_cl }}</p>
+          <span class="apg-tx__badge apg-tx__badge--{{ estado_key }}">{{ p.get_estado_display }}</span>
+          {% if p.comprobante %}
+          <a href="{{ p.comprobante.url }}" class="apg-tx__receipt" target="_blank" rel="noopener">Ver archivo</a>
+          {% endif %}
+        </div>
+      </article>
+      {% endwith %}
+      {% endfor %}
+    </div>
+    <p class="apg-filter-empty apg-hidden" id="apgFilterEmpty">Ningún movimiento coincide con este filtro.</p>
+    {% else %}
+    <div class="apg-empty">
+      <span class="apg-empty__icon" aria-hidden="true">💳</span>
+      <h3 class="apg-empty__title">Sin movimientos aún</h3>
+      <p>Cuando el colegio registre un pago, aparecerá aquí con fecha y comprobante.</p>
+      <a href="{% url 'matriculas:mi_estado_cuenta' %}{% if estudiante_seleccionado %}?estudiante_id={{ estudiante_seleccionado.id }}{% endif %}" class="apg-btn apg-btn--outline">Ver cuotas en Estado de Cuenta</a>
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+{% if pagos %}
+<script>
+(function () {
+  var chips = document.querySelectorAll('#apgFilterChips [data-apg-filter]');
+  var items = document.querySelectorAll('#apgFeed .apg-tx');
+  var emptyMsg = document.getElementById('apgFilterEmpty');
+
+  function applyFilter(key) {
+    var visible = 0;
+    items.forEach(function (item) {
+      var st = item.getAttribute('data-apg-estado') || '';
+      var show = !key || st === key;
+      item.hidden = !show;
+      if (show) visible++;
+    });
+    if (emptyMsg) {
+      emptyMsg.classList.toggle('apg-hidden', visible > 0 || !key);
+    }
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      chips.forEach(function (c) { c.classList.remove('apg-chips__chip--active'); });
+      chip.classList.add('apg-chips__chip--active');
+      applyFilter(chip.getAttribute('data-apg-filter') || '');
+    });
+  });
+})();
+</script>
+{% endif %}
+
+{% include 'apoderado/_apoderado_wrap_end.html' %}

@@ -1,7 +1,7 @@
-{% load static %}
+{% load static custom_filters %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
 {% include 'apoderado/_apoderado_hero.html' with hero_title="Asistencia" hero_subtitle="Consulta inasistencias y justificativos por pupilo." hero_aria="Asistencia" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/asistencia.css' %}?v=20260616">
+<link rel="stylesheet" href="{% static 'css/apoderado/asistencia.css' %}?v=20260619">
 
 <div class="aa-page">
   <section class="apod-section-card aa-panel" aria-label="Asistencia por pupilo">
@@ -110,11 +110,14 @@
         {% for fecha, registros in registros_por_fecha.items %}
           {% for r in registros %}
             {% with asig=r.clase.asignatura.nombre|default:"Sin asignatura" %}
+            {% with accent=asig|color_asignatura:r.clase.asignatura.color %}
             <article
               class="attendance-card aa-attendance-card"
               role="listitem"
+              style="--aa-accent: {{ accent }};"
               data-aa-date="{{ fecha|date:'Y-m-d' }}"
               data-aa-subject="{{ asig|lower }}"
+              data-aa-accent="{{ accent }}"
               data-aa-status="{% if r.estado == 'P' %}presente{% elif r.estado == 'J' %}justificado{% elif r.estado == 'A' %}injustificado{% elif r.estado == 'T' %}atraso{% else %}otro{% endif %}"
             >
               <div class="aa-attendance-card__date">
@@ -154,6 +157,7 @@
               </div>
             </article>
             {% endwith %}
+            {% endwith %}
           {% endfor %}
         {% endfor %}
       </div>
@@ -190,28 +194,6 @@
   var clearEl = document.getElementById('aaClearFilters');
   var hintEl = document.getElementById('aaFilterHint');
   var cards = document.querySelectorAll('.aa-attendance-card');
-
-  var SUBJECT_COLORS = {
-    matem: '#3B82F6', lengua: '#EF4444', comunic: '#EF4444', castellano: '#EF4444',
-    cienc: '#10B981', natur: '#10B981', histor: '#8B5CF6', geograf: '#8B5CF6',
-    ingl: '#F59E0B', educ: '#06B6D4', física: '#06B6D4', edfis: '#06B6D4',
-    arte: '#EC4899', visual: '#EC4899', músic: '#F97316', music: '#F97316',
-    tecno: '#6B7280', comput: '#6B7280', tecnología: '#6B7280', tecnologia: '#6B7280',
-    música: '#F97316', musica: '#F97316', religion: '#A855F7', religión: '#A855F7'
-  };
-
-  function resolveAccent(key) {
-    var s = (key || '').toLowerCase();
-    var k;
-    for (k in SUBJECT_COLORS) {
-      if (s.indexOf(k) !== -1) return SUBJECT_COLORS[k];
-    }
-    return '#64748b';
-  }
-
-  cards.forEach(function (card) {
-    card.style.setProperty('--aa-accent', resolveAccent(card.getAttribute('data-aa-subject')));
-  });
 
   var minDate = '';
   var maxDate = '';
