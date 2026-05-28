@@ -1,126 +1,291 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
-{% include 'apoderado/_apoderado_hero.html' with hero_title="Notas y Calificaciones" hero_subtitle="Selecciona un estudiante para ver sus notas." hero_aria="Notas y Calificaciones" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/notas.css' %}?v=20260528">
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Notas y Calificaciones" hero_subtitle="Revisa el rendimiento de tus pupilos por asignatura." hero_aria="Notas y Calificaciones" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
+<link rel="stylesheet" href="{% static 'css/apoderado/notas.css' %}?v=20260531">
 
-<div class="content-wrapper">
-  <div class="page-header">
+<div class="an-page">
+  <section class="apod-section-card an-panel" aria-label="Calificaciones por pupilo">
+
     {% if estudiantes %}
-      <form method="get" action="{% url 'dashboard' %}" class="estudiante-selector">
-        <input type="hidden" name="pagina" value="notas">
-        <label for="estudiante_id">Estudiante</label>
-        <select id="estudiante_id" name="estudiante_id" onchange="this.form.submit()">
-          <option value="">Seleccionar estudiante</option>
-          {% for e in estudiantes %}
-            <option value="{{ e.id }}" {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}selected{% endif %}>
-              {% if e.get_full_name %}{{ e.get_full_name }}{% else %}{{ e.email|default:"-" }}{% endif %}
-            </option>
-          {% endfor %}
-        </select>
-      </form>
+    <nav class="an-pupil-tabs" aria-label="Seleccionar pupilo">
+      {% for e in estudiantes %}
+        {% with nombre_tab=e.get_full_name|default:e.email|default:"Pupilo" %}
+        <a
+          href="{% url 'dashboard' %}?pagina=notas&amp;estudiante_id={{ e.id }}"
+          class="an-pupil-tab{% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %} an-pupil-tab--active{% endif %}"
+          {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}aria-current="page"{% endif %}
+        >
+          <span class="an-pupil-tab__avatar" aria-hidden="true">{{ nombre_tab|first|upper }}</span>
+          <span class="an-pupil-tab__label">{{ nombre_tab }}</span>
+        </a>
+        {% endwith %}
+      {% endfor %}
+    </nav>
     {% endif %}
-  </div>
 
-  {% if not estudiantes %}
-    <div class="empty-state">
-      <span class="empty-icon">👥</span>
-      <h3>No hay estudiantes asociados</h3>
-      <p>Cuando existan pupilos asociados, podrás ver sus notas aquí.</p>
-    </div>
-  {% elif not estudiante_seleccionado %}
-    <div class="empty-state">
-      <span class="empty-icon">🎓</span>
-      <h3>Selecciona un estudiante</h3>
-      <p>Usa el selector superior para continuar.</p>
-    </div>
-  {% else %}
-    {% with nombre_est=estudiante_seleccionado.get_full_name|default:estudiante_seleccionado.email|default:"?" %}
-      <div class="estudiante-kpi-card">
-        <div class="estudiante-avatar">{{ nombre_est|first|upper }}</div>
-        <div class="estudiante-datos">
-          <h2 class="estudiante-kpi-card__name">{{ nombre_est }}</h2>
-          <p class="estudiante-kpi-card__desc">Resumen académico consolidado del período actual.</p>
-        </div>
-        <div class="promedio-general-box">
-          <label>Promedio General Actual</label>
-          {% if promedio_general %}
-            <div class="promedio-valor
-              {% if promedio_general >= 6 %} nota-nivel--alto
-              {% elif promedio_general >= 4 %} nota-nivel--medio
-              {% else %} nota-nivel--bajo{% endif %}">{{ promedio_general|floatformat:1 }}</div>
-          {% else %}
-            <div class="promedio-valor">-</div>
-          {% endif %}
-        </div>
+    {% if not estudiantes %}
+      <div class="an-empty">
+        <span class="an-empty__icon" aria-hidden="true">👥</span>
+        <h3 class="an-empty__title">No hay estudiantes asociados</h3>
+        <p class="an-empty__text">Cuando existan pupilos vinculados, podrás ver sus calificaciones aquí.</p>
       </div>
-    {% endwith %}
-
-    {% if notas_por_asignatura %}
-      <div class="asignaturas-grid">
-        {% for item in notas_por_asignatura %}
-          <article class="asignatura-card">
-            <div class="asignatura-header">
-              <h3 class="asignatura-title">
-                <span class="asignatura-icon" aria-hidden="true">
-                  {% with asign=item.asignatura.nombre|default:item.asignatura|lower %}
-                    {% if 'arte' in asign %}🎨
-                    {% elif 'cien' in asign %}🔬
-                    {% elif 'mate' in asign %}📐
-                    {% elif 'hist' in asign %}🏛️
-                    {% elif 'leng' in asign or 'lit' in asign %}📚
-                    {% elif 'ingl' in asign %}🌍
-                    {% elif 'mús' in asign or 'mus' in asign %}🎵
-                    {% elif 'educación física' in asign or 'fisic' in asign %}🏃
-                    {% else %}📘{% endif %}
-                  {% endwith %}
-                </span>
-                <span>{{ item.asignatura.nombre|default:item.asignatura }}</span>
-              </h3>
-              {% if item.asignatura.codigo %}<span class="asignatura-codigo">{{ item.asignatura.codigo }}</span>{% endif %}
-            </div>
-
-            <div class="asignatura-promedio">
-              <label>Promedio</label>
-              {% if item.promedio %}
-                <span class="
-                  {% if item.promedio >= 6 %} nota-nivel--alto
-                  {% elif item.promedio >= 4 %} nota-nivel--medio
-                  {% else %} nota-nivel--bajo{% endif %}">{{ item.promedio|floatformat:1 }}</span>
-              {% else %}
-                <span>-</span>
-              {% endif %}
-            </div>
-
-            <div class="evaluaciones-lista">
-              <h4>Detalle de evaluaciones</h4>
-              {% for ev in item.evaluaciones %}
-                  <div class="evaluacion-item">
-                    <div class="evaluacion-info">
-                      <span class="evaluacion-nombre">{{ ev.nombre }}</span>
-                      <span class="evaluacion-meta">{{ ev.fecha_evaluacion|date:"d/m/Y" }} · {{ ev.ponderacion|floatformat:0 }}%</span>
-                    </div>
-                    <div class="evaluacion-right">
-                      <div class="evaluacion-nota
-                        {% if ev.nota >= 6 %} nota-nivel--alto
-                        {% elif ev.nota >= 4 %} nota-nivel--medio
-                        {% else %} nota-nivel--bajo{% endif %}">{{ ev.nota|floatformat:1 }}</div>
-                    </div>
-                  </div>
-              {% empty %}
-                <div class="sin-datos">Sin calificaciones registradas.</div>
-              {% endfor %}
-            </div>
-          </article>
-        {% endfor %}
+    {% elif not estudiante_seleccionado %}
+      <div class="an-empty">
+        <span class="an-empty__icon" aria-hidden="true">🎓</span>
+        <h3 class="an-empty__title">Selecciona un pupilo</h3>
+        <p class="an-empty__text">Elige una pestaña superior para ver sus notas.</p>
       </div>
     {% else %}
-      <div class="empty-state">
-        <span class="empty-icon">📭</span>
-        <h3>Sin datos</h3>
-        <p>No hay calificaciones para mostrar.</p>
+      {% with nombre_est=estudiante_seleccionado.get_full_name|default:estudiante_seleccionado.email|default:"Pupilo" %}
+      <header class="an-executive" aria-label="Resumen académico de {{ nombre_est }}">
+        <div class="an-executive__top">
+          <div class="an-executive__identity">
+            <span class="an-executive__avatar" aria-hidden="true">{{ nombre_est|first|upper }}</span>
+            <div class="an-executive__copy">
+              <p class="an-executive__eyebrow">Ficha académica</p>
+              <p class="an-executive__name">{{ nombre_est }}</p>
+              <p class="an-executive__course">{{ ficha_alumno.curso|default:"Sin curso asignado" }}</p>
+            </div>
+          </div>
+          <div class="an-executive__kpi">
+            <span class="an-executive__kpi-label">Promedio general</span>
+            {% if promedio_general %}
+              <span class="an-executive__kpi-value{% if promedio_general >= 4.0 %} an-nota--aprobada{% else %} an-nota--reprobada{% endif %}">{{ promedio_general|floatformat:1 }}</span>
+            {% else %}
+              <span class="an-executive__kpi-value an-executive__kpi-value--muted">—</span>
+            {% endif %}
+          </div>
+        </div>
+        <dl class="an-executive__facts">
+          <div class="an-executive__fact">
+            <dt>RUT</dt>
+            <dd>{{ ficha_alumno.rut|default:"—" }}</dd>
+          </div>
+          <div class="an-executive__fact">
+            <dt>Correo</dt>
+            <dd>{{ ficha_alumno.email|default:"—" }}</dd>
+          </div>
+          {% if ficha_alumno.ciclo %}
+          <div class="an-executive__fact">
+            <dt>Ciclo</dt>
+            <dd>{{ ficha_alumno.ciclo }}</dd>
+          </div>
+          {% endif %}
+          <div class="an-executive__fact">
+            <dt>Asistencia</dt>
+            <dd>{% if ficha_alumno.porcentaje_asistencia is not None %}{{ ficha_alumno.porcentaje_asistencia }}%{% else %}—{% endif %}</dd>
+          </div>
+          <div class="an-executive__fact">
+            <dt>Asignaturas</dt>
+            <dd>{{ ficha_alumno.total_asignaturas|default:"0" }}</dd>
+          </div>
+          <div class="an-executive__fact">
+            <dt>Evaluaciones</dt>
+            <dd>{{ ficha_alumno.total_evaluaciones|default:"0" }}</dd>
+          </div>
+          <div class="an-executive__fact an-executive__fact--alert">
+            <dt>Por reforzar</dt>
+            <dd>{{ ficha_alumno.por_reforzar|default:"0" }}</dd>
+          </div>
+        </dl>
+      </header>
+
+      {% if notas_por_asignatura %}
+      <section class="an-refine" aria-label="Filtrar asignaturas">
+        <div class="an-refine__head">
+          <h2 class="an-refine__title">Buscar asignatura</h2>
+          <button type="button" class="an-refine__clear" id="anClearFilters" hidden>Limpiar</button>
+        </div>
+        <div class="an-refine__grid">
+          <div class="an-refine__field an-refine__field--grow">
+            <label class="an-refine__label" for="anSearch">Nombre</label>
+            <input type="search" class="an-refine__control" id="anSearch" placeholder="Ej: Matemática, Lenguaje..." autocomplete="off">
+          </div>
+          <div class="an-refine__field">
+            <label class="an-refine__label" for="anStatusFilter">Estado</label>
+            <select class="an-refine__control" id="anStatusFilter">
+              <option value="">Todas</option>
+              <option value="aprobado">Aprobadas</option>
+              <option value="reforzar">Por reforzar</option>
+            </select>
+          </div>
+        </div>
+        <p class="an-refine__hint" id="anFilterHint" hidden></p>
+      </section>
+
+      <p class="an-list-hint">Haz clic en una fila para ver el detalle de evaluaciones.</p>
+      <div class="an-subjects-list" id="anSubjectsList" role="list">
+        {% for item in notas_por_asignatura %}
+          {% with nombre_asig=item.asignatura.nombre|default:item.asignatura %}
+          <article
+            class="an-subject-row subject-card"
+            role="listitem"
+            data-subject="{{ nombre_asig|lower }}"
+            data-an-status="{% if item.promedio >= 4.0 %}aprobado{% elif item.promedio %}reforzar{% else %}sin-dato{% endif %}"
+            id="an-subject-{{ forloop.counter }}"
+          >
+            <button
+              type="button"
+              class="an-subject-row__toggle"
+              aria-expanded="false"
+              aria-controls="an-detail-{{ forloop.counter }}"
+              data-an-target="an-detail-{{ forloop.counter }}"
+            >
+              <span class="an-subject-row__bar" aria-hidden="true"></span>
+              <span class="an-subject-row__icon" aria-hidden="true">
+                {% with asign=nombre_asig|lower %}
+                  {% if 'arte' in asign %}🎨
+                  {% elif 'cien' in asign %}🔬
+                  {% elif 'mate' in asign %}📐
+                  {% elif 'hist' in asign %}🏛️
+                  {% elif 'leng' in asign or 'lit' in asign or 'comunic' in asign or 'castell' in asign %}📚
+                  {% elif 'ingl' in asign %}🌍
+                  {% elif 'mús' in asign or 'mus' in asign %}🎵
+                  {% elif 'educación física' in asign or 'fisic' in asign or 'edfis' in asign %}🏃
+                  {% elif 'tecno' in asign or 'comput' in asign %}💻
+                  {% else %}📘{% endif %}
+                {% endwith %}
+              </span>
+              <span class="an-subject-row__info">
+                <span class="an-subject-row__title">{{ nombre_asig }}</span>
+                <span class="an-subject-row__meta">
+                  {{ item.evaluaciones|length }} evaluación{{ item.evaluaciones|length|pluralize:"es" }}
+                  {% if item.asignatura.codigo %} · {{ item.asignatura.codigo }}{% endif %}
+                </span>
+              </span>
+              {% if item.promedio %}
+              <span class="an-subject-row__status an-subject-row__status--{% if item.promedio >= 4.0 %}ok{% else %}risk{% endif %}">
+                {% if item.promedio >= 4.0 %}Aprobado{% else %}Por reforzar{% endif %}
+              </span>
+              <span class="an-subject-row__prom{% if item.promedio >= 4.0 %} an-nota--aprobada{% else %} an-nota--reprobada{% endif %}">{{ item.promedio|floatformat:1 }}</span>
+              {% else %}
+              <span class="an-subject-row__prom an-subject-row__prom--muted">—</span>
+              {% endif %}
+              <span class="an-subject-row__chev" aria-hidden="true"></span>
+            </button>
+
+            <div class="an-subject-row__detail" id="an-detail-{{ forloop.counter }}" hidden>
+              <div class="an-subject-row__detail-inner">
+                {% for ev in item.evaluaciones %}
+                <div class="an-eval">
+                  <span class="an-eval__name">{{ ev.nombre }}</span>
+                  <span class="an-eval__meta">{{ ev.fecha_evaluacion|date:"d/m/Y" }} · {{ ev.ponderacion|floatformat:0 }}%</span>
+                  <span class="an-eval__badge{% if ev.nota >= 4.0 %} an-nota--aprobada{% else %} an-nota--reprobada{% endif %}">{{ ev.nota|floatformat:1 }}</span>
+                </div>
+                {% empty %}
+                <p class="an-subject-row__sin-datos">Sin calificaciones registradas.</p>
+                {% endfor %}
+              </div>
+            </div>
+          </article>
+          {% endwith %}
+        {% endfor %}
       </div>
+      {% else %}
+      <div class="an-empty an-empty--inline">
+        <span class="an-empty__icon" aria-hidden="true">📭</span>
+        <h3 class="an-empty__title">Sin calificaciones</h3>
+        <p class="an-empty__text">Aún no hay notas publicadas para este pupilo.</p>
+      </div>
+      {% endif %}
+      {% endwith %}
     {% endif %}
-  {% endif %}
+  </section>
 </div>
+
+<script>
+(function () {
+  var SUBJECT_COLORS = {
+    matem: '#3B82F6', lengua: '#EF4444', comunic: '#EF4444', castellano: '#EF4444',
+    cienc: '#10B981', natur: '#10B981', histor: '#8B5CF6', geograf: '#8B5CF6',
+    ingl: '#F59E0B', educ: '#06B6D4', física: '#06B6D4', edfis: '#06B6D4',
+    arte: '#EC4899', visual: '#EC4899', músic: '#F97316', music: '#F97316',
+    tecno: '#6B7280', comput: '#6B7280'
+  };
+
+  function resolveAccent(key) {
+    var s = (key || '').toLowerCase();
+    var k;
+    for (k in SUBJECT_COLORS) {
+      if (s.indexOf(k) !== -1) return SUBJECT_COLORS[k];
+    }
+    return '#94A3B8';
+  }
+
+  document.querySelectorAll('.an-subject-row[data-subject]').forEach(function (row) {
+    var accent = resolveAccent(row.getAttribute('data-subject'));
+    row.style.setProperty('--an-accent', accent);
+  });
+
+  function setRowOpen(row, open) {
+    if (row) row.classList.toggle('an-subject-row--open', open);
+  }
+
+  function closeAllDetails(exceptId) {
+    document.querySelectorAll('.an-subject-row__detail').forEach(function (panel) {
+      if (panel.id === exceptId) return;
+      panel.hidden = true;
+      setRowOpen(panel.closest('.an-subject-row'), false);
+    });
+    document.querySelectorAll('.an-subject-row__toggle').forEach(function (btn) {
+      if (btn.getAttribute('aria-controls') === exceptId) return;
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  document.querySelectorAll('.an-subject-row__toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var targetId = btn.getAttribute('data-an-target');
+      var panel = document.getElementById(targetId);
+      if (!panel) return;
+      var row = panel.closest('.an-subject-row');
+      var open = panel.hidden;
+      closeAllDetails(open ? targetId : null);
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      setRowOpen(row, open);
+      if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+
+  var searchEl = document.getElementById('anSearch');
+  var statusEl = document.getElementById('anStatusFilter');
+  var clearEl = document.getElementById('anClearFilters');
+  var hintEl = document.getElementById('anFilterHint');
+
+  function applyFilters() {
+    if (!searchEl || !statusEl) return;
+    var q = (searchEl.value || '').trim().toLowerCase();
+    var status = statusEl.value;
+    var visible = 0;
+    document.querySelectorAll('.an-subject-row').forEach(function (row) {
+      var matchSearch = !q || (row.getAttribute('data-subject') || '').indexOf(q) !== -1;
+      var matchStatus = !status || row.getAttribute('data-an-status') === status;
+      var show = matchSearch && matchStatus;
+      row.hidden = !show;
+      if (show) visible++;
+    });
+    if (clearEl) clearEl.hidden = !(q || status);
+    if (hintEl && (q || status)) {
+      hintEl.hidden = false;
+      hintEl.textContent = visible
+        ? visible + ' asignatura(s) coinciden con el filtro.'
+        : 'Ninguna asignatura coincide. Prueba otro término.';
+    } else if (hintEl) {
+      hintEl.hidden = true;
+    }
+  }
+
+  if (searchEl) searchEl.addEventListener('input', applyFilters);
+  if (statusEl) statusEl.addEventListener('change', applyFilters);
+  if (clearEl) {
+    clearEl.addEventListener('click', function () {
+      if (searchEl) searchEl.value = '';
+      if (statusEl) statusEl.value = '';
+      applyFilters();
+    });
+  }
+})();
+</script>
 
 {% include 'apoderado/_apoderado_wrap_end.html' %}
