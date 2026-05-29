@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { canAccessRoute } from '../utils/capabilities';
 import { APP_ROUTES } from './appRoutes';
+import { buildReactRouteForDjangoPage, getReactRouteForDjangoPage } from './djangoViewRoutes';
 
 const DEFAULT_CAPABILITIES_BY_ROLE = {
   profesor: [
@@ -59,7 +60,7 @@ const DEFAULT_CAPABILITIES_BY_ROLE = {
 
 function visiblePathsFor(role) {
   const me = { role, capabilities: DEFAULT_CAPABILITIES_BY_ROLE[role] || [] };
-  return APP_ROUTES.filter((route) => canAccessRoute(me, route)).map((route) => route.path);
+  return APP_ROUTES.filter((route) => !route.hidden && canAccessRoute(me, route)).map((route) => route.path);
 }
 
 describe('APP_ROUTES', () => {
@@ -103,5 +104,17 @@ describe('APP_ROUTES', () => {
     expect(visiblePathsFor('estudiante')).toContain('estudiante/panel');
     expect(visiblePathsFor('apoderado')).toContain('apoderado/panel');
     expect(visiblePathsFor('inspector_convivencia')).toContain('inspector-convivencia/panel');
+  });
+
+  it('keeps Django dashboard pages paired with React role views', () => {
+    expect(getReactRouteForDjangoPage('profesor', 'mis_clases')).toBe('/profesor/clases');
+    expect(getReactRouteForDjangoPage('profesor', 'asistencia')).toBe('/profesor/asistencias');
+    expect(getReactRouteForDjangoPage('alumno', 'mis_notas')).toBe('/estudiante/panel?tab=notas');
+    expect(getReactRouteForDjangoPage('apoderado', 'firmas_pendientes')).toBe('/apoderado/panel?tab=firmas');
+  });
+
+  it('preserves useful filters when translating Django dashboard URLs', () => {
+    const params = new URLSearchParams('pagina=asistencia&fecha=2026-05-28&clase_id=7');
+    expect(buildReactRouteForDjangoPage('profesor', 'asistencia', params)).toBe('/profesor/asistencias?fecha=2026-05-28&clase_id=7');
   });
 });

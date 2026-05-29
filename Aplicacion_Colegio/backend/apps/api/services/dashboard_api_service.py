@@ -281,7 +281,7 @@ class DashboardApiService:
     def _build_apoderado_self(cls, user, *, today, school_id):
         from django.db.models import Avg
         from backend.apps.accounts.models import Apoderado, RelacionApoderadoEstudiante
-        from backend.apps.matriculas.models import EstadoCuenta
+        from backend.apps.matriculas.models import EstadoCuenta, Matricula
         from backend.apps.comunicados.models import Comunicado, ConfirmacionLectura
 
         data = {
@@ -297,9 +297,12 @@ class DashboardApiService:
             return data
 
         # Pupilos con métricas
-        relaciones = RelacionApoderadoEstudiante.objects.filter(
-            apoderado=apoderado, activa=True
-        ).select_related('estudiante')
+        relaciones = list(
+            RelacionApoderadoEstudiante.objects.filter(
+                apoderado=apoderado, activa=True
+            ).select_related('estudiante')
+        )
+        pupil_ids = [r.estudiante_id for r in relaciones]
 
         for rel in relaciones:
             est = rel.estudiante
@@ -327,7 +330,7 @@ class DashboardApiService:
 
         # Pagos pendientes
         cuentas_pendientes = EstadoCuenta.objects.filter(
-            estudiante_id__in=[r.estudiante_id for r in relaciones],
+            estudiante_id__in=pupil_ids,
             colegio_id=school_id,
             estado__in=['GENERADO', 'ENVIADO'],
         )
@@ -337,13 +340,33 @@ class DashboardApiService:
         )
 
         # Comunicados sin leer
-        comunicados_enviados = Comunicado.objects.filter(
+        course_ids = list(
+            Matricula.objects.filter(
+                estudiante_id__in=pupil_ids,
+                colegio_id=school_id,
+                estado='ACTIVA',
+            )
+            .exclude(curso_id__isnull=True)
+            .values_list('curso_id', flat=True)
+        )
+        comunicados_qs = Comunicado.objects.filter(
             colegio_id=school_id,
-            estado='ENVIADO',
-        ).values_list('id', flat=True)
+        )
+        comunicado_fields = {field.name for field in Comunicado._meta.fields}
+        if 'estado' in comunicado_fields:
+            comunicados_qs = comunicados_qs.filter(estado='ENVIADO')
+        else:
+            comunicados_qs = comunicados_qs.filter(activo=True)
+
+        comunicados_enviados = comunicados_qs.filter(
+            Q(destinatario='todos')
+            | Q(destinatario='apoderados')
+            | Q(destinatario='curso_especifico', cursos_destinatarios__in=course_ids)
+        ).distinct().values_list('id_comunicado', flat=True)
         leidos = set(
             ConfirmacionLectura.objects.filter(
                 usuario=user,
+                leido=True,
                 comunicado_id__in=comunicados_enviados,
             ).values_list('comunicado_id', flat=True)
         )

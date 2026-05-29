@@ -211,7 +211,7 @@ function AuthorizedApp() {
     if (!mePayload) {
       return [];
     }
-    return APP_ROUTES.filter((route) => canAccessRoute(mePayload, route));
+    return APP_ROUTES.filter((route) => !route.hidden && canAccessRoute(mePayload, route));
   }, [mePayload]);
 
   return loadingMe ? (
