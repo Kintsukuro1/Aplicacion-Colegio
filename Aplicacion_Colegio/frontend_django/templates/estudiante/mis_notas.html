@@ -1,345 +1,198 @@
-<div class="content-wrapper">
-    <div class="page-header">
-        <h1>📊 Mis Notas</h1>
-        <p class="subtitle">Consulta tus calificaciones por asignatura</p>
-    </div>
+{% load static %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/estudiante/mis_notas.css' %}?v=20260609">
 
-    <div class="notas-container">
-        
-        {# Resumen General #}
-        <div class="resumen-card">
-            <h2>📈 Resumen Académico</h2>
-            <div class="resumen-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Promedio General</span>
-                    <span class="stat-value promedio">{{ promedio_general|default:"0.0" }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Total Evaluaciones</span>
-                    <span class="stat-value">{{ total_notas|default:"0" }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Curso Actual</span>
-                    <span class="stat-value" style="font-size: 1.5rem;">{{ curso_actual.nombre|default:"No asignado" }}</span>
-                </div>
+<div class="mn-page">
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Mis Calificaciones" hero_subtitle="Consulta tus notas, promedios y avance por asignatura" hero_aria="Mis Calificaciones" metrics_aria="Resumen académico" m1_value=promedio_general|default:"0.0" m1_label="Promedio general" m1_mod="promedio" m1_progress=promedio_progress|default:"0" m2_value=total_notas|default:"0" m2_label="Evaluaciones" m2_mod="clases" m3_value=total_asignaturas|default:"0" m3_label="Asignaturas" m3_mod="tareas" m4_value=total_reforzar|default:"0" m4_label="Por reforzar" m4_mod="asistencia" %}
+
+    {% if curso_actual %}
+    <p class="mn-course-chip">{{ curso_actual.nombre }}</p>
+    {% endif %}
+
+    <section class="mn-refine" aria-label="Refinar asignaturas">
+        <div class="mn-refine__head">
+            <h2 class="mn-refine__title">Refinar listado</h2>
+            <button type="button" class="mn-refine__clear" id="mnClearFilters" hidden>Limpiar</button>
+        </div>
+        <div class="mn-refine__grid">
+            <div class="mn-refine__field">
+                <label class="mn-refine__label" for="mnStatusFilter">Estado</label>
+                <select class="mn-refine__control" id="mnStatusFilter">
+                    <option value="">Todos</option>
+                    <option value="aprobado">Aprobado</option>
+                    <option value="reprobado">Por reforzar</option>
+                </select>
+            </div>
+            <div class="mn-refine__field mn-refine__field--grow">
+                <label class="mn-refine__label" for="mnSearch">Buscar asignatura</label>
+                <input type="search" class="mn-refine__control" id="mnSearch" placeholder="Ej: Matemática, Lenguaje..." autocomplete="off">
             </div>
         </div>
+        <p class="mn-refine__hint" id="mnFilterHint" hidden></p>
+    </section>
 
-        {# Notas por Asignatura #}
-        <div class="asignaturas-section">
-            <h2>📚 Notas por Asignatura</h2>
-            
-            {% if notas_por_asignatura %}
-                {% for item in notas_por_asignatura %}
-                <div class="asignatura-card {% if item.estado == 'Reprobado' %}reprobado{% endif %}">
-                    <div class="asignatura-header">
-                        <div>
-                            <h3>{{ item.asignatura }}</h3>
-                            <p class="profesor-nombre">👨‍🏫 {{ item.profesor }}</p>
-                        </div>
-                        <div class="promedio-container">
-                            <span class="promedio-asignatura {% if item.promedio >= 4.0 %}aprobado{% else %}reprobado{% endif %}">
-                                {{ item.promedio }}
-                            </span>
-                            <span class="badge-estado badge-{{ item.estado|lower }}">{{ item.estado }}</span>
-                        </div>
-                    </div>
-                    <div class="notas-list">
-                        {% for evaluacion in item.evaluaciones %}
-                        <div class="nota-item">
-                            <div class="nota-info">
-                                <span class="nota-descripcion">{{ evaluacion.nombre }}</span>
-                                <span class="nota-ponderacion">Ponderación: {{ evaluacion.ponderacion }}%</span>
-                            </div>
-                            <span class="nota-valor {% if evaluacion.nota >= 4.0 %}aprobado{% else %}reprobado{% endif %}">
-                                {{ evaluacion.nota }}
-                            </span>
-                            <span class="nota-fecha">{{ evaluacion.fecha|date:"d/m/Y" }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <div class="asignatura-footer">
-                        <span class="total-evaluaciones">Total evaluaciones: {{ item.total_evaluaciones }}</span>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="mensaje-vacio">
-                    <span class="icon">📝</span>
-                    <p>No tienes calificaciones registradas aún.</p>
-                    <p class="hint">Las notas aparecerán aquí cuando tus profesores las ingresen al sistema.</p>
-                </div>
-            {% endif %}
-
+    <section class="alumno-section-card mn-section" aria-label="Notas por asignatura">
+        <div class="mn-section__head">
+            <h2 class="alumno-section-title">
+                <span class="alumno-section-title__icon" aria-hidden="true">📚</span>
+                Notas por asignatura
+            </h2>
+            <span class="mn-section__count">{{ notas_por_asignatura|length }} materia{{ notas_por_asignatura|length|pluralize:"s" }}</span>
         </div>
 
-    </div>
+        {% if notas_por_asignatura %}
+        <div class="mn-list" id="mnSubjectList" role="list">
+            {% for item in notas_por_asignatura %}
+            <article class="mn-row {% if item.estado == 'Reprobado' %}mn-row--risk{% endif %}"
+                id="mn-subject-{{ forloop.counter }}"
+                role="listitem"
+                data-mn-subject="{{ item.asignatura_key|default:item.asignatura|lower }}"
+                data-mn-status="{% if item.estado == 'Reprobado' %}reprobado{% else %}aprobado{% endif %}">
+                <button type="button" class="mn-row__head mn-toggle-detail"
+                    aria-expanded="false"
+                    aria-controls="mn-detail-{{ forloop.counter }}"
+                    data-mn-target="mn-detail-{{ forloop.counter }}"
+                    data-subject="{{ item.asignatura_key|default:item.asignatura|lower }}">
+                    <span class="mn-row__bar" aria-hidden="true"></span>
+                    <span class="mn-row__info">
+                        <span class="mn-row__title">{{ item.asignatura }}</span>
+                        <span class="mn-row__prof">{{ item.profesor }}</span>
+                    </span>
+                    <span class="mn-row__prom {% if item.estado == 'Reprobado' %}mn-row__prom--low{% else %}mn-row__prom--ok{% endif %}">{{ item.promedio }}</span>
+                    <span class="mn-badge mn-badge--{% if item.estado == 'Reprobado' %}risk{% else %}ok{% endif %}">{{ item.estado }}</span>
+                    <span class="mn-row__chev" aria-hidden="true"></span>
+                </button>
+                <div class="mn-detail" id="mn-detail-{{ forloop.counter }}" hidden>
+                    <div class="mn-detail__inner">
+                        <p class="mn-detail__summary">
+                            {{ item.total_evaluaciones }} evaluación{{ item.total_evaluaciones|pluralize:"es" }}
+                            {% if item.nota_min is not None %} · Rango <strong>{{ item.nota_min }} – {{ item.nota_max }}</strong>{% endif %}
+                        </p>
+                        <table class="mn-detail__table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Evaluación</th>
+                                    <th scope="col">Ponderación</th>
+                                    <th scope="col">Nota</th>
+                                    <th scope="col">Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluacion in item.evaluaciones %}
+                                <tr>
+                                    <td class="mn-detail__name" data-label="Evaluación">{{ evaluacion.nombre }}</td>
+                                    <td data-label="Ponderación">{{ evaluacion.ponderacion }}%</td>
+                                    <td data-label="Nota">
+                                        <span class="mn-detail__nota {% if evaluacion.aprobada %}mn-detail__nota--ok{% else %}mn-detail__nota--low{% endif %}">
+                                            {{ evaluacion.nota }}
+                                        </span>
+                                    </td>
+                                    <td class="mn-detail__fecha" data-label="Fecha">{% if evaluacion.fecha %}{{ evaluacion.fecha|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="mn-empty">
+            <span class="mn-empty__icon" aria-hidden="true">📝</span>
+            <p class="mn-empty__title">Sin calificaciones registradas</p>
+            <p class="mn-empty__text">Las notas aparecerán aquí cuando tus profesores las publiquen en el sistema.</p>
+        </div>
+        {% endif %}
+    </section>
 </div>
 
-<style>
-.content-wrapper {
-    padding: 2rem;
-}
+<script>
+(function () {
+    var SUBJECT_COLORS = {
+        matem: '#3B82F6', lengua: '#EF4444', comunic: '#EF4444', castellano: '#EF4444',
+        cienc: '#10B981', natur: '#10B981', histor: '#8B5CF6', geograf: '#8B5CF6',
+        ingl: '#F59E0B', educ: '#06B6D4', física: '#06B6D4', edfis: '#06B6D4',
+        arte: '#EC4899', visual: '#EC4899', músic: '#F97316', music: '#F97316',
+        tecno: '#6B7280', comput: '#6B7280'
+    };
 
-.page-header {
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    font-size: 2rem;
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
-}
-
-.page-header .subtitle {
-    color: #7f8c8d;
-    font-size: 1.1rem;
-}
-
-.resumen-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-}
-
-.resumen-card h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.resumen-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-    margin-bottom: 0.5rem;
-}
-
-.stat-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-}
-
-.stat-value.promedio {
-    color: #f1c40f;
-}
-
-.asignaturas-section h2 {
-    font-size: 1.5rem;
-    color: #34495e;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e0e0e0;
-}
-
-.asignatura-card {
-    background: white;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border-left: 4px solid #3498db;
-}
-
-.asignatura-card.reprobado {
-    border-left-color: #e74c3c;
-}
-
-.asignatura-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid #ecf0f1;
-}
-
-.asignatura-header h3 {
-    font-size: 1.25rem;
-    color: #2c3e50;
-    margin: 0;
-}
-
-.profesor-nombre {
-    color: #7f8c8d;
-    font-size: 0.9rem;
-    margin: 0.3rem 0 0 0;
-}
-
-.promedio-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.5rem;
-}
-
-.promedio-asignatura {
-    font-size: 1.75rem;
-    font-weight: 700;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-}
-
-.promedio-asignatura.aprobado {
-    color: #27ae60;
-    background: #eafaf1;
-}
-
-.promedio-asignatura.reprobado {
-    color: #e74c3c;
-    background: #f8d7da;
-}
-
-.badge-estado {
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.badge-aprobado {
-    background: #27ae60;
-    color: white;
-}
-
-.badge-reprobado {
-    background: #e74c3c;
-    color: white;
-}
-
-.notas-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.nota-item {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    align-items: center;
-    padding: 0.75rem;
-    background: #f8f9fa;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.nota-item:hover {
-    background: #e9ecef;
-    transform: translateX(4px);
-}
-
-.nota-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.nota-descripcion {
-    color: #2c3e50;
-    font-weight: 500;
-}
-
-.nota-ponderacion {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-top: 0.2rem;
-}
-
-.nota-valor {
-    text-align: center;
-    font-weight: 700;
-    font-size: 1.1rem;
-    padding: 0.3rem 0.8rem;
-    border-radius: 6px;
-}
-
-.nota-valor.aprobado {
-    color: #27ae60;
-    background: #eafaf1;
-}
-
-.nota-valor.reprobado {
-    color: #e74c3c;
-    background: #f8d7da;
-}
-
-.nota-valor.nota-pendiente {
-    color: #e67e22;
-    font-size: 0.9rem;
-}
-
-.nota-fecha {
-    text-align: right;
-    color: #95a5a6;
-    font-size: 0.85rem;
-}
-
-.asignatura-footer {
-    margin-top: 1rem;
-    padding-top: 0.8rem;
-    border-top: 1px solid #ecf0f1;
-    text-align: right;
-}
-
-.total-evaluaciones {
-    color: #6c757d;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.mensaje-vacio {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: #6c757d;
-}
-
-.mensaje-vacio .icon {
-    font-size: 4rem;
-    display: block;
-    margin-bottom: 1rem;
-}
-
-.mensaje-vacio p {
-    font-size: 1.1rem;
-    margin: 0.5rem 0;
-}
-
-.mensaje-vacio .hint {
-    font-size: 0.95rem;
-    color: #95a5a6;
-}
-
-@media (max-width: 768px) {
-    .asignatura-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+    function resolveAccent(key) {
+        var s = (key || '').toLowerCase();
+        var k;
+        for (k in SUBJECT_COLORS) {
+            if (s.indexOf(k) !== -1) return SUBJECT_COLORS[k];
+        }
+        return '#94A3B8';
     }
 
-    .promedio-container {
-        align-items: flex-start;
+    document.querySelectorAll('.mn-row__head[data-subject]').forEach(function (el) {
+        el.style.setProperty('--mn-accent', resolveAccent(el.getAttribute('data-subject')));
+    });
+
+    function setRowOpen(row, open) {
+        if (!row) return;
+        row.classList.toggle('mn-row--open', open);
     }
 
-    .nota-item {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
+    function closeAllDetails(exceptId) {
+        document.querySelectorAll('.mn-detail').forEach(function (panel) {
+            if (panel.id === exceptId) return;
+            panel.hidden = true;
+            setRowOpen(panel.closest('.mn-row'), false);
+        });
+        document.querySelectorAll('.mn-toggle-detail').forEach(function (btn) {
+            if (btn.getAttribute('aria-controls') === exceptId) return;
+            btn.setAttribute('aria-expanded', 'false');
+        });
     }
-    
-    .nota-valor, .nota-fecha {
-        text-align: left;
+
+    document.querySelectorAll('.mn-toggle-detail').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var targetId = btn.getAttribute('data-mn-target');
+            var panel = document.getElementById(targetId);
+            if (!panel) return;
+            var row = panel.closest('.mn-row');
+            var open = panel.hidden;
+            closeAllDetails(open ? targetId : null);
+            panel.hidden = !open;
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            setRowOpen(row, open);
+            if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    });
+
+    function applyFilters() {
+        var status = document.getElementById('mnStatusFilter').value;
+        var q = (document.getElementById('mnSearch').value || '').trim().toLowerCase();
+        var visible = 0;
+        document.querySelectorAll('.mn-row').forEach(function (card) {
+            var matchStatus = !status || card.getAttribute('data-mn-status') === status;
+            var matchSearch = !q || (card.getAttribute('data-mn-subject') || '').indexOf(q) !== -1;
+            var show = matchStatus && matchSearch;
+            card.hidden = !show;
+            if (show) visible++;
+        });
+        document.getElementById('mnClearFilters').hidden = !(status || q);
+        var hint = document.getElementById('mnFilterHint');
+        if (status || q) {
+            hint.hidden = false;
+            hint.textContent = visible
+                ? visible + ' asignatura(s) coinciden con el filtro.'
+                : 'Ninguna asignatura coincide. Prueba otro filtro.';
+        } else {
+            hint.hidden = true;
+        }
     }
-}
-</style>
+
+    document.getElementById('mnStatusFilter').addEventListener('change', applyFilters);
+    document.getElementById('mnSearch').addEventListener('input', applyFilters);
+    document.getElementById('mnClearFilters').addEventListener('click', function () {
+        document.getElementById('mnStatusFilter').value = '';
+        document.getElementById('mnSearch').value = '';
+        applyFilters();
+    });
+})();
+</script>
+
+{% include 'estudiante/_alumno_wrap_end.html' %}

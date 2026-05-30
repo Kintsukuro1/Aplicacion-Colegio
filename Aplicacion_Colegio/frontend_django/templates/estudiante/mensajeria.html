@@ -1,262 +1,394 @@
 {% load static %}
+{% if rol == 'apoderado' %}
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+{% else %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
+{% endif %}
+<link rel="stylesheet" href="{% static 'css/estudiante/mensajeria.css' %}?v=20260618">
 
-<link rel="stylesheet" href="{% static 'css/estudiante/mensajeria.css' %}">
+<div class="mm-page" id="mmPage">
+    {% if rol == 'apoderado' %}
+    {% include 'apoderado/_apoderado_hero.html' with hero_title="Mensajería Institucional" hero_subtitle="Comunicación directa con profesores y administración de tus pupilos." hero_aria="Mensajería apoderado" metrics_aria="Resumen de mensajería" m1_value=no_leidos_count|default:"0" m1_label="No leídos" m1_mod="firmas" m2_value=conversaciones_count|default:"0" m2_label="Conversaciones" m2_mod="comunicados" m3_value=con_profesores_count|default:"0" m3_label="Con docentes" m3_mod="pupilos" m4_value=total_mensajes_count|default:"0" m4_label="Mensajes" m4_mod="cuotas" %}
+    {% else %}
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Mensajes" hero_subtitle=hero_subtitle_mensajes|default:"Comunícate con profesores y la administración del colegio" hero_aria="Mensajes" metrics_aria="Resumen de mensajería" m1_value=no_leidos_count|default:"0" m1_label="No leídos" m1_mod="tareas" m2_value=conversaciones_count|default:"0" m2_label="Conversaciones" m2_mod="clases" m3_value=con_profesores_count|default:"0" m3_label="Con profesores" m3_mod="tareas" m4_value=total_mensajes_count|default:"0" m4_label="Mensajes" m4_mod="asistencia" %}
+    {% endif %}
 
-<div class="content-wrapper">
-    <div class="page-header">
-        <h1>✉️ Mensajería</h1>
-        <p class="subtitle">Comunicación con profesores y administración</p>
-    </div>
+    <nav class="mm-chips" aria-label="Accesos rápidos">
+        <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="mm-chips__chip{% if not estado_filtro %} mm-chips__chip--active{% endif %}">Todas ({{ conversaciones_count|default:"0" }})</a>
+        {% if no_leidos_count %}
+        <a href="{% url 'mensajeria:bandeja_mensajes' %}?estado=sin_leer" class="mm-chips__chip{% if estado_filtro == 'sin_leer' %} mm-chips__chip--active{% endif %}">No leídos ({{ no_leidos_count }})</a>
+        {% endif %}
+        <a href="{% url 'mensajeria:bandeja_mensajes' %}?estado=profesores" class="mm-chips__chip{% if estado_filtro == 'profesores' %} mm-chips__chip--active{% endif %}">Profesores ({{ con_profesores_count|default:"0" }})</a>
+    </nav>
 
-    <div class="mensajeria-container">
-        <!-- Conversaciones -->
-        <div class="conversaciones-panel">
-            <div class="panel-header">
-                <h3>Conversaciones</h3>
-                <button type="button" class="btn-nuevo-mensaje" onclick="nuevoMensaje()">
-                    <span>➕</span> Nuevo mensaje
-                </button>
+    <section class="mm-refine" aria-label="Filtrar conversaciones">
+        <div class="mm-refine__head">
+            <h2 class="mm-refine__title">Refinar vista</h2>
+            {% if filtros_activos %}
+            <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="mm-refine__clear">Limpiar filtros</a>
+            {% endif %}
+        </div>
+        <form method="get" class="mm-refine__grid" id="mmFilterForm" action="{% url 'mensajeria:bandeja_mensajes' %}">
+            <div class="mm-refine__field">
+                <label class="mm-refine__label" for="mmEstadoFilter">Estado</label>
+                <select class="mm-refine__control" id="mmEstadoFilter" name="estado">
+                    <option value="">Todos</option>
+                    <option value="sin_leer" {% if estado_filtro == 'sin_leer' %}selected{% endif %}>Con mensajes no leídos</option>
+                    <option value="profesores" {% if estado_filtro == 'profesores' %}selected{% endif %}>Solo profesores</option>
+                </select>
             </div>
+            <div class="mm-refine__field mm-refine__field--grow">
+                <label class="mm-refine__label" for="mmSearch">Buscar</label>
+                <input type="search" class="mm-refine__control" id="mmSearch" name="q" value="{{ busqueda }}" placeholder="Persona, asignatura o texto..." autocomplete="off">
+            </div>
+            <div class="mm-refine__actions">
+                <button type="submit" class="mm-btn mm-btn--primary">Buscar</button>
+            </div>
+        </form>
+    </section>
 
-            <div class="lista-conversaciones">
-                {% if conversaciones %}
+    <div class="mm-layout{% if clases and not conversacion_actual %} mm-layout--with-aside{% endif %}">
+        <section class="{% if rol == 'apoderado' %}apod-section-card{% else %}alumno-section-card{% endif %} mm-conv-panel" aria-label="Lista de conversaciones">
+            <header class="mm-conv-panel__head">
+                <h2 class="{% if rol == 'apoderado' %}apod-section-title{% else %}alumno-section-title{% endif %}">
+                    <span class="{% if rol == 'apoderado' %}apod-section-title__icon{% else %}alumno-section-title__icon{% endif %}" aria-hidden="true">💬</span>
+                    Conversaciones
+                </h2>
+                <button type="button" class="mm-btn mm-btn--primary mm-btn--sm" id="mmBtnNuevo">+ Nuevo mensaje</button>
+            </header>
+
+            <div class="mm-conv-list" id="mmConvList">
+                {% if not tiene_conversaciones %}
+                <div class="mm-empty mm-empty--compact">
+                    <div class="mm-empty__icon" aria-hidden="true">📭</div>
+                    <p class="mm-empty__title">Sin conversaciones aún</p>
+                    {% if rol == 'apoderado' %}
+                    <p class="mm-empty__text">Escríbele a un profesor de tus pupilos desde aquí o elige una materia en el panel lateral.</p>
+                    <a href="{% url 'dashboard' %}?pagina=mis_pupilos" class="mm-btn mm-btn--outline">Ver mis pupilos</a>
+                    {% else %}
+                    <p class="mm-empty__text">Escríbele a un profesor desde aquí o desde el detalle de una clase.</p>
+                    <a href="{% url 'dashboard' %}?pagina=mis_clases" class="mm-btn mm-btn--outline">Ir a Mis Clases</a>
+                    {% endif %}
+                </div>
+                {% elif not hay_resultados %}
+                <div class="mm-empty mm-empty--compact">
+                    <div class="mm-empty__icon" aria-hidden="true">🔍</div>
+                    <p class="mm-empty__title">Sin coincidencias</p>
+                    <p class="mm-empty__text"><a href="{% url 'mensajeria:bandeja_mensajes' %}">Limpia los filtros</a> para ver todas.</p>
+                </div>
+                {% else %}
                     {% for conv in conversaciones %}
-                    <a href="{% url 'mensajeria:ver_conversacion' conv.conversacion.id_conversacion %}" style="text-decoration:none; color:inherit;">
-                        <div class="conversacion-item {% if conv.no_leidos > 0 %}tiene-no-leidos{% endif %}">
-                            <div class="avatar">{{ conv.destinatario.nombre|first }}{{ conv.destinatario.apellido_paterno|first }}</div>
-                            <div class="conv-info">
-                                <div class="conv-header">
-                                    <span class="nombre">{{ conv.destinatario.get_full_name }}</span>
-                                    <span class="fecha">{% if conv.ultimo_mensaje %}{{ conv.ultimo_mensaje.fecha_envio|date:"d/m H:i" }}{% else %}--{% endif %}</span>
-                                </div>
-                                <div class="ultimo-mensaje">{% if conv.ultimo_mensaje %}{{ conv.ultimo_mensaje.contenido|truncatewords:10 }}{% else %}<em>Sin mensajes</em>{% endif %}</div>
-                                {% if conv.no_leidos > 0 %}
-                                <span class="badge-no-leidos">{{ conv.no_leidos }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
+                    <a href="{% url 'mensajeria:ver_conversacion' conv.conversacion.id_conversacion %}"
+                       class="mm-conv-item mm-themed {% if conv.no_leidos %}mm-conv-item--unread{% endif %} {% if conv.activa %}mm-conv-item--active{% endif %}"
+                       data-subject="{{ conv.asignatura_key }}"
+                       data-model-color="{{ conv.asignatura_color|default:'' }}">
+                        <span class="mm-conv-item__accent" aria-hidden="true"></span>
+                        <span class="mm-conv-item__avatar" aria-hidden="true">{{ conv.iniciales }}</span>
+                        <span class="mm-conv-item__body">
+                            <span class="mm-conv-item__row">
+                                <span class="mm-conv-item__name">{{ conv.destinatario.get_full_name }}</span>
+                                <span class="mm-conv-item__time">{% if conv.ultimo_mensaje %}{{ conv.ultimo_mensaje.fecha_envio|date:"d/m H:i" }}{% else %}—{% endif %}</span>
+                            </span>
+                            <span class="mm-conv-item__tags">
+                                <span class="mm-subject-pill">{{ conv.asignatura }}</span>
+                                <span class="mm-curso-pill">{{ conv.curso }}</span>
+                            </span>
+                            <span class="mm-conv-item__preview">{% if conv.ultimo_mensaje %}{{ conv.ultimo_mensaje.contenido|truncatewords:12 }}{% else %}<em>Sin mensajes</em>{% endif %}</span>
+                        </span>
+                        {% if conv.no_leidos %}
+                        <span class="mm-conv-item__badge" aria-label="{{ conv.no_leidos }} no leídos">{{ conv.no_leidos }}</span>
+                        {% endif %}
                     </a>
                     {% endfor %}
-                {% else %}
-                    <div class="empty-state">
-                        <div class="empty-icon">📭</div>
-                        <p>No tienes conversaciones aún</p>
-                        <small>Abre una clase y usa “Enviar mensaje”</small>
-                    </div>
                 {% endif %}
             </div>
-        </div>
+        </section>
 
-        <!-- Mensajes -->
-        <div class="mensajes-panel">
-            <div class="panel-header">
+        <section class="{% if rol == 'apoderado' %}apod-section-card{% else %}alumno-section-card{% endif %} mm-chat-panel" aria-label="Mensajes de la conversación">
+            <header class="mm-chat-panel__head{% if conversacion_actual %} mm-themed{% endif %}"
                 {% if conversacion_actual %}
-                <div class="destinatario-info">
-                    <div class="avatar-grande">{{ conversacion_actual.destinatario.nombre|first }}{{ conversacion_actual.destinatario.apellido_paterno|first }}</div>
+                data-subject="{{ conversacion_actual.clase.asignatura.nombre|lower }}"
+                data-model-color="{{ conversacion_actual.clase.asignatura.color|default:'' }}"
+                {% endif %}>
+                {% if conversacion_actual %}
+                <span class="mm-chat-panel__accent" aria-hidden="true"></span>
+                <div class="mm-chat-panel__who">
+                    <span class="mm-chat-panel__avatar" aria-hidden="true">{{ conversacion_actual.destinatario.nombre|first }}{{ conversacion_actual.destinatario.apellido_paterno|first }}</span>
                     <div>
-                        <h3>{{ conversacion_actual.destinatario.get_full_name }}</h3>
-                        <span class="status">{{ conversacion_actual.clase.asignatura.nombre }} · {{ conversacion_actual.clase.curso.nombre }}</span>
+                        <h2 class="mm-chat-panel__title">{{ conversacion_actual.destinatario.get_full_name }}</h2>
+                        <p class="mm-chat-panel__meta">
+                            <span class="mm-subject-pill mm-subject-pill--lg">{{ conversacion_actual.clase.asignatura.nombre }}</span>
+                            <span class="mm-curso-pill">{{ conversacion_actual.clase.curso.nombre }}</span>
+                        </p>
                     </div>
                 </div>
                 {% else %}
-                <div class="destinatario-info">
-                    <div class="avatar-grande">💬</div>
+                <div class="mm-chat-panel__who mm-chat-panel__who--empty">
+                    <span class="mm-chat-panel__avatar mm-chat-panel__avatar--placeholder" aria-hidden="true">💬</span>
                     <div>
-                        <h3>Selecciona una conversación</h3>
-                        <span class="status">o inicia una desde una clase</span>
+                        <h2 class="mm-chat-panel__title">Selecciona una conversación</h2>
+                        <p class="mm-chat-panel__meta">o crea un mensaje nuevo a un profesor</p>
                     </div>
                 </div>
                 {% endif %}
-            </div>
+            </header>
 
-            <div class="mensajes-lista">
+            <div class="mm-chat-thread" id="mmChatThread">
                 {% if conversacion_actual %}
                     {% if mensajes %}
                         {% for m in mensajes %}
-                            <div style="margin-bottom: 12px; display:flex; {% if m.emisor_id == request.user.id %}justify-content:flex-end;{% endif %}">
-                                <div style="max-width: 70%; padding: 10px 12px; border-radius: 10px; background: {% if m.emisor_id == request.user.id %}#dbeafe{% else %}#ffffff{% endif %}; border: 1px solid #e2e8f0;">
-                                    {% if m.contenido %}
-                                        <div style="white-space: pre-wrap;">{{ m.contenido }}</div>
-                                    {% endif %}
-                                    {% if m.archivo_adjunto %}
-                                        <div style="margin-top: 6px;">
-                                            <a href="{{ m.archivo_adjunto.url }}" target="_blank" rel="noopener">📎 Archivo adjunto</a>
-                                        </div>
-                                    {% endif %}
-                                    <div style="margin-top: 6px; font-size: 0.8rem; color: #64748b; text-align: right;">
-                                        {{ m.fecha_envio|date:"d/m H:i" }}
-                                    </div>
-                                </div>
+                        <div class="mm-bubble-row {% if m.emisor_id == request.user.id %}mm-bubble-row--out{% endif %}">
+                            <div class="mm-bubble">
+                                {% if m.contenido %}<p class="mm-bubble__text">{{ m.contenido }}</p>{% endif %}
+                                {% if m.archivo_adjunto %}
+                                <p class="mm-bubble__file"><a href="{{ m.archivo_adjunto.url }}" target="_blank" rel="noopener">📎 Archivo adjunto</a></p>
+                                {% endif %}
+                                <time class="mm-bubble__time" datetime="{{ m.fecha_envio|date:'c' }}">{{ m.fecha_envio|date:"d/m H:i" }}</time>
                             </div>
+                        </div>
                         {% endfor %}
                     {% else %}
-                        <div class="empty-state">
-                            <div class="empty-icon">💬</div>
-                            <p>No hay mensajes aún</p>
-                            <small>Envía el primero para comenzar</small>
-                        </div>
+                    <div class="mm-empty mm-empty--chat">
+                        <p class="mm-empty__title">Sin mensajes en esta conversación</p>
+                        <p class="mm-empty__text">Envía el primero con el cuadro de abajo.</p>
+                    </div>
                     {% endif %}
                 {% else %}
-                    <div class="empty-state">
-                        <div class="empty-icon">💬</div>
-                        <p>Selecciona una conversación para ver los mensajes</p>
-                    </div>
+                <div class="mm-empty mm-empty--chat">
+                    <div class="mm-empty__illus" aria-hidden="true"></div>
+                    <p class="mm-empty__title">Bandeja de mensajes</p>
+                    {% if rol == 'apoderado' %}
+                    <p class="mm-empty__text">Elige una conversación de la lista o inicia un chat con el profesor de un pupilo.</p>
+                    {% else %}
+                    <p class="mm-empty__text">Elige una conversación de la lista o inicia una con tu profesor.</p>
+                    {% endif %}
+                </div>
                 {% endif %}
             </div>
 
             {% if conversacion_actual %}
-            <div class="mensaje-input">
-                <form method="post" action="{% url 'mensajeria:ver_conversacion' conversacion_actual.id %}" enctype="multipart/form-data" style="display:flex; gap: 12px; width:100%;">
+            <footer class="mm-chat-compose">
+                <form method="post" action="{% url 'mensajeria:ver_conversacion' conversacion_actual.id %}" enctype="multipart/form-data" class="mm-chat-compose__form">
                     {% csrf_token %}
-                    <textarea name="contenido" placeholder="Escribe tu mensaje..." rows="2" required></textarea>
-                    <input type="file" name="archivo" style="align-self:flex-end;" />
-                    <button class="btn-enviar" type="submit">Enviar</button>
+                    <textarea name="contenido" class="mm-chat-compose__input" placeholder="Escribe tu mensaje..." rows="2" required></textarea>
+                    <label class="mm-chat-compose__file">
+                        <span class="mm-btn mm-btn--outline mm-btn--sm">Adjuntar</span>
+                        <input type="file" name="archivo" hidden>
+                    </label>
+                    <button type="submit" class="mm-btn mm-btn--primary">Enviar</button>
                 </form>
-            </div>
+            </footer>
             {% endif %}
-        </div>
+        </section>
+
+        {% if clases and not conversacion_actual %}
+        <aside class="mm-aside" aria-label="Iniciar conversación">
+            <section class="{% if rol == 'apoderado' %}apod-section-card{% else %}alumno-section-card{% endif %} mm-aside-card">
+                <h3 class="mm-aside-card__title">{% if rol == 'apoderado' %}Contactar docente{% else %}Escribir a un profesor{% endif %}</h3>
+                <p class="mm-aside-card__hint">{% if rol == 'apoderado' %}Elige la materia y curso de tu pupilo para abrir el chat con su profesor.{% else %}Toca una materia para abrir el chat con su profesor.{% endif %}</p>
+                <ul class="mm-class-quick">
+                    {% for clase in clases %}
+                    {% if clase.profesor %}
+                    <li>
+                        <a href="{% url 'mensajeria:bandeja_mensajes' %}?clase_id={{ clase.id }}&amp;destinatario_id={{ clase.profesor_id }}"
+                           class="mm-class-quick__link mm-themed"
+                           data-subject="{{ clase.asignatura.nombre|lower }}"
+                           data-model-color="{{ clase.asignatura.color|default:'' }}">
+                            <span class="mm-class-quick__accent" aria-hidden="true"></span>
+                            <span class="mm-class-quick__body">
+                                <span class="mm-subject-pill">{{ clase.asignatura.nombre }}</span>
+                                <span class="mm-class-quick__teacher">{{ clase.profesor.get_full_name }}</span>
+                                <span class="mm-curso-pill">{{ clase.curso.nombre }}</span>
+                            </span>
+                            <span class="mm-class-quick__arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </section>
+        </aside>
+        {% endif %}
     </div>
 </div>
 
-
-<div class="modal" id="modalNuevoMensaje" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.55); z-index:1000; align-items:center; justify-content:center; padding:16px;">
-    <div class="modal-dialog" style="width:min(560px, 100%);">
-        <div class="modal-content" style="background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(15, 23, 42, 0.25);">
-            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #e2e8f0;">
-                <h3 class="modal-title" style="margin:0;">Nuevo mensaje</h3>
-                <button type="button" class="modal-close" data-dismiss="modal" style="border:0; background:transparent; font-size:1.1rem; cursor:pointer;">
-                    <i class="fas fa-times"></i>
-                </button>
+<div class="mm-modal" id="mmModalNuevo" hidden>
+    <div class="mm-modal__backdrop" data-mm-dismiss></div>
+    <div class="mm-modal__dialog" role="dialog" aria-labelledby="mmModalTitle" aria-modal="true">
+        <header class="mm-modal__head">
+            <h3 class="mm-modal__title" id="mmModalTitle">{% if rol == 'apoderado' %}Nuevo mensaje al docente{% else %}Nuevo mensaje{% endif %}</h3>
+            <button type="button" class="mm-modal__close" data-mm-dismiss aria-label="Cerrar">×</button>
+        </header>
+        <form id="mmFormNuevo" class="mm-modal__body">
+            {% csrf_token %}
+            <div class="mm-refine__field">
+                <label class="mm-refine__label" for="mmClaseSelect">{% if rol == 'apoderado' %}Materia y curso del pupilo{% else %}Clase{% endif %}</label>
+                <select class="mm-refine__control" id="mmClaseSelect" name="clase_id" required>
+                    <option value="">{% if rol == 'apoderado' %}Selecciona materia y curso{% else %}Selecciona una clase{% endif %}</option>
+                    {% for clase in clases %}
+                    {% if clase.profesor %}
+                    <option value="{{ clase.id }}"
+                        data-destinatario-id="{{ clase.profesor_id }}"
+                        data-destinatario-nombre="{{ clase.profesor.get_full_name }}"
+                        data-subject="{{ clase.asignatura.nombre|lower }}"
+                        data-model-color="{{ clase.asignatura.color|default:'' }}">
+                        {{ clase.asignatura.nombre }} — {{ clase.curso.nombre }}
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
             </div>
-            <form id="formNuevoMensaje" class="modal-body" style="padding:20px; display:grid; gap:16px;">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="clase" class="form-label">Clase: *</label>
-                    <select id="clase" name="clase_id" class="form-control" required>
-                        <option value="">Selecciona una clase</option>
-                        {% for clase in clases %}
-                        <option value="{{ clase.id }}" data-destinatario-id="{{ clase.profesor_id }}" data-destinatario-nombre="{{ clase.profesor.get_full_name }}">
-                            {{ clase.asignatura.nombre }} - {{ clase.curso.nombre }}
-                        </option>
-                        {% endfor %}
-                    </select>
+            <input type="hidden" id="mmDestinatarioId" name="destinatario_id" value="">
+            <div class="mm-refine__field">
+                <label class="mm-refine__label">Para</label>
+                <div class="mm-modal__preview mm-themed" id="mmDestPreviewWrap" data-subject="" data-model-color="">
+                    <span class="mm-modal__preview-pill" id="mmDestPreviewPill" hidden></span>
+                    <p class="mm-modal__preview-text" id="mmDestinatarioPreview">Selecciona una clase</p>
                 </div>
-                <input type="hidden" id="destinatario_id" name="destinatario_id" value="">
-                <div class="form-group">
-                    <label class="form-label">Para:</label>
-                    <div id="destinatarioPreview" class="form-control" style="background:#f8fafc; min-height:42px; display:flex; align-items:center;">Selecciona una clase</div>
-                </div>
-                <div class="form-group">
-                    <label for="mensaje" class="form-label">Mensaje: *</label>
-                    <textarea id="mensaje" name="contenido" class="form-control" rows="5" required></textarea>
-                </div>
-            </form>
-            <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:12px; padding:0 20px 20px;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btnEnviarNuevo">
-                    <i class="fas fa-paper-plane"></i>
-                    Enviar
-                </button>
             </div>
-        </div>
+            <div class="mm-refine__field">
+                <label class="mm-refine__label" for="mmMensajeNuevo">Mensaje</label>
+                <textarea class="mm-refine__control" id="mmMensajeNuevo" name="contenido" rows="4" required placeholder="Escribe tu mensaje..."></textarea>
+            </div>
+        </form>
+        <footer class="mm-modal__foot">
+            <button type="button" class="mm-btn mm-btn--outline" data-mm-dismiss>Cancelar</button>
+            <button type="button" class="mm-btn mm-btn--primary" id="mmBtnEnviarNuevo">Enviar</button>
+        </footer>
     </div>
 </div>
-
-
 
 <script>
-function nuevoMensaje() {
-    const modal = document.getElementById('modalNuevoMensaje');
-    modal.style.display = 'flex';
-}
-
-function cerrarNuevoMensaje() {
-    const modal = document.getElementById('modalNuevoMensaje');
-    modal.style.display = 'none';
-}
-
-function actualizarDestinatario() {
-    const select = document.getElementById('clase');
-    const preview = document.getElementById('destinatarioPreview');
-    const destinatarioInput = document.getElementById('destinatario_id');
-    const option = select.options[select.selectedIndex];
-
-    if (!option || !option.value) {
-        preview.textContent = 'Selecciona una clase';
-        destinatarioInput.value = '';
-        return;
+(function () {
+    function parseHex(hex) {
+        var h = (hex || '').replace('#', '').trim();
+        if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+        if (h.length !== 6) return { r: 148, g: 163, b: 184 };
+        return {
+            r: parseInt(h.slice(0, 2), 16),
+            g: parseInt(h.slice(2, 4), 16),
+            b: parseInt(h.slice(4, 6), 16)
+        };
     }
 
-    const destinatarioId = option.dataset.destinatarioId || '';
-    const destinatarioNombre = option.dataset.destinatarioNombre || 'Destinatario no disponible';
-
-    destinatarioInput.value = destinatarioId;
-    preview.textContent = destinatarioNombre;
-}
-
-function enviarNuevoMensaje() {
-    const form = document.getElementById('formNuevoMensaje');
-    const claseId = document.getElementById('clase').value;
-    const destinatarioId = document.getElementById('destinatario_id').value;
-    const contenido = document.getElementById('mensaje').value.trim();
-
-    if (!claseId) {
-        alert('Selecciona una clase');
-        return;
+    function resolveAccent(name, modelColor) {
+        var s = (name || '').toLowerCase();
+        var accent = '#94A3B8';
+        var text = '#334155';
+        if (s.indexOf('matem') !== -1) { accent = '#3B82F6'; text = '#1E3A8A'; }
+        else if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1 || s.indexOf('castellano') !== -1) { accent = '#EF4444'; text = '#991B1B'; }
+        else if (s.indexOf('cienc') !== -1 || s.indexOf('naturales') !== -1 || s.indexOf('biolog') !== -1) { accent = '#10B981'; text = '#065F46'; }
+        else if (s.indexOf('histor') !== -1 || s.indexOf('geograf') !== -1) { accent = '#8B5CF6'; text = '#5B21B6'; }
+        else if (s.indexOf('ingl') !== -1 || s.indexOf('english') !== -1) { accent = '#F59E0B'; text = '#92400E'; }
+        else if (s.indexOf('edfis') !== -1 || s.indexOf('educación física') !== -1 || s.indexOf('educacion fisica') !== -1 || s.indexOf('deport') !== -1) { accent = '#06B6D4'; text = '#155E75'; }
+        else if (s.indexOf('músic') !== -1 || s.indexOf('music') !== -1) { accent = '#F97316'; text = '#9A3412'; }
+        else if (s.indexOf('arte') !== -1 || s.indexOf('visuales') !== -1) { accent = '#EC4899'; text = '#9D174D'; }
+        else if (s.indexOf('tecno') !== -1 || s.indexOf('comput') !== -1) { accent = '#6B7280'; text = '#374151'; }
+        else if (modelColor) { accent = modelColor; text = '#1e293b'; }
+        return { accent: accent, text: text };
     }
 
-    if (!destinatarioId) {
-        alert('Selecciona una clase válida');
-        return;
+    function applyTheme(el) {
+        if (!el) return;
+        var name = el.getAttribute('data-subject') || '';
+        var modelColor = (el.getAttribute('data-model-color') || '').trim();
+        var theme = resolveAccent(name, modelColor);
+        var rgb = parseHex(theme.accent);
+        el.style.setProperty('--mm-accent', theme.accent);
+        el.style.setProperty('--mm-accent-rgb', rgb.r + ', ' + rgb.g + ', ' + rgb.b);
+        el.style.setProperty('--mm-accent-text', theme.text);
     }
 
-    if (!contenido) {
-        alert('Escribe un mensaje');
-        return;
+    document.querySelectorAll('.mm-themed').forEach(applyTheme);
+
+    var modal = document.getElementById('mmModalNuevo');
+    var btnNuevo = document.getElementById('mmBtnNuevo');
+    var btnEnviar = document.getElementById('mmBtnEnviarNuevo');
+    var form = document.getElementById('mmFormNuevo');
+    var selectClase = document.getElementById('mmClaseSelect');
+    var destInput = document.getElementById('mmDestinatarioId');
+    var destPreview = document.getElementById('mmDestinatarioPreview');
+    var destPreviewWrap = document.getElementById('mmDestPreviewWrap');
+    var destPreviewPill = document.getElementById('mmDestPreviewPill');
+    var estadoFilter = document.getElementById('mmEstadoFilter');
+    var filterForm = document.getElementById('mmFilterForm');
+    var thread = document.getElementById('mmChatThread');
+    var chatHead = document.querySelector('.mm-chat-panel__head.mm-themed');
+
+    function openModal() {
+        if (modal) { modal.hidden = false; document.body.style.overflow = 'hidden'; }
     }
-
-    const formData = new FormData(form);
-
-    fetch('/mensajeria/nueva/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            cerrarNuevoMensaje();
-            window.location.href = `/mensajeria/conversacion/${data.conversacion_id}/`;
-        } else {
-            alert(data.message || 'No se pudo enviar el mensaje');
-        }
-    })
-    .catch(() => {
-        alert('Error de conexión');
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const select = document.getElementById('clase');
-    const btnEnviar = document.getElementById('btnEnviarNuevo');
-    const modal = document.getElementById('modalNuevoMensaje');
-
-    if (select) {
-        select.addEventListener('change', actualizarDestinatario);
+    function closeModal() {
+        if (modal) { modal.hidden = true; document.body.style.overflow = ''; }
     }
-
-    if (btnEnviar) {
-        btnEnviar.addEventListener('click', enviarNuevoMensaje);
-    }
-
-    if (modal) {
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal || event.target.dataset.dismiss === 'modal') {
-                cerrarNuevoMensaje();
+    function updateDestinatario() {
+        if (!selectClase || !destInput || !destPreview) return;
+        var opt = selectClase.options[selectClase.selectedIndex];
+        if (!opt || !opt.value) {
+            destInput.value = '';
+            destPreview.textContent = 'Selecciona una clase';
+            if (destPreviewPill) { destPreviewPill.hidden = true; destPreviewPill.textContent = ''; }
+            if (destPreviewWrap) {
+                destPreviewWrap.setAttribute('data-subject', '');
+                destPreviewWrap.setAttribute('data-model-color', '');
+                applyTheme(destPreviewWrap);
             }
+            return;
+        }
+        destInput.value = opt.dataset.destinatarioId || '';
+        destPreview.textContent = opt.dataset.destinatarioNombre || 'Profesor';
+        if (destPreviewPill) {
+            var label = opt.textContent.trim();
+            destPreviewPill.textContent = label.split('—')[0].trim();
+            destPreviewPill.hidden = false;
+        }
+        if (destPreviewWrap) {
+            destPreviewWrap.setAttribute('data-subject', opt.dataset.subject || '');
+            destPreviewWrap.setAttribute('data-model-color', opt.dataset.modelColor || '');
+            applyTheme(destPreviewWrap);
+        }
+    }
+    function enviarNuevo() {
+        if (!form) return;
+        var fd = new FormData(form);
+        if (!fd.get('clase_id') || !fd.get('destinatario_id') || !(fd.get('contenido') || '').trim()) {
+            alert('Completa clase y mensaje');
+            return;
+        }
+        fetch('{% url "mensajeria:crear_nueva_conversacion" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': fd.get('csrfmiddlewaretoken') },
+            body: fd
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                window.location.href = '/mensajeria/conversacion/' + data.conversacion_id + '/';
+            } else {
+                alert(data.message || 'No se pudo enviar');
+            }
+        })
+        .catch(function () { alert('Error de conexión'); });
+    }
+
+    if (btnNuevo) btnNuevo.addEventListener('click', openModal);
+    if (selectClase) selectClase.addEventListener('change', updateDestinatario);
+    if (btnEnviar) btnEnviar.addEventListener('click', enviarNuevo);
+    if (modal) {
+        modal.querySelectorAll('[data-mm-dismiss]').forEach(function (el) {
+            el.addEventListener('click', closeModal);
         });
     }
-});
+    if (estadoFilter && filterForm) {
+        estadoFilter.addEventListener('change', function () { filterForm.submit(); });
+    }
+    if (thread) thread.scrollTop = thread.scrollHeight;
+    if (chatHead) applyTheme(chatHead);
+})();
 </script>
+
+{% if rol == 'apoderado' %}
+{% include 'apoderado/_apoderado_wrap_end.html' %}
+{% else %}
+{% include 'estudiante/_alumno_wrap_end.html' %}
+{% endif %}

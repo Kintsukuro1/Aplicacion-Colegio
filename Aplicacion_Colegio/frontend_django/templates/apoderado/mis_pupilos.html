@@ -1,39 +1,207 @@
 {% load static %}
-
-<link rel="stylesheet" href="{% static 'css/apoderado/mis_pupilos.css' %}">
-<link rel="stylesheet" href="{% static 'css/apoderado/perfil.css' %}">
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Mis pupilos" hero_subtitle="Gestiona y revisa la información de tus pupilos." hero_aria="Mis pupilos" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
 
 <div class="content-wrapper">
-  <div class="profile-container">
-    <div class="profile-card">
-      <h2>👨‍👩‍👧‍👦 Mis Pupilos</h2>
+  {% if estudiantes %}
+  <section class="apod-section-card" aria-label="Listado de pupilos">
+    <div class="apod-pupilos-grid">
+      {% for e in estudiantes %}
+      {% with nombre=e.get_full_name|default:e.email|default:"-" %}
+      <article class="apod-alumno-card">
+        <header class="apod-alumno-card__head">
+          <div class="apod-alumno-card__identity">
+            <div class="apod-alumno-card__avatar" aria-hidden="true">{{ nombre|first|upper }}</div>
+            <div>
+              <h3 class="apod-alumno-card__name">{{ nombre }}</h3>
+              <p class="apod-alumno-card__meta">Pupilo bajo seguimiento académico</p>
+            </div>
+          </div>
+          <span class="apod-chip apod-chip--course">
+            {% if e.perfil_estudiante and e.perfil_estudiante.curso_actual %}
+            {{ e.perfil_estudiante.curso_actual.nombre }}
+            {% else %}
+            Sin curso asignado
+            {% endif %}
+          </span>
+        </header>
 
-      {% if estudiantes %}
-        <div class="estudiantes-list">
+        <div class="apod-alumno-card__body">
+          <p><strong>Correo:</strong> {{ e.email|default:"No registrado" }}</p>
+          <p><strong>Estado:</strong> Activo en plataforma</p>
+        </div>
+
+        <footer class="apod-alumno-card__actions">
+          <a class="apod-btn apod-btn--primary" href="{% url 'dashboard' %}?pagina=notas&estudiante_id={{ e.id }}">
+            <span aria-hidden="true">📊</span>
+            <span>Ver Notas</span>
+          </a>
+          <a class="apod-btn apod-btn--ghost" href="{% url 'dashboard' %}?pagina=asistencia&estudiante_id={{ e.id }}">
+            <span aria-hidden="true">📅</span>
+            <span>Detalle Asistencia</span>
+          </a>
+        </footer>
+      </article>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="apod-section-card apod-overview" aria-label="Resumen y próximos hitos">
+    <div class="apod-overview__grid">
+      <article class="apod-overview-card" aria-label="Resumen de rendimiento general">
+        <h2 class="apod-section-title">
+          <span class="apod-section-title__icon" aria-hidden="true">📈</span>
+          Resumen de Rendimiento General
+        </h2>
+        <div class="apod-kpi-list">
           {% for e in estudiantes %}
-            {% with nombre=e.get_full_name|default:e.email|default:"-" %}
-              <div class="estudiante-card">
-                <div class="estudiante-header">
-                  <h3>{{ nombre }}</h3>
-                  <span class="badge-tipo secundario">Pupilo</span>
-                </div>
-
-                <div class="estudiante-info">
-                  <p><strong>Curso:</strong> {% if e.perfil_estudiante and e.perfil_estudiante.curso_actual %}{{ e.perfil_estudiante.curso_actual.nombre }}{% else %}-{% endif %}</p>
-                  <p><strong>Email:</strong> {{ e.email|default:"-" }}</p>
-                </div>
-
-                <div class="d-flex gap-2 flex-wrap">
-                  <a class="btn btn-sm btn-outline-secondary" href="{% url 'dashboard' %}?pagina=notas&estudiante_id={{ e.id }}">Notas</a>
-                  <a class="btn btn-sm btn-outline-secondary" href="{% url 'dashboard' %}?pagina=asistencia&estudiante_id={{ e.id }}">Asistencia</a>
+          {% with nombre=e.get_full_name|default:e.email|default:"Pupilo" %}
+          <div class="apod-kpi-item">
+            <div class="apod-kpi-item__head">
+              <p class="apod-kpi-item__name">{{ nombre }}</p>
+              <span class="apod-chip apod-chip--course">
+                {% if e.perfil_estudiante and e.perfil_estudiante.curso_actual %}
+                {{ e.perfil_estudiante.curso_actual.nombre }}
+                {% else %}
+                Sin curso
+                {% endif %}
+              </span>
+            </div>
+            <div class="apod-kpi-item__metrics">
+              <div class="apod-kpi">
+                <span class="apod-kpi__label">Promedio</span>
+                <span class="apod-kpi__value
+                  {% if e.promedio_general or e.promedio_general == 0 %}
+                    {% if e.promedio_general >= 5.5 %} apod-kpi__value--ok
+                    {% elif e.promedio_general >= 4.0 %} apod-kpi__value--warn
+                    {% else %} apod-kpi__value--risk{% endif %}
+                  {% elif e.promedio or e.promedio == 0 %}
+                    {% if e.promedio >= 5.5 %} apod-kpi__value--ok
+                    {% elif e.promedio >= 4.0 %} apod-kpi__value--warn
+                    {% else %} apod-kpi__value--risk{% endif %}
+                  {% else %} apod-kpi__value--na{% endif %}">
+                  {% if e.promedio_general %}
+                  {{ e.promedio_general|floatformat:1 }}
+                  {% elif e.promedio %}
+                  {{ e.promedio|floatformat:1 }}
+                  {% else %}
+                  N/D
+                  {% endif %}
+                </span>
+                <div class="apod-kpi__bar" role="presentation">
+                  <div class="apod-kpi__fill
+                    {% if e.promedio_general or e.promedio_general == 0 %}
+                      {% if e.promedio_general >= 5.5 %} apod-kpi__fill--ok
+                      {% elif e.promedio_general >= 4.0 %} apod-kpi__fill--warn
+                      {% else %} apod-kpi__fill--risk{% endif %}
+                    {% elif e.promedio or e.promedio == 0 %}
+                      {% if e.promedio >= 5.5 %} apod-kpi__fill--ok
+                      {% elif e.promedio >= 4.0 %} apod-kpi__fill--warn
+                      {% else %} apod-kpi__fill--risk{% endif %}
+                    {% else %} apod-kpi__fill--na{% endif %}" style="width:
+                    {% if e.promedio_general %}{% widthratio e.promedio_general 7 100 %}{% elif e.promedio %}{% widthratio e.promedio 7 100 %}{% else %}0{% endif %}%;">
+                  </div>
                 </div>
               </div>
-            {% endwith %}
+              <div class="apod-kpi">
+                <span class="apod-kpi__label">Asistencia</span>
+                <span class="apod-kpi__value
+                  {% if e.porcentaje_asistencia or e.porcentaje_asistencia == 0 %}
+                    {% if e.porcentaje_asistencia >= 90 %} apod-kpi__value--ok
+                    {% elif e.porcentaje_asistencia >= 75 %} apod-kpi__value--warn
+                    {% else %} apod-kpi__value--risk{% endif %}
+                  {% elif e.asistencia or e.asistencia == 0 %}
+                    {% if e.asistencia >= 90 %} apod-kpi__value--ok
+                    {% elif e.asistencia >= 75 %} apod-kpi__value--warn
+                    {% else %} apod-kpi__value--risk{% endif %}
+                  {% else %} apod-kpi__value--na{% endif %}">
+                  {% if e.porcentaje_asistencia %}
+                  {{ e.porcentaje_asistencia|floatformat:0 }}%
+                  {% elif e.asistencia %}
+                  {{ e.asistencia|floatformat:0 }}%
+                  {% else %}
+                  N/D
+                  {% endif %}
+                </span>
+                <div class="apod-kpi__bar" role="presentation">
+                  <div class="apod-kpi__fill apod-kpi__fill--alt
+                    {% if e.porcentaje_asistencia or e.porcentaje_asistencia == 0 %}
+                      {% if e.porcentaje_asistencia >= 90 %} apod-kpi__fill--ok
+                      {% elif e.porcentaje_asistencia >= 75 %} apod-kpi__fill--warn
+                      {% else %} apod-kpi__fill--risk{% endif %}
+                    {% elif e.asistencia or e.asistencia == 0 %}
+                      {% if e.asistencia >= 90 %} apod-kpi__fill--ok
+                      {% elif e.asistencia >= 75 %} apod-kpi__fill--warn
+                      {% else %} apod-kpi__fill--risk{% endif %}
+                    {% else %} apod-kpi__fill--na{% endif %}" style="width:
+                    {% if e.porcentaje_asistencia %}{{ e.porcentaje_asistencia|floatformat:0 }}{% elif e.asistencia %}{{ e.asistencia|floatformat:0 }}{% else %}0{% endif %}%;">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endwith %}
           {% endfor %}
         </div>
-      {% else %}
-        <div class="empty-state">No hay pupilos registrados.</div>
-      {% endif %}
+      </article>
+
+      <article class="apod-overview-card" aria-label="Próximos hitos del mes">
+        <h2 class="apod-section-title">
+          <span class="apod-section-title__icon" aria-hidden="true">🗓️</span>
+          Próximos Hitos del Mes
+        </h2>
+        <ul class="apod-timeline">
+          <li class="apod-timeline__item">
+            <span class="apod-timeline__icon" aria-hidden="true">📅</span>
+            <div>
+              <p class="apod-timeline__title">Reunión de Apoderados</p>
+              <p class="apod-timeline__meta">Próximo martes · 19:00 hrs</p>
+              <p class="apod-timeline__text">Coordinación mensual con el colegio y lineamientos académicos.</p>
+            </div>
+          </li>
+          <li class="apod-timeline__item">
+            <span class="apod-timeline__icon" aria-hidden="true">📝</span>
+            <div>
+              <p class="apod-timeline__title">Evaluación pendiente</p>
+              <p class="apod-timeline__meta">{% now "d/m/Y" %} · Ventana de revisión</p>
+              <p class="apod-timeline__text">
+                {% with p=estudiantes|first %}
+                {{ p.get_full_name|default:p.email|default:"Pupilo" }} · Revisar calendario académico y próximas evaluaciones.
+                {% endwith %}
+              </p>
+            </div>
+          </li>
+          <li class="apod-timeline__item">
+            <span class="apod-timeline__icon" aria-hidden="true">🔔</span>
+            <div>
+              <p class="apod-timeline__title">Gestión documental</p>
+              <p class="apod-timeline__meta">Actualizado hoy</p>
+              <p class="apod-timeline__text">
+                {% if apod_resumen_firmas|default:pendientes_firma|default:0 %}
+                Tienes documentos pendientes de firma. Revisa la sección Gestión.
+                {% else %}
+                Sin firmas pendientes por ahora. Mantente atento a nuevas solicitudes.
+                {% endif %}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </article>
     </div>
-  </div>
+  </section>
+  {% else %}
+  <section class="apod-section-card" aria-label="Sin pupilos">
+    <div class="empty-state">
+      <div class="empty-icon">👨‍👩‍👧‍👦</div>
+      <h3 class="empty-title">Sin pupilos vinculados por ahora</h3>
+      <p class="empty-text">
+        Estimada/o {{ nombre_usuario|default:"Apoderado" }}, aquí podrá visualizar el perfil académico de cada pupilo,
+        junto a su asistencia, calificaciones y seguimiento escolar. Actualmente no hay pupilos asociados a su cuenta.
+      </p>
+    </div>
+  </section>
+  {% endif %}
 </div>
+
+{% include 'apoderado/_apoderado_wrap_end.html' %}

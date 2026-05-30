@@ -1,0 +1,8 @@
+{% load static %}
+<img
+    src="{% static 'favicon.ico' %}"
+    alt="{{ logo_alt|default:'Logo del colegio' }}"
+    class="portal-brand-logo{% if extra_class %} {{ extra_class }}{% endif %}"
+    width="32"
+    height="32"
+>

@@ -1,130 +1,249 @@
-{% load static %}
+{% load static custom_filters %}
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Asistencia" hero_subtitle="Consulta inasistencias y justificativos por pupilo." hero_aria="Asistencia" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
+<link rel="stylesheet" href="{% static 'css/apoderado/asistencia.css' %}?v=20260619">
 
-<link rel="stylesheet" href="{% static 'css/apoderado/asistencia.css' %}">
-
-<div class="content-wrapper">
-  <div class="page-header">
-    <div>
-      <h2>📅 Asistencia</h2>
-      <p class="text-muted">Últimos registros (90 días aprox.).</p>
-    </div>
+<div class="aa-page">
+  <section class="apod-section-card aa-panel" aria-label="Asistencia por pupilo">
 
     {% if estudiantes %}
-      <form method="get" action="{% url 'dashboard' %}" class="estudiante-selector">
-        <input type="hidden" name="pagina" value="asistencia">
-        <label for="estudiante_id">Estudiante</label>
-        <select id="estudiante_id" name="estudiante_id" onchange="this.form.submit()">
-          <option value="">Seleccionar estudiante</option>
-          {% for e in estudiantes %}
-            <option value="{{ e.id }}" {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}selected{% endif %}>
-              {% if e.get_full_name %}{{ e.get_full_name }}{% else %}{{ e.email|default:"-" }}{% endif %}
-            </option>
-          {% endfor %}
-        </select>
-      </form>
+    <nav class="aa-pupil-tabs" aria-label="Seleccionar pupilo">
+      {% for e in estudiantes %}
+        {% with nombre_tab=e.get_full_name|default:e.email|default:"Pupilo" %}
+        <a
+          href="{% url 'dashboard' %}?pagina=asistencia&amp;estudiante_id={{ e.id }}"
+          class="aa-pupil-tab{% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %} aa-pupil-tab--active{% endif %}"
+          {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}aria-current="page"{% endif %}
+        >
+          <span class="aa-pupil-tab__avatar" aria-hidden="true">{{ nombre_tab|first|upper }}</span>
+          <span class="aa-pupil-tab__label">{{ nombre_tab }}</span>
+        </a>
+        {% endwith %}
+      {% endfor %}
+    </nav>
     {% endif %}
-  </div>
 
-  {% if not estudiantes %}
-    <div class="empty-state">
-      <span class="empty-icon">👥</span>
-      <h3>No hay estudiantes asociados</h3>
-      <p>Cuando existan pupilos asociados, podrás ver su asistencia aquí.</p>
-    </div>
-  {% elif not estudiante_seleccionado %}
-    <div class="empty-state">
-      <span class="empty-icon">🎓</span>
-      <h3>Selecciona un estudiante</h3>
-      <p>Usa el selector superior para continuar.</p>
-    </div>
-  {% else %}
+    {% if not estudiantes %}
+      <div class="aa-empty">
+        <span class="aa-empty__icon" aria-hidden="true">👥</span>
+        <h3 class="aa-empty__title">No hay estudiantes asociados</h3>
+        <p class="aa-empty__text">Cuando existan pupilos vinculados, podrás ver su asistencia aquí.</p>
+      </div>
+    {% elif not estudiante_seleccionado %}
+      <div class="aa-empty">
+        <span class="aa-empty__icon" aria-hidden="true">🎓</span>
+        <h3 class="aa-empty__title">Selecciona un pupilo</h3>
+        <p class="aa-empty__text">Elige una pestaña superior para continuar.</p>
+      </div>
+    {% else %}
+      {% with nombre_est=estudiante_seleccionado.get_full_name|default:estudiante_seleccionado.email|default:"Pupilo" %}
+      {% with pct=estadisticas.porcentaje_presente|default:0 presentes=estadisticas.presentes|default:0 ausentes=estadisticas.ausentes|default:0 justificadas=estadisticas.justificadas|default:0 %}
+      {% with inasistencias_total=ausentes|add:justificadas %}
 
-    {% with nombre_est=estudiante_seleccionado.get_full_name|default:estudiante_seleccionado.email|default:"?" %}
-      <div class="estudiante-info-card">
-        <div class="estudiante-avatar">{{ nombre_est|first|upper }}</div>
-        <div class="estudiante-datos">
-          <h2>{{ nombre_est }}</h2>
-          <p>Resumen de asistencia</p>
-        </div>
-      </div>
-    {% endwith %}
+      <p class="aa-period-hint">Resumen de los últimos <strong>90 días</strong> · {{ nombre_est }}</p>
 
-    <div class="asistencia-resumen">
-      <div class="resumen-card resumen-presente">
-        <div class="resumen-icon">✅</div>
-        <div class="resumen-content">
-          <label>Presentes</label>
-          <div class="resumen-valor">{{ estadisticas.presentes|default:0 }}</div>
-        </div>
-      </div>
-      <div class="resumen-card resumen-ausente">
-        <div class="resumen-icon">❌</div>
-        <div class="resumen-content">
-          <label>Ausentes</label>
-          <div class="resumen-valor">{{ estadisticas.ausentes|default:0 }}</div>
-        </div>
-      </div>
-      <div class="resumen-card resumen-tarde">
-        <div class="resumen-icon">⏰</div>
-        <div class="resumen-content">
-          <label>Atrasos</label>
-          <div class="resumen-valor">{{ estadisticas.atrasos|default:0 }}</div>
-        </div>
-      </div>
-      <div class="resumen-card resumen-justificada">
-        <div class="resumen-icon">📝</div>
-        <div class="resumen-content">
-          <label>Justificadas</label>
-          <div class="resumen-valor">{{ estadisticas.justificadas|default:0 }}</div>
-        </div>
-      </div>
-    </div>
+      <div class="aa-kpi-grid" aria-label="Indicadores de asistencia">
+        <article class="aa-kpi-card aa-kpi-card--primary">
+          <p class="aa-kpi-card__label">Asistencia general</p>
+          <p class="aa-kpi-card__value aa-kpi-card__value--ok">{{ pct }}%</p>
+          <p class="aa-kpi-card__hint">Porcentaje de presencia</p>
+          <div class="aa-kpi-card__bar" role="presentation" aria-hidden="true">
+            <span class="aa-kpi-card__bar-fill" style="width: {{ pct }}%;"></span>
+          </div>
+        </article>
 
-    <div class="asistencia-por-fecha">
-      <h3>Registros</h3>
+        <article class="aa-kpi-card">
+          <p class="aa-kpi-card__label">Días presentes</p>
+          <p class="aa-kpi-card__value aa-kpi-card__value--ok">{{ presentes }}</p>
+          <p class="aa-kpi-card__hint">Registros marcados como presente</p>
+        </article>
+
+        <article class="aa-kpi-card">
+          <p class="aa-kpi-card__label">Inasistencias</p>
+          <p class="aa-kpi-card__value aa-kpi-card__value--alert">{{ inasistencias_total }}</p>
+          <div class="aa-kpi-card__split">
+            <span><strong>{{ justificadas }}</strong> justificadas</span>
+            <span><strong>{{ ausentes }}</strong> injustificadas</span>
+          </div>
+          {% if estadisticas.atrasos %}
+          <p class="aa-kpi-card__hint">{{ estadisticas.atrasos }} atraso{{ estadisticas.atrasos|pluralize:"s" }} en el período</p>
+          {% endif %}
+        </article>
+      </div>
 
       {% if registros_por_fecha %}
-        {% for fecha, registros in registros_por_fecha.items %}
-          <div class="fecha-grupo">
-            <div class="fecha-header">
-              <h4>{{ fecha|date:"d/m/Y" }}</h4>
-              <div class="fecha-resumen">{{ registros|length }} registro(s)</div>
-            </div>
-
-            <div class="registros-lista">
-              {% for r in registros %}
-                <div class="registro-item">
-                  <div class="registro-asignatura">
-                    <strong>
-                      {% if r.clase and r.clase.asignatura %}{{ r.clase.asignatura.nombre }}{% else %}-{% endif %}
-                    </strong>
-                    <div class="registro-profesor">
-                      {% if r.clase and r.clase.profesor %}
-                        {% if r.clase.profesor.get_full_name %}{{ r.clase.profesor.get_full_name }}{% else %}{{ r.clase.profesor.email|default:"-" }}{% endif %}
-                      {% else %}
-                        -
-                      {% endif %}
-                    </div>
-                  </div>
-
-                  <div class="estado-badge estado-{{ r.estado }}">{{ r.get_estado_display|default:r.estado }}</div>
-
-                  {% if r.observacion %}
-                    <div class="registro-observaciones">{{ r.observacion }}</div>
-                  {% endif %}
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-        {% endfor %}
-      {% else %}
-        <div class="empty-state">
-          <span class="empty-icon">📭</span>
-          <h3>Sin registros</h3>
-          <p>No hay registros de asistencia para mostrar.</p>
+      <section class="aa-refine" aria-label="Filtrar registros">
+        <div class="aa-refine__head">
+          <h2 class="aa-refine__title">Filtrar registros</h2>
+          <button type="button" class="aa-refine__clear" id="aaClearFilters" hidden>Limpiar</button>
         </div>
-      {% endif %}
-    </div>
+        <div class="aa-refine__grid">
+          <div class="aa-refine__field">
+            <label class="aa-refine__label" for="aaDateFilter">Fecha</label>
+            <input
+              type="date"
+              class="aa-refine__control aa-refine__control--date"
+              id="aaDateFilter"
+              aria-describedby="aaDateFilterHint"
+            >
+          </div>
+          <div class="aa-refine__field aa-refine__field--grow">
+            <label class="aa-refine__label" for="aaSearch">Asignatura</label>
+            <input type="search" class="aa-refine__control" id="aaSearch" placeholder="Ej: Matemática, Lenguaje..." autocomplete="off">
+          </div>
+          <div class="aa-refine__field">
+            <label class="aa-refine__label" for="aaStatusFilter">Estado</label>
+            <select class="aa-refine__control" id="aaStatusFilter">
+              <option value="">Todos</option>
+              <option value="presente">Presente</option>
+              <option value="justificado">Ausente justificado</option>
+              <option value="injustificado">Ausente injustificado</option>
+              <option value="atraso">Atraso</option>
+            </select>
+          </div>
+        </div>
+        <p class="aa-refine__hint aa-refine__hint--filters" id="aaDateFilterHint">Calendario o escribe la fecha. Vacío = ver todo el período.</p>
+        <p class="aa-refine__hint" id="aaFilterHint" hidden></p>
+      </section>
 
-  {% endif %}
+      <div class="aa-records" id="aaRecordsList" role="list">
+        {% for fecha, registros in registros_por_fecha.items %}
+          {% for r in registros %}
+            {% with asig=r.clase.asignatura.nombre|default:"Sin asignatura" %}
+            {% with accent=asig|color_asignatura:r.clase.asignatura.color %}
+            <article
+              class="attendance-card aa-attendance-card"
+              role="listitem"
+              style="--aa-accent: {{ accent }};"
+              data-aa-date="{{ fecha|date:'Y-m-d' }}"
+              data-aa-subject="{{ asig|lower }}"
+              data-aa-accent="{{ accent }}"
+              data-aa-status="{% if r.estado == 'P' %}presente{% elif r.estado == 'J' %}justificado{% elif r.estado == 'A' %}injustificado{% elif r.estado == 'T' %}atraso{% else %}otro{% endif %}"
+            >
+              <div class="aa-attendance-card__date">
+                <span class="aa-attendance-card__day">{{ fecha|date:"d" }}</span>
+                <span class="aa-attendance-card__month">{{ fecha|date:"M/Y" }}</span>
+              </div>
+
+              <div class="aa-attendance-card__main">
+                <p class="aa-attendance-card__subject">{{ asig }}</p>
+                <p class="aa-attendance-card__meta">
+                  {% if r.clase and r.clase.profesor %}
+                    {{ r.clase.profesor.get_full_name|default:r.clase.profesor.email }}
+                  {% else %}
+                    Sin profesor asignado
+                  {% endif %}
+                </p>
+                {% if r.observaciones %}
+                <p class="aa-attendance-card__note">{{ r.observaciones }}</p>
+                {% endif %}
+              </div>
+
+              <div class="aa-attendance-card__actions">
+                {% if r.estado == 'P' %}
+                  <span class="aa-badge aa-badge--presente">Presente</span>
+                {% elif r.estado == 'J' %}
+                  <span class="aa-badge aa-badge--justificado">Ausente justificado</span>
+                  <a class="aa-attendance-card__link" href="{% url 'dashboard' %}?pagina=justificativos">Ver justificativo</a>
+                {% elif r.estado == 'A' %}
+                  <span class="aa-badge aa-badge--injustificado">Ausente injustificado</span>
+                  <a class="aa-attendance-card__link" href="{% url 'dashboard' %}?pagina=justificativos">Subir justificativo</a>
+                {% elif r.estado == 'T' %}
+                  <span class="aa-badge aa-badge--atraso">Atraso</span>
+                  <a class="aa-attendance-card__link" href="{% url 'dashboard' %}?pagina=justificativos">Subir justificativo</a>
+                {% else %}
+                  <span class="aa-badge">{{ r.get_estado_display|default:r.estado }}</span>
+                {% endif %}
+              </div>
+            </article>
+            {% endwith %}
+            {% endwith %}
+          {% endfor %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="aa-empty aa-empty--inline">
+        <span class="aa-empty__icon" aria-hidden="true">📭</span>
+        <h3 class="aa-empty__title">Sin registros</h3>
+        <p class="aa-empty__text">No hay registros de asistencia en los últimos 90 días.</p>
+      </div>
+      {% endif %}
+
+      {% endwith %}
+      {% endwith %}
+      {% endwith %}
+    {% endif %}
+  </section>
 </div>
+
+<script>
+(function () {
+  function debounce(fn, wait) {
+    var timer;
+    return function () {
+      var ctx = this;
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait);
+    };
+  }
+
+  var dateEl = document.getElementById('aaDateFilter');
+  var searchEl = document.getElementById('aaSearch');
+  var statusEl = document.getElementById('aaStatusFilter');
+  var clearEl = document.getElementById('aaClearFilters');
+  var hintEl = document.getElementById('aaFilterHint');
+  var cards = document.querySelectorAll('.aa-attendance-card');
+
+  var minDate = '';
+  var maxDate = '';
+  cards.forEach(function (card) {
+    var d = card.getAttribute('data-aa-date');
+    if (!d) return;
+    if (!minDate || d < minDate) minDate = d;
+    if (!maxDate || d > maxDate) maxDate = d;
+  });
+  if (dateEl && minDate) {
+    dateEl.min = minDate;
+    dateEl.max = maxDate;
+  }
+
+  function applyFilters() {
+    var day = dateEl ? dateEl.value : '';
+    var q = (searchEl && searchEl.value || '').trim().toLowerCase();
+    var status = statusEl ? statusEl.value : '';
+    var visible = 0;
+    cards.forEach(function (card) {
+      var matchDate = !day || card.getAttribute('data-aa-date') === day;
+      var matchSearch = !q || (card.getAttribute('data-aa-subject') || '').indexOf(q) !== -1;
+      var matchStatus = !status || card.getAttribute('data-aa-status') === status;
+      var show = matchDate && matchSearch && matchStatus;
+      card.hidden = !show;
+      if (show) visible++;
+    });
+    if (clearEl) clearEl.hidden = !(day || q || status);
+    if (hintEl && (day || q || status)) {
+      hintEl.hidden = false;
+      hintEl.textContent = visible
+        ? visible + ' registro(s) coinciden con el filtro.'
+        : 'Ningún registro coincide. Prueba otra fecha o filtro.';
+    } else if (hintEl) {
+      hintEl.hidden = true;
+    }
+  }
+
+  if (dateEl) dateEl.addEventListener('change', applyFilters);
+  if (searchEl) searchEl.addEventListener('input', debounce(applyFilters, 180));
+  if (statusEl) statusEl.addEventListener('change', applyFilters);
+  if (clearEl) {
+    clearEl.addEventListener('click', function () {
+      if (dateEl) dateEl.value = '';
+      if (searchEl) searchEl.value = '';
+      if (statusEl) statusEl.value = '';
+      applyFilters();
+    });
+  }
+})();
+</script>
+
+{% include 'apoderado/_apoderado_wrap_end.html' %}

@@ -10,7 +10,11 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from backend.apps.mensajeria.services import MensajeriaService
-from backend.common.utils.auth_helpers import normalizar_rol
+from backend.apps.mensajeria.views.bandeja import (
+    _get_clases_for_user,
+    _mensajeria_content_template,
+    enrich_apoderado_mensajeria_context,
+)
 from backend.common.utils.dashboard_helpers import build_dashboard_context
 
 
@@ -46,22 +50,34 @@ def ver_conversacion(request, id_conversacion: int):
     context, redirect_response = build_dashboard_context(
         request,
         pagina_actual='mensajes',
-        content_template='estudiante/mensajeria.html',
+        content_template=_mensajeria_content_template(request.user),
     )
     if redirect_response:
         return redirect_response
 
     otro = conversacion.get_otro_participante(request.user)
-
-    context.update(
-        {
-            'conversaciones': MensajeriaService.get_conversaciones_data(request.user),
-            'conversacion_actual': {
-                'id': conversacion.id_conversacion,
-                'destinatario': otro,
-                'clase': conversacion.clase,
-            },
-            'mensajes': mensajes,
-        }
+    uses_mm_bandeja = (
+        hasattr(request.user, 'perfil_estudiante')
+        or hasattr(request.user, 'perfil_apoderado')
     )
+
+    if uses_mm_bandeja:
+        context.update(
+            MensajeriaService.get_alumno_bandeja_context(
+                request.user,
+                request.GET,
+                conversacion_activa_id=conversacion.id_conversacion,
+            ),
+        )
+
+    context.update({
+        'conversacion_actual': {
+            'id': conversacion.id_conversacion,
+            'destinatario': otro,
+            'clase': conversacion.clase,
+        },
+        'mensajes': mensajes,
+        'clases': list(_get_clases_for_user(request.user)),
+    })
+    enrich_apoderado_mensajeria_context(request.user, context)
     return render(request, 'dashboard.html', context)

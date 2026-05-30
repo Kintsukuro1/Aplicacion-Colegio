@@ -56,6 +56,12 @@ class ProfileService:
     
     # Configuración de seguridad
     MIN_PASSWORD_LENGTH = 6
+    MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024
+    ALLOWED_PHOTO_CONTENT_TYPES = {
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+    }
     
     @staticmethod
     def validate_role_for_student_operations(user) -> Tuple[bool, Optional[str]]:
@@ -135,6 +141,145 @@ class ProfileService:
                 school_id=user.rbd_colegio,
                 action=action,
             )
+
+    @staticmethod
+    def _get_student_profile(user):
+        from backend.apps.accounts.models import PerfilEstudiante
+
+        return PerfilEstudiante.objects.filter(user=user).first()
+
+    @staticmethod
+    def update_own_student_profile(user, data: Dict[str, Any], User=None) -> Tuple[bool, str]:
+        """El estudiante actualiza su propio perfil (contacto y emergencia)."""
+        ProfileService._validate_school_integrity_from_user(user, 'UPDATE_OWN_STUDENT_PROFILE')
+        is_valid, error_msg = ProfileService.validate_role_for_student_operations(user)
+        if not is_valid:
+            return False, error_msg or 'Rol inválido'
+
+        perfil = ProfileService._get_student_profile(user)
+        if not perfil:
+            return False, 'No se encontró tu perfil de estudiante'
+
+        email = (data.get('email') or '').strip()
+        if not email:
+            return False, 'El email es obligatorio'
+
+        error = ProfileService.validate_email_format(email)
+        if error:
+            return False, error['context']['message']
+
+        if User:
+            error = ProfileService.check_email_availability(email, user, User)
+            if error:
+                return False, error['context']['message']
+
+        try:
+            user.email = email
+            user.save(update_fields=['email'])
+
+            perfil.telefono = (data.get('telefono') or '').strip() or None
+            perfil.telefono_movil = (data.get('telefono_movil') or '').strip() or None
+            perfil.direccion = (data.get('direccion') or '').strip() or None
+            perfil.contacto_emergencia_nombre = (
+                (data.get('contacto_emergencia_nombre') or '').strip() or None
+            )
+            perfil.contacto_emergencia_relacion = (
+                (data.get('contacto_emergencia_relacion') or '').strip() or None
+            )
+            perfil.contacto_emergencia_telefono = (
+                (data.get('contacto_emergencia_telefono') or '').strip() or None
+            )
+            perfil.save()
+
+            logger.info('Perfil propio actualizado - Usuario: %s', user.email)
+            return True, 'Perfil actualizado correctamente'
+        except Exception as exc:
+            logger.error('Error actualizando perfil propio: %s', exc)
+            return False, f'Error al actualizar perfil: {exc}'
+
+    @staticmethod
+    def upload_student_photo(user, image_file) -> Tuple[bool, str]:
+        """Sube o reemplaza la foto de perfil del estudiante."""
+        ProfileService._validate_school_integrity_from_user(user, 'UPLOAD_STUDENT_PHOTO')
+        is_valid, error_msg = ProfileService.validate_role_for_student_operations(user)
+        if not is_valid:
+            return False, error_msg or 'Rol inválido'
+
+        if not image_file:
+            return False, 'Selecciona una imagen'
+
+        content_type = getattr(image_file, 'content_type', '') or ''
+        if content_type not in ProfileService.ALLOWED_PHOTO_CONTENT_TYPES:
+            return False, 'Formato no permitido. Usa JPG, PNG o WebP'
+
+        if image_file.size > ProfileService.MAX_PHOTO_SIZE_BYTES:
+            return False, 'La imagen no puede superar 5 MB'
+
+        perfil = ProfileService._get_student_profile(user)
+        if not perfil:
+            return False, 'No se encontró tu perfil de estudiante'
+
+        try:
+            if perfil.foto_perfil:
+                perfil.foto_perfil.delete(save=False)
+            perfil.foto_perfil = image_file
+            perfil.save()
+            logger.info('Foto de perfil actualizada - Usuario: %s', user.email)
+            return True, 'Foto de perfil actualizada'
+        except Exception as exc:
+            logger.error('Error subiendo foto de perfil: %s', exc)
+            return False, f'No se pudo guardar la foto: {exc}'
+
+    @staticmethod
+    def remove_student_photo(user) -> Tuple[bool, str]:
+        """Elimina la foto de perfil del estudiante."""
+        ProfileService._validate_school_integrity_from_user(user, 'REMOVE_STUDENT_PHOTO')
+        perfil = ProfileService._get_student_profile(user)
+        if not perfil or not perfil.foto_perfil:
+            return False, 'No tienes foto de perfil para eliminar'
+        try:
+            perfil.foto_perfil.delete(save=True)
+            return True, 'Foto de perfil eliminada'
+        except Exception as exc:
+            return False, f'Error al eliminar la foto: {exc}'
+
+    @staticmethod
+    def change_own_student_password(
+        user,
+        password_actual: str,
+        password_nueva: str,
+        password_confirmar: str,
+        client_ip: str,
+    ) -> Tuple[bool, str]:
+        """El estudiante cambia su propia contraseña (sin permiso administrativo)."""
+        ProfileService._validate_school_integrity_from_user(user, 'CHANGE_OWN_STUDENT_PASSWORD')
+        is_valid, error_msg = ProfileService.validate_role_for_student_operations(user)
+        if not is_valid:
+            security_logger.warning(
+                'Cambio de contraseña no autorizado - Usuario: %s, IP: %s',
+                user.email,
+                client_ip,
+            )
+            return False, error_msg
+
+        is_valid, error_msg = ProfileService.validate_password_change(
+            user, password_actual, password_nueva, password_confirmar, client_ip,
+        )
+        if not is_valid:
+            return False, error_msg
+
+        try:
+            user.set_password(password_nueva)
+            user.save()
+            security_logger.info(
+                'Contraseña propia cambiada - Usuario: %s, IP: %s',
+                user.email,
+                client_ip,
+            )
+            return True, 'Contraseña cambiada correctamente'
+        except Exception as exc:
+            logger.error('Error cambiando contraseña propia: %s', exc)
+            return False, f'Error al cambiar contraseña: {exc}'
     
     @staticmethod
     @PermissionService.require_permission('ADMINISTRATIVO', 'MANAGE_USERS')

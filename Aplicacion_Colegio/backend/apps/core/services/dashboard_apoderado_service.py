@@ -106,6 +106,13 @@ class DashboardApoderadoService:
                     user, estudiantes, estudiante_id_param
                 )
                 context.update(context_notas)
+
+            # Mis pupilos page
+            elif pagina_solicitada == 'mis_pupilos':
+                context_pupilos = DashboardApoderadoService._get_apoderado_mis_pupilos_context(
+                    estudiantes
+                )
+                context.update(context_pupilos)
             
             # Asistencia page
             elif pagina_solicitada == 'asistencia':
@@ -185,11 +192,34 @@ class DashboardApoderadoService:
         
         if not estudiante_seleccionado and estudiantes:
             estudiante_seleccionado = estudiantes[0]
-        
+
+        ficha_alumno = {}
         notas_por_asignatura = []
         promedio_general = None
-        
+
         if estudiante_seleccionado:
+            from backend.apps.accounts.models import User
+            from backend.apps.academico.models import Asistencia
+            from django.db.models import Count, Q
+
+            try:
+                estudiante_enriquecido = (
+                    User.objects
+                    .select_related(
+                        'perfil_estudiante__curso_actual_id',
+                        'perfil_estudiante__ciclo_actual',
+                    )
+                    .filter(pk=estudiante_seleccionado.pk)
+                    .first()
+                )
+                if estudiante_enriquecido:
+                    estudiante_seleccionado = estudiante_enriquecido
+            except Exception as enrich_error:
+                logger.warning(
+                    'No se pudo enriquecer perfil del estudiante para notas: %s',
+                    enrich_error,
+                )
+
             calificaciones = Calificacion.objects.filter(
                 estudiante=estudiante_seleccionado,
                 evaluacion__activa=True
@@ -258,11 +288,50 @@ class DashboardApoderadoService:
 
             if count_asignaturas > 0:
                 promedio_general = round(total_promedio / count_asignaturas, 1)
-        
+
+            total_evaluaciones = sum(len(item['evaluaciones']) for item in notas_por_asignatura)
+            por_reforzar = sum(
+                1 for item in notas_por_asignatura
+                if item.get('promedio') is not None and item['promedio'] < 4.0
+            )
+
+            perfil = getattr(estudiante_seleccionado, 'perfil_estudiante', None)
+            curso = getattr(perfil, 'curso_actual', None) if perfil else None
+            curso_nombre = getattr(curso, 'nombre', None) if curso else None
+            ciclo = getattr(perfil, 'ciclo_actual', None) if perfil else None
+            ciclo_nombre = getattr(ciclo, 'nombre', None) if ciclo else None
+
+            asistencia_row = (
+                Asistencia.objects
+                .filter(estudiante_id=estudiante_seleccionado.id)
+                .aggregate(
+                    total=Count('pk'),
+                    presentes=Count('pk', filter=Q(estado='P')),
+                )
+            )
+            pct_asistencia = None
+            if asistencia_row['total']:
+                pct_asistencia = round(
+                    (asistencia_row['presentes'] / asistencia_row['total']) * 100,
+                    1,
+                )
+
+            ficha_alumno = {
+                'curso': curso_nombre or 'Sin curso asignado',
+                'ciclo': ciclo_nombre,
+                'rut': getattr(estudiante_seleccionado, 'rut', None) or '—',
+                'email': getattr(estudiante_seleccionado, 'email', None) or '—',
+                'total_asignaturas': count_asignaturas,
+                'total_evaluaciones': total_evaluaciones,
+                'por_reforzar': por_reforzar,
+                'porcentaje_asistencia': pct_asistencia,
+            }
+
         return {
             'estudiante_seleccionado': estudiante_seleccionado,
             'notas_por_asignatura': notas_por_asignatura,
             'promedio_general': promedio_general,
+            'ficha_alumno': ficha_alumno,
         }
 
     @staticmethod
@@ -376,6 +445,50 @@ class DashboardApoderadoService:
             'registros_por_fecha': dict(registros_por_fecha),
             'asignaturas': asignaturas,
         }
+
+    @staticmethod
+    def _get_apoderado_mis_pupilos_context(estudiantes):
+        """Attach promedio general y asistencia acumulada por pupilo."""
+        from django.db.models import Avg, Count, Q
+        from backend.apps.academico.models import Calificacion, Asistencia
+
+        if not estudiantes:
+            return {'estudiantes': estudiantes}
+
+        estudiante_ids = [e.id for e in estudiantes if getattr(e, 'id', None)]
+        if not estudiante_ids:
+            return {'estudiantes': estudiantes}
+
+        promedios_qs = (
+            Calificacion.objects
+            .filter(estudiante_id__in=estudiante_ids, evaluacion__activa=True)
+            .values('estudiante_id')
+            .annotate(promedio=Avg('nota'))
+        )
+        promedios_map = {row['estudiante_id']: row['promedio'] for row in promedios_qs}
+
+        asistencia_qs = (
+            Asistencia.objects
+            .filter(estudiante_id__in=estudiante_ids)
+            .values('estudiante_id')
+            .annotate(
+                total=Count('pk'),
+                presentes=Count('pk', filter=Q(estado='P')),
+            )
+        )
+        asistencia_map = {
+            row['estudiante_id']: (
+                round((row['presentes'] / row['total']) * 100, 1) if row['total'] else None
+            )
+            for row in asistencia_qs
+        }
+
+        for estudiante in estudiantes:
+            promedio_raw = promedios_map.get(estudiante.id)
+            estudiante.promedio_general = round(float(promedio_raw), 1) if promedio_raw is not None else None
+            estudiante.porcentaje_asistencia = asistencia_map.get(estudiante.id)
+
+        return {'estudiantes': estudiantes}
 
     @staticmethod
     def _get_apoderado_justificativos_context(user, estudiantes):

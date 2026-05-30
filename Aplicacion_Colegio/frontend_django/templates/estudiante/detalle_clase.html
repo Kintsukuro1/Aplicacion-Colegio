@@ -4,546 +4,412 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ asignatura.nombre }} - Detalle</title>
-    <link rel="stylesheet" href="{% static 'css/estudiante/detalle_clase.css' %}">
-    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
+    <title>{{ asignatura.nombre }} — Detalle</title>
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/estudiante/detalle_clase.css' %}?v=20260530">
 </head>
-<body>
-    <div class="course-detail-container">
-        {# Back Button #}
-        <div class="back-section">
-            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="back-button">
-                <span>←</span> Volver a Mis Clases
+<body class="da-page"
+      data-asignatura="{{ asignatura.nombre|lower }}"
+      data-model-color="{{ asignatura.color|default:'#94A3B8' }}">
+
+    <div class="da-container">
+        <nav class="da-back" aria-label="Volver">
+            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="da-back__pill">
+                <svg class="da-back__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver a Mis Clases
             </a>
-        </div>
+        </nav>
 
-        {# Hero Banner with Course Info #}
-        <div class="course-hero gradient-{{ clase.asignatura.codigo|slice:":3"|lower|default:"blue" }}">
-            <div class="hero-background"></div>
-            <div class="hero-content">
-                <div class="course-badges">
-                    <span class="badge-code">{{ asignatura.codigo|default:"N/A" }}</span>
-                    <span class="badge-semester">{{ curso.ciclo_academico.nombre|default:"2024" }}</span>
-                </div>
-                <h1 class="course-hero-title">{{ asignatura.nombre }}</h1>
-                <p class="course-hero-description">
-                    {% if asignatura.descripcion %}
-                        {{ asignatura.descripcion|truncatewords:20 }}
-                    {% else %}
-                        Explora los contenidos, materiales y actividades de este curso.
+        <header class="da-hero" aria-label="Resumen de la asignatura">
+            <span class="da-hero__orb da-hero__orb--tl" aria-hidden="true"></span>
+            <span class="da-hero__orb da-hero__orb--br" aria-hidden="true"></span>
+
+            <div class="da-hero__inner">
+                <div class="da-hero__badges">
+                    <span class="da-hero__badge da-hero__badge--code">{% if asignatura.codigo %}{{ asignatura.codigo|slice:":3"|upper }}{% else %}{{ asignatura.nombre|slice:":3"|upper }}{% endif %}</span>
+                    {% if curso.ciclo_academico %}
+                    <span class="da-hero__badge da-hero__badge--neutral">{{ curso.ciclo_academico.nombre }}</span>
                     {% endif %}
+                    {% if curso %}
+                    <span class="da-hero__badge da-hero__badge--neutral">{{ curso.nombre }}</span>
+                    {% endif %}
+                </div>
+
+                <h1 class="da-hero__title">{{ asignatura.nombre }}</h1>
+                <p class="da-hero__subtitle">
+                    Prof. {{ profesor.get_full_name }}{% if curso %} · {{ curso.nombre }}{% endif %}
                 </p>
-                
-                {# Progress Bar #}
-                <div class="hero-progress">
-                    <div class="progress-label-row">
-                        <span class="progress-label">PROGRESO DEL CURSO</span>
-                        <span class="progress-value">{{ progreso|default:"0" }}% COMPLETADO</span>
-                    </div>
-                    <div class="progress-bar-hero">
-                        <div class="progress-fill-hero" style="width: {{ progreso|default:"0" }}%;"></div>
-                    </div>
+
+                <div class="da-hero__metrics" aria-label="Indicadores del curso">
+                    <article class="da-metric da-metric--accent">
+                        <span class="da-metric__label">Nota actual</span>
+                        {% if nota_actual %}
+                        <span class="da-metric__value da-metric__value--{% if nota_actual >= 5.0 %}ok{% elif nota_actual >= 4.0 %}warn{% else %}low{% endif %}">{{ nota_actual|floatformat:1 }}</span>
+                        <span class="da-metric__hint da-metric__hint--{% if nota_actual >= 5.0 %}ok{% elif nota_actual >= 4.0 %}warn{% else %}low{% endif %}">
+                            {% if nota_actual >= 5.0 %}Aprobado{% elif nota_actual >= 4.0 %}En riesgo{% else %}Reprobado{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="da-metric__value da-metric__value--none">—</span>
+                        <span class="da-metric__hint da-metric__hint--none">Sin nota</span>
+                        {% endif %}
+                    </article>
+                    <article class="da-metric">
+                        <span class="da-metric__label">Evaluaciones</span>
+                        <span class="da-metric__value">{{ evaluaciones_proximas|length }}</span>
+                        <span class="da-metric__hint">este semestre</span>
+                    </article>
+                    <article class="da-metric da-metric--tasks" id="daMetricTasks">
+                        <span class="da-metric__label">Tareas pendientes</span>
+                        <span class="da-metric__value" id="daPendingTasksCount">0</span>
+                        <span class="da-metric__hint" id="daPendingTasksHint">por entregar</span>
+                    </article>
+                    <article class="da-metric">
+                        <span class="da-metric__label">Avance</span>
+                        <span class="da-metric__value">{{ progreso|default:"0" }}%</span>
+                        <span class="da-metric__progress" role="progressbar" aria-valuenow="{{ progreso|default:0 }}" aria-valuemin="0" aria-valuemax="100">
+                            <span class="da-metric__progress-fill" style="width: {{ progreso|default:0 }}%;"></span>
+                        </span>
+                    </article>
                 </div>
+
+                <section class="da-hero-pending" id="daHeroPending" hidden aria-label="Tareas pendientes">
+                    <h2 class="da-hero-pending__title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Tareas pendientes
+                    </h2>
+                    <ul class="da-hero-pending__list" id="daHeroPendingList">
+                        {% for item in tareas %}
+                        {% if not item.entrega %}
+                        <li class="da-hero-pending__item">
+                            <svg class="da-hero-pending__pencil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                            <span class="da-hero-pending__name">{{ item.tarea.titulo }}</span>
+                            <span class="da-hero-pending__badge">Pendiente</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </section>
+            </div>
+        </header>
+
+        <div class="da-tabs-wrap">
+            <div class="da-tabs" role="tablist" aria-label="Secciones del curso">
+                <button type="button" class="da-tabs__btn da-tabs__btn--active" data-tab="content" role="tab" aria-selected="true">Contenido</button>
+                <button type="button" class="da-tabs__btn" data-tab="materials" role="tab" aria-selected="false">Materiales</button>
+                <button type="button" class="da-tabs__btn" data-tab="assignments" role="tab" aria-selected="false">Tareas</button>
+                <button type="button" class="da-tabs__btn" data-tab="grades" role="tab" aria-selected="false">Calificaciones</button>
             </div>
         </div>
 
-        {# Main Content Layout #}
-        <div class="course-layout">
-            {# Left Column - Main Content #}
-            <div class="course-main">
-                {# Navigation Tabs #}
-                <div class="course-tabs">
-                    <button class="tab-btn active" data-tab="syllabus">
-                        <span class="tab-icon">📋</span> Programa
-                    </button>
-                    <button class="tab-btn" data-tab="materials">
-                        <span class="tab-icon">📚</span> Materiales
-                    </button>
-                    <button class="tab-btn" data-tab="assignments">
-                        <span class="tab-icon">📝</span> Tareas
-                    </button>
-                    <button class="tab-btn" data-tab="grades">
-                        <span class="tab-icon">⭐</span> Calificaciones
-                    </button>
-                </div>
+        <div class="da-layout">
+            <main class="da-main">
+                <div class="da-tab-panel da-tab-panel--active" id="tab-content" role="tabpanel">
+                    <section class="da-card">
+                        <h2 class="da-card__title">Programación del curso</h2>
 
-                {# Tab Content: Syllabus #}
-                <div class="tab-content active" id="tab-syllabus">
-                    <section class="content-section">
-                        <h2 class="section-title">Acerca de este Curso</h2>
-                        <p class="section-text">
-                            {% if asignatura.descripcion %}
-                                {{ asignatura.descripcion }}
-                            {% else %}
-                                Este curso cubre los conceptos fundamentales y las habilidades necesarias para dominar {{ asignatura.nombre }}.
-                            {% endif %}
-                        </p>
-                        
-                        <div class="course-tags">
-                            <span class="tag">{{ asignatura.nombre }}</span>
-                            <span class="tag">{{ curso.nivel|default:"Educación Básica" }}</span>
-                            {% if asignatura.codigo %}
-                            <span class="tag">Código {{ asignatura.codigo }}</span>
-                            {% endif %}
-                        </div>
-                    </section>
-
-                    <section class="content-section">
-                        <div class="section-header-row">
-                            <h2 class="section-title">Programación del Curso</h2>
-                            <a href="#" onclick="descargarSyllabus(event)" class="link-download">Descargar Programa Completo →</a>
-                        </div>
-
-                        {# Week/Unit Accordion #}
-                        <div class="course-schedule">
-                            {# Example Week 1 - Completed #}
-                            <div class="schedule-week completed">
-                                <div class="week-header" onclick="toggleWeek(this)">
-                                    <div class="week-info">
-                                        <span class="week-status-icon">✓</span>
-                                        <div>
-                                            <h3 class="week-title">Semana 1: Introducción al Curso</h3>
-                                            <p class="week-subtitle">Completado el 15 de Enero</p>
-                                        </div>
-                                    </div>
-                                    <span class="week-toggle">▼</span>
-                                </div>
-                                <div class="week-content">
-                                    <div class="activity-item done">
-                                        <span class="activity-icon">📖</span>
-                                        <span class="activity-title">Lectura: Introducción a {{ asignatura.nombre }}</span>
-                                        <span class="activity-status done-badge">Completado</span>
-                                    </div>
-                                    <div class="activity-item done">
-                                        <span class="activity-icon">🎥</span>
-                                        <span class="activity-title">Video: Conceptos Fundamentales</span>
-                                        <span class="activity-status done-badge">Completado</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {# Example Week 2 - In Progress #}
-                            <div class="schedule-week in-progress">
-                                <div class="week-header" onclick="toggleWeek(this)">
-                                    <div class="week-info">
-                                        <span class="week-status-icon orange">⏱</span>
-                                        <div>
-                                            <h3 class="week-title">Semana 2: Desarrollo de Competencias</h3>
-                                            <p class="week-subtitle">En Progreso - 2 Actividades Pendientes</p>
-                                        </div>
-                                    </div>
-                                    <span class="week-toggle">▼</span>
-                                </div>
-                                <div class="week-content" style="display: block;">
-                                    <div class="activity-item done">
-                                        <span class="activity-icon">📖</span>
-                                        <span class="activity-title">Lectura: Teorías y Modelos</span>
-                                        <span class="activity-status done-badge">Completado</span>
-                                    </div>
-                                    <div class="activity-item pending">
-                                        <span class="activity-icon">📄</span>
-                                        <span class="activity-title">Presentación: Aplicaciones Prácticas</span>
-                                        <span class="activity-status start-badge">Iniciar</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                {# Tab Content: Materials #}
-                <div class="tab-content" id="tab-materials">
-                    <section class="content-section">
-                        <h2 class="section-title">Materiales del Curso</h2>
-                        
-                        {% if materiales %}
-                        <div class="materials-list">
-                            {% for material in materiales %}
-                            <div class="material-card">
-                                <div class="material-icon-large">📄</div>
-                                <div class="material-details">
-                                    <h3 class="material-title">{{ material.titulo }}</h3>
-                                    <p class="material-meta">{{ material.get_tamanio_legible }} • {{ material.fecha_creacion|date:"d M Y" }}</p>
-                                </div>
-                                <a href="{{ material.archivo.url }}" class="btn-download" download>
-                                    <span>⬇</span> Descargar
-                                </a>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <div class="empty-state">
-                            <p>No hay materiales disponibles aún.</p>
-                        </div>
-                        {% endif %}
-                    </section>
-                </div>
-
-                {# Tab Content: Assignments #}
-                <div class="tab-content" id="tab-assignments">
-                    <section class="content-section">
-                        <h2 class="section-title">Tareas y Evaluaciones</h2>
-                        
-                        {% if tareas %}
-                        <div class="assignments-list">
+                        <div class="da-accordion" id="daCourseAccordion">
                             {% for item in tareas %}
-                            <div class="assignment-card {% if item.entrega %}submitted{% endif %}">
-                                <div class="assignment-header">
-                                    <h3 class="assignment-title">{{ item.tarea.titulo }}</h3>
-                                    <span class="assignment-status {{ item.estado }}">{{ item.texto_estado }}</span>
-                                </div>
-                                <p class="assignment-description">{{ item.tarea.descripcion|truncatewords:20 }}</p>
-                                <div class="assignment-footer">
-                                    <span class="assignment-date">
-                                        Fecha límite: {{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}
+                            {% ifchanged item.entrega %}
+                            {% if not forloop.first %}</div></div>{% endif %}
+                            {% if item.entrega %}
+                            <div class="da-unit da-unit--done">
+                                <button type="button" class="da-unit__header" aria-expanded="false">
+                                    <span class="da-unit__icon da-unit__icon--done" aria-hidden="true">✓</span>
+                                    <span class="da-unit__text">
+                                        <span class="da-unit__title">Actividades entregadas</span>
+                                        <span class="da-unit__subtitle">Completado{% if item.entrega.fecha_entrega %} · {{ item.entrega.fecha_entrega|date:"d/m/Y" }}{% endif %}</span>
                                     </span>
-                                    {% if not item.entrega %}
-                                    <a href="#" class="btn-submit">Entregar Tarea</a>
-                                    {% else %}
-                                    <span class="submitted-badge">✓ Entregada</span>
-                                    {% endif %}
-                                </div>
-                            </div>
+                                    <span class="da-unit__chevron" aria-hidden="true">▶</span>
+                                </button>
+                                <div class="da-unit__body" hidden>
+                            {% else %}
+                            <div class="da-unit da-unit--current">
+                                <button type="button" class="da-unit__header" aria-expanded="true">
+                                    <span class="da-unit__icon da-unit__icon--current" aria-hidden="true">▶</span>
+                                    <span class="da-unit__text">
+                                        <span class="da-unit__title">Actividades en curso</span>
+                                        <span class="da-unit__subtitle" id="daUnitPendingSubtitle">En curso · actividades pendientes</span>
+                                    </span>
+                                    <span class="da-unit__chevron" aria-hidden="true">▼</span>
+                                </button>
+                                <div class="da-unit__body">
+                            {% endif %}
+                            {% endifchanged %}
+                                    <div class="da-activity {% if item.entrega %}da-activity--done{% else %}da-activity--pending{% endif %}">
+                                        <span class="da-activity__icon" aria-hidden="true">{% if item.entrega %}📄{% else %}📝{% endif %}</span>
+                                        <span class="da-activity__title">{{ item.tarea.titulo }}</span>
+                                        <span class="da-activity__status">{% if item.entrega %}Completado{% else %}Pendiente{% endif %}</span>
+                                    </div>
+                            {% empty %}
+                            <p class="da-empty">Aún no hay unidades publicadas en el programa.</p>
                             {% endfor %}
+                            {% if tareas %}</div></div>{% endif %}
                         </div>
+                    </section>
+                </div>
+
+                <div class="da-tab-panel" id="tab-materials" role="tabpanel" hidden>
+                    <section class="da-card">
+                        <h2 class="da-card__title">Materiales</h2>
+                        {% if materiales %}
+                        <ul class="da-materials">
+                            {% for material in materiales %}
+                            <li class="da-material">
+                                <div class="da-material__info">
+                                    <span class="da-material__name">{{ material.titulo }}</span>
+                                    <span class="da-material__meta">{{ material.get_tamanio_legible }} · {{ material.fecha_creacion|date:"d/m/Y" }}</span>
+                                </div>
+                                <a href="{{ material.archivo.url }}" class="da-material__btn" download>Descargar</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
                         {% else %}
-                        <div class="empty-state">
-                            <p>No hay tareas pendientes en este momento.</p>
-                        </div>
+                        <p class="da-empty">No hay materiales disponibles aún.</p>
                         {% endif %}
                     </section>
                 </div>
 
-                {# Tab Content: Grades #}
-                <div class="tab-content" id="tab-grades">
-                    <section class="content-section">
-                        <h2 class="section-title">Libro de Calificaciones</h2>
-                        <p>Las calificaciones se mostrarán aquí cuando el profesor las publique.</p>
+                <div class="da-tab-panel" id="tab-assignments" role="tabpanel" hidden>
+                    <section class="da-card">
+                        <h2 class="da-card__title">Tareas</h2>
+                        {% if tareas %}
+                        <ul class="da-assignments">
+                            {% for item in tareas %}
+                            <li class="da-assignment">
+                                <div class="da-assignment__head">
+                                    <h3 class="da-assignment__title">{{ item.tarea.titulo }}</h3>
+                                    <span class="da-assignment__badge">{{ item.texto_estado }}</span>
+                                </div>
+                                {% if item.tarea.instrucciones %}
+                                <p class="da-assignment__desc">{{ item.tarea.instrucciones|truncatewords:24 }}</p>
+                                {% endif %}
+                                <p class="da-assignment__meta">
+                                    Fecha límite:
+                                    {% if item.tarea.fecha_entrega %}
+                                        {{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        Sin fecha
+                                    {% endif %}
+                                </p>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="da-empty">No hay tareas pendientes en este momento.</p>
+                        {% endif %}
                     </section>
                 </div>
-            </div>
 
-            {# Right Column - Sidebar #}
-            <aside class="course-sidebar">
-                {# Professor Card #}
-                <div class="sidebar-card professor-card">
-                    <div class="professor-avatar">
-                        <span class="avatar-initials">{{ profesor.nombre|first }}{{ profesor.apellido_paterno|first }}</span>
-                    </div>
-                    <h3 class="professor-name">{{ profesor.get_full_name }}</h3>
-                    <p class="professor-title">PROFESOR DE {{ asignatura.nombre|upper }}</p>
-                    
-                    <div class="professor-actions">
-                        <a href="mailto:{{ profesor.email }}" class="btn-action email">
-                            <span>📧</span> Email
+                <div class="da-tab-panel" id="tab-grades" role="tabpanel" hidden>
+                    <section class="da-card">
+                        <h2 class="da-card__title">Calificaciones</h2>
+                        <p class="da-empty">Las calificaciones se mostrarán aquí cuando el profesor las publique.</p>
+                    </section>
+                </div>
+            </main>
+
+            <aside class="da-aside" aria-label="Información del curso">
+                <section class="da-card da-card--aside">
+                    <div class="da-teacher">
+                        <span class="da-teacher__avatar" aria-hidden="true">{{ profesor.nombre|first|upper }}{{ profesor.apellido_paterno|first|upper }}</span>
+                        <h3 class="da-teacher__name">{{ profesor.get_full_name }}</h3>
+                        <p class="da-teacher__role">Profesor/a de {{ asignatura.nombre }}</p>
+                        <a href="{% url 'mensajeria:bandeja_mensajes' %}?clase_id={{ clase.id }}&amp;destinatario_id={{ profesor.id }}" class="da-teacher__btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Enviar mensaje
                         </a>
-                        <button class="btn-action office" onclick="abrirModalConsultoria()">
-                            <span>📅</span> Consultoría
-                        </button>
                     </div>
-                </div>
+                </section>
 
-                {# Office Hours #}
-                <div class="sidebar-card">
-                    <h3 class="sidebar-card-title">HORARIOS DE ATENCIÓN</h3>
-                    {% if horarios_por_dia %}
-                    <div class="office-hours">
-                        {% for dia, info in horarios_por_dia.items %}
-                        <div class="office-hour-item">
-                            <span class="hour-day">{{ dia|slice:":3" }}</span>
-                            <span class="hour-time">{{ info.hora_inicio }} - {{ info.hora_fin }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="sidebar-empty">Consultar con el profesor</p>
-                    {% endif %}
-                </div>
-
-                {# Upcoming Deadlines #}
-                <div class="sidebar-card">
-                    <h3 class="sidebar-card-title">PRÓXIMAS FECHAS</h3>
+                <section class="da-card da-card--aside">
+                    <h3 class="da-aside__title">Próximas fechas</h3>
                     {% if evaluaciones_proximas %}
-                    <div class="deadlines-list">
-                        {% for evaluacion in evaluaciones_proximas %}
-                        <div class="deadline-item {% if forloop.first %}critical{% endif %}">
-                            <div class="deadline-dot"></div>
-                            <div class="deadline-content">
-                                <h4 class="deadline-title">{{ evaluacion.titulo }}</h4>
-                                <p class="deadline-meta">{{ evaluacion.fecha_evaluacion|date:"d M Y" }}</p>
+                    <ul class="da-dates">
+                        {% for evaluacion in evaluaciones_proximas|slice:":4" %}
+                        <li class="da-date">
+                            <div class="da-date__cal" aria-hidden="true">
+                                <span class="da-date__day">{{ evaluacion.fecha_evaluacion|date:"d" }}</span>
+                                <span class="da-date__month">{{ evaluacion.fecha_evaluacion|date:"M" }}</span>
                             </div>
-                            {% if forloop.first %}
-                            <span class="deadline-badge critical">Crítico</span>
-                            {% endif %}
-                        </div>
+                            <div class="da-date__body">
+                                <p class="da-date__name">{{ evaluacion.nombre }}</p>
+                                <p class="da-date__type">{{ evaluacion.get_tipo_evaluacion_display }}</p>
+                            </div>
+                        </li>
                         {% endfor %}
-                    </div>
+                    </ul>
                     {% else %}
-                    <p class="sidebar-empty">No hay fechas próximas</p>
+                    <p class="da-empty da-empty--aside">Sin fechas próximas</p>
                     {% endif %}
-                </div>
+                </section>
 
-                {# Quick Resources #}
-                <div class="sidebar-card">
-                    <h3 class="sidebar-card-title">RECURSOS RÁPIDOS</h3>
-                    <div class="quick-resources">
-                        <a href="#" onclick="abrirModal('modal-bibliografia'); return false;" class="resource-link">📚 Bibliografía del Curso</a>
-                        <a href="#" onclick="abrirModal('modal-foro'); return false;" class="resource-link">💬 Foro de Discusión</a>
-                        <a href="#" onclick="abrirModal('modal-faq'); return false;" class="resource-link">❓ Preguntas Frecuentes</a>
-                    </div>
-                </div>
+                <section class="da-card da-card--aside">
+                    <h3 class="da-aside__title">Recursos rápidos</h3>
+                    <ul class="da-resources">
+                        {% for material in materiales|slice:":1" %}
+                        <li class="da-resource">
+                            <a href="{{ material.archivo.url }}" class="da-resource__link" download>
+                                <span class="da-resource__icon" aria-hidden="true">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                </span>
+                                Programa del curso
+                            </a>
+                        </li>
+                        {% endfor %}
+                        <li class="da-resource">
+                            <span class="da-resource__link da-resource__link--muted">
+                                <span class="da-resource__icon" aria-hidden="true">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                </span>
+                                Foro de discusión
+                            </span>
+                        </li>
+                        <li class="da-resource">
+                            <span class="da-resource__link da-resource__link--muted">
+                                <span class="da-resource__icon" aria-hidden="true">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                </span>
+                                Preguntas frecuentes
+                            </span>
+                        </li>
+                    </ul>
+                </section>
             </aside>
         </div>
     </div>
 
-    <!-- Modal de Consultoría Premium -->
-    <div id="modal-consultoria" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;">
-        <div style="background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; width: 90%; max-width: 500px; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); transform: scale(0.9); animation: scaleUp 0.3s forwards cubic-bezier(0.34, 1.56, 0.64, 1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                    <span>📅</span> Agendar Consultoría
-                </h3>
-                <button onclick="cerrarModalConsultoria()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; transition: color 0.2s;">&times;</button>
-            </div>
-            
-            <p style="color: #475569; font-size: 0.95rem; margin-top: 0; margin-bottom: 20px; line-height: 1.5;">
-                Seleccione un horario de atención disponible para agendar una sesión de consultoría virtual o presencial con el profesor <strong>{{ profesor.get_full_name }}</strong>.
-            </p>
-
-            <form id="form-consultoria" onsubmit="confirmarAgendamiento(event)">
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 600; color: #1e293b;">TEMA DE LA CONSULTORÍA</label>
-                    <input type="text" required placeholder="Ej: Dudas sobre prueba de Álgebra" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.9rem; transition: border-color 0.2s;" />
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 600; color: #1e293b;">SELECCIONAR BLOQUE DISPONIBLE</label>
-                    <select required style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.9rem;">
-                        <option value="">-- Elija un bloque disponible --</option>
-                        <option value="1">Lunes de 14:00 a 14:45 (Virtual)</option>
-                        <option value="2">Miércoles de 10:30 a 11:15 (Cubículo 3)</option>
-                        <option value="3">Viernes de 15:00 a 15:45 (Virtual)</option>
-                    </select>
-                </div>
-
-                <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                    <button type="button" onclick="cerrarModalConsultoria()" style="background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Cancelar</button>
-                    <button type="submit" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">Agendar Sesión</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal de Bibliografía -->
-    <div id="modal-bibliografia" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;">
-        <div style="background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; width: 90%; max-width: 500px; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); color: #0f172a;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <span>📚</span> Bibliografía del Curso
-                </h3>
-                <button onclick="cerrarModal('modal-bibliografia')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; transition: color 0.2s;">&times;</button>
-            </div>
-            <ul style="padding-left: 20px; line-height: 1.6; font-size: 0.95rem; color: #334155; display: flex; flex-direction: column; gap: 10px;">
-                <li><strong>Libro Guía:</strong> Introducción práctica a {{ asignatura.nombre }} (Ed. Kintsugi, 2023)</li>
-                <li><strong>Lectura Obligatoria:</strong> Compendio de Casos de Estudio y Talleres Resueltos (Vol. II)</li>
-                <li><strong>Apuntes Complementarios:</strong> Material digital publicado en la pestaña de <em>Materiales</em>.</li>
-            </ul>
-            <div style="margin-top: 25px; display: flex; justify-content: flex-end;">
-                <button onclick="cerrarModal('modal-bibliografia')" style="background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Cerrar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Foro de Discusión -->
-    <div id="modal-foro" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;">
-        <div style="background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; width: 90%; max-width: 550px; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); color: #0f172a;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <span>💬</span> Foro de Discusión - {{ asignatura.nombre }}
-                </h3>
-                <button onclick="cerrarModal('modal-foro')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; transition: color 0.2s;">&times;</button>
-            </div>
-            
-            <div id="foro-threads" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; padding-right: 5px;">
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                        <strong style="font-size: 0.9rem; color: #1e3a8a;">Profesor {{ profesor.nombre }}</strong>
-                        <small style="color: #64748b;">Ayer</small>
-                    </div>
-                    <p style="margin: 0; font-size: 0.9rem; color: #334155;">Estimados estudiantes, recuerden que la lectura del capítulo 2 es requisito fundamental para la clase del miércoles.</p>
-                </div>
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                        <strong style="font-size: 0.9rem; color: #3b82f6;">Tú (Estudiante)</strong>
-                        <small style="color: #64748b;">Hace 2 horas</small>
-                    </div>
-                    <p style="margin: 0; font-size: 0.9rem; color: #334155;">¿Profesor, el material complementario del foro entrará en la evaluación sumativa de la semana?</p>
-                </div>
-            </div>
-
-            <form onsubmit="postForoMessage(event)" style="display: flex; flex-direction: column; gap: 10px;">
-                <textarea id="foro-input" required placeholder="Escribe tu mensaje en el foro..." style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.9rem; height: 70px; resize: none;"></textarea>
-                <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                    <button type="button" onclick="cerrarModal('modal-foro')" style="background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Cerrar</button>
-                    <button type="submit" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">Publicar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal de Preguntas Frecuentes -->
-    <div id="modal-faq" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; animation: fadeIn 0.3s ease;">
-        <div style="background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; width: 90%; max-width: 550px; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); color: #0f172a;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <span>❓</span> Preguntas Frecuentes
-                </h3>
-                <button onclick="cerrarModal('modal-faq')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; transition: color 0.2s;">&times;</button>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px;">
-                <div>
-                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; color: #1e293b;">¿Cuándo son los exámenes y evaluaciones?</h4>
-                    <p style="margin: 0; font-size: 0.88rem; color: #475569; line-height: 1.4;">Las fechas límites oficiales se encuentran en la barra lateral "Próximas Fechas" y en tu pestaña de Tareas.</p>
-                </div>
-                <div>
-                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; color: #1e293b;">¿Cómo se calculan las notas promedio?</h4>
-                    <p style="margin: 0; font-size: 0.88rem; color: #475569; line-height: 1.4;">Cada evaluación tiene un coeficiente o ponderación que se aplica a la calificación final del periodo académico.</p>
-                </div>
-                <div>
-                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; color: #1e293b;">¿Dónde se suben los archivos de las tareas?</h4>
-                    <p style="margin: 0; font-size: 0.88rem; color: #475569; line-height: 1.4;">Puedes adjuntar tus respuestas directamente haciendo clic en "Entregar Tarea" desde el listado de Tareas de la clase.</p>
-                </div>
-            </div>
-            <div style="margin-top: 25px; display: flex; justify-content: flex-end;">
-                <button onclick="cerrarModal('modal-faq')" style="background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Cerrar</button>
-            </div>
-        </div>
-    </div>
-
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes scaleUp {
-            to { transform: scale(1); }
-        }
-    </style>
-
     <script>
-        // Tab Switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                // Remove active class from all tabs and contents
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                // Add active class to clicked tab
-                this.classList.add('active');
-                
-                // Show corresponding content
-                const tabName = this.dataset.tab;
-                document.getElementById('tab-' + tabName).classList.add('active');
-            });
-        });
+    (function () {
+        var root = document.querySelector('.da-page');
+        if (!root) return;
 
-        // Week Accordion
-        function toggleWeek(header) {
-            const week = header.parentElement;
-            const content = week.querySelector('.week-content');
-            const toggle = header.querySelector('.week-toggle');
-            
-            if (content.style.display === 'block') {
-                content.style.display = 'none';
-                toggle.textContent = '▶';
-            } else {
-                content.style.display = 'block';
-                toggle.textContent = '▼';
+        function parseHex(hex) {
+            var h = (hex || '#94A3B8').trim().replace('#', '');
+            if (h.length === 3) {
+                h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
             }
+            if (h.length !== 6) return { r: 148, g: 163, b: 184 };
+            return {
+                r: parseInt(h.slice(0, 2), 16),
+                g: parseInt(h.slice(2, 4), 16),
+                b: parseInt(h.slice(4, 6), 16)
+            };
         }
 
-        // Modal Consultoria Actions
-        function abrirModalConsultoria() {
-            document.getElementById('modal-consultoria').style.display = 'flex';
+        function darken(rgb, factor) {
+            factor = factor || 0.55;
+            var r = Math.max(0, Math.round(rgb.r * factor));
+            var g = Math.max(0, Math.round(rgb.g * factor));
+            var b = Math.max(0, Math.round(rgb.b * factor));
+            return '#' + [r, g, b].map(function (n) {
+                var s = n.toString(16);
+                return s.length === 1 ? '0' + s : s;
+            }).join('');
         }
 
-        function cerrarModalConsultoria() {
-            document.getElementById('modal-consultoria').style.display = 'none';
-            document.getElementById('form-consultoria').reset();
+        /** Paleta por nombre (igual que Mis Clases); si no coincide, usa asignatura.color del modelo */
+        function resolveAccent(name, modelColor) {
+            var s = (name || '').toLowerCase();
+            var accent = '#94A3B8';
+            var text = '#1E293B';
+            if (s.indexOf('matem') !== -1) {
+                accent = '#3B82F6'; text = '#1E3A8A';
+            } else if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1 || s.indexOf('castellano') !== -1) {
+                accent = '#EF4444'; text = '#7F1D1D';
+            } else if (s.indexOf('cienc') !== -1 || s.indexOf('biolog') !== -1 || s.indexOf('naturales') !== -1) {
+                accent = '#10B981'; text = '#064E3B';
+            } else if (s.indexOf('histor') !== -1 || s.indexOf('geograf') !== -1) {
+                accent = '#8B5CF6'; text = '#2E1065';
+            } else if (s.indexOf('ingl') !== -1 || s.indexOf('english') !== -1) {
+                accent = '#F59E0B'; text = '#78350F';
+            } else if (s.indexOf('educación física') !== -1 || s.indexOf('educacion fisica') !== -1 || s.indexOf('edfis') !== -1 || s.indexOf('deport') !== -1) {
+                accent = '#06B6D4'; text = '#164E63';
+            } else if (s.indexOf('músic') !== -1 || s.indexOf('music') !== -1) {
+                accent = '#F97316'; text = '#7C2D12';
+            } else if (s.indexOf('arte') !== -1 || s.indexOf('visuales') !== -1) {
+                accent = '#EC4899'; text = '#831843';
+            } else if (s.indexOf('tecno') !== -1 || s.indexOf('comput') !== -1 || s.indexOf('inform') !== -1) {
+                accent = '#6B7280'; text = '#1F2937';
+            } else if (modelColor) {
+                accent = modelColor;
+                text = darken(parseHex(modelColor), 0.52);
+            }
+            return { accent: accent, text: text };
         }
 
-        function confirmarAgendamiento(e) {
-            e.preventDefault();
-            alert('¡Sesión agendada exitosamente! Se ha enviado una notificación de confirmación a tu correo y al del profesor {{ profesor.get_full_name }}.');
-            cerrarModalConsultoria();
+        var subjectName = root.getAttribute('data-asignatura') || '';
+        var modelColor = (root.getAttribute('data-model-color') || '').trim();
+        var theme = resolveAccent(subjectName, modelColor);
+        var rgb = parseHex(theme.accent);
+        root.style.setProperty('--da-accent', theme.accent);
+        root.style.setProperty('--da-accent-rgb', rgb.r + ', ' + rgb.g + ', ' + rgb.b);
+        root.style.setProperty('--da-accent-text', theme.text);
+
+        var pending = 0;
+        {% for item in tareas %}{% if not item.entrega %}pending += 1;{% endif %}{% endfor %}
+
+        var pendingEl = document.getElementById('daPendingTasksCount');
+        var pendingHint = document.getElementById('daPendingTasksHint');
+        var metricTasks = document.getElementById('daMetricTasks');
+        if (pendingEl) pendingEl.textContent = String(pending);
+        if (pending > 0 && metricTasks) metricTasks.classList.add('da-metric--warn');
+        if (pendingHint && pending > 0) pendingHint.classList.add('da-metric__hint--warn');
+
+        var heroPending = document.getElementById('daHeroPending');
+        var heroList = document.getElementById('daHeroPendingList');
+        if (heroPending && heroList && heroList.children.length > 0) {
+            heroPending.hidden = false;
         }
 
-        // Global Modal Helpers
-        function abrirModal(id) {
-            document.getElementById(id).style.display = 'flex';
+        var unitSub = document.getElementById('daUnitPendingSubtitle');
+        if (unitSub && pending > 0) {
+            unitSub.textContent = 'En curso · ' + pending + ' actividad' + (pending === 1 ? '' : 'es') + ' pendientes';
         }
-        function cerrarModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-        function postForoMessage(e) {
-            e.preventDefault();
-            const textarea = document.getElementById('foro-input');
-            const text = textarea.value.trim();
-            if (!text) return;
-            
-            const threads = document.getElementById('foro-threads');
-            const newMsg = document.createElement('div');
-            newMsg.style.cssText = "background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; margin-top: 10px;";
-            newMsg.innerHTML = `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <strong style="font-size: 0.9rem; color: #3b82f6;">Tú (Estudiante)</strong>
-                    <small style="color: #64748b;">Justo ahora</small>
-                </div>
-                <p style="margin: 0; font-size: 0.9rem; color: #334155;">${text}</p>
-            `;
-            threads.appendChild(newMsg);
-            threads.scrollTop = threads.scrollHeight;
-            textarea.value = '';
-        }
-        function descargarSyllabus(e) {
-            if (e) e.preventDefault();
-            const text = `PROGRAMA COMPLETO DE CURSO: {{ asignatura.nombre }}
-Establecimiento: Colegio Kintsugi Academy
-Periodo Académico: {{ curso.ciclo_academico.nombre|default:"2024" }}
-Profesor: {{ profesor.get_full_name }}
 
-DESCRIPCIÓN GENERAL:
-{{ asignatura.descripcion|default:"Este curso cubre los contenidos teóricos y prácticos para dominar la materia." }}
-
-SEMANARIO DE ACTIVIDADES:
-Semana 1: Introducción a la materia y diagnóstico de conocimientos.
-Semana 2: Desarrollo y ejercitación de metodologías conceptuales primarias.
-Semana 3: Primer corte y evaluación preliminar acumulativa.
-Semana 4: Trabajo práctico guiado interdisciplinar.
-
-BIBLIOGRAFÍA:
-- Introducción práctica a {{ asignatura.nombre }} (Ed. Kintsugi, 2023)
-- Apuntes y recursos de lecturas obligatorias y material complementario del aula.`;
-
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `Programa_{{ asignatura.nombre|slugify }}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
-        // Handle clicking outside to close
-        window.addEventListener('click', function(event) {
-            const modalIds = ['modal-consultoria', 'modal-bibliografia', 'modal-foro', 'modal-faq'];
-            modalIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el && event.target === el) {
-                    cerrarModal(id);
+        document.querySelectorAll('.da-tabs__btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var tab = btn.getAttribute('data-tab');
+                document.querySelectorAll('.da-tabs__btn').forEach(function (b) {
+                    b.classList.remove('da-tabs__btn--active');
+                    b.setAttribute('aria-selected', 'false');
+                });
+                document.querySelectorAll('.da-tab-panel').forEach(function (p) {
+                    p.classList.remove('da-tab-panel--active');
+                    p.hidden = true;
+                });
+                btn.classList.add('da-tabs__btn--active');
+                btn.setAttribute('aria-selected', 'true');
+                var panel = document.getElementById('tab-' + tab);
+                if (panel) {
+                    panel.classList.add('da-tab-panel--active');
+                    panel.hidden = false;
                 }
             });
         });
+
+        document.querySelectorAll('.da-unit__header').forEach(function (header) {
+            var unit = header.closest('.da-unit');
+            if (unit && unit.classList.contains('da-unit--locked')) return;
+
+            header.addEventListener('click', function () {
+                var body = unit.querySelector('.da-unit__body');
+                var chevron = header.querySelector('.da-unit__chevron');
+                var open = header.getAttribute('aria-expanded') === 'true';
+                header.setAttribute('aria-expanded', open ? 'false' : 'true');
+                if (body) body.hidden = open;
+                if (chevron) chevron.textContent = open ? '▶' : '▼';
+            });
+        });
+    })();
     </script>
 </body>
 </html>

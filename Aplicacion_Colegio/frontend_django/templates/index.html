@@ -5,8 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#6BADD6">
+    {% include 'includes/_portal_favicon.html' %}
     <title>Portal Acad&eacute;mico - Sistema de Gesti&oacute;n Educativa</title>
     <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <link rel="stylesheet" href="{% static 'css/index.css' %}?v=20260604">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
 </head>
@@ -14,12 +16,8 @@
     <nav class="main-nav">
         <div class="nav-container">
             <div class="nav-logo">
-                <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-                    <circle cx="20" cy="20" r="18" fill="#6BADD6"/>
-                    <path d="M20 10 L20 23 M13 16 L20 23 L27 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <rect x="13" y="25" width="14" height="6" rx="1" fill="white"/>
-                </svg>
-                <span class="logo-text">EDUHUB</span>
+                {% include 'includes/_portal_brand_logo.html' with logo_alt='Colegio Santa María' extra_class='portal-brand-logo--nav' %}
+                <span class="logo-text">Colegio Santa María</span>
             </div>
             <ul class="nav-links">
                 <li><a href="#features">Caracter&iacute;sticas de la Plataforma</a></li>
@@ -161,7 +159,9 @@
         <section id="portal" class="portal-section">
             <div class="portal-container">
                 <div class="portal-card-unified">
-                    <div class="portal-icon" aria-hidden="true">&#127891;</div>
+                    <div class="portal-icon">
+                        {% include 'includes/_portal_brand_logo.html' with logo_alt='Colegio Santa María' extra_class='portal-brand-logo--portal-section' %}
+                    </div>
                     <h2>Acceso al Portal EduHub</h2>
                     <p>Un solo inicio de sesi&oacute;n para estudiantes, familias, docentes y personal. El sistema reconoce tu rol autom&aacute;ticamente.</p>
                     <a href="{% url 'accounts:login' %}" class="btn-portal-main">Ingresar al Portal &rarr;</a>
@@ -219,12 +219,8 @@
             <div class="footer-container">
                 <div class="footer-brand">
                     <div class="footer-logo">
-                        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-                            <circle cx="20" cy="20" r="18" fill="#6BADD6"/>
-                            <path d="M20 10 L20 23 M13 16 L20 23 L27 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            <rect x="13" y="25" width="14" height="6" rx="1" fill="white"/>
-                        </svg>
-                        <span>EDUHUB</span>
+                        {% include 'includes/_portal_brand_logo.html' with logo_alt='Colegio Santa María' extra_class='portal-brand-logo--footer' %}
+                        <span>Colegio Santa María</span>
                     </div>
                     <p>&copy; 2026 Eduhub &bull; Sistema de Gesti&oacute;n Educativa</p>
                 </div>

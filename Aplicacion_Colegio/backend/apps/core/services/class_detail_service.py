@@ -150,8 +150,12 @@ class ClassDetailService:
         ).order_by('fecha_evaluacion')[:5]
 
         progreso = 0
+        nota_actual = None
+        calificaciones_detalle = []
         if is_student:
             from backend.apps.academico.models import Calificacion
+            from backend.apps.academico.services.grades_service import GradesService
+
             total_evaluaciones = Evaluacion.objects.filter(
                 clase=clase,
                 activa=True
@@ -164,6 +168,25 @@ class ClassDetailService:
                     evaluacion__activa=True
                 ).count()
                 progreso = min(int((calificaciones_estudiante / total_evaluaciones) * 100), 100)
+
+            resultado_nota = GradesService.calculate_student_final_grade(user, clase)
+            nota_actual = resultado_nota.get('nota_final')
+
+            calificaciones_obj = Calificacion.objects.filter(
+                estudiante=user,
+                evaluacion__clase=clase,
+                evaluacion__activa=True
+            ).select_related('evaluacion').order_by('evaluacion__fecha_evaluacion')
+
+            calificaciones_detalle = [
+                {
+                    'nombre': c.evaluacion.nombre,
+                    'fecha': c.evaluacion.fecha_evaluacion,
+                    'nota': float(c.nota),
+                    'ponderacion': float(c.evaluacion.ponderacion or 100),
+                }
+                for c in calificaciones_obj
+            ]
 
         estudiantes_queryset = User.objects.filter(
             rbd_colegio=user.rbd_colegio,
@@ -261,6 +284,8 @@ class ClassDetailService:
             'total_bloques': bloques.count(),
             'evaluaciones_proximas': evaluaciones_proximas,
             'progreso': progreso,
+            'nota_actual': nota_actual,
+            'calificaciones_detalle': calificaciones_detalle,
             'total_estudiantes': total_estudiantes,
             'estudiantes_lista': estudiantes_lista,
             'es_profesor': is_teacher,

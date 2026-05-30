@@ -26,6 +26,11 @@
     --color-text-secondary: var(--color-text-light);
     --color-text-tertiary: #a8a8a8;
     --color-border-hover: #c0dce8;
+
+    /* Paleta por rol (default: alumno) */
+    --rol-primary: #5ba8d4;
+    --rol-sidebar: #d0e8f5;
+    --rol-accent: #3a8fc4;
     
     /* Espaciado */
     --spacing-xs: 0.25rem;
@@ -94,6 +99,25 @@ body {
     color: var(--color-text-primary);
     background-color: var(--color-bg-secondary);
     line-height: 1.5;
+}
+
+/* CATHERINE: paletas por rol */
+body.vista-alumno {
+    --rol-primary: #5ba8d4;
+    --rol-sidebar: #d0e8f5;
+    --rol-accent: #3a8fc4;
+}
+
+body.vista-apoderado {
+    --rol-primary: #5bb88a;
+    --rol-sidebar: #d0f0e0;
+    --rol-accent: #3a9e6f;
+}
+
+body.vista-personal {
+    --rol-primary: #8b7cc8;
+    --rol-sidebar: #e8e0ff;
+    --rol-accent: #6a5ab8;
 }
 
 /* Contenedores */
@@ -260,4 +284,47 @@ textarea:focus-visible,
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
+}
+
+/* Logo oficial del colegio (favicon.ico) en navbar, sidebar, login e index */
+.portal-brand-logo {
+    display: block;
+    height: 32px;
+    width: auto;
+    max-width: 40px;
+    object-fit: contain;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.portal-brand-logo--sidebar {
+    height: 40px;
+    max-width: 48px;
+}
+
+.portal-brand-logo--nav {
+    height: 44px;
+    max-width: 52px;
+}
+
+.portal-brand-logo--login-card {
+    height: 64px;
+    max-width: 72px;
+    margin: 0 auto 6px;
+}
+
+.portal-brand-logo--login-footer {
+    height: 28px;
+    max-width: 32px;
+}
+
+.portal-brand-logo--portal-section {
+    height: 48px;
+    max-width: 56px;
+    margin: 0 auto 16px;
+}
+
+.portal-brand-logo--footer {
+    height: 32px;
+    max-width: 40px;
 }

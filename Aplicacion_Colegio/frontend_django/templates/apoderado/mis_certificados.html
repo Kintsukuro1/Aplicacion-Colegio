@@ -1,5 +1,6 @@
 {% load static %}
-
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Certificados" hero_subtitle="Descarga certificados de tus pupilos." hero_aria="Certificados" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
 <div class="certificates-container">
     <div class="certificates-header">
         <div class="header-content">
@@ -265,3 +266,4 @@
         }
     }
 </style>
+{% include 'apoderado/_apoderado_wrap_end.html' %}

@@ -1,0 +1,34 @@
+{% load static %}
+<link rel="icon" href="{% static 'favicon.ico' %}" sizes="32x32" type="image/x-icon">
+<link rel="icon" href="{% static 'favicon.ico' %}" sizes="48x48" type="image/x-icon">
+<link rel="shortcut icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+<link rel="apple-touch-icon" href="{% static 'favicon.ico' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard_alumno.css' %}?v=20260603">
+<script>document.body.classList.add('vista-alumno');</script>
+{# Rutas standalone (ej. /comunicados/) sin dashboard.html: fija el título si el <head> no lo definió #}
+<script>
+(function () {
+    var current = (document.title || '').trim();
+    if (current.indexOf('Portal Académico') !== -1) return;
+    var r = '{{ rol|default:"estudiante"|lower }}';
+    var titles = {
+        estudiante: 'Portal Académico - Estudiante',
+        alumno: 'Portal Académico - Estudiante',
+        apoderado: 'Portal Académico - Apoderado',
+        profesor: 'Portal Académico - Profesor',
+        admin_escolar: 'Portal Académico - Administrador',
+        admin: 'Portal Académico - Administrador',
+        admin_general: 'Portal Académico - Administrador'
+    };
+    document.title = titles[r] || 'Portal Académico - Estudiante';
+})();
+</script>
+<div class="estudiante-dashboard perfil-alumno vista-alumno">
+<div class="dashboard-alumno-layout">
+{% include 'estudiante/_sidebar.html' %}
+<div class="alumno-main">
+<div class="alumno-main__body alumno-page-content">

@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduManage - Portal de Personal</title>
+    {% include 'includes/_portal_favicon.html' %}
+    {% include 'includes/_portal_tab_title.html' with portal_title_mode='login' %}
     <link rel="stylesheet" href="{% static 'css/login_staff.css' %}?v=20260414b">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
     {% if hcaptcha_enabled %}

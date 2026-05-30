@@ -142,4 +142,228 @@ El resto de CSS por módulo (profesor, estudiante, admin_escolar, etc.) hereda c
 - Alinear `login_staff.html` con el mismo diseño que `login.html` o redirigir al login único
 - Revisar páginas con CSS muy específico que aún usen fondos `#fff4ed` u otros restos locales
 - Añadir entradas nuevas en este archivo (o `CAMBIOS_VISUALES_YYYY-MM-DD.md`) por cada iteración visual
-# Cambios visuales — Frontend Django (EduHub)
+
+---
+
+## Dashboard alumno — sidebar unificado y inicio  (2026-05-23)
+
+### Archivos nuevos
+- `templates/estudiante/_sidebar.html` — navegación por secciones (Académico / Rendimiento / Comunicación)
+- `templates/estudiante/_alumno_wrap_start.html` / `_alumno_wrap_end.html` — layout + CSS `dashboard_alumno.css`
+
+### Paletas por rol (`design-system.css`)
+- `body.vista-alumno` → celeste (`--rol-primary`, `--rol-sidebar`, `--rol-accent`)
+- `body.vista-apoderado` → verde
+- `body.vista-personal` → violeta
+
+### Páginas con sidebar alumno
+Inicio, Mis Clases, Mi Horario, Tareas Pendientes (`tareas.html`), Calendario, Mis Tareas, Evaluaciones, Calificaciones, Asistencia, Comunicados, Mensajes.
+
+### Inicio estudiante
+- Hero celeste con métricas (borde superior 3px por tipo)
+- Timeline vertical con filtro (JS mínimo)
+- Accesos rápidos: Mis Clases / Tareas / Calendario
+
+### Cache busting
+- `dashboard_alumno.css?v=20260523`
+
+### Mis Clases alineada a Inicio (2026-05-26)
+- `estudiante/mis_clases.html` + `estudiante/mis_clases.css`: hero, grid 70/30, cards compactas con franja de color fija, panel evaluaciones y horario de hoy.
+
+### Ajustes inicio (2026-05-23)
+- Timeline sin texto `{% cycle %}` suelto; solo badges CLASE/TAREA/etc.
+- Métricas con colores #5ba8d4 / #f97316 / #22c55e / #8b5cf6 y barras de progreso
+- Secciones: Clases de hoy, Próximas evaluaciones, cards blancas
+- Fondo página `#f8fafc`; sidebar blanco con separadores
+
+### Verificación
+1. Login como estudiante → `?pagina=inicio`
+2. Navegar por el menú lateral en cada sección
+3. Ctrl+F5 si no carga el CSS
+
+---
+
+## Portal estudiante — vistas recientes (2026-05-24)
+
+> Bloque de trabajo del portal alumno: **HTML/CSS + backend** en perfil y comunicados. Otras páginas del mismo estilo (hero `mc-` / `ma-` / `mm-`) se hicieron en la misma línea visual.
+
+### Resumen en una línea
+
+Inicio, Mis Clases, **Mi Asistencia**, **Comunicados** (lista y detalle), **Mensajes** y **Mi Perfil** comparten sidebar celeste, hero con métricas reales y datos desde la BD (no placeholders).
+
+### Otras páginas ya alineadas (misma sesión / línea visual)
+
+| Vista | Plantilla / CSS | Nota breve |
+|-------|-----------------|------------|
+| Mi Asistencia | `asistencia.html`, `asistencia.css` (`ma-`) | Filtros mes/materia/estado; métricas y registros reales |
+| Mensajes | `mensajeria.html`, `mensajeria.css` (`mm-`) | Bandeja 3 columnas; colores por asignatura; envío desde detalle de clase |
+| Mis Clases | `mis_clases.html`, `mis_clases.css` (`mc-` clases) | Ya documentado arriba (2026-05-26) |
+
+---
+
+## Mi Perfil + Comunicados + sidebar (detalle 2026-05-24)
+
+> Esta parte **sí tocó backend** (perfil, comunicados, migración).
+
+### Mi Perfil (`?pagina=perfil`)
+
+| Qué | Detalle |
+|-----|---------|
+| Plantilla nueva | `estudiante/mi_perfil.html` + `estudiante/perfil_estudiante.css` (prefijo `mp-`) |
+| Hero | Promedio, asistencia, total calificaciones y asignaturas **desde BD** (no números fijos) |
+| Foto | El alumno puede subir/quitar foto (JPG/PNG/WebP, máx. 5 MB) |
+| Editable | Email, teléfonos, dirección, contacto de emergencia, contraseña |
+| Solo lectura | RUT, apoderado, curso, ciclo, datos académicos del colegio |
+| Backend | Campo `foto_perfil` en `PerfilEstudiante` + migración `accounts.0012` |
+| Servicios | `ProfileService`: `update_own_student_profile`, `upload_student_photo`, `change_own_student_password` (sin permiso admin) |
+
+**Migración obligatoria en cada máquina:** `python manage.py migrate accounts`
+
+**Media en desarrollo:** fotos en `/media/` (`core/urls.py` solo con `DEBUG=True`).
+
+---
+
+### Comunicados — lista (`/comunicados/`)
+
+| Qué | Detalle |
+|-----|---------|
+| Plantilla | `comunicados/lista_comunicados_alumno.html` + `estudiante/comunicados.css` (`mc-`) |
+| Métricas hero | Sin leer / Leídos / Urgentes / Total **reales** por alumno |
+| Lista “Todos” | Muestra siempre los comunicados (antes, si todo estaba leído, solo salía el mensaje verde) |
+| Chips | Siempre visible **Sin leer (N)** aunque N sea 0 |
+| Secciones | Urgentes → Sin leer → Leídos (sin filtros activos) |
+| Lectura | Al abrir el detalle se marca como leído |
+
+---
+
+### Comunicados — detalle (`/comunicados/<id>/`)
+
+| Qué | Detalle |
+|-----|---------|
+| Problema corregido | Antes usaba `detalle_comunicado.html` del dashboard → fondo rojo y otra tipografía |
+| Plantilla alumno | `comunicados/detalle_comunicado_alumno.html` — mismo layout que lista (sidebar + hero) |
+| Contexto | Incluye `nombre_usuario` y menú (antes el sidebar quedaba sin nombre) |
+| Navegación | Hero + breadcrumb `← Comunicados / Detalle` |
+| Confirmación | Caja para confirmar asistencia si el comunicado lo pide |
+
+Profesor/admin siguen con `comunicados/detalle_comunicado.html` (sin cambio de layout).
+
+---
+
+### Sidebar alumno (`_sidebar.html`)
+
+- Muestra **nombre** aunque falte variable de contexto (`user.get_full_name` de respaldo).
+- Muestra **foto de perfil** si existe (`foto_perfil` o `foto_perfil_url`).
+- Estilos foto: `dashboard_alumno.css` → `.alumno-sidebar__avatar--photo`.
+
+---
+
+### Archivos clave (para revisar en Git)
+
+**Frontend**
+- `templates/estudiante/mi_perfil.html`
+- `static/css/estudiante/perfil_estudiante.css`
+- `templates/comunicados/lista_comunicados_alumno.html`
+- `templates/comunicados/detalle_comunicado_alumno.html`
+- `templates/comunicados/_comunicado_alumno_item.html`
+- `static/css/estudiante/comunicados.css`
+- `templates/estudiante/_sidebar.html`
+
+**Backend**
+- `backend/common/utils/permissions.py` → estudiante `perfil` → `mi_perfil.html`
+- `backend/apps/core/services/dashboard_context_service.py` → contexto perfil alumno
+- `backend/apps/accounts/services/profile_service.py` + `views/profile.py`
+- `backend/apps/comunicados/views/comunicados.py` + `services/comunicados_service.py`
+- `backend/apps/accounts/models.py` + migración `0012`
+
+---
+
+### Cómo probar (estudiante demo)
+
+1. `python manage.py migrate` (si falta `0012`).
+2. Login alumno (ej. `alumno1@colegio.cl`).
+3. **Mi Perfil:** `dashboard/?pagina=perfil` — subir foto, guardar contacto.
+4. **Comunicados:** menú Comunicados → ver lista en “Todos” → abrir uno → volver; contadores deben cuadrar.
+5. **Ctrl+F5** si no se ven estilos (`comunicados.css?v=20260621`, `perfil_estudiante.css`).
+
+---
+
+### Coordinación con el equipo
+
+- Posibles conflictos de merge: `dashboard_context_service.py`, `permissions.py`, `comunicados/views/comunicados.py`.
+- La plantilla vieja `compartido/perfil.html` **sigue** para otros roles; no se borró.
+- `estudiante/perfil.html` antigua sigue en el repo (no es la del dashboard actual).
+
+
+---
+
+## Portal apoderado — resumen simple (2026-05-27)
+
+> Este bloque está escrito en lenguaje simple para revisión rápida de equipo.
+
+### Qué se mejoró
+
+- Se dejó el portal de **Apoderado** con el mismo estilo base moderno del estudiante, pero en color **verde menta**.
+- Se ordenaron pantallas que estaban desalineadas o con elementos repetidos (título/sidebars/metricas duplicadas).
+- Se mejoró la utilidad del inicio para que no sea solo “botones”, sino información accionable.
+
+### Cambios visuales principales
+
+- **Layout nuevo apoderado**
+  - Archivos nuevos:  
+    - `templates/apoderado/_apoderado_wrap_start.html`  
+    - `templates/apoderado/_apoderado_wrap_end.html`  
+    - `templates/apoderado/_apoderado_hero.html`  
+    - `templates/apoderado/_sidebar.html`  
+    - `static/css/dashboard_apoderado.css`
+- **Sidebar unificado**
+  - Se corrigió el problema de doble sidebar.
+  - Se usó el sidebar menta también en vistas donde antes no aplicaba bien.
+- **Inicio apoderado rediseñado**
+  - Hero con métricas reales (pupilos, comunicados, firmas, cuotas).
+  - Bloques útiles: “Prioridades del día”, “Monitoreo familiar”, “Gestión financiera”.
+- **Mis pupilos rediseñado**
+  - Tarjetas limpias por alumno, en grid responsive.
+  - Botones claros: “Ver Notas” y “Detalle Asistencia”.
+  - Se agregaron bloques de valor:
+    - Resumen de rendimiento general.
+    - Próximos hitos del mes.
+  - KPIs con semáforo:
+    - Verde / Ámbar / Rojo para promedio y asistencia.
+
+### Empty states (pantallas sin datos)
+
+- Se eliminaron cajas vacías grandes.
+- Ahora muestran mensajes informativos claros y amigables para el apoderado, manteniendo el diseño del portal.
+- Se aplicó en vistas como calendario, comunicados, firmas y otras del módulo.
+
+### Ajustes de coherencia (importante)
+
+- Se eliminó la duplicación de títulos internos cuando ya existe el Hero arriba.
+- Se corrigieron caídas por variables faltantes en componentes compartidos (hero/sidebar), especialmente en finanzas.
+- Estado de Cuenta y Mis Pagos quedaron estables y visualmente consistentes.
+
+### Cambio funcional puntual (backend mínimo para mostrar datos reales)
+
+- En `dashboard_apoderado_service.py` se agregó contexto para `mis_pupilos`:
+  - `promedio_general` por alumno (desde calificaciones).
+  - `porcentaje_asistencia` por alumno (desde asistencia).
+- Con esto se reemplazó el “N/D” por datos reales en la vista.
+
+### Nota técnica local (entorno)
+
+- Se agregó `psycopg[binary]>=3.3.4` en `requirements.txt` para evitar error de conexión PostgreSQL por encoding en entorno local.
+
+### Archivos más relevantes tocados
+
+- `frontend_django/templates/apoderado/*.html`
+- `frontend_django/templates/sidebars/sidebar_apoderado.html`
+- `frontend_django/templates/comunicados/lista_comunicados.html`
+- `frontend_django/templates/comunicados/_lista_comunicados_contenido.html`
+- `frontend_django/templates/matriculas/estado_cuenta.html`
+- `frontend_django/templates/matriculas/mis_pagos.html`
+- `frontend_django/templates/estudiante/mensajeria.html` (ajuste para rol apoderado)
+- `frontend_django/static/css/dashboard_apoderado.css`
+- `backend/apps/core/services/dashboard_apoderado_service.py`
+- `requirements.txt`
+

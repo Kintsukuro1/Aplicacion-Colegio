@@ -85,13 +85,20 @@ DATOS DE INICIO DE SESIÓN (USUARIOS DE PRUEBA):
   - ✅ Audit Trails: Trazabilidad completa de cambios
   - ✅ Matrículas Mejoradas: Con ciclo académico y estados
 
-EJECUCIÓN:
-  python autopoblar.py
+EJECUCIÓN (desde la raíz Aplicacion_Colegio, donde está manage.py):
+  python scripts/autopoblar.py
 ============================================================
 """
 
 import os
 import sys
+from pathlib import Path
+
+# Raíz del proyecto (carpeta que contiene manage.py y el paquete backend/)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import django
 import random
 from datetime import datetime, time, timedelta, date
@@ -1585,8 +1592,8 @@ def poblar_asistencia():
     total_estudiantes = sum(len(est) for est in estudiantes_por_curso.values())
     print(f"  → {total_estudiantes} estudiantes en total")
     
-    # Crear asistencia para los últimos 30 días hábiles
-    dias_atras = 30
+    # Crear asistencia para los últimos 90 días hábiles (cubre el semestre visible)
+    dias_atras = 90
     registros_creados = 0
     dias_procesados = 0
     
@@ -1631,15 +1638,18 @@ def poblar_asistencia():
                         estado = 'J'
                         observaciones = 'Terapia PIE' if not observaciones else observaciones
                 
-                Asistencia.objects.create(
-                    colegio=colegio,
+                _, created = Asistencia.objects.update_or_create(
                     clase=clase,
                     estudiante=estudiante,
                     fecha=fecha,
-                    estado=estado,
-                    observaciones=observaciones
+                    defaults={
+                        'colegio': colegio,
+                        'estado': estado,
+                        'observaciones': observaciones,
+                    },
                 )
-                registros_creados += 1
+                if created:
+                    registros_creados += 1
     
     print(f"  ✓ {registros_creados} registros de asistencia creados")
     print(f"  ✓ {dias_procesados} días hábiles procesados")
@@ -1800,60 +1810,126 @@ def poblar_anuncios():
     print("✅ Anuncios creados\n")
 
 def poblar_comunicados():
-    """Crear comunicados para el curso"""
+    """Crear comunicados para cursos demo (1° Básico A y 1° Medio A)"""
     print("📨 Creando Comunicados...")
-    
+
+    from django.utils import timezone
+    from datetime import timedelta
+
     colegio = Colegio.objects.get(rbd=10001)
+    curso_basico = Curso.objects.get(nombre='1° Básico A', colegio=colegio)
     curso_1medio = Curso.objects.get(nombre='1° Medio A', colegio=colegio)
-    
-    # Admin escolar como autor
     admin_escolar = User.objects.get(email='maria.lopez@colegio.cl')
-    
-    comunicados_data = [
+    ahora = timezone.now()
+
+    lotes = [
         {
-            'titulo': 'Reunión de Apoderados',
-            'contenido': 'Se les convoca a reunión de apoderados el próximo viernes 15 de diciembre a las 19:00 hrs. Es importante su asistencia.',
-            'tipo': 'citacion',
-            'es_prioritario': True
+            'curso': curso_basico,
+            'destinatario': 'curso_especifico',
+            'items': [
+                {
+                    'titulo': 'Reunión de apoderados 1° Básico',
+                    'contenido': 'Se convoca a apoderados de 1° Básico A el viernes 10 de abril a las 19:00 en sala de actos.',
+                    'tipo': 'citacion',
+                    'es_prioritario': True,
+                    'fecha_evento': ahora + timedelta(days=12),
+                    'lugar_evento': 'Sala de actos',
+                },
+                {
+                    'titulo': 'Suspensión de clases — actividad interna',
+                    'contenido': 'El lunes 14 de abril no habrá clases por jornada de planificación docente.',
+                    'tipo': 'urgente',
+                    'es_prioritario': True,
+                },
+                {
+                    'titulo': 'Lista de útiles 2026',
+                    'contenido': 'La lista de materiales para el año escolar ya está publicada en la web del colegio.',
+                    'tipo': 'noticia',
+                    'es_prioritario': False,
+                },
+                {
+                    'titulo': 'Salida pedagógica al museo',
+                    'contenido': 'El 22 de abril se realizará visita al museo regional. Traer colación y buena vestimenta.',
+                    'tipo': 'evento',
+                    'es_prioritario': False,
+                    'fecha_evento': ahora + timedelta(days=20),
+                    'lugar_evento': 'Museo regional',
+                },
+                {
+                    'titulo': 'Protocolo de convivencia escolar',
+                    'contenido': 'Recordamos revisar el protocolo de convivencia actualizado con estudiantes y apoderados.',
+                    'tipo': 'comunicado',
+                    'es_prioritario': False,
+                },
+            ],
         },
         {
-            'titulo': 'Suspensión de Clases',
-            'contenido': 'Se informa que el lunes 18 de diciembre no habrá clases por actividad interna del establecimiento.',
-            'tipo': 'urgente',
-            'es_prioritario': True
+            'curso': curso_1medio,
+            'destinatario': 'curso_especifico',
+            'items': [
+                {
+                    'titulo': 'Reunión de Apoderados',
+                    'contenido': 'Se les convoca a reunión de apoderados el próximo viernes a las 19:00 hrs.',
+                    'tipo': 'citacion',
+                    'es_prioritario': True,
+                    'fecha_evento': ahora + timedelta(days=8),
+                    'lugar_evento': 'Sala 201',
+                },
+                {
+                    'titulo': 'Suspensión de Clases',
+                    'contenido': 'Se informa suspensión de clases por actividad interna del establecimiento.',
+                    'tipo': 'urgente',
+                    'es_prioritario': True,
+                },
+                {
+                    'titulo': 'Horario de Verano',
+                    'contenido': 'A partir del 1 de enero, el horario de atención será de 9:00 a 13:00 hrs.',
+                    'tipo': 'comunicado',
+                    'es_prioritario': False,
+                },
+                {
+                    'titulo': 'Materiales para el próximo año',
+                    'contenido': 'Lista de útiles escolares disponible en la página web del colegio.',
+                    'tipo': 'noticia',
+                    'es_prioritario': False,
+                },
+            ],
         },
         {
-            'titulo': 'Horario de Verano',
-            'contenido': 'A partir del 1 de enero, el horario de atención será de 9:00 a 13:00 hrs.',
-            'tipo': 'comunicado',
-            'es_prioritario': False
-        },
-        {
-            'titulo': 'Materiales para el próximo año',
-            'contenido': 'Ya está disponible la lista de útiles escolares para el año 2026 en la página web del colegio.',
-            'tipo': 'noticia',
-            'es_prioritario': False
+            'curso': None,
+            'destinatario': 'estudiantes',
+            'items': [
+                {
+                    'titulo': 'Campeonato deportivo intercursos',
+                    'contenido': 'Inscripciones abiertas para el campeonato deportivo de abril. Consulta con tu profesor de Educación Física.',
+                    'tipo': 'noticia',
+                    'es_prioritario': False,
+                },
+            ],
         },
     ]
-    
+
     comunicados_creados = 0
-    
-    for comm_data in comunicados_data:
-        comunicado = Comunicado.objects.create(
-            colegio=colegio,
-            publicado_por=admin_escolar,
-            titulo=comm_data['titulo'],
-            contenido=comm_data['contenido'],
-            tipo=comm_data['tipo'],
-            destinatario='curso_especifico',
-            es_prioritario=comm_data['es_prioritario'],
-            requiere_confirmacion=random.random() < 0.5
-        )
-        
-        # Asignar a curso específico
-        comunicado.cursos_destinatarios.add(curso_1medio)
-        comunicados_creados += 1
-    
+    for lote in lotes:
+        for comm_data in lote['items']:
+            extra = {k: v for k, v in comm_data.items() if k not in (
+                'titulo', 'contenido', 'tipo', 'es_prioritario',
+            )}
+            comunicado = Comunicado.objects.create(
+                colegio=colegio,
+                publicado_por=admin_escolar,
+                titulo=comm_data['titulo'],
+                contenido=comm_data['contenido'],
+                tipo=comm_data['tipo'],
+                destinatario=lote['destinatario'],
+                es_prioritario=comm_data['es_prioritario'],
+                requiere_confirmacion=comm_data['tipo'] in ('citacion', 'urgente'),
+                **extra,
+            )
+            if lote['curso']:
+                comunicado.cursos_destinatarios.add(lote['curso'])
+            comunicados_creados += 1
+
     print(f"  ✓ {comunicados_creados} comunicados creados")
     print("✅ Comunicados creados\n")
 
@@ -1916,6 +1992,36 @@ def poblar_notificaciones():
         receptor=profesor,
         contenido='Profesor, ya subi mi tarea. Quedo atento a comentarios.',
     )
+
+    # Conversación demo para Pedro (1° Básico A)
+    estudiante_pedro = User.objects.filter(email='alumno1@colegio.cl').first()
+    curso_basico = Curso.objects.filter(nombre='1° Básico A', colegio=colegio).first()
+    if estudiante_pedro and curso_basico:
+        clase_basico = (
+            Clase.objects.filter(curso=curso_basico, activo=True, profesor__isnull=False)
+            .select_related('profesor', 'asignatura')
+            .first()
+        )
+        if clase_basico and clase_basico.profesor:
+            conv_basico, _ = Conversacion.objects.get_or_create(
+                clase=clase_basico,
+                participante1=clase_basico.profesor,
+                participante2=estudiante_pedro,
+            )
+            if not conv_basico.mensajes.exists():
+                Mensaje.objects.create(
+                    conversacion=conv_basico,
+                    emisor=clase_basico.profesor,
+                    receptor=estudiante_pedro,
+                    contenido='Hola Pedro, recuerda traer el cuaderno de Matemática mañana.',
+                )
+                Mensaje.objects.create(
+                    conversacion=conv_basico,
+                    emisor=estudiante_pedro,
+                    receptor=clase_basico.profesor,
+                    contenido='Gracias profesor, lo tendré listo.',
+                )
+            print(f"  ✓ Conversación demo 1° Básico A ID: {conv_basico.id_conversacion}")
 
     # ─── Crear Notificaciones reales en la BD ───────────────────────────────
     now = timezone.now()
@@ -3116,7 +3222,7 @@ def poblar_datos_pedro_gonzalez():
     # 1. ASISTENCIA ADICIONAL (últimos 30 días con mayor detalle)
     print("\n  📅 Generando asistencia adicional detallada...")
     asistencias_creadas = 0
-    for dias in range(30, 0, -1):
+    for dias in range(90, 0, -1):
         fecha = timezone.now().date() - timedelta(days=dias)
         if fecha.weekday() >= 5:  # Skip weekends
             continue
@@ -3135,19 +3241,17 @@ def poblar_datos_pedro_gonzalez():
                 observaciones = 'Control médico'
             
             # Evitar duplicados
-            if not Asistencia.objects.filter(
-                estudiante=pedro,
+            _, created = Asistencia.objects.update_or_create(
                 clase=clase,
-                fecha=fecha
-            ).exists():
-                Asistencia.objects.create(
-                    colegio=colegio,
-                    clase=clase,
-                    estudiante=pedro,
-                    fecha=fecha,
-                    estado=estado,
-                    observaciones=observaciones
-                )
+                estudiante=pedro,
+                fecha=fecha,
+                defaults={
+                    'colegio': colegio,
+                    'estado': estado,
+                    'observaciones': observaciones,
+                },
+            )
+            if created:
                 asistencias_creadas += 1
     
     print(f"    ✓ {asistencias_creadas} registros de asistencia adicionales")

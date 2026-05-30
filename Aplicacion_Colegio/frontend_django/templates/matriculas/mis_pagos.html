@@ -1,5 +1,8 @@
 {% load static %}
 
+{% if rol == 'apoderado' %}
+{% include 'apoderado/mis_pagos.html' %}
+{% else %}
 <link rel="stylesheet" href="{% static 'css/matriculas/mis_pagos.css' %}">
 
 <div class="content-wrapper">
@@ -8,19 +11,6 @@
       <h1>💵 Mis Pagos</h1>
       <p class="subtitle">Historial de pagos registrados</p>
     </div>
-
-    {% if rol == 'apoderado' and estudiantes %}
-      <form method="get" action="{% url 'matriculas:mis_pagos' %}" class="estudiante-selector">
-        <label for="estudiante_id">Estudiante</label>
-        <select id="estudiante_id" name="estudiante_id" onchange="this.form.submit()">
-          {% for e in estudiantes %}
-            <option value="{{ e.id }}" {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}selected{% endif %}>
-              {% if e.get_full_name %}{{ e.get_full_name }}{% else %}{{ e.email|default:"-" }}{% endif %}
-            </option>
-          {% endfor %}
-        </select>
-      </form>
-    {% endif %}
   </div>
 
   <div class="card section-spacing">
@@ -79,3 +69,4 @@
     </div>
   </div>
 </div>
+{% endif %}

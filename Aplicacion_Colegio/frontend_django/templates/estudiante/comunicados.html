@@ -1,10 +1,9 @@
+{% load static %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
 <link rel="stylesheet" href="{% static 'estudiante/css/comunicados.css' %}">
 
 <div class="content-wrapper">
-    <div class="page-header">
-        <h1>📢 Comunicados</h1>
-        <p class="subtitle">Información importante del colegio</p>
-    </div>
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Comunicados" hero_subtitle="Información oficial, circulares y avisos del colegio" hero_aria="Comunicados" metrics_aria="Resumen de comunicados" m1_value="5" m1_label="Sin leer" m1_mod="tareas" m2_value="12" m2_label="Leídos" m2_mod="clases" m3_value="2" m3_label="Urgentes" m3_mod="promedio" m4_value="19" m4_label="Total" m4_mod="asistencia" %}
 
     <div class="filtros-container">
         <select class="filtro-select">
@@ -64,3 +63,4 @@ function verComunicado(id) {
     alert('Ver comunicado ' + id);
 }
 </script>
+{% include 'estudiante/_alumno_wrap_end.html' %}

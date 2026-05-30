@@ -4,6 +4,7 @@ Main URL routing
 """
 
 from django.conf import settings
+from django.conf.urls.static import static
 
 from django.urls import path, include
 from django.views.generic import RedirectView
@@ -413,3 +414,6 @@ urlpatterns = [
 if settings.DEBUG and getattr(settings, 'DEBUG_TOOLBAR_ENABLED', False):
     import debug_toolbar
     urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

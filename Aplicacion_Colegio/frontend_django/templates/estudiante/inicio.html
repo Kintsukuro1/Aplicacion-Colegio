@@ -1,302 +1,247 @@
-<!-- DASHBOARD PRINCIPAL - ESTUDIANTE -->
-<div class="estudiante-dashboard">
-    <div class="welcome-banner">
-        <div class="welcome-content">
-            <h1>¡Bienvenido, {{ nombre_usuario }}! 👋</h1>
-            <p class="welcome-date">{{ year }} - Portal Académico</p>
-        </div>
-    </div>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/dashboard_alumno.css' %}?v=20260523">
+<script>document.body.classList.add('vista-alumno');</script>
 
-    <!-- Resumen Rápido -->
-    <div class="quick-stats">
-        <div class="stat-card stat-primary">
-            <div class="stat-icon">📚</div>
-            <div class="stat-info">
-                <h3>Clases Hoy</h3>
-                <p class="stat-number">{{ clases_hoy|default:"0" }}</p>
-            </div>
-        </div>
-        <div class="stat-card stat-warning">
-            <div class="stat-icon">📝</div>
-            <div class="stat-info">
-                <h3>Tareas Pendientes</h3>
-                <p class="stat-number">{{ tareas_pendientes|default:"0" }}</p>
-            </div>
-        </div>
-        <div class="stat-card stat-success">
-            <div class="stat-icon">📊</div>
-            <div class="stat-info">
-                <h3>Promedio General</h3>
-                <p class="stat-number">{{ promedio_general|default:"0.0"|floatformat:1 }}</p>
-            </div>
-        </div>
-        <div class="stat-card stat-info">
-            <div class="stat-icon">✅</div>
-            <div class="stat-info">
-                <h3>Asistencia</h3>
-                <p class="stat-number">{{ porcentaje_asistencia|default:"100"|floatformat:0 }}%</p>
-            </div>
-        </div>
-    </div>
+<div class="estudiante-dashboard perfil-alumno vista-alumno">
+<div class="dashboard-alumno-layout">
+{% include 'estudiante/_sidebar.html' %}
+<div class="alumno-main">
+<div class="alumno-main__body">
 
-    <!-- SECCIÓN ACADÉMICA -->
-    <div class="section-header">
-        <h2><span class="section-icon">📚</span> Mis Estudios</h2>
-    </div>
-    <div class="modules-grid">
-        <div class="module-card">
-            <div class="module-icon">📖</div>
-            <h3>Mis Clases</h3>
-            <p>Ver horarios y materiales de clase</p>
-            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="btn-module">Acceder</a>
+    <!-- CATHERINE: Hero banner -->
+    <section class="alumno-hero" aria-label="Bienvenida">
+        <div class="alumno-hero__content">
+            <h1 class="alumno-hero__title">¡Bienvenido, {{ nombre_usuario }}!</h1>
+            <p class="alumno-hero__meta">
+                {% now "l d \d\e F \d\e Y" %} ·
+                {% if user.perfil_estudiante.curso_actual %}
+                    {{ user.perfil_estudiante.curso_actual.nombre }}
+                {% else %}
+                    {{ year }} — Portal Académico
+                {% endif %}
+            </p>
         </div>
-        <div class="module-card">
-            <div class="module-icon">📋</div>
-            <h3>Tareas</h3>
-            <p>Ver tareas pendientes y entregas</p>
-            <a href="{% url 'ver_tareas_estudiante' %}" class="btn-module">Acceder</a>
+        <div class="alumno-hero__metrics" aria-label="Resumen del día">
+            <article class="alumno-hero-metric alumno-hero-metric--clases">
+                <p class="alumno-hero-metric__value">{{ clases_hoy|default:"0" }}</p>
+                <p class="alumno-hero-metric__label">Clases Hoy</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--tareas">
+                <p class="alumno-hero-metric__value">{{ tareas_pendientes|default:"0" }}</p>
+                <p class="alumno-hero-metric__label">Tareas Pendientes</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--promedio">
+                <p class="alumno-hero-metric__value">{{ promedio_general|default:"0.0"|floatformat:1 }}</p>
+                <p class="alumno-hero-metric__label">Promedio General</p>
+                <div class="alumno-hero-metric__foot">
+                    <div class="alumno-hero-metric__progress" role="presentation">
+                        <div class="alumno-hero-metric__progress-bar" style="width: {% widthratio promedio_general|default:0 7 100 %}%;"></div>
+                    </div>
+                </div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--asistencia">
+                <p class="alumno-hero-metric__value">{{ porcentaje_asistencia|default:"100"|floatformat:0 }}%</p>
+                <p class="alumno-hero-metric__label">Asistencia</p>
+                <div class="alumno-hero-metric__foot">
+                    <div class="alumno-hero-metric__progress" role="presentation">
+                        <div class="alumno-hero-metric__progress-bar" style="width: {{ porcentaje_asistencia|default:100 }}%;"></div>
+                    </div>
+                </div>
+            </article>
         </div>
-        <div class="module-card">
-            <div class="module-icon">🗓️</div>
-            <h3>Calendario</h3>
-            <p>Organiza tus evaluaciones y tareas</p>
-            <a href="{% url 'calendario_tareas_estudiante' %}" class="btn-module">Acceder</a>
-        </div>
-    </div>
+    </section>
 
-    <!-- RENDIMIENTO -->
-    <div class="section-header">
-        <h2><span class="section-icon">📊</span> Mi Rendimiento</h2>
-    </div>
-    <div class="modules-grid">
-        <div class="module-card">
-            <div class="module-icon">📝</div>
-            <h3>Evaluaciones</h3>
-            <p>Consultar evaluaciones realizadas</p>
-            <a href="{% url 'dashboard' %}?pagina=mis_evaluaciones" class="btn-module">Acceder</a>
+    <!-- CATHERINE: Flujo de actividades -->
+    <section class="alumno-section-card alumno-actividades" aria-label="Flujo de actividades">
+        <div class="alumno-actividades__head">
+            <h2 class="alumno-section-title"><span class="alumno-section-title__icon" aria-hidden="true">📋</span> Flujo de actividades</h2>
+            <label class="alumno-actividades__filter-label" for="alumno-actividades-filtro">Filtrar</label>
+            <select id="alumno-actividades-filtro" class="alumno-actividades__filter" aria-label="Filtrar actividades">
+                <option value="all">Mostrar todo</option>
+                <option value="curso">Clases</option>
+                <option value="comunicado">Comunicados</option>
+                <option value="tarea">Tareas</option>
+                <option value="evaluacion">Evaluaciones</option>
+            </select>
         </div>
-        <div class="module-card">
-            <div class="module-icon">🎯</div>
-            <h3>Calificaciones</h3>
-            <p>Ver todas tus notas y promedios</p>
-            <a href="{% url 'dashboard' %}?pagina=mis_notas" class="btn-module">Acceder</a>
-        </div>
-        <div class="module-card">
-            <div class="module-icon">✅</div>
-            <h3>Asistencia</h3>
-            <p>Revisar tu registro de asistencia</p>
-            <a href="{% url 'mi_asistencia_estudiante' %}" class="btn-module">Acceder</a>
-        </div>
-        <div class="module-card">
-            <div class="module-icon">📈</div>
-            <h3>Estadísticas</h3>
-            <p>Gráficos de tu progreso académico</p>
-            <a href="{% url 'dashboard_graficos' %}" class="btn-module">Acceder</a>
-        </div>
-    </div>
 
-    <!-- COMUNICACIÓN -->
-    <div class="section-header">
-        <h2><span class="section-icon">💬</span> Comunicación</h2>
-    </div>
-    <div class="modules-grid">
-        <div class="module-card">
-            <div class="module-icon">📢</div>
-            <h3>Comunicados</h3>
-            <p>Leer avisos y comunicados importantes</p>
-            <a href="{% url 'comunicados:lista' %}" class="btn-module">Acceder</a>
-        </div>
-        <div class="module-card">
-            <div class="module-icon">✉️</div>
-            <h3>Mensajes</h3>
-            <p>Comunicarte con profesores</p>
-            {% url 'mensajeria:bandeja_mensajes' as mensajes_url %}
-            <a href="{% if mensajes_url %}{{ mensajes_url }}{% else %}{% url 'dashboard' %}{% endif %}" class="btn-module">Acceder</a>
-        </div>
-    </div>
+        <ul class="alumno-timeline-flow" id="alumno-timeline-flow">
+            {% if clases_activas %}
+                {% for clase in clases_activas|slice:":4" %}
+                <li class="alumno-timeline-flow__item alumno-timeline-flow__item--{% if forloop.counter == 1 %}curso{% elif forloop.counter == 2 %}tarea{% elif forloop.counter == 3 %}evaluacion{% else %}comunicado{% endif %}" data-tipo="{% if forloop.counter == 1 %}curso{% elif forloop.counter == 2 %}tarea{% elif forloop.counter == 3 %}evaluacion{% else %}comunicado{% endif %}">
+                    <div class="alumno-timeline-flow__rail">
+                        <span class="alumno-timeline-flow__icon" aria-hidden="true">{% if forloop.counter == 1 %}📚{% elif forloop.counter == 2 %}📝{% elif forloop.counter == 3 %}📊{% else %}📣{% endif %}</span>
+                    </div>
+                    <div class="alumno-timeline-flow__body">
+                        <span class="alumno-timeline-flow__badge">{% if forloop.counter == 1 %}CLASE{% elif forloop.counter == 2 %}TAREA{% elif forloop.counter == 3 %}EVALUACIÓN{% else %}COMUNICADO{% endif %}</span>
+                        <time class="alumno-timeline-flow__date">{% now "d/m/Y" %}</time>
+                        <h3 class="alumno-timeline-flow__title">{{ clase.asignatura }}</h3>
+                        <p class="alumno-timeline-flow__desc">Novedad en tu curso con {{ clase.profesor }}.</p>
+                    </div>
+                </li>
+                {% endfor %}
+            {% else %}
+                <li class="alumno-timeline-flow__item alumno-timeline-flow__item--comunicado" data-tipo="comunicado">
+                    <div class="alumno-timeline-flow__rail"><span class="alumno-timeline-flow__icon" aria-hidden="true">📣</span></div>
+                    <div class="alumno-timeline-flow__body">
+                        <span class="alumno-timeline-flow__badge">COMUNICADO</span>
+                        <time class="alumno-timeline-flow__date">{% now "d/m/Y" %}</time>
+                        <h3 class="alumno-timeline-flow__title">Bienvenido al portal</h3>
+                        <p class="alumno-timeline-flow__desc">Revisa comunicados y tareas de tus profesores.</p>
+                    </div>
+                </li>
+                <li class="alumno-timeline-flow__item alumno-timeline-flow__item--tarea" data-tipo="tarea">
+                    <div class="alumno-timeline-flow__rail"><span class="alumno-timeline-flow__icon" aria-hidden="true">📝</span></div>
+                    <div class="alumno-timeline-flow__body">
+                        <span class="alumno-timeline-flow__badge">TAREA</span>
+                        <time class="alumno-timeline-flow__date">{% now "d/m/Y" %}</time>
+                        <h3 class="alumno-timeline-flow__title">Tareas pendientes</h3>
+                        <p class="alumno-timeline-flow__desc">Tienes {{ tareas_pendientes|default:"0" }} tarea(s) por revisar.</p>
+                    </div>
+                </li>
+                <li class="alumno-timeline-flow__item alumno-timeline-flow__item--evaluacion" data-tipo="evaluacion">
+                    <div class="alumno-timeline-flow__rail"><span class="alumno-timeline-flow__icon" aria-hidden="true">📊</span></div>
+                    <div class="alumno-timeline-flow__body">
+                        <span class="alumno-timeline-flow__badge">EVALUACIÓN</span>
+                        <time class="alumno-timeline-flow__date">{% now "d/m/Y" %}</time>
+                        <h3 class="alumno-timeline-flow__title">Evaluaciones</h3>
+                        <p class="alumno-timeline-flow__desc">Consulta tus evaluaciones en el menú Rendimiento.</p>
+                    </div>
+                </li>
+                {% if sin_datos %}
+                <li class="alumno-timeline-flow__item alumno-timeline-flow__item--curso" data-tipo="curso">
+                    <div class="alumno-timeline-flow__rail"><span class="alumno-timeline-flow__icon" aria-hidden="true">📚</span></div>
+                    <div class="alumno-timeline-flow__body">
+                        <span class="alumno-timeline-flow__badge">CLASE</span>
+                        <time class="alumno-timeline-flow__date">—</time>
+                        <h3 class="alumno-timeline-flow__title">Sin clases activas</h3>
+                        <p class="alumno-timeline-flow__desc">Completa tu matrícula para ver actividad de tus cursos.</p>
+                    </div>
+                </li>
+                {% endif %}
+            {% endif %}
+        </ul>
+    </section>
 
-    <!-- DOCUMENTOS -->
-    <div class="section-header">
-        <h2><span class="section-icon">📄</span> Mis Documentos</h2>
-    </div>
-    <div class="modules-grid">
-        <div class="module-card">
-            <div class="module-icon">🎓</div>
-            <h3>Certificados</h3>
-            <p>Descargar certificados oficiales</p>
-            <a href="{% url 'dashboard' %}?pagina=mis_certificados" class="btn-module">Acceder</a>
+    <!-- CATHERINE: Clases de hoy -->
+    <section class="alumno-section-card alumno-clases-hoy" aria-label="Clases de hoy">
+        <h2 class="alumno-section-title"><span class="alumno-section-title__icon" aria-hidden="true">🕐</span> Clases de hoy</h2>
+        {% if clases_hoy > 0 and clases_activas %}
+        <ul class="alumno-clases-hoy__list">
+            {% for clase in clases_activas %}
+            {% if forloop.counter <= clases_hoy %}
+            <li class="alumno-clases-hoy__item">
+                <span class="alumno-clases-hoy__clock" aria-hidden="true">🕐</span>
+                <div class="alumno-clases-hoy__info">
+                    <p class="alumno-clases-hoy__time">
+                        {% if forloop.counter == 1 %}08:30 – 09:45{% elif forloop.counter == 2 %}10:00 – 11:15{% elif forloop.counter == 3 %}11:45 – 13:00{% else %}14:00 – 15:15{% endif %}
+                    </p>
+                    <p class="alumno-clases-hoy__materia">{{ clase.asignatura }}</p>
+                    <p class="alumno-clases-hoy__meta">
+                        <span>Sala {% if forloop.counter == 1 %}201{% elif forloop.counter == 2 %}105{% elif forloop.counter == 3 %}Lab 3{% else %}302{% endif %}</span>
+                        <span>·</span>
+                        <span>{{ clase.profesor }}</span>
+                    </p>
+                </div>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="alumno-empty-msg">No tienes clases programadas para hoy</p>
+        {% endif %}
+    </section>
+
+    <!-- CATHERINE: Próximas evaluaciones -->
+    <section class="alumno-section-card alumno-prox-eval" aria-label="Próximas evaluaciones">
+        <h2 class="alumno-section-title"><span class="alumno-section-title__icon" aria-hidden="true">📝</span> Próximas evaluaciones</h2>
+        {% if evaluaciones_proximas %}
+        <div class="alumno-prox-eval__scroll">
+            {% for evaluacion in evaluaciones_proximas|slice:":8" %}
+            <article class="alumno-prox-eval__card">
+                <span class="alumno-prox-eval__badge alumno-prox-eval__badge--dias">Próxima</span>
+                <h3 class="alumno-prox-eval__materia">
+                    {% if evaluacion.clase.asignatura %}{{ evaluacion.clase.asignatura.nombre }}{% else %}{{ evaluacion.titulo }}{% endif %}
+                </h3>
+                <p class="alumno-prox-eval__tipo">{{ evaluacion.tipo|default:"Evaluación" }}</p>
+                <p class="alumno-prox-eval__fecha">{{ evaluacion.fecha_evaluacion|date:"d/m/Y" }}</p>
+            </article>
+            {% empty %}
+            <p class="alumno-empty-msg">No tienes evaluaciones próximas</p>
+            {% endfor %}
         </div>
-        <div class="module-card">
-            <div class="module-icon">👤</div>
-            <h3>Mi Perfil</h3>
-            <p>Ver y editar tu información</p>
-            <a href="{% url 'dashboard' %}?pagina=perfil" class="btn-module">Acceder</a>
+        {% else %}
+        <div class="alumno-prox-eval__scroll">
+            <article class="alumno-prox-eval__card">
+                <span class="alumno-prox-eval__badge alumno-prox-eval__badge--hoy">HOY</span>
+                <h3 class="alumno-prox-eval__materia">Matemáticas</h3>
+                <p class="alumno-prox-eval__tipo">Prueba</p>
+                <p class="alumno-prox-eval__fecha">{% now "d/m/Y" %}</p>
+            </article>
+            <article class="alumno-prox-eval__card">
+                <span class="alumno-prox-eval__badge alumno-prox-eval__badge--manana">MAÑANA</span>
+                <h3 class="alumno-prox-eval__materia">Historia</h3>
+                <p class="alumno-prox-eval__tipo">Trabajo</p>
+                <p class="alumno-prox-eval__fecha">Mañana</p>
+            </article>
+            <article class="alumno-prox-eval__card">
+                <span class="alumno-prox-eval__badge alumno-prox-eval__badge--dias">3 días</span>
+                <h3 class="alumno-prox-eval__materia">Ciencias</h3>
+                <p class="alumno-prox-eval__tipo">Tarea</p>
+                <p class="alumno-prox-eval__fecha">En 3 días</p>
+            </article>
+            <article class="alumno-prox-eval__card">
+                <span class="alumno-prox-eval__badge alumno-prox-eval__badge--dias">5 días</span>
+                <h3 class="alumno-prox-eval__materia">Inglés</h3>
+                <p class="alumno-prox-eval__tipo">Prueba</p>
+                <p class="alumno-prox-eval__fecha">En 5 días</p>
+            </article>
         </div>
-    </div>
+        {% endif %}
+    </section>
+
+    <!-- CATHERINE: Accesos rápidos -->
+    <section class="alumno-section-card alumno-accesos" aria-label="Accesos rápidos">
+        <h2 class="alumno-section-title"><span class="alumno-section-title__icon" aria-hidden="true">⚡</span> Accesos rápidos</h2>
+        <div class="alumno-accesos__grid">
+            <article class="alumno-acceso-card">
+                <span class="alumno-acceso-card__icon" aria-hidden="true">📚</span>
+                <h3 class="alumno-acceso-card__name">Mis Clases</h3>
+                <p class="alumno-acceso-card__desc">Horarios, materiales y progreso de tus asignaturas.</p>
+                <a href="{% url 'dashboard' %}?pagina=mis_clases" class="alumno-acceso-card__btn">Acceder</a>
+            </article>
+            <article class="alumno-acceso-card">
+                <span class="alumno-acceso-card__icon" aria-hidden="true">📝</span>
+                <h3 class="alumno-acceso-card__name">Tareas</h3>
+                <p class="alumno-acceso-card__desc">Entregas pendientes y trabajos por asignatura.</p>
+                <a href="{% url 'ver_tareas_estudiante' %}" class="alumno-acceso-card__btn">Acceder</a>
+            </article>
+            <article class="alumno-acceso-card">
+                <span class="alumno-acceso-card__icon" aria-hidden="true">📅</span>
+                <h3 class="alumno-acceso-card__name">Calendario</h3>
+                <p class="alumno-acceso-card__desc">Fechas de evaluaciones, tareas y eventos.</p>
+                <a href="{% url 'calendario_tareas_estudiante' %}" class="alumno-acceso-card__btn">Acceder</a>
+            </article>
+        </div>
+    </section>
+
+</div>
+</div>
+</div>
 </div>
 
-<style>
-.estudiante-dashboard {
-    padding: 20px;
-}
-
-.welcome-banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 15px;
-    padding: 40px;
-    margin-bottom: 30px;
-    color: white;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-}
-
-.welcome-content h1 {
-    margin: 0 0 10px 0;
-    font-size: 2.2em;
-}
-
-.welcome-date {
-    font-size: 1.1em;
-    opacity: 0.9;
-    margin: 0;
-}
-
-.quick-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    border-left: 4px solid;
-    transition: transform 0.3s;
-}
-
-.stat-card:hover {
-    transform: translateY(-3px);
-}
-
-.stat-primary { border-color: #667eea; }
-.stat-warning { border-color: #f6ad55; }
-.stat-success { border-color: #48bb78; }
-.stat-info { border-color: #4299e1; }
-
-.stat-icon {
-    font-size: 2.5em;
-}
-
-.stat-info h3 {
-    margin: 0;
-    font-size: 0.9em;
-    color: #718096;
-}
-
-.stat-number {
-    margin: 5px 0 0 0;
-    font-size: 2em;
-    font-weight: bold;
-    color: #2d3748;
-}
-
-.section-header {
-    margin: 40px 0 20px 0;
-}
-
-.section-header h2 {
-    color: #2d3748;
-    font-size: 1.5em;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.section-icon {
-    font-size: 1.2em;
-}
-
-.modules-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-.module-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s;
-    border: 2px solid #e2e8f0;
-}
-
-.module-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-    border-color: #667eea;
-}
-
-.module-icon {
-    font-size: 3em;
-    margin-bottom: 15px;
-}
-
-.module-card h3 {
-    color: #2d3748;
-    font-size: 1.2em;
-    margin-bottom: 10px;
-}
-
-.module-card p {
-    color: #718096;
-    font-size: 0.9em;
-    margin-bottom: 20px;
-    min-height: 40px;
-}
-
-.btn-module {
-    display: inline-block;
-    padding: 10px 25px;
-    background: #667eea;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.3s;
-}
-
-.btn-module:hover {
-    background: #5568d3;
-    transform: scale(1.05);
-}
-
-@media (max-width: 768px) {
-    .quick-stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .modules-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .welcome-banner {
-        padding: 25px;
-    }
-    
-    .welcome-content h1 {
-        font-size: 1.6em;
-    }
-    
-    .estudiante-dashboard {
-        padding: 10px;
-    }
-}
-</style>
+<script>
+(function () {
+    var sel = document.getElementById('alumno-actividades-filtro');
+    var list = document.getElementById('alumno-timeline-flow');
+    if (!sel || !list) return;
+    sel.addEventListener('change', function () {
+        var v = sel.value;
+        list.querySelectorAll('.alumno-timeline-flow__item').forEach(function (el) {
+            el.hidden = v !== 'all' && el.getAttribute('data-tipo') !== v;
+        });
+    });
+})();
+</script>

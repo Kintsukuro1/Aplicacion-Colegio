@@ -4,6 +4,15 @@
 {% block title %}Comunicados - Panel de Control{% endblock %}
 
 {% block content %}
+{% if rol == 'apoderado' %}
+<link rel="stylesheet" href="{% static 'css/apoderado/comunicados.css' %}?v=20260615">
+
+<div class="aco-page">
+    {% include 'apoderado/_apoderado_hero.html' with hero_title="Comunicados y Circulares" hero_subtitle="Información oficial y avisos importantes del colegio." hero_aria="Comunicados" metrics_aria="Resumen de comunicados" m1_value=comunicados|length m1_label="En bandeja" m1_mod="comunicados" m2_value=0 m2_label="Urgentes" m2_mod="firmas" m3_value=0 m3_label="Citaciones" m3_mod="pupilos" m4_value=0 m4_label="Prioritarios" m4_mod="cuotas" %}
+    {% include 'comunicados/lista_comunicados_apoderado.html' %}
+</div>
+
+{% else %}
 <link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados.css' %}">
 
 <div class="comunicados-container">
@@ -16,70 +25,7 @@
         {% endif %}
     </div>
 
-    <div class="filtros-container">
-        <form method="get" class="filtros-grupo">
-            <label for="tipo">Filtrar por tipo:</label>
-            <select name="tipo" id="tipo" class="filtro-select" onchange="this.form.submit()">
-                <option value="">Todos los tipos</option>
-                {% for value, label in tipos %}
-                <option value="{{ value }}" {% if tipo_filtro == value %}selected{% endif %}>
-                    {{ label }}
-                </option>
-                {% endfor %}
-            </select>
-        </form>
-    </div>
-
-    {% if comunicados %}
-    <div class="comunicados-grid">
-        {% for comunicado in comunicados %}
-        <div class="comunicado-card {% if comunicado.tipo == 'urgente' %}urgente{% elif comunicado.es_destacado %}destacado{% endif %}">
-            <div class="comunicado-header">
-                <div>
-                    <span class="comunicado-tipo tipo-{{ comunicado.tipo }}">
-                        {{ comunicado.get_tipo_display }}
-                    </span>
-                    <h2 class="comunicado-titulo">{{ comunicado.titulo }}</h2>
-                    <p class="comunicado-fecha">
-                        📅 {{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}
-                        {% if comunicado.fecha_evento %}
-                        | 🗓️ Fecha evento: {{ comunicado.fecha_evento|date:"d/m/Y H:i" }}
-                        {% endif %}
-                    </p>
-                </div>
-                <div class="badges">
-                    {% if comunicado.es_prioritario %}
-                    <span class="badge badge-prioritario">🚨 Prioritario</span>
-                    {% endif %}
-                    {% if comunicado.es_destacado %}
-                    <span class="badge badge-destacado">⭐ Destacado</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <p class="comunicado-contenido">
-                {{ comunicado.contenido|truncatewords:30 }}
-            </p>
-
-            <div class="comunicado-footer">
-                <a href="{% url 'comunicados:detalle' comunicado.id_comunicado %}" class="btn-ver">
-                    Ver detalle →
-                </a>
-                {% if user.role == 'admin_escolar' and comunicado.requiere_confirmacion %}
-                <a href="{% url 'comunicados:estadisticas' comunicado.id_comunicado %}" class="btn-estadisticas-link">
-                    📊 Ver estadísticas
-                </a>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-state-icon">📭</div>
-        <h3>No hay comunicados disponibles</h3>
-        <p>No se encontraron comunicados con los filtros seleccionados.</p>
-    </div>
-    {% endif %}
+    {% include 'comunicados/_lista_comunicados_contenido.html' %}
 </div>
+{% endif %}
 {% endblock %}

@@ -1,295 +1,553 @@
 {% load static %}
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Calendario" hero_subtitle="Eventos y fechas importantes de tus pupilos." hero_aria="Calendario" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
+<link rel="stylesheet" href="{% static 'css/apoderado/calendario_pupilo.css' %}?v=20260614">
 
-<div class="calendario-container">
-    <div class="page-header">
-        <div class="header-content">
-            <a href="{% url 'dashboard' %}" class="back-link">← Volver al Dashboard</a>
-            <h1 class="page-title">📆 Calendario del Pupilo</h1>
-            <p class="page-subtitle">Próximas evaluaciones y tareas de tu pupilo</p>
-        </div>
-    </div>
+<div class="acal-page">
+  <section class="apod-section-card acal-panel" aria-label="Calendario por pupilo">
 
-    <!-- Selector de pupilo -->
-    {% if estudiantes|length > 1 %}
-    <div class="student-selector">
-        <label for="selectEstudiante">Seleccionar pupilo:</label>
-        <select id="selectEstudiante" onchange="cambiarEstudiante(this.value)">
-            {% for est in estudiantes %}
-            <option value="{{ est.id }}" {% if estudiante_seleccionado and estudiante_seleccionado.id == est.id %}selected{% endif %}>
-                {{ est.nombre }} {{ est.apellido_paterno }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
+    {% if estudiantes %}
+    <nav class="acal-pupil-tabs" aria-label="Seleccionar pupilo">
+      {% for e in estudiantes %}
+        {% with nombre_tab=e.get_full_name|default:e.email|default:"Pupilo" %}
+        <a
+          href="{% url 'dashboard' %}?pagina=calendario_pupilo&amp;estudiante_id={{ e.id }}"
+          class="acal-pupil-tab{% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %} acal-pupil-tab--active{% endif %}"
+          {% if estudiante_seleccionado and e.id == estudiante_seleccionado.id %}aria-current="page"{% endif %}
+        >
+          <span class="acal-pupil-tab__avatar" aria-hidden="true">{{ nombre_tab|first|upper }}</span>
+          <span class="acal-pupil-tab__label">{{ nombre_tab }}</span>
+        </a>
+        {% endwith %}
+      {% endfor %}
+    </nav>
     {% endif %}
 
-    {% if estudiante_seleccionado %}
-    <div class="selected-student">
-        <span class="student-badge">👤 {{ estudiante_seleccionado.nombre }} {{ estudiante_seleccionado.apellido_paterno
-            }}</span>
-        <span class="event-count">{{ total_eventos }} eventos próximos</span>
-    </div>
-    {% endif %}
-
-    {% if eventos_calendario %}
-    <div class="events-timeline">
-        {% for evento in eventos_calendario %}
-        <div class="event-card event-{{ evento.tipo }}">
-            <div class="event-date-col">
-                <span class="event-day">{{ evento.fecha|date:"d" }}</span>
-                <span class="event-month">{{ evento.fecha|date:"M" }}</span>
-            </div>
-            <div class="event-divider" style="background-color: {{ evento.color }};"></div>
-            <div class="event-content">
-                <div class="event-header">
-                    <span class="event-icon">{{ evento.icono }}</span>
-                    <span class="event-tipo-badge" style="background: {{ evento.color }}20; color: {{ evento.color }};">
-                        {% if evento.tipo == 'evaluacion' %}Evaluación{% else %}Tarea{% endif %}
-                    </span>
-                </div>
-                <h4 class="event-title">{{ evento.titulo }}</h4>
-                <span class="event-asignatura">📚 {{ evento.asignatura }}</span>
-                <span class="event-fecha">📅 {{ evento.fecha|date:"l d \d\e F" }}</span>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+    {% if not estudiantes %}
+      <div class="acal-empty">
+        <span class="acal-empty__icon" aria-hidden="true">👥</span>
+        <h3 class="acal-empty__title">No hay estudiantes asociados</h3>
+        <p class="acal-empty__text">Cuando existan pupilos vinculados, podrás ver su calendario académico aquí.</p>
+      </div>
+    {% elif not estudiante_seleccionado %}
+      <div class="acal-empty">
+        <span class="acal-empty__icon" aria-hidden="true">🎓</span>
+        <h3 class="acal-empty__title">Selecciona un pupilo</h3>
+        <p class="acal-empty__text">Elige una pestaña superior para ver evaluaciones y tareas próximas.</p>
+      </div>
     {% else %}
-    <div class="empty-state">
-        <div class="empty-icon">📆</div>
-        <h3 class="empty-title">Sin eventos próximos</h3>
-        <p class="empty-text">
-            {% if not estudiante_seleccionado %}
-            No se encontraron pupilos vinculados a tu cuenta.
-            {% else %}
-            No hay evaluaciones ni tareas programadas en los próximos 30 días para {{ estudiante_seleccionado.nombre }}.
-            {% endif %}
-        </p>
-    </div>
+      {% with nombre_est=estudiante_seleccionado.get_full_name|default:estudiante_seleccionado.email|default:"Pupilo" %}
+
+      <p class="acal-period-hint">Próximos <strong>30 días</strong> · {{ nombre_est }}</p>
+
+      <div class="acal-kpi-grid" aria-label="Resumen de eventos">
+        <article class="acal-kpi-card">
+          <p class="acal-kpi-card__label">Total eventos</p>
+          <p class="acal-kpi-card__value" id="acalKpiTotal">{{ total_eventos|default:0 }}</p>
+          <p class="acal-kpi-card__hint">Evaluaciones y tareas</p>
+        </article>
+        <article class="acal-kpi-card">
+          <p class="acal-kpi-card__label">Evaluaciones</p>
+          <p class="acal-kpi-card__value acal-kpi-card__value--eval" id="acalKpiEval">0</p>
+          <p class="acal-kpi-card__hint">Próximas en el período</p>
+        </article>
+        <article class="acal-kpi-card">
+          <p class="acal-kpi-card__label">Tareas</p>
+          <p class="acal-kpi-card__value acal-kpi-card__value--task" id="acalKpiTask">0</p>
+          <p class="acal-kpi-card__hint">Entregas programadas</p>
+        </article>
+      </div>
+
+      {% if eventos_calendario %}
+      <section class="acal-refine" aria-label="Filtrar eventos">
+        <div class="acal-refine__head">
+          <h2 class="acal-refine__title">Filtrar eventos</h2>
+          <button type="button" class="acal-refine__clear" id="acalClearFilters" hidden>Limpiar</button>
+        </div>
+        <div class="acal-refine__grid">
+          <div class="acal-refine__field">
+            <label class="acal-refine__label" for="acalDateFilter">Fecha</label>
+            <input type="date" class="acal-refine__control acal-refine__control--date" id="acalDateFilter">
+          </div>
+          <div class="acal-refine__field">
+            <label class="acal-refine__label" for="acalTypeFilter">Tipo</label>
+            <select class="acal-refine__control" id="acalTypeFilter">
+              <option value="">Todos</option>
+              <option value="evaluacion">Evaluación</option>
+              <option value="tarea">Tarea</option>
+            </select>
+          </div>
+          <div class="acal-refine__field">
+            <label class="acal-refine__label" for="acalSearch">Asignatura</label>
+            <input type="search" class="acal-refine__control" id="acalSearch" placeholder="Ej: Matemática, Lenguaje..." autocomplete="off">
+          </div>
+        </div>
+        <p class="acal-refine__hint" id="acalFilterHint" hidden></p>
+      </section>
+
+      <div class="acal-layout">
+        <section class="acal-calendar-card" aria-label="Calendario mensual">
+          <div class="acal-toolbar">
+            <div class="acal-month-nav">
+              <button type="button" class="acal-nav-btn" id="acalPrevMonth" aria-label="Mes anterior">‹</button>
+              <h2 class="acal-month-title" id="acalMonthTitle">—</h2>
+              <button type="button" class="acal-nav-btn" id="acalNextMonth" aria-label="Mes siguiente">›</button>
+            </div>
+            <button type="button" class="acal-today-btn" id="acalTodayBtn">Hoy</button>
+          </div>
+          <div class="acal-legend" id="acalSubjectLegend" aria-label="Colores por asignatura"></div>
+          <div class="acal-grid" id="acalGrid">
+            <div class="acal-grid__head">Dom</div>
+            <div class="acal-grid__head">Lun</div>
+            <div class="acal-grid__head">Mar</div>
+            <div class="acal-grid__head">Mié</div>
+            <div class="acal-grid__head">Jue</div>
+            <div class="acal-grid__head">Vie</div>
+            <div class="acal-grid__head">Sáb</div>
+          </div>
+        </section>
+
+        <aside class="acal-aside" aria-label="Detalle de eventos">
+          <section class="acal-aside-card acal-next" id="acalNextCard" hidden>
+            <h3 class="acal-aside-card__title">Próximo evento</h3>
+            <div id="acalNextContent"></div>
+          </section>
+
+          <section class="acal-aside-card">
+            <div class="acal-aside-card__head">
+              <h3 class="acal-aside-card__title">Agenda</h3>
+              <span class="acal-aside-card__meta" id="acalListMeta">{{ total_eventos }} evento{{ total_eventos|pluralize:"s" }}</span>
+            </div>
+            <div class="acal-events" id="acalEventsList" role="list">
+              {% for evento in eventos_calendario %}
+              <article
+                class="acal-event-card"
+                role="listitem"
+                data-acal-date="{{ evento.fecha|date:'Y-m-d' }}"
+                data-acal-tipo="{{ evento.tipo }}"
+                data-acal-subject="{{ evento.asignatura|lower }}"
+              >
+                <div class="acal-event-card__date">
+                  <span class="acal-event-card__day">{{ evento.fecha|date:"d" }}</span>
+                  <span class="acal-event-card__month">{{ evento.fecha|date:"M/Y" }}</span>
+                </div>
+                <div class="acal-event-card__main">
+                  <div class="acal-event-card__head">
+                    <span class="acal-event-card__badge acal-event-card__badge--{% if evento.tipo == 'evaluacion' %}eval{% else %}task{% endif %}">
+                      {% if evento.tipo == 'evaluacion' %}Evaluación{% else %}Tarea{% endif %}
+                    </span>
+                  </div>
+                  <p class="acal-event-card__title">{{ evento.titulo }}</p>
+                  <p class="acal-event-card__meta">
+                    <span class="acal-event-card__subject">{{ evento.asignatura }}</span>
+                    <span class="acal-event-card__when">{{ evento.fecha|date:"l j \d\e F" }}</span>
+                  </p>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+            <p class="acal-events__empty" id="acalEventsEmpty" hidden>No hay eventos con estos filtros.</p>
+          </section>
+        </aside>
+      </div>
+
+      {% else %}
+      <div class="acal-empty acal-empty--inline">
+        <span class="acal-empty__icon" aria-hidden="true">📆</span>
+        <h3 class="acal-empty__title">Sin eventos próximos</h3>
+        <p class="acal-empty__text">No hay evaluaciones ni tareas programadas para {{ nombre_est }} en los próximos 30 días.</p>
+      </div>
+      {% endif %}
+
+      {% endwith %}
     {% endif %}
+  </section>
 </div>
 
-<style>
-    .calendario-container {
-        padding: 24px;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .page-header {
-        margin-bottom: 20px;
-    }
-
-    .header-content {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .back-link {
-        color: #6b7280;
-        text-decoration: none;
-        font-size: 0.9rem;
-    }
-
-    .back-link:hover {
-        color: #3b82f6;
-    }
-
-    .page-title {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    .page-subtitle {
-        color: #64748b;
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    .student-selector {
-        background: white;
-        padding: 14px 20px;
-        border-radius: 10px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .student-selector label {
-        font-weight: 600;
-        color: #374151;
-        white-space: nowrap;
-    }
-
-    .student-selector select {
-        padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        flex: 1;
-    }
-
-    .selected-student {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .student-badge {
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 1rem;
-    }
-
-    .event-count {
-        background: #eff6ff;
-        color: #1d4ed8;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-
-    .events-timeline {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .event-card {
-        background: white;
-        border-radius: 12px;
-        padding: 0;
-        display: flex;
-        align-items: stretch;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        transition: transform 0.15s, box-shadow 0.15s;
-    }
-
-    .event-card:hover {
-        transform: translateX(4px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .event-date-col {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 16px 14px;
-        min-width: 60px;
-        background: #f8fafc;
-    }
-
-    .event-day {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1e293b;
-        line-height: 1;
-    }
-
-    .event-month {
-        font-size: 0.75rem;
-        color: #64748b;
-        text-transform: uppercase;
-    }
-
-    .event-divider {
-        width: 4px;
-        flex-shrink: 0;
-    }
-
-    .event-content {
-        padding: 14px 18px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .event-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .event-icon {
-        font-size: 1.1rem;
-    }
-
-    .event-tipo-badge {
-        font-size: 0.7rem;
-        padding: 2px 8px;
-        border-radius: 10px;
-        font-weight: 600;
-    }
-
-    .event-title {
-        margin: 0;
-        font-size: 1rem;
-        color: #1e293b;
-        font-weight: 600;
-    }
-
-    .event-asignatura {
-        font-size: 0.8rem;
-        color: #64748b;
-    }
-
-    .event-fecha {
-        font-size: 0.75rem;
-        color: #9ca3af;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .empty-icon {
-        font-size: 3rem;
-        margin-bottom: 12px;
-    }
-
-    .empty-title {
-        font-size: 1.1rem;
-        color: #374151;
-        margin: 0 0 6px;
-    }
-
-    .empty-text {
-        color: #6b7280;
-        margin: 0;
-        font-size: 0.9rem;
-    }
-
-    @media (max-width: 640px) {
-        .calendario-container {
-            padding: 12px;
-        }
-
-        .event-date-col {
-            min-width: 50px;
-            padding: 12px 10px;
-        }
-    }
-</style>
-
+{% if eventos_calendario %}
 <script>
-    function cambiarEstudiante(estudianteId) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('pagina', 'calendario_pupilo');
-        url.searchParams.set('estudiante_id', estudianteId);
-        window.location.href = url.toString();
+(function () {
+  function debounce(fn, wait) {
+    var timer;
+    return function () {
+      var ctx = this;
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait);
+    };
+  }
+
+  var SUBJECT_COLORS = {
+    matem: '#3B82F6', lengua: '#EF4444', comunic: '#EF4444', castellano: '#EF4444',
+    cienc: '#10B981', natur: '#10B981', histor: '#8B5CF6', geograf: '#8B5CF6',
+    ingl: '#F59E0B', educ: '#06B6D4', física: '#06B6D4', edfis: '#06B6D4',
+    arte: '#EC4899', visual: '#EC4899', músic: '#F97316', music: '#F97316',
+    tecno: '#6B7280', comput: '#6B7280'
+  };
+
+  function resolveAccent(key) {
+    var s = (key || '').toLowerCase();
+    var k;
+    for (k in SUBJECT_COLORS) {
+      if (s.indexOf(k) !== -1) return SUBJECT_COLORS[k];
     }
+    return '#94A3B8';
+  }
+
+  var monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  var grid = document.getElementById('acalGrid');
+  var monthTitle = document.getElementById('acalMonthTitle');
+  var dateFilter = document.getElementById('acalDateFilter');
+  var typeFilter = document.getElementById('acalTypeFilter');
+  var searchEl = document.getElementById('acalSearch');
+  var clearBtn = document.getElementById('acalClearFilters');
+  var filterHint = document.getElementById('acalFilterHint');
+  var listMeta = document.getElementById('acalListMeta');
+  var eventsEmpty = document.getElementById('acalEventsEmpty');
+  var cards = document.querySelectorAll('.acal-event-card');
+  var kpiEval = document.getElementById('acalKpiEval');
+  var kpiTask = document.getElementById('acalKpiTask');
+  var kpiTotal = document.getElementById('acalKpiTotal');
+  var nextCard = document.getElementById('acalNextCard');
+  var nextContent = document.getElementById('acalNextContent');
+
+  var currentYear, currentMonth, selectedDate = '';
+
+  var events = Array.prototype.map.call(cards, function (card) {
+    var titleEl = card.querySelector('.acal-event-card__title');
+    var subjectEl = card.querySelector('.acal-event-card__subject');
+    var whenEl = card.querySelector('.acal-event-card__when');
+    return {
+      tipo: card.getAttribute('data-acal-tipo') || '',
+      fecha: card.getAttribute('data-acal-date') || '',
+      asignatura: subjectEl ? subjectEl.textContent.trim() : (card.getAttribute('data-acal-subject') || ''),
+      titulo: titleEl ? titleEl.textContent.trim() : '',
+      fecha_label: whenEl ? whenEl.textContent.trim() : ''
+    };
+  }).filter(function (ev) { return ev.fecha; });
+
+  function pad(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function dateKey(y, m, d) {
+    return y + '-' + pad(m + 1) + '-' + pad(d);
+  }
+
+  function parseDateKey(key) {
+    var p = (key || '').split('-');
+    if (p.length !== 3) return null;
+    return { y: parseInt(p[0], 10), m: parseInt(p[1], 10) - 1 };
+  }
+
+  function initMonth() {
+    var now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
+    if (!events.length) return;
+    var earliest = events.map(function (e) { return e.fecha; }).sort()[0];
+    var inCurrentMonth = events.some(function (e) {
+      var p = parseDateKey(e.fecha);
+      return p && p.y === currentYear && p.m === currentMonth;
+    });
+    if (!inCurrentMonth) {
+      var jump = parseDateKey(earliest);
+      if (jump) {
+        currentYear = jump.y;
+        currentMonth = jump.m;
+      }
+    }
+  }
+
+  function getCalendarEvents() {
+    var tipo = typeFilter ? typeFilter.value : '';
+    var q = (searchEl && searchEl.value || '').trim().toLowerCase();
+    return events.filter(function (ev) {
+      if (tipo && ev.tipo !== tipo) return false;
+      if (q && (ev.asignatura || '').toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+  }
+
+  function eventsByDate() {
+    var map = {};
+    getCalendarEvents().forEach(function (ev) {
+      if (!map[ev.fecha]) map[ev.fecha] = { total: 0, accents: [] };
+      map[ev.fecha].total += 1;
+      var accent = resolveAccent(ev.asignatura);
+      if (map[ev.fecha].accents.indexOf(accent) === -1 && map[ev.fecha].accents.length < 5) {
+        map[ev.fecha].accents.push(accent);
+      }
+    });
+    return map;
+  }
+
+  function applySubjectColors() {
+    document.querySelectorAll('.acal-event-card[data-acal-subject]').forEach(function (card) {
+      var accent = resolveAccent(card.getAttribute('data-acal-subject'));
+      card.style.setProperty('--acal-accent', accent);
+    });
+  }
+
+  function renderSubjectLegend() {
+    var legend = document.getElementById('acalSubjectLegend');
+    if (!legend) return;
+    var subjects = {};
+    getCalendarEvents().forEach(function (ev) {
+      var name = (ev.asignatura || '').trim();
+      if (!name) return;
+      var key = name.toLowerCase();
+      if (!subjects[key]) subjects[key] = { label: name, accent: resolveAccent(key) };
+    });
+    var keys = Object.keys(subjects).sort(function (a, b) {
+      return subjects[a].label.localeCompare(subjects[b].label, 'es');
+    });
+    legend.innerHTML = '';
+    if (!keys.length) {
+      legend.setAttribute('aria-hidden', 'true');
+      return;
+    }
+    legend.removeAttribute('aria-hidden');
+    keys.forEach(function (key) {
+      var item = document.createElement('span');
+      item.className = 'acal-legend__item';
+      var dot = document.createElement('span');
+      dot.className = 'acal-legend__dot';
+      dot.style.background = subjects[key].accent;
+      item.appendChild(dot);
+      item.appendChild(document.createTextNode(' ' + subjects[key].label));
+      legend.appendChild(item);
+    });
+  }
+
+  function getFilteredEvents() {
+    var day = dateFilter ? dateFilter.value : '';
+    var tipo = typeFilter ? typeFilter.value : '';
+    var q = (searchEl && searchEl.value || '').trim().toLowerCase();
+    return events.filter(function (ev) {
+      if (day && ev.fecha !== day) return false;
+      if (tipo && ev.tipo !== tipo) return false;
+      if (q && (ev.asignatura || '').toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+  }
+
+  function updateKpis() {
+    var filtered = getFilteredEvents();
+    var evalN = filtered.filter(function (e) { return e.tipo === 'evaluacion'; }).length;
+    var taskN = filtered.filter(function (e) { return e.tipo === 'tarea'; }).length;
+    if (kpiEval) kpiEval.textContent = String(evalN);
+    if (kpiTask) kpiTask.textContent = String(taskN);
+    if (kpiTotal) kpiTotal.textContent = String(filtered.length);
+  }
+
+  function renderNext() {
+    if (!nextCard || !nextContent) return;
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var upcoming = getFilteredEvents().filter(function (ev) {
+      return new Date(ev.fecha + 'T12:00:00') >= today;
+    }).sort(function (a, b) {
+      return new Date(a.fecha) - new Date(b.fecha);
+    });
+    if (!upcoming.length) {
+      nextCard.hidden = true;
+      return;
+    }
+    var ev = upcoming[0];
+    var badgeClass = ev.tipo === 'evaluacion' ? 'acal-next__badge--eval' : 'acal-next__badge--task';
+    var badgeLabel = ev.tipo === 'evaluacion' ? 'Evaluación' : 'Tarea';
+    var accent = resolveAccent(ev.asignatura);
+    nextCard.hidden = false;
+    nextContent.innerHTML =
+      '<div class="acal-next__body" style="--acal-accent:' + accent + '">' +
+      '<p class="acal-next__title">' + escapeHtml(ev.titulo) + '</p>' +
+      '<p class="acal-next__meta"><span class="acal-next__subject">' + escapeHtml(ev.asignatura) + '</span> · ' +
+      escapeHtml(ev.fecha_label || ev.fecha) + '</p>' +
+      '<span class="acal-next__badge ' + badgeClass + '">' + badgeLabel + '</span></div>';
+  }
+
+  function escapeHtml(text) {
+    var d = document.createElement('div');
+    d.textContent = text || '';
+    return d.innerHTML;
+  }
+
+  function applyListFilters() {
+    var day = dateFilter ? dateFilter.value : '';
+    var tipo = typeFilter ? typeFilter.value : '';
+    var q = (searchEl && searchEl.value || '').trim().toLowerCase();
+    var visible = 0;
+    cards.forEach(function (card) {
+      var matchDate = !day || card.getAttribute('data-acal-date') === day;
+      var matchTipo = !tipo || card.getAttribute('data-acal-tipo') === tipo;
+      var matchSearch = !q || (card.getAttribute('data-acal-subject') || '').indexOf(q) !== -1;
+      var show = matchDate && matchTipo && matchSearch;
+      card.hidden = !show;
+      if (show) visible++;
+    });
+    if (clearBtn) clearBtn.hidden = !(day || tipo || q);
+    if (filterHint) {
+      if (day || tipo || q) {
+        filterHint.hidden = false;
+        filterHint.textContent = visible
+          ? visible + ' evento(s) coinciden con el filtro.'
+          : 'Ningún evento coincide. Prueba otros criterios.';
+      } else {
+        filterHint.hidden = true;
+      }
+    }
+    if (listMeta) {
+      listMeta.textContent = visible + ' evento' + (visible === 1 ? '' : 's');
+    }
+    if (eventsEmpty) eventsEmpty.hidden = visible > 0;
+    updateKpis();
+    renderNext();
+    renderSubjectLegend();
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    if (!grid) return;
+    grid.querySelectorAll('.acal-day').forEach(function (el) { el.remove(); });
+
+    monthTitle.textContent = monthNames[currentMonth] + ' ' + currentYear;
+
+    var byDate = eventsByDate();
+    var first = new Date(currentYear, currentMonth, 1);
+    var last = new Date(currentYear, currentMonth + 1, 0);
+    var startPad = first.getDay();
+    var today = new Date();
+    var todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+    for (var i = 0; i < startPad; i++) {
+      var empty = document.createElement('button');
+      empty.type = 'button';
+      empty.className = 'acal-day';
+      empty.disabled = true;
+      empty.setAttribute('aria-hidden', 'true');
+      grid.appendChild(empty);
+    }
+
+    for (var d = 1; d <= last.getDate(); d++) {
+      var key = dateKey(currentYear, currentMonth, d);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'acal-day';
+
+      if (key === todayKey) btn.classList.add('acal-day--today');
+      if (key === selectedDate) btn.classList.add('acal-day--selected');
+
+      btn.setAttribute('aria-label', d + ' de ' + monthNames[currentMonth]);
+
+      var num = document.createElement('span');
+      num.className = 'acal-day__num';
+      num.textContent = String(d);
+      btn.appendChild(num);
+
+      var info = byDate[key];
+      if (info) {
+        btn.classList.add('acal-day--has-events');
+        if (info.accents[0]) btn.style.setProperty('--acal-accent', info.accents[0]);
+        btn.setAttribute('aria-label', d + ' de ' + monthNames[currentMonth] + ', ' + info.total + ' evento(s)');
+
+        var count = document.createElement('span');
+        count.className = 'acal-day__count';
+        count.textContent = String(info.total);
+        count.title = info.total + ' evento(s)';
+        btn.appendChild(count);
+
+        var dots = document.createElement('span');
+        dots.className = 'acal-day__dots';
+        dots.setAttribute('aria-hidden', 'true');
+        info.accents.forEach(function (accent) {
+          var dot = document.createElement('span');
+          dot.className = 'acal-day__dot';
+          dot.style.background = accent;
+          dots.appendChild(dot);
+        });
+        btn.appendChild(dots);
+      }
+
+      (function (dateStr) {
+        btn.addEventListener('click', function () {
+          if (dateFilter) {
+            if (selectedDate === dateStr) {
+              selectedDate = '';
+              dateFilter.value = '';
+            } else {
+              selectedDate = dateStr;
+              dateFilter.value = dateStr;
+            }
+          }
+          applyListFilters();
+        });
+      })(key);
+
+      grid.appendChild(btn);
+    }
+  }
+
+  if (dateFilter) {
+    var minD = '', maxD = '';
+    events.forEach(function (ev) {
+      if (!minD || ev.fecha < minD) minD = ev.fecha;
+      if (!maxD || ev.fecha > maxD) maxD = ev.fecha;
+    });
+    if (minD) {
+      dateFilter.min = minD;
+      dateFilter.max = maxD;
+    }
+    dateFilter.addEventListener('change', function () {
+      selectedDate = dateFilter.value || '';
+      applyListFilters();
+    });
+    dateFilter.addEventListener('input', applyListFilters);
+  }
+
+  if (typeFilter) typeFilter.addEventListener('change', applyListFilters);
+  if (searchEl) searchEl.addEventListener('input', debounce(applyListFilters, 180));
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () {
+      selectedDate = '';
+      if (dateFilter) dateFilter.value = '';
+      if (typeFilter) typeFilter.value = '';
+      if (searchEl) searchEl.value = '';
+      applyListFilters();
+    });
+  }
+
+  document.getElementById('acalPrevMonth').addEventListener('click', function () {
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar();
+  });
+
+  document.getElementById('acalNextMonth').addEventListener('click', function () {
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar();
+  });
+
+  document.getElementById('acalTodayBtn').addEventListener('click', function () {
+    var now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
+    selectedDate = dateKey(now.getFullYear(), now.getMonth(), now.getDate());
+    if (dateFilter) dateFilter.value = selectedDate;
+    renderCalendar();
+    applyListFilters();
+  });
+
+  applySubjectColors();
+  renderSubjectLegend();
+  initMonth();
+  updateKpis();
+  renderNext();
+  renderCalendar();
+})();
 </script>
+{% endif %}
+
+{% include 'apoderado/_apoderado_wrap_end.html' %}

@@ -94,7 +94,7 @@ def get_paginas_por_rol(rol):
             'mis_tareas': 'estudiante/mis_tareas.html',
             'mis_anotaciones': 'estudiante/mis_anotaciones.html',
             'mis_certificados': 'estudiante/mis_certificados.html',
-            'perfil': 'compartido/perfil.html',
+            'perfil': 'estudiante/mi_perfil.html',
             'notificaciones': 'compartido/notificaciones.html',
         },
         'apoderado': {

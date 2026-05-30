@@ -1,97 +1,280 @@
 {% load static %}
+{% include 'apoderado/_apoderado_wrap_start.html' %}
 
-<link rel="stylesheet" href="{% static 'css/apoderado/inicio.css' %}">
-
-<div class="content-wrapper">
-  <div class="mb-4">
-    <h2 class="mb-1">🏠 Inicio Apoderado</h2>
-    <div class="text-muted">Bienvenido/a, {{ nombre_usuario }}.</div>
-  </div>
-
-  <div class="row g-3 mb-4">
-    <div class="col-12 col-md-3">
-      <div class="card h-100"><div class="card-body">
-        <div class="text-muted">Mis pupilos</div>
-        <div class="fs-3 fw-bold">{{ total_pupilos|default:0 }}</div>
-      </div></div>
-    </div>
-    <div class="col-12 col-md-3">
-      <div class="card h-100"><div class="card-body">
-        <div class="text-muted">Comunicados nuevos</div>
-        <div class="fs-3 fw-bold">{{ comunicados_nuevos|default:0 }}</div>
-      </div></div>
-    </div>
-    <div class="col-12 col-md-3">
-      <div class="card h-100"><div class="card-body">
-        <div class="text-muted">Pendientes de firma</div>
-        <div class="fs-3 fw-bold">{{ pendientes_firma|default:0 }}</div>
-      </div></div>
-    </div>
-    <div class="col-12 col-md-3">
-      <div class="card h-100"><div class="card-body">
-        <div class="text-muted">Cuotas pendientes</div>
-        <div class="fs-3 fw-bold">{{ cuotas_pendientes|default:0 }}</div>
-      </div></div>
-    </div>
-  </div>
-
-  <div class="row g-3">
-    <div class="col-12 col-lg-7">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <strong>👨‍👩‍👧‍👦 Mis Pupilos</strong>
-          <a class="btn btn-sm btn-outline-primary" href="{% url 'dashboard' %}?pagina=mis_pupilos">Ver todos</a>
+    <section class="apod-hero" aria-label="Bienvenida apoderado">
+        <div class="apod-hero__content">
+            <h1 class="apod-hero__title">¡Bienvenido/a, {{ nombre_usuario }}!</h1>
+            <p class="apod-hero__meta">
+                {% now "l d \d\e F \d\e Y" %} · {{ year|default:"" }} Portal Apoderado
+            </p>
         </div>
-        <div class="card-body">
-          {% if estudiantes %}
-            <div class="table-responsive">
-              <table class="table table-striped mb-0">
+        <div class="apod-hero__metrics" aria-label="Resumen familiar">
+            <article class="apod-hero-metric apod-hero-metric--pupilos">
+                <p class="apod-hero-metric__value">
+                    {% if estudiantes %}
+                        {{ estudiantes|length }}
+                    {% elif total_pupilos is not None %}
+                        {{ total_pupilos }}
+                    {% else %}
+                        {{ apod_resumen_pupilos|default:"0" }}
+                    {% endif %}
+                </p>
+                <p class="apod-hero-metric__label">Mis pupilos</p>
+                <div class="apod-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="apod-hero-metric apod-hero-metric--comunicados">
+                <p class="apod-hero-metric__value" id="apodMetricComunicados">{{ apod_resumen_comunicados|default:comunicados_nuevos|default:"0" }}</p>
+                <p class="apod-hero-metric__label">Comunicados nuevos</p>
+                <div class="apod-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="apod-hero-metric apod-hero-metric--firmas">
+                <p class="apod-hero-metric__value" id="apodMetricFirmas">{{ apod_resumen_firmas|default:pendientes_firma|default:"0" }}</p>
+                <p class="apod-hero-metric__label">Pendientes de firma</p>
+                <div class="apod-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="apod-hero-metric apod-hero-metric--cuotas">
+                <p class="apod-hero-metric__value" id="apodMetricCuotas">{{ apod_resumen_cuotas|default:cuotas_pendientes|default:"0" }}</p>
+                <p class="apod-hero-metric__label">Cuotas pendientes</p>
+                <div class="apod-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="apod-section-card apod-priority" aria-label="Prioridades del día">
+        <div class="apod-section-card__head">
+            <h2 class="apod-section-title">
+                <span class="apod-section-title__icon" aria-hidden="true">🎯</span>
+                Prioridades del día
+            </h2>
+            <span class="apod-priority__tag">Panel ejecutivo</span>
+        </div>
+        <div class="apod-priority__grid">
+            <article class="apod-priority-item" id="apodPriorityComunicados">
+                <p class="apod-priority-item__title">Comunicados pendientes</p>
+                <p class="apod-priority-item__desc">Revisa avisos recientes del colegio.</p>
+                <a href="{% url 'comunicados:lista' %}" class="apod-priority-item__link">Ir a comunicados</a>
+            </article>
+            <article class="apod-priority-item" id="apodPriorityFirmas">
+                <p class="apod-priority-item__title">Firmas digitales</p>
+                <p class="apod-priority-item__desc">Confirma documentos pendientes de tus pupilos.</p>
+                <a href="{% url 'dashboard' %}?pagina=firmas_pendientes" class="apod-priority-item__link">Ver firmas</a>
+            </article>
+            <article class="apod-priority-item" id="apodPriorityPagos">
+                <p class="apod-priority-item__title">Seguimiento financiero</p>
+                <p class="apod-priority-item__desc">Consulta cuotas pendientes y estado de pagos.</p>
+                <a href="{% url 'matriculas:mi_estado_cuenta' %}" class="apod-priority-item__link">Revisar estado</a>
+            </article>
+        </div>
+    </section>
+
+    <section class="apod-section-card" aria-label="Mis pupilos">
+        <div class="apod-section-card__head">
+            <h2 class="apod-section-title">
+                <span class="apod-section-title__icon" aria-hidden="true">👨‍👩‍👧‍👦</span>
+                Mis pupilos
+            </h2>
+            {% if 'mis_pupilos' in paginas_habilitadas %}
+            <a href="{% url 'dashboard' %}?pagina=mis_pupilos" class="apod-acceso-card__btn">Ver todos</a>
+            {% endif %}
+        </div>
+        {% if estudiantes %}
+        <div class="apod-table-wrap">
+            <table class="apod-table">
                 <thead>
-                  <tr>
-                    <th>Estudiante</th>
-                    <th>Curso</th>
-                    <th class="text-end">Acciones</th>
-                  </tr>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Curso</th>
+                        <th class="apod-table__actions">Acciones</th>
+                    </tr>
                 </thead>
                 <tbody>
-                  {% for e in estudiantes %}
-                  <tr>
-                    <td>{% if e.get_full_name %}{{ e.get_full_name }}{% else %}{{ e.email|default:"-" }}{% endif %}</td>
-                    <td>{% if e.perfil_estudiante and e.perfil_estudiante.curso_actual %}{{ e.perfil_estudiante.curso_actual.nombre }}{% else %}-{% endif %}</td>
-                    <td class="text-end">
-                      <a class="btn btn-sm btn-outline-secondary" href="{% url 'dashboard' %}?pagina=notas&estudiante_id={{ e.id }}">Notas</a>
-                      <a class="btn btn-sm btn-outline-secondary" href="{% url 'dashboard' %}?pagina=asistencia&estudiante_id={{ e.id }}">Asistencia</a>
-                    </td>
-                  </tr>
-                  {% endfor %}
+                    {% for e in estudiantes %}
+                    <tr>
+                        <td>
+                            {% if e.get_full_name %}
+                                {{ e.get_full_name }}
+                            {% elif e.nombre %}
+                                {{ e.nombre }} {{ e.apellido_paterno|default:"" }} {{ e.apellido_materno|default:"" }}
+                            {% elif e.user and e.user.get_full_name %}
+                                {{ e.user.get_full_name }}
+                            {% else %}
+                                {{ e.email|default:e.user.email|default:"-" }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if e.perfil_estudiante and e.perfil_estudiante.curso_actual %}
+                                <span class="apod-chip apod-chip--course">{{ e.perfil_estudiante.curso_actual.nombre }}</span>
+                            {% else %}
+                                <span class="apod-chip apod-chip--muted">Sin curso</span>
+                            {% endif %}
+                        </td>
+                        <td class="apod-table__actions">
+                            <a href="{% url 'dashboard' %}?pagina=notas&estudiante_id={{ e.id }}">Notas</a>
+                            <a href="{% url 'dashboard' %}?pagina=asistencia&estudiante_id={{ e.id }}">Asistencia</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="text-muted">No hay estudiantes asociados a este apoderado.</div>
-          {% endif %}
+            </table>
         </div>
-      </div>
-    </div>
+        {% else %}
+        <p class="apod-empty-msg">No hay estudiantes asociados a este apoderado.</p>
+        {% endif %}
+    </section>
 
-    <div class="col-12 col-lg-5">
-      <div class="card mb-3">
-        <div class="card-header"><strong>⚡ Accesos rápidos</strong></div>
-        <div class="card-body d-grid gap-2">
-          <a class="btn btn-outline-primary" href="{% url 'dashboard' %}?pagina=notas">📊 Notas y calificaciones</a>
-          <a class="btn btn-outline-primary" href="{% url 'dashboard' %}?pagina=asistencia">📅 Asistencia</a>
-          <a class="btn btn-outline-primary" href="{% url 'comunicados:lista' %}">📢 Comunicados</a>
-          <a class="btn btn-outline-primary" href="{% url 'mensajeria:bandeja_mensajes' %}">💬 Mensajes</a>
+    <section class="apod-section-card apod-accesos" aria-label="Monitoreo familiar">
+        <h2 class="apod-section-title">
+            <span class="apod-section-title__icon" aria-hidden="true">📌</span>
+            Monitoreo familiar
+        </h2>
+        <div class="apod-accesos__grid">
+            <article class="apod-acceso-card">
+                <span class="apod-acceso-card__icon" aria-hidden="true">🗓️</span>
+                <h3 class="apod-acceso-card__name">Próxima revisión sugerida</h3>
+                <p class="apod-acceso-card__desc">
+                    {% now "l d \d\e F" %}. Revisa primero pendientes de firma y comunicados institucionales.
+                </p>
+                <a href="{% url 'dashboard' %}?pagina=firmas_pendientes" class="apod-acceso-card__btn">Revisar ahora</a>
+            </article>
+            <article class="apod-acceso-card">
+                <span class="apod-acceso-card__icon" aria-hidden="true">👨‍👩‍👧‍👦</span>
+                <h3 class="apod-acceso-card__name">Pupilos bajo seguimiento</h3>
+                <p class="apod-acceso-card__desc">
+                    Actualmente gestionas {{ estudiantes|length|default:"0" }} pupilo(s) en el portal académico.
+                </p>
+                <a href="{% url 'dashboard' %}?pagina=mis_pupilos" class="apod-acceso-card__btn">Ver detalle</a>
+            </article>
+            <article class="apod-acceso-card">
+                <span class="apod-acceso-card__icon" aria-hidden="true">💬</span>
+                <h3 class="apod-acceso-card__name">Coordinación institucional</h3>
+                <p class="apod-acceso-card__desc">
+                    Prioriza mensajes con docentes y mantén registro de acuerdos relevantes del periodo.
+                </p>
+                <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="apod-acceso-card__btn">Ir a mensajería</a>
+            </article>
+            <article class="apod-acceso-card">
+                <span class="apod-acceso-card__icon" aria-hidden="true">📊</span>
+                <h3 class="apod-acceso-card__name">Rendimiento académico</h3>
+                <p class="apod-acceso-card__desc">
+                    Consolida notas y asistencia por pupilo para anticipar apoyos durante el mes.
+                </p>
+                <a href="{% url 'dashboard' %}?pagina=notas" class="apod-acceso-card__btn">Analizar</a>
+            </article>
         </div>
-      </div>
+    </section>
 
-      <div class="card">
-        <div class="card-header"><strong>💰 Pagos</strong></div>
-        <div class="card-body d-grid gap-2">
-          <a class="btn btn-outline-success" href="{% url 'matriculas:mi_estado_cuenta' %}">💳 Estado de cuenta</a>
-          <a class="btn btn-outline-success" href="{% url 'matriculas:mis_pagos' %}">💵 Mis pagos</a>
+    <section class="apod-section-card" aria-label="Gestión financiera">
+        <h2 class="apod-section-title">
+            <span class="apod-section-title__icon" aria-hidden="true">💰</span>
+            Gestión financiera
+        </h2>
+        <div class="apod-accesos__grid apod-accesos__grid--compact">
+            <article class="apod-acceso-card">
+                <span class="apod-acceso-card__icon" aria-hidden="true">📎</span>
+                <h3 class="apod-acceso-card__name">Estado financiero actual</h3>
+                <p class="apod-acceso-card__desc" id="apodFinanceHint">
+                    Consulta saldos, vencimientos y comportamiento de pagos por estudiante.
+                </p>
+                <a href="{% url 'matriculas:mi_estado_cuenta' %}" class="apod-acceso-card__btn">Ver estado</a>
+            </article>
+            <article class="apod-acceso-card">
+                <span class="apod-acceso-card__icon" aria-hidden="true">🧾</span>
+                <h3 class="apod-acceso-card__name">Historial y comprobantes</h3>
+                <p class="apod-acceso-card__desc">
+                    Mantén trazabilidad de pagos realizados y respaldo documental del periodo.
+                </p>
+                <a href="{% url 'matriculas:mis_pagos' %}" class="apod-acceso-card__btn">Ver historial</a>
+            </article>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
+    </section>
+
+{% include 'apoderado/_apoderado_wrap_end.html' %}
+
+<script>
+(function () {
+    function toInt(value, fallback) {
+        var n = Number(value);
+        return Number.isFinite(n) ? Math.max(0, Math.round(n)) : fallback;
+    }
+
+    async function fetchFirst(urls) {
+        for (var i = 0; i < urls.length; i++) {
+            try {
+                var r = await fetch(urls[i], { credentials: 'same-origin' });
+                if (r.ok) return await r.json();
+            } catch (e) {
+                // noop: try next endpoint
+            }
+        }
+        return null;
+    }
+
+    var elComunicados = document.getElementById('apodMetricComunicados');
+    var elFirmas = document.getElementById('apodMetricFirmas');
+    var elCuotas = document.getElementById('apodMetricCuotas');
+    var financeHint = document.getElementById('apodFinanceHint');
+    var priorityComunicados = document.getElementById('apodPriorityComunicados');
+    var priorityFirmas = document.getElementById('apodPriorityFirmas');
+    var priorityPagos = document.getElementById('apodPriorityPagos');
+    if (!elComunicados || !elFirmas || !elCuotas) return;
+
+    function syncPriorityStates() {
+        if (priorityComunicados) {
+            var n1 = toInt(elComunicados.textContent, 0);
+            priorityComunicados.classList.toggle('apod-priority-item--active', n1 > 0);
+            priorityComunicados.querySelector('.apod-priority-item__desc').textContent =
+                n1 > 0 ? ('Tienes ' + n1 + ' comunicado(s) por revisar.') : 'Sin comunicados pendientes por ahora.';
+        }
+        if (priorityFirmas) {
+            var n2 = toInt(elFirmas.textContent, 0);
+            priorityFirmas.classList.toggle('apod-priority-item--active', n2 > 0);
+            priorityFirmas.querySelector('.apod-priority-item__desc').textContent =
+                n2 > 0 ? ('Hay ' + n2 + ' documento(s) en espera de firma.') : 'No hay documentos pendientes de firma.';
+        }
+        if (priorityPagos) {
+            var n3 = toInt(elCuotas.textContent, 0);
+            priorityPagos.classList.toggle('apod-priority-item--active', n3 > 0);
+            priorityPagos.querySelector('.apod-priority-item__desc').textContent =
+                n3 > 0 ? ('' + n3 + ' pupilo(s) tienen cuotas pendientes.') : 'No hay cuotas pendientes registradas.';
+            if (financeHint) {
+                financeHint.textContent = n3 > 0
+                    ? ('Se detectan cuotas pendientes en ' + n3 + ' pupilo(s). Revisa vencimientos y prioriza regularización.')
+                    : 'Sin cuotas pendientes actualmente. Puedes revisar historial y respaldos de pago.';
+            }
+        }
+    }
+
+    syncPriorityStates();
+
+    Promise.all([
+        fetchFirst(['/api/apoderado/comunicados/', '/api/v1/apoderado/comunicados/']),
+        fetchFirst(['/api/apoderado/firmas/', '/api/v1/apoderado/firmas/']),
+        fetchFirst(['/api/apoderado/pagos/estado/', '/api/v1/apoderado/pagos/estado/'])
+    ]).then(function (results) {
+        var comunicadosData = results[0];
+        var firmasData = results[1];
+        var pagosData = results[2];
+
+        if (Array.isArray(comunicadosData)) {
+            elComunicados.textContent = String(comunicadosData.length);
+        } else if (comunicadosData && Array.isArray(comunicadosData.results)) {
+            elComunicados.textContent = String(comunicadosData.results.length);
+        }
+
+        if (firmasData && Array.isArray(firmasData.pendientes)) {
+            elFirmas.textContent = String(firmasData.pendientes.length);
+        }
+
+        if (pagosData && Array.isArray(pagosData.pupilos)) {
+            var cuotasPendientes = pagosData.pupilos.reduce(function (acc, p) {
+                var pendiente = toInt(p && p.pendiente, 0);
+                return acc + (pendiente > 0 ? 1 : 0);
+            }, 0);
+            elCuotas.textContent = String(cuotasPendientes);
+        }
+        syncPriorityStates();
+    }).catch(function () {
+        // Si falla todo, mantiene valores iniciales del servidor.
+    });
+})();
+</script>
