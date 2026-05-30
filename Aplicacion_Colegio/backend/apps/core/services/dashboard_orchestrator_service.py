@@ -11,6 +11,7 @@ from backend.apps.accounts.services import TeacherAvailabilityService
 from backend.apps.core.services.dashboard_service import DashboardService
 from backend.apps.core.services.dashboard_context_service import DashboardContextService
 from backend.apps.core.services.school_query_service import SchoolQueryService
+from backend.apps.core.services.integrity_service import IntegrityService
 from backend.common.exceptions import PrerequisiteException
 from backend.common.services.onboarding_service import OnboardingService
 from backend.common.services.onboarding_notification_service import OnboardingNotificationService
@@ -22,6 +23,9 @@ class DashboardOrchestratorService:
 
     @staticmethod
     def handle_dashboard(request):
+        # Clear per-request caches to avoid cross-request data leaks
+        IntegrityService.clear_cache()
+
         user_context = DashboardService.get_user_context(request.user, request.session)
 
         if user_context is None:

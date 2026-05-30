@@ -79,120 +79,92 @@ class DashboardContextService:
             )
 
     @staticmethod
-    def get_estudiante_context(user, pagina_solicitada, escuela_rbd, request_get_params=None):
-        return DashboardContextService.execute('get_estudiante_context', {
+    def get_notificaciones_context(user):
+        return DashboardContextService.execute('get_notificaciones_context', {
             'user': user,
-            'pagina_solicitada': pagina_solicitada,
-            'escuela_rbd': escuela_rbd,
+        })
+
+    @staticmethod
+    def get_notificaciones_full_context(user, request_get_params=None):
+        return DashboardContextService.execute('get_notificaciones_full_context', {
+            'user': user,
             'request_get_params': request_get_params,
         })
 
     @staticmethod
-    def _execute_get_estudiante_context(params: dict):
-        """Get context specific for estudiante role - sin decorador, validación manual"""
+    def _execute_get_notificaciones_context(params: dict):
+        """Get summarized notifications context for topbar/dashboard."""
         user = params['user']
-        pagina_solicitada = params['pagina_solicitada']
-        escuela_rbd = params['escuela_rbd']
-        request_get_params = params.get('request_get_params')
-
-        DashboardContextService._validate_school_integrity(escuela_rbd, 'DASHBOARD_CONTEXT_ESTUDIANTE')
-        has_student_scope = (
-            PolicyService.has_capability(user, 'CLASS_VIEW', school_id=escuela_rbd)
-            and PolicyService.has_capability(user, 'GRADE_VIEW', school_id=escuela_rbd)
-            and not PolicyService.has_capability(user, 'STUDENT_VIEW', school_id=escuela_rbd)
-        )
-        has_student_management_scope = PolicyService.has_capability(user, 'STUDENT_VIEW', school_id=escuela_rbd)
-
-        if not has_student_scope and not has_student_management_scope:
-            raise PermissionDenied("No tiene permisos para acceder a datos de estudiantes")
+        from backend.apps.notificaciones.models import Notificacion
         
-        context = {}
-
-        if pagina_solicitada == 'inicio':
-            context.update(DashboardContextService._get_estudiante_inicio_context(user, escuela_rbd))
-        elif pagina_solicitada == 'perfil':
-            context.update(DashboardContextService._get_estudiante_perfil_context(user, escuela_rbd))
-        elif pagina_solicitada == 'asistencia':
-            context.update(DashboardContextService._get_estudiante_asistencia_context(user, request_get_params))
-"""
-Dashboard Context Service - Context loaders específicos por rol y página.
-
-Extraído de dashboard_service.py para separar responsabilidades.
-"""
-
-from datetime import date, datetime, timedelta
-from django.db.models import Avg, Count, Q, Prefetch
-from django.utils import timezone
-from django.core.exceptions import PermissionDenied
-
-from backend.common.services import PermissionService
-from backend.common.services.policy_service import PolicyService
-from backend.apps.core.services.integrity_service import IntegrityService
-
-
-class DashboardContextService:
-    """Service for role-specific context loading."""
-
-    @staticmethod
-    def execute(operation: str, params: dict):
-        DashboardContextService.validate(operation, params)
-        return DashboardContextService._execute(operation, params)
+        # Count unread notifications
+        unread_count = Notificacion.objects.filter(destinatario=user, leido=False).count()
+        
+        # Get 5 most recent notifications
+        recent_notifications = Notificacion.objects.filter(destinatario=user).order_by('-fecha_creacion')[:5]
+        
+        formatted_notifications = []
+        for notif in recent_notifications:
+            # Map notification type to icon
+            icono = 'star' if getattr(notif, 'tipo', '') == 'calificacion' else 'bell'
+            url = getattr(notif, 'enlace', '')
+            if not url:
+                url = '#'
+                
+            formatted_notifications.append({
+                'id': notif.id if hasattr(notif, 'id') else getattr(notif, 'id_notificacion', None),
+                'titulo': notif.titulo,
+                'mensaje': notif.mensaje,
+                'fecha_creacion': notif.fecha_creacion,
+                'icono': icono,
+                'url': url,
+                'leido': notif.leido,
+            })
+            
+        return {
+            'notificaciones_count': unread_count,
+            'notificaciones_recientes': formatted_notifications,
+        }
 
     @staticmethod
-    def validate(operation: str, params: dict) -> None:
-        if operation == 'get_estudiante_context':
-            if params.get('user') is None:
-                raise ValueError('Parámetro requerido: user')
-            if params.get('pagina_solicitada') is None:
-                raise ValueError('Parámetro requerido: pagina_solicitada')
-            if params.get('escuela_rbd') is None:
-                raise ValueError('Parámetro requerido: escuela_rbd')
-            return
-        if operation == 'get_asistencia_context':
-            if params.get('user') is None:
-                raise ValueError('Parámetro requerido: user')
-            if params.get('colegio') is None:
-                raise ValueError('Parámetro requerido: colegio')
-            return
-        if operation == 'get_profesor_context':
-            if params.get('user') is None:
-                raise ValueError('Parámetro requerido: user')
-            if params.get('pagina_solicitada') is None:
-                raise ValueError('Parámetro requerido: pagina_solicitada')
-            if params.get('escuela_rbd') is None:
-                raise ValueError('Parámetro requerido: escuela_rbd')
-            return
-        if operation == 'get_notificaciones_context':
-            if params.get('user') is None:
-                raise ValueError('Parámetro requerido: user')
-            return
-        if operation == 'get_notificaciones_full_context':
-            if params.get('user') is None:
-                raise ValueError('Parámetro requerido: user')
-            return
-        raise ValueError(f'Operación no soportada: {operation}')
-
-    @staticmethod
-    def _execute(operation: str, params: dict):
-        if operation == 'get_estudiante_context':
-            return DashboardContextService._execute_get_estudiante_context(params)
-        if operation == 'get_asistencia_context':
-            return DashboardContextService._execute_get_asistencia_context(params)
-        if operation == 'get_profesor_context':
-            return DashboardContextService._execute_get_profesor_context(params)
-        if operation == 'get_notificaciones_context':
-            return DashboardContextService._execute_get_notificaciones_context(params)
-        if operation == 'get_notificaciones_full_context':
-            return DashboardContextService._execute_get_notificaciones_full_context(params)
-        raise ValueError(f'Operación no soportada: {operation}')
-
-    @staticmethod
-    def _validate_school_integrity(escuela_rbd, action):
-        if escuela_rbd:
-            IntegrityService.validate_school_integrity_or_raise(
-                school_id=escuela_rbd,
-                action=action,
-            )
+    def _execute_get_notificaciones_full_context(params: dict):
+        """Get full notifications list context for the notifications page."""
+        user = params['user']
+        request_get_params = params.get('request_get_params') or {}
+        from backend.apps.notificaciones.models import Notificacion
+        
+        # Filter by read/unread if requested
+        filtro_estado = request_get_params.get('estado')
+        queryset = Notificacion.objects.filter(destinatario=user)
+        
+        if filtro_estado == 'leidas':
+            queryset = queryset.filter(leido=True)
+        elif filtro_estado == 'no_leidas':
+            queryset = queryset.filter(leido=False)
+            
+        notifications = queryset.order_by('-fecha_creacion')
+        
+        formatted_notifications = []
+        for notif in notifications:
+            icono = 'star' if getattr(notif, 'tipo', '') == 'calificacion' else 'bell'
+            url = getattr(notif, 'enlace', '')
+            if not url:
+                url = '#'
+                
+            formatted_notifications.append({
+                'id': notif.id if hasattr(notif, 'id') else getattr(notif, 'id_notificacion', None),
+                'titulo': notif.titulo,
+                'mensaje': notif.mensaje,
+                'fecha_creacion': notif.fecha_creacion,
+                'icono': icono,
+                'url': url,
+                'leido': notif.leido,
+            })
+            
+        return {
+            'notificaciones_todas': formatted_notifications,
+            'filtro_estado': filtro_estado or 'todas',
+        }
 
     @staticmethod
     def get_estudiante_context(user, pagina_solicitada, escuela_rbd, request_get_params=None):
@@ -239,13 +211,86 @@ class DashboardContextService:
         elif pagina_solicitada == 'mis_tareas':
             context.update(DashboardContextService._get_estudiante_tareas_context(user))
         elif pagina_solicitada == 'mis_evaluaciones':
-            context.update(DashboardContextService._get_estudiante_evaluaciones_context(user, escuela_rbd))
+            context.update(DashboardContextService._get_estudiante_evaluaciones_context(user))
         elif pagina_solicitada == 'mis_anotaciones':
             context.update(DashboardContextService._get_estudiante_anotaciones_context(user))
-        elif pagina_solicitada == 'mis_evaluaciones':
-            context.update(DashboardContextService._get_estudiante_evaluaciones_context(user))
 
         return context
+
+    @staticmethod
+    def _get_estudiante_tareas_context(user):
+        """Get tasks context for estudiante role."""
+        from backend.apps.academico.models import Tarea, EntregaTarea
+        from backend.apps.cursos.models import Clase
+        from django.utils import timezone
+        
+        curso_actual = DashboardContextService._resolve_estudiante_curso_actual(user)
+        if not curso_actual:
+            return {
+                'tareas_pendientes': [],
+                'tareas_entregadas': [],
+                'total_pendientes': 0,
+            }
+            
+        clases = Clase.objects.filter(
+            curso=curso_actual,
+            colegio_id=user.rbd_colegio,
+            activo=True,
+        )
+        
+        tareas_qs = Tarea.objects.filter(
+            clase__in=clases,
+            es_publica=True,
+            activa=True,
+            colegio_id=user.rbd_colegio,
+        ).select_related('clase__asignatura').order_by('fecha_entrega')
+        
+        entregas = EntregaTarea.objects.filter(
+            tarea__in=tareas_qs,
+            estudiante=user,
+        )
+        entregas_por_tarea = {e.tarea_id: e for e in entregas}
+        
+        tareas_pendientes = []
+        tareas_entregadas = []
+        ahora = timezone.now()
+        
+        for tarea in tareas_qs:
+            entrega = entregas_por_tarea.get(tarea.id_tarea)
+            vencida = tarea.fecha_entrega and tarea.fecha_entrega < ahora
+            
+            if entrega:
+                # Determinar estado de entrega
+                if entrega.calificacion is not None or entrega.estado == 'revisada' or entrega.retroalimentacion:
+                    estado_text = 'Corregida'
+                elif entrega.estado == 'tarde' or entrega.fue_entregada_tarde():
+                    estado_text = 'Entregada tarde'
+                else:
+                    estado_text = 'Entregada'
+                    
+                tareas_entregadas.append({
+                    'id': tarea.id_tarea,
+                    'titulo': tarea.titulo,
+                    'asignatura': tarea.clase.asignatura.nombre if tarea.clase and tarea.clase.asignatura else 'N/A',
+                    'fecha_entrega': tarea.fecha_entrega,
+                    'estado_entrega': estado_text,
+                    'calificacion': float(entrega.calificacion) if entrega.calificacion is not None else None,
+                    'retroalimentacion': entrega.retroalimentacion or '',
+                })
+            else:
+                tareas_pendientes.append({
+                    'id': tarea.id_tarea,
+                    'titulo': tarea.titulo,
+                    'asignatura': tarea.clase.asignatura.nombre if tarea.clase and tarea.clase.asignatura else 'N/A',
+                    'fecha_entrega': tarea.fecha_entrega,
+                    'vencida': vencida,
+                })
+                
+        return {
+            'tareas_pendientes': tareas_pendientes,
+            'tareas_entregadas': tareas_entregadas,
+            'total_pendientes': len(tareas_pendientes),
+        }
 
     @staticmethod
     def _get_estudiante_horario_context(user):

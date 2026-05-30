@@ -114,10 +114,18 @@ class IntegrityService:
             return handler(params)
         raise ValueError(f'Operación no soportada: {operation}')
 
+    # Per-request cache for integrity validation results.
+    # Cleared at the start of each request by middleware or manually.
+    # Key: school_id, Value: list of errors (empty = valid)
+    _integrity_cache: dict = {}
+
     @staticmethod
     def validate_school_integrity_or_raise(school_id, action='UNSPECIFIED_ACTION'):
         """
         Valida integridad de colegio y lanza error estructurado si hay inconsistencias.
+
+        Uses per-request cache to avoid running the full integrity report multiple
+        times for the same school_id within a single request (~8 queries saved).
 
         Args:
             school_id (int): RBD del colegio
@@ -126,10 +134,21 @@ class IntegrityService:
         Raises:
             PrerequisiteException: Si se detectan inconsistencias de integridad
         """
-        errors = IntegrityService.validate_school_integrity(school_id)
+        cache_key = int(school_id) if school_id is not None else None
+        if cache_key in IntegrityService._integrity_cache:
+            errors = IntegrityService._integrity_cache[cache_key]
+        else:
+            errors = IntegrityService.validate_school_integrity(school_id)
+            IntegrityService._integrity_cache[cache_key] = errors
+
         if not errors:
             return
         IntegrityService._raise_integrity_exception(school_id, action, errors)
+
+    @staticmethod
+    def clear_cache():
+        """Clear the per-request integrity cache. Call at request start or end."""
+        IntegrityService._integrity_cache.clear()
 
     @staticmethod
     def validate_curso_creation(colegio_or_school_id):

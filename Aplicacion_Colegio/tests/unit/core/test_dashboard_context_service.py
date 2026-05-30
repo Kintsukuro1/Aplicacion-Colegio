@@ -95,6 +95,8 @@ class TestDashboardContextServiceEstudiante:
             ('asistencia', '_get_estudiante_asistencia_context', {'c': 3}),
             ('mis_clases', '_get_estudiante_clases_context', {'d': 4}),
             ('mis_notas', '_get_estudiante_notas_context', {'e': 5}),
+            ('mis_tareas', '_get_estudiante_tareas_context', {'f': 6}),
+            ('mis_evaluaciones', '_get_estudiante_evaluaciones_context', {'g': 7}),
         ],
     )
     def test_execute_get_estudiante_context_routes_by_page(self, pagina, helper_name, expected):

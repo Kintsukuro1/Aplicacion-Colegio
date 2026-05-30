@@ -39,6 +39,7 @@ class TestDashboardApoderadoService:
 
     def test_execute_get_apoderado_context_inicio(self):
         user = Mock(id=10, rbd_colegio=444)
+        del user.perfil_apoderado
         estudiante = SimpleNamespace(id=1, nombre='Ana', apellido_paterno='Pérez', apellido_materno='López', email='ana@test.cl')
         relacion = SimpleNamespace(estudiante=estudiante)
         manager = Mock()
@@ -145,3 +146,50 @@ class TestDashboardApoderadoService:
 
         assert result['estadisticas']['sin_datos'] is True
         assert result['estadisticas']['total'] == 0
+
+    def test_get_apoderado_admision_context_with_active_cycle(self):
+        user = Mock(id=10, rbd_colegio=444)
+        
+        sol_1 = Mock(
+            id_solicitud=1,
+            nombre_estudiante='Juan',
+            apellido_paterno_estudiante='Pérez',
+            apellido_materno_estudiante='Gómez',
+            rut_estudiante='12345678-9',
+            curso_postulado=Mock(id_curso=2, nombre='1º Básico'),
+            ciclo_academico=Mock(nombre='Ciclo 2026'),
+            estado='NUEVA',
+            posicion_lista_espera=None,
+            fecha_creacion='2026-05-30',
+            estudiante_id=None,
+        )
+        sol_1.get_estado_display.return_value = 'Nueva'
+        
+        sol_qs = Mock()
+        sol_qs.select_related.return_value = sol_qs
+        sol_qs.prefetch_related.return_value = sol_qs
+        sol_qs.order_by.return_value = [sol_1]
+        
+        ciclo_activo = Mock(nombre='Ciclo Activo 2026')
+        ciclo_qs = Mock()
+        ciclo_qs.first.return_value = ciclo_activo
+        
+        curso_1 = Mock(id_curso=2, nombre='1º Básico')
+        curso_qs = Mock()
+        curso_qs.order_by.return_value = [curso_1]
+        
+        with patch('backend.apps.matriculas.models.SolicitudAdmision.objects.filter', return_value=sol_qs) as mock_sol_filter, \
+             patch('backend.apps.institucion.models.CicloAcademico.objects.filter') as mock_ciclo_filter, \
+             patch('backend.apps.cursos.models.Curso.objects.filter', return_value=curso_qs) as mock_curso_filter:
+            
+            mock_ciclo_filter.return_value = ciclo_qs
+            
+            result = DashboardApoderadoService._get_apoderado_admision_context(user)
+            
+        assert result['total_solicitudes'] == 1
+        assert len(result['solicitudes_admision']) == 1
+        assert result['ciclo_activo'] is ciclo_activo
+        assert len(result['cursos_disponibles']) == 1
+        
+        from backend.common.constants import CICLO_ESTADO_ACTIVO
+        mock_ciclo_filter.assert_called_once_with(colegio_id=444, estado=CICLO_ESTADO_ACTIVO)

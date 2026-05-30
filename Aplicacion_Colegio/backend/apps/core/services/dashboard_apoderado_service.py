@@ -417,17 +417,12 @@ class DashboardApoderadoService:
                     'sin_datos': True
                 }
             
-            # Group by fecha
+            # Group by fecha — only use data already loaded via select_related
+            # NOTE: The template (apoderado/asistencia.html) accesses r.clase.asignatura
+            # and r.clase.profesor, both covered by select_related above.
+            # hora_inicio/hora_fin from BloqueHorario are NOT used in the template,
+            # so we skip the per-record bloques_horario query that was causing 2400+ queries.
             for registro in registros:
-                # Inyectar dinámicamente los campos requeridos en el template para evitar fallos silenciosos
-                registro.asignatura = registro.clase.asignatura
-                bloque = registro.clase.bloques_horario.filter(activo=True).order_by('hora_inicio').first()
-                if bloque:
-                    registro.hora_inicio = bloque.hora_inicio
-                    registro.hora_fin = bloque.hora_fin
-                else:
-                    registro.hora_inicio = None
-                    registro.hora_fin = None
                 registros_por_fecha[registro.fecha].append(registro)
             
             # Get asignaturas
@@ -634,6 +629,7 @@ class DashboardApoderadoService:
         from backend.apps.matriculas.models import SolicitudAdmision
         from backend.apps.cursos.models import Curso
         from backend.apps.institucion.models import CicloAcademico
+        from backend.common.constants import CICLO_ESTADO_ACTIVO
         
         rbd = getattr(user, 'rbd_colegio', None)
         solicitudes = []
@@ -674,7 +670,7 @@ class DashboardApoderadoService:
             # 2. Obtener ciclo académico activo
             ciclo_activo = CicloAcademico.objects.filter(
                 colegio_id=rbd,
-                activo=True
+                estado=CICLO_ESTADO_ACTIVO
             ).first()
             
             # 3. Obtener cursos disponibles
