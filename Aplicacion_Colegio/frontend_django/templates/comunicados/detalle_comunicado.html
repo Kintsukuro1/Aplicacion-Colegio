@@ -99,9 +99,9 @@
         </div>
         {% endif %}
 
-        {% if comunicado.requiere_confirmacion and user.role != 'admin_escolar' %}
-        <div class="confirmacion-box {% if confirmacion.confirmado %}confirmado{% endif %}">
-            {% if confirmacion.confirmado %}
+        {% if comunicado.requiere_confirmacion and not is_admin_user %}
+        <div class="confirmacion-box {% if confirmacion and confirmacion.confirmado %}confirmado{% endif %}">
+            {% if confirmacion and confirmacion.confirmado %}
                 <h3>✅ Asistencia Confirmada</h3>
                 <p class="estado-confirmado">
                     Has confirmado tu asistencia el {{ confirmacion.fecha_confirmacion|date:"d/m/Y H:i" }}

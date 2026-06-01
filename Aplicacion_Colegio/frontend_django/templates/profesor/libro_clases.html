@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 <link rel="stylesheet" href="{% static 'css/profesor/libro_clases.css' %}">
 
 <div class="content-wrapper">
@@ -13,14 +14,32 @@
         <div class="filtros-section">
             <form method="GET" class="filtros-form">
                 <input type="hidden" name="pagina" value="libro_clases">
+                {% if rol == 'admin_escolar' %}
+                <div class="filtro-item">
+                    <label for="filtro_curso_nombre">Seleccionar Curso:</label>
+                    <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
+                        <option value="">-- Todos los cursos --</option>
+                        {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                        {% for grupo in clases_por_curso %}
+                            <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
                 <div class="filtro-item">
                     <label for="clase_id">Seleccionar Clase:</label>
                     <select name="clase_id" id="clase_id" onchange="this.form.submit()">
                         <option value="">-- Seleccione una clase --</option>
-                        {% for clase in clases %}
-                            <option value="{{ clase.id }}" {% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %}selected{% endif %}>
-                                {{ clase.curso.nombre }} - {{ clase.asignatura.nombre }}
-                            </option>
+                        {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                        {% for grupo in clases_por_curso %}
+                            <optgroup label="{{ grupo.grouper }}">
+                                {% for clase in grupo.list %}
+                                    <option value="{{ clase.id }}" {% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ clase.asignatura.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </optgroup>
                         {% endfor %}
                     </select>
                 </div>
@@ -79,6 +98,212 @@
         </div>
 
         {% if evaluaciones %}
+        <style>
+            .libro-charts-container {
+                display: grid;
+                grid-template-columns: 1.5fr 1fr;
+                gap: 20px;
+                margin-bottom: 25px;
+                align-items: stretch;
+            }
+            .libro-chart-card {
+                background: #ffffff;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                border-top: 4px solid #6366f1;
+            }
+            .libro-chart-card.card-aprobacion {
+                border-top-color: #10b981;
+            }
+            .libro-chart-card h3 {
+                margin-top: 0;
+                margin-bottom: 15px;
+                font-family: 'Outfit', sans-serif;
+                font-size: 1.1rem;
+                color: #1e293b;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .libro-chart-card .chart-container {
+                position: relative;
+                height: 200px;
+                width: 100%;
+            }
+            @media (max-width: 992px) {
+                .libro-charts-container {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+        <div class="libro-charts-container">
+            <div class="libro-chart-card">
+                <h3>📈 Rendimiento Histórico por Evaluación</h3>
+                <div class="chart-container">
+                    <canvas id="rendimientoChart"></canvas>
+                </div>
+            </div>
+            <div class="libro-chart-card card-aprobacion">
+                <h3>📊 Estado de Aprobación</h3>
+                <div class="chart-container">
+                    <canvas id="aprobacionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // 1. Rendimiento por Evaluación
+                const ctxRendimiento = document.getElementById('rendimientoChart');
+                if (ctxRendimiento) {
+                    const evalNames = [
+                        {% for eval in evaluaciones %}
+                            "{{ eval.nombre|escapejs }}",
+                        {% endfor %}
+                    ];
+                    const evalAverages = [
+                        {% for promedio in promedios_evaluaciones %}
+                            {{ promedio|default:0.0 }},
+                        {% endfor %}
+                    ];
+                    
+                    new Chart(ctxRendimiento, {
+                        type: 'line',
+                        data: {
+                            labels: evalNames.length ? evalNames : ['Sin evaluaciones'],
+                            datasets: [{
+                                label: 'Promedio del Curso',
+                                data: evalAverages.length ? evalAverages : [0],
+                                fill: true,
+                                backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                                borderColor: '#6366f1',
+                                borderWidth: 3,
+                                tension: 0.35,
+                                pointBackgroundColor: '#6366f1',
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    min: 1.0,
+                                    max: 7.0,
+                                    ticks: {
+                                        stepSize: 1.0,
+                                        font: { family: "'Inter', sans-serif" }
+                                    },
+                                    grid: {
+                                        color: '#e2e8f0'
+                                    }
+                                },
+                                x: {
+                                    ticks: {
+                                        font: { family: "'Inter', sans-serif", size: 10 }
+                                    },
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Promedio: ' + context.parsed.y.toFixed(1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // 2. Aprobación del Curso (Calculado en base a matriz_calificaciones)
+                const ctxAprobacion = document.getElementById('aprobacionChart');
+                if (ctxAprobacion) {
+                    let aprobados = 0;
+                    let reprobados = 0;
+                    let sinNotas = 0;
+
+                    {% for fila in matriz_calificaciones %}
+                        {% if fila.promedio %}
+                            if (parseFloat("{{ fila.promedio }}") >= 4.0) {
+                                aprobados++;
+                            } else {
+                                reprobados++;
+                            }
+                        {% else %}
+                            sinNotas++;
+                        {% endif %}
+                    {% endfor %}
+
+                    new Chart(ctxAprobacion, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Aprobados (≥ 4.0)', 'Reprobados (< 4.0)', 'Sin Calificación'],
+                            datasets: [{
+                                data: [aprobados, reprobados, sinNotas],
+                                backgroundColor: [
+                                    '#10b981', // green esmeralda
+                                    '#f43f5e', // rose
+                                    '#94a3b8'  // slate / neutral
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#ffffff',
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        font: {
+                                            family: "'Inter', sans-serif",
+                                            size: 11
+                                        },
+                                        color: '#475569',
+                                        boxWidth: 12
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            let value = context.parsed;
+                                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            let percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                            return label + value + ' estudiante(s) (' + percentage + '%)';
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '65%'
+                        }
+                    });
+                }
+            });
+        </script>
+
         {# Tabla Matriz de Calificaciones #}
         <div class="tabla-container">
             <div class="tabla-scroll">
@@ -258,3 +483,63 @@ function exportarExcel() {
     document.body.removeChild(link);
 }
 </script>
+
+{% if rol == 'admin_escolar' %}
+<script>
+function filtrarClasesPorCurso(cursoNombre) {
+    const claseSelect = document.getElementById('clase_id');
+    if (!claseSelect) return;
+    
+    const optgroups = claseSelect.querySelectorAll('optgroup');
+    
+    // Si cursoNombre es vacío, mostramos todos los optgroups
+    if (!cursoNombre) {
+        optgroups.forEach(group => group.style.display = '');
+        return;
+    }
+    
+    // Ocultar todos los optgroups excepto el seleccionado
+    optgroups.forEach(group => {
+        if (group.getAttribute('label') === cursoNombre) {
+            group.style.display = '';
+        } else {
+            group.style.display = 'none';
+        }
+    });
+    
+    // Auto-seleccionar la primera opción visible si la opción seleccionada actualmente está oculta
+    const currentSelected = claseSelect.options[claseSelect.selectedIndex];
+    if (currentSelected && currentSelected.value !== "") {
+        const parentGroup = currentSelected.parentNode;
+        if (parentGroup && parentGroup.tagName === 'OPTGROUP' && parentGroup.style.display === 'none') {
+            const targetGroup = Array.from(optgroups).find(g => g.getAttribute('label') === cursoNombre);
+            if (targetGroup) {
+                const firstOption = targetGroup.querySelector('option');
+                if (firstOption) {
+                    claseSelect.value = firstOption.value;
+                    claseSelect.dispatchEvent(new Event('change'));
+                }
+            }
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const cursoFiltro = document.getElementById('filtro_curso_nombre');
+    if (cursoFiltro) {
+        const claseSelect = document.getElementById('clase_id');
+        if (claseSelect) {
+            const selectedOption = claseSelect.options[claseSelect.selectedIndex];
+            if (selectedOption && selectedOption.value !== "") {
+                const parentGroup = selectedOption.parentNode;
+                if (parentGroup && parentGroup.tagName === 'OPTGROUP') {
+                    const cursoNombre = parentGroup.getAttribute('label');
+                    cursoFiltro.value = cursoNombre;
+                    filtrarClasesPorCurso(cursoNombre);
+                }
+            }
+        }
+    }
+});
+</script>
+{% endif %}

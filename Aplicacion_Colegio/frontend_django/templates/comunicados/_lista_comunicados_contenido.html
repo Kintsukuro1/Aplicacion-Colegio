@@ -47,7 +47,7 @@
                 <a href="{% url 'comunicados:detalle' comunicado.id_comunicado %}" class="btn-ver">
                     Ver detalle →
                 </a>
-                {% if user.role == 'admin_escolar' and comunicado.requiere_confirmacion %}
+                {% if can_view_stats and comunicado.requiere_confirmacion %}
                 <a href="{% url 'comunicados:estadisticas' comunicado.id_comunicado %}" class="btn-estadisticas-link">
                     📊 Ver estadísticas
                 </a>

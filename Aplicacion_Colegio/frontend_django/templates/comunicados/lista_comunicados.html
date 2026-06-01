@@ -18,7 +18,7 @@
 <div class="comunicados-container">
     <div class="header-comunicados">
         <h1>📢 Comunicados y Circulares</h1>
-        {% if user.role == 'admin_escolar' %}
+        {% if can_create_comunicado %}
         <a href="{% url 'comunicados:crear' %}" class="btn-crear">
             ➕ Nuevo Comunicado
         </a>

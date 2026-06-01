@@ -60,6 +60,24 @@ def lista_comunicados(request):
         messages.error(request, 'No tienes permiso para ver comunicados.')
         return redirect('dashboard')
 
+    can_create_comunicado = (
+        PolicyService.has_capability(
+            request.user,
+            'ANNOUNCEMENT_CREATE',
+            school_id=request.user.rbd_colegio,
+        )
+        and PolicyService.has_capability(
+            request.user,
+            'SYSTEM_CONFIGURE',
+            school_id=request.user.rbd_colegio,
+        )
+    )
+    can_view_stats = PolicyService.has_capability(
+        request.user,
+        'REPORT_VIEW_BASIC',
+        school_id=request.user.rbd_colegio,
+    )
+
     # Obtener comunicados usando el service
     comunicados = ComunicadosService.get_comunicados_for_user(request.user)
 
@@ -73,6 +91,8 @@ def lista_comunicados(request):
         )
         context = {
             'tipos': Comunicado.TIPOS,
+            'can_create_comunicado': can_create_comunicado,
+            'can_view_stats': can_view_stats,
             **alumno_ctx,
             **shell_context,
         }
@@ -85,6 +105,8 @@ def lista_comunicados(request):
         'comunicados': comunicados,
         'tipo_filtro': tipo_filtro,
         'tipos': Comunicado.TIPOS,
+        'can_create_comunicado': can_create_comunicado,
+        'can_view_stats': can_view_stats,
         **shell_context,
     }
     return render(request, 'comunicados/lista_comunicados.html', context)
@@ -127,6 +149,11 @@ def detalle_comunicado(request, comunicado_id):
 
     # Obtener confirmación del usuario usando el service
     confirmacion = ComunicadosService.get_user_confirmacion_for_comunicado(request.user, comunicado)
+    is_admin_user = PolicyService.has_capability(
+        request.user,
+        'SYSTEM_CONFIGURE',
+        school_id=request.user.rbd_colegio,
+    )
 
     shell_context = _build_dashboard_shell_context(request)
     rol_normalizado = str(shell_context.get('rol', '')).lower()
@@ -139,6 +166,7 @@ def detalle_comunicado(request, comunicado_id):
         context = {
             'comunicado': comunicado,
             'confirmacion': confirmacion,
+            'is_admin_user': is_admin_user,
             **alumno_ctx,
             **shell_context,
         }
@@ -147,6 +175,7 @@ def detalle_comunicado(request, comunicado_id):
     context = {
         'comunicado': comunicado,
         'confirmacion': confirmacion,
+        'is_admin_user': is_admin_user,
         **shell_context,
     }
     return render(request, 'comunicados/detalle_comunicado.html', context)
@@ -170,6 +199,8 @@ def crear_comunicado(request):
         messages.error(request, 'No tienes permiso para crear comunicados.')
         return redirect('comunicados:lista')
 
+    shell_context = _build_dashboard_shell_context(request)
+
     if request.method == 'POST':
         # Usar el service para crear el comunicado
         result = ComunicadosService.create_comunicado(request.user, request.POST, request.FILES)
@@ -182,12 +213,13 @@ def crear_comunicado(request):
                 'tipos': Comunicado.TIPOS,
                 'destinatarios': Comunicado.DESTINATARIOS,
                 'cursos': cursos,
+                **shell_context,
             }
             return render(request, 'comunicados/crear_comunicado.html', context)
 
         # Éxito
         messages.success(request, f'✓ Comunicado "{result["comunicado"].titulo}" publicado exitosamente.')
-        return redirect('detalle_comunicado', comunicado_id=result['comunicado'].id_comunicado)
+        return redirect('comunicados:detalle', comunicado_id=result['comunicado'].id_comunicado)
 
     # GET - Mostrar formulario
     cursos = ComunicadosService.get_active_courses_for_user(request.user)
@@ -196,6 +228,7 @@ def crear_comunicado(request):
         'tipos': Comunicado.TIPOS,
         'destinatarios': Comunicado.DESTINATARIOS,
         'cursos': cursos,
+        **shell_context,
     }
 
     return render(request, 'comunicados/crear_comunicado.html', context)
@@ -212,17 +245,25 @@ def estadisticas_comunicado(request, comunicado_id):
         messages.error(request, 'No tienes permiso para ver estadísticas de comunicados.')
         return redirect('comunicados:lista')
 
+    comunicado = ComunicadosService.get_comunicado_or_none(comunicado_id)
+    if comunicado is None:
+        messages.error(request, 'Comunicado no encontrado.')
+        return redirect('comunicados:lista')
+
     # Usar el service para obtener estadísticas
-    result = ComunicadosService.get_comunicado_statistics(request.user, comunicado_id)
+    result = ComunicadosService.get_comunicado_statistics(request.user, comunicado)
 
     if 'error' in result:
         messages.error(request, result['error'])
         return redirect('comunicados:lista')
 
+    shell_context = _build_dashboard_shell_context(request)
+
     context = {
         'comunicado': result['comunicado'],
         'confirmaciones': result['confirmaciones'],
         'stats': result['stats'],
+        **shell_context,
     }
 
     return render(request, 'comunicados/estadisticas_comunicado.html', context)

@@ -375,6 +375,7 @@ class AcademicReportsService:
     def _execute_generate_class_performance_report(params: Dict[str, Any]) -> Dict:
         """
         Genera reporte de rendimiento académico de una clase.
+        Altamente optimizado para evitar consultas N+1.
 
         Args:
             clase: Clase
@@ -387,22 +388,36 @@ class AcademicReportsService:
         from backend.apps.academico.models import Calificacion
         from backend.apps.accounts.models import User
 
+        # 1. Obtener todos los estudiantes activos en una única query
         estudiantes = User.objects.filter(
             clases_matriculadas__clase=clase,
             clases_matriculadas__activo=True,
             is_active=True
         ).select_related('perfil_estudiante').distinct().order_by('apellido_paterno', 'nombre')
 
+        # 2. Cargar todas las calificaciones y evaluaciones asociadas de una única vez
+        calificaciones_all = Calificacion.objects.filter(
+            evaluacion__clase=clase,
+            evaluacion__activa=True
+        ).select_related('evaluacion', 'estudiante')
+
+        # 3. Agrupar en memoria para evitar consultas N+1 repetidas
+        calificaciones_por_estudiante = {}
+        calificaciones_por_evaluacion = {}
+        evaluaciones = set()
+        
+        for calif in calificaciones_all:
+            calificaciones_por_estudiante.setdefault(calif.estudiante_id, []).append(calif)
+            calificaciones_por_evaluacion.setdefault(calif.evaluacion_id, []).append(calif)
+            evaluaciones.add(calif.evaluacion)
+
         estudiantes_report = []
         notas_clase = []
         rendimiento_estudiantes = []
 
         for estudiante in estudiantes:
-            calificaciones = Calificacion.objects.filter(
-                estudiante=estudiante,
-                evaluacion__clase=clase,
-                evaluacion__activa=True
-            ).select_related('evaluacion')
+            # Obtener desde memoria
+            calificaciones = calificaciones_por_estudiante.get(estudiante.id, [])
 
             if calificaciones:
                 suma_ponderada = 0
@@ -435,7 +450,7 @@ class AcademicReportsService:
                     'promedio': nota_final,
                     'nota_maxima': max(notas_estudiante) if notas_estudiante else 0,
                     'nota_minima': min(notas_estudiante) if notas_estudiante else 0,
-                    'total_evaluaciones': calificaciones.count(),
+                    'total_evaluaciones': len(calificaciones),
                     'nivel': nivel,
                     'estado': 'Aprobado' if nota_final >= 4.0 else 'Reprobado'
                 })
@@ -444,9 +459,10 @@ class AcademicReportsService:
                     'estudiante': estudiante,
                     'nota_final': nota_final,
                     'estado': 'Aprobado' if nota_final >= 4.0 else 'Reprobado',
-                    'total_evaluaciones': calificaciones.count()
+                    'total_evaluaciones': len(calificaciones)
                 })
             else:
+                # Caso sin evaluaciones registrado
                 rendimiento_estudiantes.append({
                     'estudiante': estudiante,
                     'posicion': 0,
@@ -485,20 +501,10 @@ class AcademicReportsService:
             'rango_6_7': len([n for n in notas_clase if 6.0 <= n <= 7.0])
         }
 
-        # Calcular rendimiento por evaluación
+        # Calcular rendimiento por evaluación utilizando memoria agrupada
         rendimiento_evaluaciones = []
-        evaluaciones = set()
-        for estudiante in estudiantes:
-            calificaciones = Calificacion.objects.filter(
-                estudiante=estudiante,
-                evaluacion__clase=clase,
-                evaluacion__activa=True
-            ).select_related('evaluacion')
-            for calif in calificaciones:
-                evaluaciones.add(calif.evaluacion)
-
         for evaluacion in evaluaciones:
-            califs_eval = Calificacion.objects.filter(evaluacion=evaluacion)
+            califs_eval = calificaciones_por_evaluacion.get(evaluacion.id_evaluacion, [])
             notas_eval = [float(c.nota) for c in califs_eval]
             if notas_eval:
                 promedio_eval = sum(notas_eval) / len(notas_eval)

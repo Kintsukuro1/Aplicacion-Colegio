@@ -1,0 +1,328 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/admin_escolar/reporte_cursos.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1>📈 Rendimiento Académico por Cursos</h1>
+        <p class="subtitle">Análisis comparativo de asignaturas y distribución de calificaciones</p>
+    </div>
+
+    {# Filtros de Selección #}
+    <div class="filtros-section">
+        <form method="GET" class="filtros-form" id="formFiltros">
+            <input type="hidden" name="pagina" value="reporte_cursos">
+            
+            <div class="filtro-item">
+                <label for="ciclo_id">Año Académico (Ciclo):</label>
+                <select name="ciclo_id" id="ciclo_id" onchange="document.getElementById('curso_id').value=''; this.form.submit()">
+                    <option value="">-- Seleccione un año académico --</option>
+                    {% for ciclo in ciclos %}
+                        <option value="{{ ciclo.id }}" {% if filtro_ciclo_id == ciclo.id|stringformat:"s" %}selected{% endif %}>
+                            {{ ciclo.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filtro-item">
+                <label for="curso_id">Curso:</label>
+                <select name="curso_id" id="curso_id" onchange="this.form.submit()">
+                    <option value="">-- Seleccione un curso --</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id_curso }}" {% if filtro_curso_id == curso.id_curso|stringformat:"s" %}selected{% endif %}>
+                            {{ curso.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    {% if curso_seleccionado and reporte_data %}
+        {# Métricas Rápidas KPI #}
+        <div class="stats-grid">
+            <div class="stat-card kpi-promedio">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <div class="stat-value {% if reporte_data.promedio_general >= 4.0 %}aprobado{% else %}reprobado{% endif %}">
+                        {{ reporte_data.promedio_general|default:"0.0" }}
+                    </div>
+                    <div class="stat-label">Promedio General</div>
+                </div>
+            </div>
+
+            <div class="stat-card kpi-estudiantes">
+                <div class="stat-icon">👨‍🎓</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ reporte_data.total_estudiantes }}</div>
+                    <div class="stat-label">Estudiantes</div>
+                </div>
+            </div>
+
+            <div class="stat-card kpi-evaluaciones">
+                <div class="stat-icon">📝</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ reporte_data.total_evaluaciones }}</div>
+                    <div class="stat-label">Evaluaciones</div>
+                </div>
+            </div>
+
+            <div class="stat-card kpi-calificaciones">
+                <div class="stat-icon">✍️</div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ reporte_data.total_calificaciones }}</div>
+                    <div class="stat-label">Calificaciones</div>
+                </div>
+            </div>
+        </div>
+
+        {# Gráficos Interactivos #}
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h2>📊 Promedio General por Asignatura</h2>
+                <div class="chart-wrapper">
+                    {% if reporte_data.total_calificaciones > 0 %}
+                        <canvas id="asignaturasChart"></canvas>
+                    {% else %}
+                        <div class="mensaje-inicial" style="border: none; padding: 2rem;">
+                            <span class="icon">📈</span>
+                            <p>No hay datos suficientes para graficar</p>
+                            <p class="hint">Registre calificaciones en las materias para habilitar visualizaciones.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h2>🎯 Distribución del Rendimiento</h2>
+                <div class="chart-wrapper">
+                    {% if reporte_data.total_calificaciones > 0 %}
+                        <canvas id="distribucionChart"></canvas>
+                    {% else %}
+                        <div class="mensaje-inicial" style="border: none; padding: 2rem;">
+                            <span class="icon">🎯</span>
+                            <p>Distribución no disponible</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Destacados (Mejores/Peores Asignaturas) #}
+        {% if reporte_data.total_calificaciones > 0 %}
+        <div class="destacados-grid">
+            <div class="destacado-card top">
+                <h3>🏆 Asignaturas con Mayor Rendimiento</h3>
+                <div class="destacado-list">
+                    {% for item in reporte_data.mejores_asignaturas %}
+                        <div class="destacado-item">
+                            <div class="destacado-info">
+                                <span class="destacado-nombre">{{ item.nombre }}</span>
+                                <span class="destacado-profesor">{{ item.profesor }}</span>
+                            </div>
+                            <span class="destacado-nota">{{ item.promedio }}</span>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted-sm">No hay datos suficientes.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="destacado-card bottom">
+                <h3>⚠️ Asignaturas con Menor Rendimiento</h3>
+                <div class="destacado-list">
+                    {% for item in reporte_data.peores_asignaturas %}
+                        <div class="destacado-item">
+                            <div class="destacado-info">
+                                <span class="destacado-nombre">{{ item.nombre }}</span>
+                                <span class="destacado-profesor">{{ item.profesor }}</span>
+                            </div>
+                            <span class="destacado-nota">{{ item.promedio }}</span>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted-sm">No hay datos suficientes.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Tabla Comparativa Detallada #}
+        <div class="tabla-section">
+            <h2>📚 Detalle de Asignaturas - {{ curso_seleccionado.nombre }}</h2>
+            <div class="tabla-scroll">
+                <table class="tabla-reporte">
+                    <thead>
+                        <tr>
+                            <th>Asignatura</th>
+                            <th>Profesor a Cargo</th>
+                            <th>Evaluaciones</th>
+                            <th>Promedio Curso</th>
+                            <th>Estado General</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in reporte_data.lista_asignaturas %}
+                        <tr>
+                            <td>
+                                <div class="materia-badge">
+                                    <span class="materia-color" style="background-color: {{ item.color }};"></span>
+                                    <span>{{ item.nombre }}</span>
+                                </div>
+                            </td>
+                            <td>{{ item.profesor }}</td>
+                            <td>{{ item.total_evaluaciones }}</td>
+                            <td>
+                                {% if item.promedio is not None %}
+                                    <span class="nota-badge {% if item.promedio >= 4.0 %}aprobado{% else %}reprobado{% endif %}">
+                                        {{ item.promedio }}
+                                    </span>
+                                {% else %}
+                                    <span class="nota-badge sin-nota">S/N</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.promedio is not None %}
+                                    {% if item.promedio >= 4.0 %}
+                                        <span style="color: #10b981; font-weight: 600;">Aprobado</span>
+                                    {% else %}
+                                        <span style="color: #ef4444; font-weight: 600;">En Riesgo</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No se encontraron asignaturas asignadas a este curso.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# Scripts para Chart.js #}
+        {% if reporte_data.total_calificaciones > 0 %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // 1. Gráfico de Asignaturas (Barras)
+                const ctxAsignaturas = document.getElementById('asignaturasChart').getContext('2d');
+                const labelsAsig = {{ reporte_data.nombre_asignaturas_json|safe }};
+                const dataAsig = {{ reporte_data.promedios_asignaturas_json|safe }};
+                const colorsAsig = {{ reporte_data.colores_asignaturas_json|safe }};
+
+                new Chart(ctxAsignaturas, {
+                    type: 'bar',
+                    data: {
+                        labels: labelsAsig,
+                        datasets: [{
+                            label: 'Promedio Curso',
+                            data: dataAsig,
+                            backgroundColor: colorsAsig.map(c => c + 'CC'), // 80% opacity
+                            borderColor: colorsAsig,
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            barPercentage: 0.6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                padding: 12,
+                                bodyFont: { size: 14, weight: 'bold' },
+                                callbacks: {
+                                    label: function(context) {
+                                        return ` Promedio: ${context.raw}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 1.0,
+                                max: 7.0,
+                                ticks: { stepSize: 1.0, font: { weight: 'bold' } },
+                                grid: { color: '#f1f5f9' }
+                            },
+                            x: {
+                                ticks: { font: { size: 11, weight: 'bold' } },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+
+                // 2. Gráfico de Distribución (Doughnut)
+                const ctxDistribucion = document.getElementById('distribucionChart').getContext('2d');
+                const distData = [
+                    {{ reporte_data.distribucion.rango_1_3 }},
+                    {{ reporte_data.distribucion.rango_4_5 }},
+                    {{ reporte_data.distribucion.rango_5_6 }},
+                    {{ reporte_data.distribucion.rango_6_7 }}
+                ];
+
+                new Chart(ctxDistribucion, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [
+                            'Reprobado (1.0 - 3.9)', 
+                            'Suficiente (4.0 - 4.9)', 
+                            'Bueno (5.0 - 5.9)', 
+                            'Excelente (6.0 - 7.0)'
+                        ],
+                        datasets: [{
+                            data: distData,
+                            backgroundColor: [
+                                '#fca5a5', // Reprobado (Rojo suave)
+                                '#fde047', // Suficiente (Amarillo suave)
+                                '#93c5fd', // Bueno (Azul suave)
+                                '#86efac'  // Excelente (Verde suave)
+                            ],
+                            borderColor: [
+                                '#ef4444',
+                                '#eab308',
+                                '#3b82f6',
+                                '#22c55e'
+                            ],
+                            borderWidth: 2,
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15,
+                                    font: { size: 11, weight: 'bold' }
+                                }
+                            },
+                            tooltip: {
+                                padding: 12,
+                                bodyFont: { size: 13 }
+                            }
+                        },
+                        cutout: '60%'
+                    }
+                });
+            });
+        </script>
+        {% endif %}
+
+    {% else %}
+        <div class="mensaje-inicial">
+            <span class="icon">📊</span>
+            <p>Seleccione un año académico y un curso para visualizar el rendimiento general.</p>
+            <p class="hint">Use el panel superior para filtrar y cargar los gráficos interactivos.</p>
+        </div>
+    {% endif %}
+</div>

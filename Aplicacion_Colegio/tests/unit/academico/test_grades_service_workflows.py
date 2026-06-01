@@ -28,6 +28,20 @@ def _allow_permissions(monkeypatch):
     )
 
 
+@pytest.fixture(autouse=True)
+def _mock_escala(monkeypatch):
+    monkeypatch.setattr(
+        'backend.apps.institucion.models.ConfiguracionAcademica.get_escala_para_colegio',
+        lambda *args, **kwargs: {
+            'nota_minima': Decimal('1.0'),
+            'nota_maxima': Decimal('7.0'),
+            'nota_aprobacion': Decimal('4.0'),
+            'nota_eximicion': Decimal('5.5'),
+            'redondeo_decimales': 1
+        }
+    )
+
+
 class _FakePrereq(Exception):
     def __init__(self):
         self.error_dict = {'message': 'faltan prerequisitos', 'action_url': '/accion'}
@@ -76,7 +90,9 @@ class TestGradesServiceWorkflows:
     @patch('backend.apps.academico.services.grades_service.CommonValidations.validate_class_ownership', return_value=(True, ''))
     @patch('backend.apps.academico.services.grades_service.GradesService.create_evaluation')
     @patch('django.urls.reverse', return_value='/dashboard/')
-    def test_process_evaluation_action_create_success(self, _mock_reverse, mock_create_eval, _mock_owner, mock_clase):
+    @patch('backend.apps.academico.services.resoluble_service.ResolubleService.create_or_update_activity')
+    @patch('backend.apps.academico.services.grades_service.GradesService._notificar_revision_pendiente')
+    def test_process_evaluation_action_create_success(self, mock_notify, mock_create_activity, _mock_reverse, mock_create_eval, _mock_owner, mock_clase):
         user = _user('Profesor')
         colegio = Mock()
         clase = Mock(id=11)
@@ -89,6 +105,9 @@ class TestGradesServiceWorkflows:
             'nombre': 'Prueba',
             'fecha_evaluacion': date.today(),
             'ponderacion': '40.0',
+            'pregunta_1_enunciado': 'Pregunta 1',
+            'pregunta_1_tipo': 'desarrollo',
+            'pregunta_1_respuesta_texto': 'Respuesta',
         })
 
         assert result['success'] is True
@@ -101,19 +120,29 @@ class TestGradesServiceWorkflows:
         colegio = Mock()
         mock_clase.objects.get.return_value = Mock(id=2)
 
-        result = GradesService.process_evaluation_action(user, colegio, {'accion': 'crear_evaluacion', 'clase_id': '2'})
+        result = GradesService.process_evaluation_action(user, colegio, {
+            'accion': 'crear_evaluacion',
+            'clase_id': '2',
+            'pregunta_1_enunciado': 'Pregunta 1',
+            'pregunta_1_tipo': 'desarrollo',
+            'pregunta_1_respuesta_texto': 'Respuesta',
+        })
 
         assert result == {'success': False, 'message': 'sin permisos'}
 
+    @patch('backend.apps.academico.models.Evaluacion')
     @patch('backend.apps.cursos.models.Clase')
     @patch('backend.apps.academico.services.grades_service.CommonValidations.validate_class_ownership', return_value=(True, ''))
     @patch('backend.apps.academico.services.grades_service.GradesService.update_evaluation', return_value=True)
     @patch('django.urls.reverse', return_value='/dashboard/')
-    def test_process_evaluation_action_edit_success(self, _mock_reverse, _mock_update, _mock_owner, mock_clase):
+    @patch('backend.apps.academico.services.resoluble_service.ResolubleService.create_or_update_activity')
+    @patch('backend.apps.academico.services.grades_service.GradesService._notificar_revision_pendiente')
+    def test_process_evaluation_action_edit_success(self, mock_notify, mock_create_activity, _mock_reverse, _mock_update, _mock_owner, mock_clase, mock_eval):
         user = _user('Profesor')
         colegio = Mock()
         clase = Mock(id=12)
         mock_clase.objects.get.return_value = clase
+        mock_eval.objects.select_related.return_value.prefetch_related.return_value.get.return_value = Mock(clase_id=12)
 
         result = GradesService.process_evaluation_action(user, colegio, {
             'accion': 'editar_evaluacion',
@@ -122,6 +151,9 @@ class TestGradesServiceWorkflows:
             'nombre': 'Control',
             'fecha_evaluacion': date.today(),
             'ponderacion': '30.0',
+            'pregunta_1_enunciado': 'Pregunta 1',
+            'pregunta_1_tipo': 'desarrollo',
+            'pregunta_1_respuesta_texto': 'Respuesta',
         })
 
         assert result['success'] is True
@@ -255,42 +287,15 @@ class TestGradesServiceWorkflows:
         clase = Mock()
         clase.curso.ciclo_academico = Mock()
 
-        ev1 = Mock(nombre='E1', fecha_evaluacion=date.today())
-        ev2 = Mock(nombre='E2', fecha_evaluacion=date.today())
+        ev1 = Mock(pk=201, nombre='E1', fecha_evaluacion=date.today())
+        ev2 = Mock(pk=202, nombre='E2', fecha_evaluacion=date.today())
         mock_eval.objects.filter.return_value.order_by.return_value = [ev1, ev2]
 
-        estudiante = Mock()
+        estudiante = Mock(pk=101)
         mock_user_model.objects.filter.return_value.select_related.return_value.order_by.return_value = [estudiante]
 
-        class _QS:
-            def __init__(self, first_value=None, count_value=0, aggregate_value=None, truthy=True):
-                self._first = first_value
-                self._count = count_value
-                self._aggregate = aggregate_value or {'nota__avg': None}
-                self._truthy = truthy
-
-            def first(self):
-                return self._first
-
-            def count(self):
-                return self._count
-
-            def aggregate(self, *_args, **_kwargs):
-                return self._aggregate
-
-            def __bool__(self):
-                return self._truthy
-
-        calif_e1 = Mock(nota=Decimal('5.0'))
-        filter_calls = [
-            _QS(first_value=calif_e1),
-            _QS(first_value=None),
-            _QS(aggregate_value={'nota__avg': Decimal('5.0')}, truthy=True),
-            _QS(aggregate_value={'nota__avg': None}, truthy=False),
-            _QS(count_value=1),
-            _QS(aggregate_value={'nota__avg': Decimal('5.0')}),
-        ]
-        mock_calificacion.objects.filter.side_effect = filter_calls
+        calif_e1 = Mock(estudiante_id=101, evaluacion_id=201, nota=Decimal('5.0'))
+        mock_calificacion.objects.filter.return_value = [calif_e1]
 
         result = GradesService.build_gradebook_matrix(colegio, clase)
 
@@ -298,6 +303,8 @@ class TestGradesServiceWorkflows:
         assert result['total_estudiantes'] == 1
         assert result['promedio_general'] == 5.0
         assert len(result['promedios_evaluaciones']) == 2
+        assert result['matriz_calificaciones'][0]['notas'] == [5.0, None]
+        assert result['matriz_calificaciones'][0]['promedio'] == 5.0
 
     @patch('backend.apps.academico.models.Calificacion')
     @patch('backend.apps.accounts.models.PerfilEstudiante')
@@ -407,35 +414,12 @@ class TestGradesServiceWorkflows:
         clase = Mock()
         clase.curso.ciclo_academico = Mock()
 
-        ev1 = Mock(nombre='E1', fecha_evaluacion=date.today())
+        ev1 = Mock(pk=201, nombre='E1', fecha_evaluacion=date.today())
         mock_eval.objects.filter.return_value.order_by.return_value = [ev1]
-        estudiante = Mock()
+        estudiante = Mock(pk=101)
         mock_user_model.objects.filter.return_value.select_related.return_value.order_by.return_value = [estudiante]
 
-        class _QS:
-            def __init__(self, first_value=None, count_value=0, aggregate_value=None, truthy=False):
-                self._first = first_value
-                self._count = count_value
-                self._aggregate = aggregate_value or {'nota__avg': None}
-                self._truthy = truthy
-
-            def first(self):
-                return self._first
-
-            def count(self):
-                return self._count
-
-            def aggregate(self, *_args, **_kwargs):
-                return self._aggregate
-
-            def __bool__(self):
-                return self._truthy
-
-        mock_calificacion.objects.filter.side_effect = [
-            _QS(first_value=None),
-            _QS(aggregate_value={'nota__avg': None}, truthy=False),
-            _QS(count_value=0),
-        ]
+        mock_calificacion.objects.filter.return_value = []
 
         result = GradesService.build_gradebook_matrix(colegio, clase)
         assert result['matriz_calificaciones'][0]['estado'] == 'Sin Notas'

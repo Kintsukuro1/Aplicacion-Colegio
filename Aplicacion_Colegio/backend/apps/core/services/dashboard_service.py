@@ -205,6 +205,12 @@ class DashboardService:
         """Delegate to admin service"""
         DashboardService._validate_school_integrity(escuela_rbd, 'DASHBOARD_GET_ADMIN_REPORTES_CONTEXT')
         return DashboardAdminService.get_admin_reportes_context(user, request.GET, escuela_rbd)
+
+    @staticmethod
+    def get_reporte_cursos_context(user, request, escuela_rbd):
+        """Delegate to admin service"""
+        DashboardService._validate_school_integrity(escuela_rbd, 'DASHBOARD_GET_REPORTE_CURSOS_CONTEXT')
+        return DashboardAdminService.get_reporte_cursos_context(user, request.GET, escuela_rbd)
     
     # =====================================
     # ROLE-SPECIFIC CONTEXT LOADERS

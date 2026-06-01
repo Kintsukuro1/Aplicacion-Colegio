@@ -353,9 +353,16 @@ class PerfilEstudiante(models.Model):
     
     @property
     def curso_actual(self):  # type: ignore[override]
-        if self.curso_actual_id:
+        if self.curso_actual_id_id:
             return self.curso_actual_id
-        if self.ciclo_actual:
+        if self.ciclo_actual_id:
+            # Comprobar en memoria si las matrículas ya están precargadas
+            if hasattr(self.user, '_prefetched_objects_cache') and 'matriculas' in self.user._prefetched_objects_cache:
+                for m in self.user.matriculas.all():
+                    if m.ciclo_academico_id == self.ciclo_actual_id and m.estado == 'ACTIVA':
+                        return m.curso
+            
+            # Caída defensiva si no están en memoria
             from backend.apps.matriculas.models import Matricula
             matricula = Matricula.objects.filter(
                 estudiante=self.user,

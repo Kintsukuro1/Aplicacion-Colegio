@@ -723,6 +723,7 @@ class GradesService:
         """
         from backend.apps.academico.models import Evaluacion, Calificacion
         from backend.apps.accounts.models import User
+        from collections import defaultdict
 
         evaluaciones = Evaluacion.objects.filter(
             clase=clase,
@@ -736,18 +737,23 @@ class GradesService:
             perfil_estudiante__ciclo_actual=clase.curso.ciclo_academico
         ).select_related('perfil_estudiante').order_by('apellido_paterno', 'apellido_materno', 'nombre')
 
+        escala_gb = GradesService._get_escala(colegio)
+        nota_aprob = float(escala_gb['nota_aprobacion'])
+
+        # Cargar calificaciones en masa para evitar consulta N+1 por estudiante
+        calificaciones_qs = Calificacion.objects.filter(
+            evaluacion__clase=clase,
+            evaluacion__activa=True
+        )
+        
+        calificaciones_by_estudiante = defaultdict(dict)
+        for cal in calificaciones_qs:
+            calificaciones_by_estudiante[cal.estudiante_id][cal.evaluacion_id] = cal.nota
+
         matriz_calificaciones = []
 
         for estudiante in estudiantes:
-            calificaciones_dict = {}
-            calificaciones = Calificacion.objects.filter(
-                estudiante=estudiante,
-                evaluacion__clase=clase,
-                evaluacion__activa=True
-            ).select_related('evaluacion')
-
-            for cal in calificaciones:
-                calificaciones_dict[cal.evaluacion.pk] = cal.nota
+            calificaciones_dict = calificaciones_by_estudiante.get(estudiante.pk, {})
 
             notas_fila = []
             suma_ponderada = 0
@@ -765,8 +771,6 @@ class GradesService:
             promedio = suma_ponderada / suma_ponderaciones if suma_ponderaciones > 0 else None
             promedio = round(promedio, 2) if promedio is not None else None
 
-            escala_gb = GradesService._get_escala(colegio)
-            nota_aprob = float(escala_gb['nota_aprobacion'])
             matriz_calificaciones.append({
                 'estudiante': estudiante,
                 'notas': notas_fila,
@@ -1252,6 +1256,7 @@ class GradesService:
         """
         from backend.apps.academico.models import Evaluacion, Calificacion
         from backend.apps.accounts.models import User
+        from collections import defaultdict
         
         # Obtener evaluaciones
         evaluaciones = list(Evaluacion.objects.filter(
@@ -1267,9 +1272,27 @@ class GradesService:
             perfil_estudiante__ciclo_actual=clase.curso.ciclo_academico
         ).select_related('perfil_estudiante').order_by('apellido_paterno', 'nombre')
         
+        # Cargar calificaciones en masa para evitar consulta N+1 cuadrática
+        calificaciones_qs = list(Calificacion.objects.filter(
+            evaluacion__clase=clase,
+            evaluacion__activa=True
+        ))
+        
+        calificaciones_by_estudiante = defaultdict(dict)
+        for cal in calificaciones_qs:
+            calificaciones_by_estudiante[cal.estudiante_id][cal.evaluacion_id] = cal
+            
+        # Calcular en memoria acumuladores por evaluación
+        valores_por_evaluacion = defaultdict(list)
+        for cal in calificaciones_qs:
+            if cal.nota is not None:
+                valores_por_evaluacion[cal.evaluacion_id].append(float(cal.nota))
+
+        escala_gb = GradesService._get_escala(colegio)
+        nota_aprob = float(escala_gb['nota_aprobacion'])
+
         # Construir matriz
         matriz_calificaciones = []
-        promedios_evaluaciones = []
         
         for estudiante in estudiantes:
             fila_estudiante = {
@@ -1279,13 +1302,10 @@ class GradesService:
             
             suma_notas = 0
             contador_notas = 0
+            calificaciones_dict = calificaciones_by_estudiante.get(estudiante.pk, {})
             
             for evaluacion in evaluaciones:
-                calificacion = Calificacion.objects.filter(
-                    evaluacion=evaluacion,
-                    estudiante=estudiante
-                ).first()
-                
+                calificacion = calificaciones_dict.get(evaluacion.pk)
                 nota_valor = float(calificacion.nota) if calificacion else None
                 fila_estudiante['notas'].append(nota_valor)
                 
@@ -1296,33 +1316,27 @@ class GradesService:
             # Calcular promedio del estudiante
             if contador_notas > 0:
                 fila_estudiante['promedio'] = round(suma_notas / contador_notas, 1)
-                from backend.common.utils.grade_scale import estado_nota
-                fila_estudiante['estado'] = estado_nota(fila_estudiante['promedio'], colegio)
+                fila_estudiante['estado'] = 'Aprobado' if fila_estudiante['promedio'] >= nota_aprob else 'Reprobado'
             else:
                 fila_estudiante['promedio'] = None
                 fila_estudiante['estado'] = 'Sin Notas'
             
             matriz_calificaciones.append(fila_estudiante)
         
-        # Calcular promedios por evaluación
+        # Calcular promedios por evaluación en memoria
         promedios_evaluaciones = []
         for evaluacion in evaluaciones:
-            calificaciones_eval = Calificacion.objects.filter(evaluacion=evaluacion)
-            promedio = calificaciones_eval.aggregate(Avg('nota'))['nota__avg'] if calificaciones_eval else None
+            notas_eval = valores_por_evaluacion.get(evaluacion.pk, [])
+            promedio = sum(notas_eval) / len(notas_eval) if notas_eval else None
             promedios_evaluaciones.append(round(promedio, 1) if promedio is not None else None)
         
-        # Estadísticas generales
-        total_calificaciones = Calificacion.objects.filter(
-            evaluacion__clase=clase,
-            evaluacion__activa=True
-        ).count()
+        # Estadísticas generales en memoria
+        calificaciones_validas = [float(cal.nota) for cal in calificaciones_qs if cal.nota is not None]
+        total_calificaciones = len(calificaciones_validas)
         
         promedio_general = 0
         if total_calificaciones > 0:
-            promedio_general = Calificacion.objects.filter(
-                evaluacion__clase=clase,
-                evaluacion__activa=True
-            ).aggregate(Avg('nota'))['nota__avg'] or 0
+            promedio_general = sum(calificaciones_validas) / total_calificaciones
             promedio_general = round(promedio_general, 1)
         
         return {

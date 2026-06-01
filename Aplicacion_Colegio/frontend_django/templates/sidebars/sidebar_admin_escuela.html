@@ -106,6 +106,14 @@
                 </a>
             </li>
             {% endif %}
+            {% if 'reporte_cursos' in paginas_habilitadas %}
+            <li {% if pagina_actual == 'reporte_cursos' %}class="active"{% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=reporte_cursos">
+                    <span class="icon">📈</span>
+                    <span>Rendimiento por Cursos</span>
+                </a>
+            </li>
+            {% endif %}
             {% if 'calendario_eventos' in paginas_habilitadas %}
             <li {% if pagina_actual == 'calendario_eventos' %}class="active"{% endif %}>
                 <a href="{% url 'dashboard' %}?pagina=calendario_eventos">

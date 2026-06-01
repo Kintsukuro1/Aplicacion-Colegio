@@ -452,4 +452,20 @@ document.addEventListener('keydown', function(e) {
         });
     }
 });
+
+// Auto-submit al cambiar los selectores de filtro
+document.addEventListener('DOMContentLoaded', function() {
+    const selectNivel = document.getElementById('nivel');
+    const selectAnio = document.getElementById('anio');
+    const form = document.querySelector('.filtros-form');
+    
+    if (form) {
+        if (selectNivel) {
+            selectNivel.addEventListener('change', () => form.submit());
+        }
+        if (selectAnio) {
+            selectAnio.addEventListener('change', () => form.submit());
+        }
+    }
+});
 </script>

@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 <link rel="stylesheet" href="{% static 'css/profesor/reportes.css' %}">
 
 <div class="content-wrapper">
@@ -22,14 +23,32 @@
                         </select>
                     </div>
                     
+                    {% if rol == 'admin_escolar' %}
+                    <div class="filtro-item">
+                        <label for="filtro_curso_nombre">Curso:</label>
+                        <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
+                            <option value="">-- Todos los cursos --</option>
+                            {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                            {% for grupo in clases_por_curso %}
+                                <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
                     <div class="filtro-item">
                         <label for="clase_id">Clase:</label>
                         <select name="clase_id" id="clase_id" onchange="this.form.submit()">
                             <option value="">-- Seleccione una clase --</option>
-                            {% for clase in clases %}
-                                <option value="{{ clase.id }}" {% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ clase.curso.nombre }} - {{ clase.asignatura.nombre }}
-                                </option>
+                            {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                            {% for grupo in clases_por_curso %}
+                                <optgroup label="{{ grupo.grouper }}">
+                                    {% for clase in grupo.list %}
+                                        <option value="{{ clase.id }}" {% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ clase.asignatura.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </optgroup>
                             {% endfor %}
                         </select>
                     </div>
@@ -381,4 +400,64 @@
 
     </div>
 </div>
+
+{% if rol == 'admin_escolar' %}
+<script>
+function filtrarClasesPorCurso(cursoNombre) {
+    const claseSelect = document.getElementById('clase_id');
+    if (!claseSelect) return;
+    
+    const optgroups = claseSelect.querySelectorAll('optgroup');
+    
+    // Si cursoNombre es vacío, mostramos todos los optgroups
+    if (!cursoNombre) {
+        optgroups.forEach(group => group.style.display = '');
+        return;
+    }
+    
+    // Ocultar todos los optgroups excepto el seleccionado
+    optgroups.forEach(group => {
+        if (group.getAttribute('label') === cursoNombre) {
+            group.style.display = '';
+        } else {
+            group.style.display = 'none';
+        }
+    });
+    
+    // Auto-seleccionar la primera opción visible si la opción seleccionada actualmente está oculta
+    const currentSelected = claseSelect.options[claseSelect.selectedIndex];
+    if (currentSelected && currentSelected.value !== "") {
+        const parentGroup = currentSelected.parentNode;
+        if (parentGroup && parentGroup.tagName === 'OPTGROUP' && parentGroup.style.display === 'none') {
+            const targetGroup = Array.from(optgroups).find(g => g.getAttribute('label') === cursoNombre);
+            if (targetGroup) {
+                const firstOption = targetGroup.querySelector('option');
+                if (firstOption) {
+                    claseSelect.value = firstOption.value;
+                    claseSelect.dispatchEvent(new Event('change'));
+                }
+            }
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const cursoFiltro = document.getElementById('filtro_curso_nombre');
+    if (cursoFiltro) {
+        const claseSelect = document.getElementById('clase_id');
+        if (claseSelect) {
+            const selectedOption = claseSelect.options[claseSelect.selectedIndex];
+            if (selectedOption && selectedOption.value !== "") {
+                const parentGroup = selectedOption.parentNode;
+                if (parentGroup && parentGroup.tagName === 'OPTGROUP') {
+                    const cursoNombre = parentGroup.getAttribute('label');
+                    cursoFiltro.value = cursoNombre;
+                    filtrarClasesPorCurso(cursoNombre);
+                }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
 

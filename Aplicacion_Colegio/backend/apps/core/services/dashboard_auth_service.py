@@ -50,6 +50,7 @@ PAGE_CAPABILITIES_ANY = {
     'mis_certificados': {'REPORT_VIEW_BASIC', 'REPORT_VIEW_ACADEMIC'},
     'disponibilidad': {'CLASS_VIEW', 'CLASS_TAKE_ATTENDANCE'},
     'reportes': {'REPORT_VIEW_BASIC', 'REPORT_VIEW_ACADEMIC', 'REPORT_VIEW_FINANCIAL'},
+    'reporte_cursos': {'REPORT_VIEW_ACADEMIC', 'SYSTEM_CONFIGURE'},
     'informes_reportes': {'REPORT_VIEW_BASIC', 'REPORT_VIEW_ACADEMIC', 'REPORT_VIEW_FINANCIAL'},
     'gestionar_estudiantes': {'STUDENT_VIEW'},
     'gestionar_apoderados': {'STUDENT_VIEW'},

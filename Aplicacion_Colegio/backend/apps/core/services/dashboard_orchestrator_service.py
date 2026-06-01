@@ -132,7 +132,14 @@ class DashboardOrchestratorService:
             setup_status = OnboardingService.get_setup_status(escuela_rbd)
             context['setup_status'] = setup_status
             context['setup_incomplete'] = not setup_status['setup_complete']
-            context['setup_progress'] = OnboardingService.get_setup_progress_percentage(escuela_rbd)
+            
+            steps_completed = sum([
+                setup_status['has_active_ciclo'],
+                setup_status['has_courses'],
+                setup_status['has_teachers'],
+                setup_status['has_students'],
+            ])
+            context['setup_progress'] = int((steps_completed / 4) * 100)
 
             if not setup_status['setup_complete']:
                 OnboardingNotificationService.notify_if_needed(request.user, escuela_rbd)
@@ -177,6 +184,9 @@ class DashboardOrchestratorService:
                 elif pagina_solicitada == 'reportes':
                     reportes_context = DashboardService.get_admin_reportes_context(request.user, request, escuela_rbd)
                     context.update(reportes_context)
+                elif pagina_solicitada == 'reporte_cursos':
+                    reporte_cursos_context = DashboardService.get_reporte_cursos_context(request.user, request, escuela_rbd)
+                    context.update(reporte_cursos_context)
                 elif pagina_solicitada == 'gestionar_finanzas':
                     finanzas_context = DashboardService.get_gestionar_finanzas_context(
                         request.user, escuela_rbd

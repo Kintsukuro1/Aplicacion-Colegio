@@ -61,6 +61,7 @@ def get_paginas_por_rol(rol):
             'libro_clases': 'profesor/libro_clases.html',
             'informes_reportes': 'profesor/reportes.html',
             'reportes': 'profesor/reportes.html',
+            'reporte_cursos': 'admin_escolar/reporte_cursos.html',
             'calendario_eventos': 'compartido/calendario_eventos.html',
             'solicitud_reuniones': 'compartido/solicitud_reuniones.html',
             'active_sessions': 'compartido/active_sessions.html',

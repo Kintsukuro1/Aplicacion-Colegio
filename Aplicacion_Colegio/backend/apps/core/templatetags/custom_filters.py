@@ -84,3 +84,60 @@ def asignaturas_unicas(clases):
         return ", ".join(sorted(asignaturas))
     else:
         return "Sin asignaturas"
+
+
+@register.filter
+def ordenar_por_curso(clases):
+    """
+    Ordena una lista o QuerySet de clases siguiendo el orden académico chileno:
+    1. Parvularia (Pre-kinder, Kinder)
+    2. Enseñanza Básica (1º a 8º Básico)
+    3. Enseñanza Media (1º a 4º Medio)
+    Y de forma secundaria por asignatura.
+    """
+    if not clases:
+        return []
+    
+    import re
+    
+    def obtener_peso_curso(clase):
+        if not clase or not clase.curso or not clase.curso.nombre:
+            return (99, 99, '', '')
+        
+        nombre = clase.curso.nombre
+        nombre_lower = nombre.lower()
+        
+        # 1. Determinar el nivel peso
+        if 'pre' in nombre_lower or 'kinder' in nombre_lower or 'transic' in nombre_lower or 'nt' in nombre_lower:
+            nivel_peso = 1
+        elif 'básic' in nombre_lower or 'basic' in nombre_lower:
+            nivel_peso = 2
+        elif 'medi' in nombre_lower:
+            nivel_peso = 3
+        else:
+            nivel_peso = 4
+            
+        # 2. Extraer grado número
+        match = re.search(r'^(\d+)', nombre_lower)
+        if match:
+            grado_num = int(match.group(1))
+        else:
+            # Fallback números romanos
+            if 'iv' in nombre_lower:
+                grado_num = 4
+            elif 'iii' in nombre_lower:
+                grado_num = 3
+            elif 'ii' in nombre_lower:
+                grado_num = 2
+            elif 'i' in nombre_lower:
+                grado_num = 1
+            else:
+                grado_num = 99
+                
+        asignatura_nombre = clase.asignatura.nombre.lower() if clase.asignatura and clase.asignatura.nombre else ''
+        return (nivel_peso, grado_num, nombre_lower, asignatura_nombre)
+        
+    try:
+        return sorted(clases, key=obtener_peso_curso)
+    except Exception:
+        return list(clases)
