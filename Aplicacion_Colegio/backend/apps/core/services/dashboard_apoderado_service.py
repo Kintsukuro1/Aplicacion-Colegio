@@ -113,6 +113,21 @@ class DashboardApoderadoService:
                     user, estudiantes, estudiante_id_param
                 )
                 context.update(context_notas)
+                if context_notas.get('estudiante_seleccionado'):
+                    context.update(
+                        DashboardApoderadoService._get_apoderado_notas_inteligencia(
+                            context_notas['estudiante_seleccionado'],
+                            context_notas.get('notas_por_asignatura') or [],
+                            context_notas.get('promedio_general'),
+                            context_notas.get('ficha_alumno') or {},
+                        )
+                    )
+                if context_notas.get('notas_por_asignatura'):
+                    context['notas_por_asignatura'] = (
+                        DashboardApoderadoService._enrich_notas_detalle_asignaturas(
+                            context_notas.get('notas_por_asignatura') or []
+                        )
+                    )
 
             # Mis pupilos page
             elif pagina_solicitada == 'mis_pupilos':
@@ -566,6 +581,241 @@ class DashboardApoderadoService:
             'promedio_general': promedio_general,
             'ficha_alumno': ficha_alumno,
         }
+
+    @staticmethod
+    def _get_apoderado_notas_inteligencia(estudiante, notas_por_asignatura, promedio_general, ficha_alumno):
+        """Insights para Notas (capa aparte; no modifica el contexto base de la vista)."""
+        from django.utils import timezone
+
+        from backend.apps.academico.models import Evaluacion
+        from backend.apps.cursos.models import ClaseEstudiante
+
+        empty = {'notas_inteligencia': None}
+        if not estudiante:
+            return empty
+
+        por_reforzar = int(ficha_alumno.get('por_reforzar') or 0)
+        pct_asistencia = ficha_alumno.get('porcentaje_asistencia')
+        promedio = float(promedio_general) if promedio_general is not None else None
+
+        asignaturas_con_prom = [
+            item for item in notas_por_asignatura
+            if item.get('promedio') is not None and item.get('asignatura')
+        ]
+        mejor = None
+        peor = None
+        if asignaturas_con_prom:
+            mejor_item = max(asignaturas_con_prom, key=lambda x: x['promedio'])
+            peor_item = min(asignaturas_con_prom, key=lambda x: x['promedio'])
+            mejor = {
+                'nombre': getattr(mejor_item['asignatura'], 'nombre', str(mejor_item['asignatura'])),
+                'promedio': mejor_item['promedio'],
+            }
+            peor = {
+                'nombre': getattr(peor_item['asignatura'], 'nombre', str(peor_item['asignatura'])),
+                'promedio': peor_item['promedio'],
+            }
+
+        historial = []
+        for item in notas_por_asignatura:
+            for ev in item.get('evaluaciones') or []:
+                fecha = ev.get('fecha_evaluacion')
+                nota = ev.get('nota')
+                if fecha is not None and nota is not None:
+                    historial.append((fecha, float(nota)))
+        historial.sort(key=lambda par: par[0], reverse=True)
+
+        tendencia = 'sin_dato'
+        tendencia_label = 'Aún no hay suficientes notas para ver tendencia'
+        tendencia_delta = None
+        if len(historial) >= 4:
+            recientes = [n for _, n in historial[:3]]
+            anteriores = [n for _, n in historial[3:6]]
+            if anteriores:
+                prom_rec = sum(recientes) / len(recientes)
+                prom_ant = sum(anteriores) / len(anteriores)
+                tendencia_delta = round(prom_rec - prom_ant, 1)
+                if tendencia_delta >= 0.3:
+                    tendencia = 'sube'
+                    tendencia_label = f'Las últimas notas suben ~{tendencia_delta:+.1f} pts vs. el tramo anterior'
+                elif tendencia_delta <= -0.3:
+                    tendencia = 'baja'
+                    tendencia_label = f'Las últimas notas bajan ~{tendencia_delta:+.1f} pts vs. el tramo anterior'
+                else:
+                    tendencia = 'estable'
+                    tendencia_label = 'El rendimiento reciente se mantiene estable'
+
+        estado = 'estable'
+        estado_label = 'Rendimiento estable'
+        estado_hint = 'Sigue revisando evaluaciones cuando se publiquen nuevas notas.'
+        if promedio is not None:
+            if promedio < 4.0 or por_reforzar >= 2:
+                estado = 'riesgo'
+                estado_label = 'Prioridad académica'
+                estado_hint = 'Hay asignaturas bajo el mínimo o varias por reforzar; conviene coordinarse con el colegio.'
+            elif promedio < 4.5 or por_reforzar >= 1:
+                estado = 'atencion'
+                estado_label = 'Requiere seguimiento'
+                estado_hint = 'Conviene reforzar las asignaturas más débiles antes de la próxima evaluación.'
+            elif promedio >= 6.0 and por_reforzar == 0:
+                estado = 'destacado'
+                estado_label = 'Muy buen desempeño'
+                estado_hint = 'Mantén el hábito de estudio y revisa el detalle por asignatura.'
+        if pct_asistencia is not None and pct_asistencia < 85 and estado in ('estable', 'atencion'):
+            estado = 'atencion' if estado == 'estable' else estado
+            if estado == 'atencion' and promedio and promedio >= 4.5:
+                estado_hint = 'La asistencia está baja; puede afectar el rendimiento aunque las notas se vean bien.'
+
+        alertas = []
+        if por_reforzar:
+            alertas.append(
+                f'{por_reforzar} asignatura{"s" if por_reforzar != 1 else ""} por reforzar (promedio bajo 4,0).'
+            )
+        if peor and peor['promedio'] < 4.0:
+            alertas.append(f'La asignatura más débil es {peor["nombre"]} ({peor["promedio"]:.1f}).')
+        if pct_asistencia is not None and pct_asistencia < 90:
+            alertas.append(f'Asistencia {pct_asistencia}%: revisa inasistencias en el mes.')
+        if tendencia == 'baja':
+            alertas.append('Las calificaciones más recientes muestran una baja respecto al período anterior.')
+
+        hoy = timezone.now().date()
+        proxima_evaluacion = None
+        clase_ids = list(
+            ClaseEstudiante.objects.filter(
+                estudiante_id=estudiante.id,
+                activo=True,
+                clase__activo=True,
+            ).values_list('clase_id', flat=True)
+        )
+        if clase_ids:
+            proxima = (
+                Evaluacion.objects.filter(
+                    clase_id__in=clase_ids,
+                    activa=True,
+                    fecha_evaluacion__gte=hoy,
+                )
+                .select_related('clase__asignatura')
+                .order_by('fecha_evaluacion')
+                .first()
+            )
+            if proxima:
+                asig = getattr(getattr(proxima, 'clase', None), 'asignatura', None)
+                proxima_evaluacion = {
+                    'nombre': proxima.nombre,
+                    'asignatura': getattr(asig, 'nombre', 'Asignatura') if asig else 'Asignatura',
+                    'fecha': proxima.fecha_evaluacion,
+                    'dias': (proxima.fecha_evaluacion - hoy).days,
+                }
+
+        consejo = 'Revisa el detalle de cada asignatura para ver ponderación y fechas de evaluaciones.'
+        if peor and peor['promedio'] < 4.5:
+            consejo = (
+                f'Prioriza estudio y comunicación en {peor["nombre"]} '
+                f'(promedio {peor["promedio"]:.1f}).'
+            )
+        elif mejor and tendencia == 'sube':
+            consejo = (
+                f'Buen impulso reciente; refuerza {peor["nombre"] if peor else "las asignaturas más débiles"} '
+                'para sostener la mejora.'
+            )
+        elif proxima_evaluacion and proxima_evaluacion['dias'] <= 7:
+            consejo = (
+                f'Próxima evaluación en {proxima_evaluacion["asignatura"]} '
+                f'({proxima_evaluacion["nombre"]}) — quedan {proxima_evaluacion["dias"]} día(s).'
+            )
+
+        return {
+            'notas_inteligencia': {
+                'estado': estado,
+                'estado_label': estado_label,
+                'estado_hint': estado_hint,
+                'tendencia': tendencia,
+                'tendencia_label': tendencia_label,
+                'tendencia_delta': tendencia_delta,
+                'mejor_asignatura': mejor,
+                'peor_asignatura': peor,
+                'proxima_evaluacion': proxima_evaluacion,
+                'alertas': alertas,
+                'consejo': consejo,
+            },
+        }
+
+    @staticmethod
+    def _enrich_notas_detalle_asignaturas(notas_por_asignatura):
+        """Enriquece evaluaciones para el panel desplegable (sin alterar el armado base)."""
+        from datetime import date
+
+        enriched = []
+        for item in notas_por_asignatura:
+            evaluaciones = list(item.get('evaluaciones') or [])
+            evaluaciones.sort(
+                key=lambda ev: ev.get('fecha_evaluacion') or date.min,
+                reverse=True,
+            )
+
+            notas_vals = [
+                float(ev['nota']) for ev in evaluaciones
+                if ev.get('nota') is not None
+            ]
+            mejor_nota = max(notas_vals) if notas_vals else None
+            peor_nota = min(notas_vals) if notas_vals else None
+
+            tendencia_sub = 'sin_dato'
+            tendencia_text = 'Sin tendencia calculada'
+            if len(notas_vals) >= 2:
+                delta = round(notas_vals[0] - notas_vals[1], 1)
+                if delta >= 0.3:
+                    tendencia_sub = 'sube'
+                    tendencia_text = f'Última nota sube {delta:+.1f} pts vs. la anterior'
+                elif delta <= -0.3:
+                    tendencia_sub = 'baja'
+                    tendencia_text = f'Última nota baja {delta:+.1f} pts vs. la anterior'
+                else:
+                    tendencia_sub = 'estable'
+                    tendencia_text = 'Últimas notas estables'
+
+            ponderacion_total = sum(
+                float(ev.get('ponderacion') or 0) for ev in evaluaciones
+            )
+
+            evaluaciones_ui = []
+            for ev in evaluaciones:
+                nota = ev.get('nota')
+                nota_f = float(nota) if nota is not None else None
+                bar_pct = round((nota_f / 7.0) * 100, 1) if nota_f is not None else 0
+                evaluaciones_ui.append({
+                    **ev,
+                    'bar_pct': min(100, max(0, bar_pct)),
+                    'estado_clase': 'ok' if nota_f is not None and nota_f >= 4.0 else 'risk',
+                    'es_destacada': nota_f == mejor_nota if mejor_nota is not None and nota_f is not None else False,
+                    'es_baja': (
+                        nota_f == peor_nota and peor_nota is not None and peor_nota < 4.0
+                    ) if nota_f is not None else False,
+                })
+
+            insight = None
+            promedio = item.get('promedio')
+            if promedio is not None and peor_nota is not None and peor_nota < 4.0:
+                insight = f'Reforzar: la nota más baja es {peor_nota:.1f}.'
+            elif mejor_nota is not None and tendencia_sub == 'sube':
+                insight = f'Buen ritmo: última evaluación {notas_vals[0]:.1f}.'
+            elif ponderacion_total and ponderacion_total < 100:
+                insight = f'Ponderación visible al {ponderacion_total:.0f}% (puede haber evaluaciones pendientes).'
+
+            enriched.append({
+                **item,
+                'evaluaciones': evaluaciones_ui,
+                'detalle_meta': {
+                    'total': len(evaluaciones_ui),
+                    'mejor_nota': mejor_nota,
+                    'peor_nota': peor_nota,
+                    'tendencia': tendencia_sub,
+                    'tendencia_text': tendencia_text,
+                    'ponderacion_total': round(ponderacion_total, 0) if ponderacion_total else None,
+                    'insight': insight,
+                },
+            })
+        return enriched
 
     @staticmethod
     def _get_apoderado_asistencia_context(apoderado, estudiantes, estudiante_id_param):

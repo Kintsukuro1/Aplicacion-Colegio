@@ -1,7 +1,7 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
-{% include 'apoderado/_apoderado_hero.html' with hero_title="Notas y Calificaciones" hero_subtitle="Revisa el rendimiento de tus pupilos por asignatura." hero_aria="Notas y Calificaciones" metrics_aria="Resumen" show_pupil_selector=True selector_pagina='notas' m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/notas.css' %}?v=20260531">
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Notas y Calificaciones" hero_subtitle="Revisa el rendimiento de tus pupilos por asignatura." hero_aria="Notas y Calificaciones" show_pupil_selector=True selector_pagina='notas' %}
+<link rel="stylesheet" href="{% static 'css/apoderado/notas.css' %}?v=20260702-detail">
 
 <div class="an-page">
   <section class="apod-section-card an-panel" aria-label="Calificaciones por pupilo">
@@ -90,6 +90,8 @@
         </dl>
       </header>
 
+      {% include 'apoderado/_apoderado_notas_inteligencia.html' %}
+
       {% if notas_por_asignatura %}
       <section class="an-refine" aria-label="Filtrar asignaturas">
         <div class="an-refine__head">
@@ -166,15 +168,54 @@
 
             <div class="an-subject-row__detail" id="an-detail-{{ forloop.counter }}" hidden>
               <div class="an-subject-row__detail-inner">
+                {% if item.detalle_meta and item.detalle_meta.total %}
+                <header class="an-detail-head">
+                  <div class="an-detail-head__stats">
+                    {% if item.detalle_meta.mejor_nota %}
+                    <span class="an-detail-chip an-detail-chip--best">Mejor {{ item.detalle_meta.mejor_nota|floatformat:1 }}</span>
+                    {% endif %}
+                    {% if item.detalle_meta.peor_nota %}
+                    <span class="an-detail-chip an-detail-chip--low">Mínima {{ item.detalle_meta.peor_nota|floatformat:1 }}</span>
+                    {% endif %}
+                    {% if item.detalle_meta.ponderacion_total %}
+                    <span class="an-detail-chip">Ponderación {{ item.detalle_meta.ponderacion_total|floatformat:0 }}%</span>
+                    {% endif %}
+                  </div>
+                  <p class="an-detail-head__trend an-detail-head__trend--{{ item.detalle_meta.tendencia }}">{{ item.detalle_meta.tendencia_text }}</p>
+                  {% if item.detalle_meta.insight %}
+                  <p class="an-detail-head__insight">{{ item.detalle_meta.insight }}</p>
+                  {% endif %}
+                </header>
+                {% endif %}
+
+                <div class="an-eval-list" role="list">
                 {% for ev in item.evaluaciones %}
-                <div class="an-eval">
-                  <span class="an-eval__name">{{ ev.nombre }}</span>
-                  <span class="an-eval__meta">{{ ev.fecha_evaluacion|date:"d/m/Y" }} · {{ ev.ponderacion|floatformat:0 }}%</span>
-                  <span class="an-eval__badge{% if ev.nota >= 4.0 %} an-nota--aprobada{% else %} an-nota--reprobada{% endif %}">{{ ev.nota|floatformat:1 }}</span>
-                </div>
+                <article class="an-eval an-eval--{{ ev.estado_clase }}{% if ev.es_destacada %} an-eval--highlight{% endif %}{% if ev.es_baja %} an-eval--warn{% endif %}" role="listitem">
+                  <div class="an-eval__main">
+                    <div class="an-eval__top">
+                      <h4 class="an-eval__name">{{ ev.nombre }}</h4>
+                      <div class="an-eval__tags">
+                        {% if ev.es_destacada %}<span class="an-eval__tag an-eval__tag--best">Mejor nota</span>{% endif %}
+                        {% if ev.es_baja %}<span class="an-eval__tag an-eval__tag--risk">A reforzar</span>{% endif %}
+                      </div>
+                    </div>
+                    <div class="an-eval__meta-row">
+                      <span class="an-eval__meta">{{ ev.fecha_evaluacion|date:"d/m/Y" }}</span>
+                      <span class="an-eval__ponder">Ponderación {{ ev.ponderacion|floatformat:0 }}%</span>
+                    </div>
+                    <div class="an-eval__bar-wrap" aria-hidden="true">
+                      <div class="an-eval__bar an-eval__bar--{{ ev.estado_clase }}" style="width: {{ ev.bar_pct }}%;"></div>
+                    </div>
+                  </div>
+                  <div class="an-eval__score">
+                    <span class="an-eval__badge{% if ev.nota >= 4.0 %} an-nota--aprobada{% else %} an-nota--reprobada{% endif %}">{{ ev.nota|floatformat:1 }}</span>
+                    <span class="an-eval__scale">/ 7,0</span>
+                  </div>
+                </article>
                 {% empty %}
                 <p class="an-subject-row__sin-datos">Sin calificaciones registradas.</p>
                 {% endfor %}
+                </div>
               </div>
             </div>
           </article>
@@ -244,7 +285,16 @@
       panel.hidden = !open;
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       setRowOpen(row, open);
-      if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (open) {
+        panel.querySelectorAll('.an-eval__bar').forEach(function (bar) {
+          var w = bar.style.width;
+          bar.style.width = '0%';
+          requestAnimationFrame(function () {
+            bar.style.width = w;
+          });
+        });
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
   });
 
