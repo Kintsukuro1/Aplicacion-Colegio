@@ -55,6 +55,12 @@ document.addEventListener('change', function (event) {
 
 document.addEventListener('DOMContentLoaded', function () {
     actualizarSeccionOnline();
+
+    // Auto-abrir modal si la URL contiene ?crear=1 (Reducir clics)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('crear') === '1') {
+        mostrarModalCrear();
+    }
 });
 
 function eliminarTarea(tareaId) {

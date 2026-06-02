@@ -1,4 +1,4 @@
-﻿/* ===========================
+/* ===========================
    MIS CLASES - PROFESOR
    Estilos para el módulo de visualización de clases del profesor
    =========================== */
@@ -523,3 +523,63 @@
 .clase-card:nth-child(5) { animation-delay: 0.3s; }
 .clase-card:nth-child(6) { animation-delay: 0.35s; }
 .clase-card:nth-child(n+7) { animation-delay: 0.4s; }
+
+/* ===========================
+   ACCIONES RÁPIDAS (REDUCIR CLICS)
+   =========================== */
+.clase-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.card-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 4px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.btn-action-tarea {
+    background-color: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+}
+.btn-action-tarea:hover {
+    background-color: #d1fae5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(5, 150, 105, 0.15);
+}
+
+.btn-action-asistencia {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
+.btn-action-asistencia:hover {
+    background-color: #dbeafe;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+}
+
+.btn-action-material {
+    background-color: #fffbeb;
+    color: #d97706;
+    border-color: #fde68a;
+}
+.btn-action-material:hover {
+    background-color: #fef3c7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(217, 119, 6, 0.15);
+}

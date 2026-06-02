@@ -659,222 +659,167 @@
             </div>
         </section>
 
-        <!-- Main Dashboard Layout Grid -->
-        <div class="student-grid">
-            
-            <!-- Left Side: Timeline Feed & Performance Charts (Wide) -->
-            <div class="student-main-content">
-                
-                <!-- Google Classroom Timeline Feed -->
-                <section class="student-card timeline-card" aria-label="Timeline Académico">
-                    <div class="timeline-header">
-                        <h2 class="timeline-header-title">
-                            Timeline Académico
-                        </h2>
-                        <select id="timeline-filter-select" class="timeline-filter" aria-label="Filtrar eventos">
-                            <option value="all">Mostrar todo</option>
-                            <option value="tarea">Tareas</option>
-                            <option value="nota">Calificaciones</option>
-                            <option value="comunicado">Comunicados</option>
-                            <option value="material">Materiales</option>
-                        </select>
-                    </div>
-
-                    <div class="classroom-timeline" id="classroom-timeline-feed">
-                        {% if timeline %}
-                            {% for item in timeline %}
-                            <div class="timeline-item" data-tipo="{{ item.tipo }}">
-                                <div class="timeline-dot" style="background-color: {{ item.color }}20; border-color: {{ item.color }};" aria-hidden="true">
-                                    {{ item.icono }}
-                                </div>
-                                <a href="{{ item.enlace }}" class="timeline-card-content">
-                                    <div class="timeline-meta">
-                                        <span class="timeline-badge" style="background-color: {{ item.color }}15; color: {{ item.color }};">
-                                            {{ item.badge }}
-                                        </span>
-                                        <time class="timeline-time" datetime="{{ item.fecha|date:'c' }}">
-                                            {{ item.fecha|date:"d/m/Y H:i" }}
-                                        </time>
-                                    </div>
-                                    <h3 class="timeline-title-text">{{ item.titulo }}</h3>
-                                    <p class="timeline-desc-text">{{ item.desc }}</p>
-                                </a>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="alumno-empty-msg">No hay actividades académicas registradas</p>
-                        {% endif %}
-                    </div>
-                </section>
-
-                <!-- Academic Charts (Evolución de Notas & Asistencia) -->
-                <section class="charts-grid" aria-label="Gráficos de rendimiento">
-                    
-                    <!-- Line Chart: Evolución de Notas -->
-                    <div class="chart-box">
-                        <h3 class="chart-box-title">📈 Notas: {{ subject_name }}</h3>
-                        <div class="chart-box-wrapper">
-                            <canvas id="chartNotas"></canvas>
+        <!-- 1. PRÓXIMA CLASE -->
+        <section class="student-card" aria-label="Próxima Clase">
+            <h2 class="student-card-title">📖 Próxima Clase</h2>
+            {% if proxima_clase %}
+                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 16px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="font-size: 2.2rem; background: #3b82f6; color: white; width: 60px; height: 60px; border-radius: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);">
+                            📚
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #1e3a8a;">
+                                {{ proxima_clase.clase.asignatura.nombre }}
+                            </h3>
+                            <p style="margin: 4px 0 0; color: #1e40af; font-weight: 600; font-size: 0.95rem;">
+                                Profesor: {{ proxima_clase.clase.profesor.get_full_name }}
+                            </p>
                         </div>
                     </div>
-
-                    <!-- Bar Chart: Asistencia Mensual -->
-                    <div class="chart-box">
-                        <h3 class="chart-box-title">📊 Asistencia Mensual</h3>
-                        <div class="chart-box-wrapper">
-                            <canvas id="chartAsistencia"></canvas>
-                        </div>
-                    </div>
-
-                </section>
-
-                <!-- Actionable Access Shortcuts -->
-                <section class="fast-access-grid" aria-label="Accesos rápidos">
-                    <a href="{% url 'dashboard' %}?pagina=mis_clases" class="fast-access-item">
-                        <div class="fast-access-emoji">📚</div>
-                        <div class="fast-access-info">
-                            <h3>Mis Clases</h3>
-                            <p>Horarios e información</p>
-                        </div>
-                    </a>
-                    <a href="{% url 'ver_tareas_estudiante' %}" class="fast-access-item">
-                        <div class="fast-access-emoji">📝</div>
-                        <div class="fast-access-info">
-                            <h3>Mis Tareas</h3>
-                            <p>Entregas y revisiones</p>
-                        </div>
-                    </a>
-                    <a href="{% url 'calendario_tareas_estudiante' %}" class="fast-access-item">
-                        <div class="fast-access-emoji">📅</div>
-                        <div class="fast-access-info">
-                            <h3>Calendario</h3>
-                            <p>Fechas e hitos importantes</p>
-                        </div>
-                    </a>
-                </section>
-
-            </div>
-
-            <!-- Right Side: KPI Dashboard, Prediction, and Actionable Notifications (Narrow) -->
-            <div class="student-sidebar-panel">
-                
-                <!-- "Hoy tengo" Intelligent KPI Panel -->
-                <section class="student-card hoy-tengo-card" aria-label="Dashboard Inteligente Hoy tengo">
-                    <h2 class="hoy-tengo-title">Hoy tengo</h2>
-                    
-                    <div class="hoy-tengo-list">
-                        
-                        <!-- Clases de hoy -->
-                        <a href="{% url 'dashboard' %}?pagina=mi_horario" class="hoy-tengo-item hoy-tengo-clases">
-                            <div class="hoy-tengo-left">
-                                <div class="hoy-tengo-icon" aria-hidden="true">📚</div>
-                                <span class="hoy-tengo-label">Clases programadas hoy</span>
-                            </div>
-                            <span class="hoy-tengo-value">{{ clases_hoy|default:"0" }}</span>
-                        </a>
-
-                        <!-- Tareas pendientes -->
-                        <a href="{% url 'ver_tareas_estudiante' %}" class="hoy-tengo-item hoy-tengo-tareas">
-                            <div class="hoy-tengo-left">
-                                <div class="hoy-tengo-icon" aria-hidden="true">📝</div>
-                                <span class="hoy-tengo-label">Tareas pendientes</span>
-                            </div>
-                            <span class="hoy-tengo-value">{{ tareas_pendientes|default:"0" }}</span>
-                        </a>
-
-                        <!-- Tareas vencen mañana -->
-                        <a href="{% url 'ver_tareas_estudiante' %}" class="hoy-tengo-item hoy-tengo-manana">
-                            <div class="hoy-tengo-left">
-                                <div class="hoy-tengo-icon" aria-hidden="true">⚠️</div>
-                                <span class="hoy-tengo-label">Vence mañana</span>
-                            </div>
-                            <span class="hoy-tengo-value">{{ tareas_vencen_manana|default:"0" }}</span>
-                        </a>
-
-                        <!-- Asistencia mensual -->
-                        <a href="{% url 'dashboard' %}?pagina=asistencia" class="hoy-tengo-item hoy-tengo-asistencia">
-                            <div class="hoy-tengo-left">
-                                <div class="hoy-tengo-icon" aria-hidden="true">📋</div>
-                                <span class="hoy-tengo-label">Asistencia mensual</span>
-                            </div>
-                            <span class="hoy-tengo-value">{{ asistencia_mes_pct|floatformat:0 }}%</span>
-                        </a>
-
-                        <!-- Promedio general -->
-                        <a href="{% url 'dashboard' %}?pagina=mis_notas" class="hoy-tengo-item hoy-tengo-promedio">
-                            <div class="hoy-tengo-left">
-                                <div class="hoy-tengo-icon" aria-hidden="true">⭐</div>
-                                <span class="hoy-tengo-label">Promedio actual</span>
-                            </div>
-                            <span class="hoy-tengo-value">{{ promedio_general|floatformat:1 }}</span>
-                        </a>
-
-                    </div>
-                </section>
-
-                <!-- Performance Prediction Box -->
-                <section class="prediction-card {% if prediccion.nivel == 'Excelente' or prediccion.nivel == 'Bueno' %}good{% elif prediccion.nivel == 'Regular' %}warning{% else %}risk{% endif %}" aria-label="Predicción de rendimiento">
-                    <div class="prediction-label">Predicción de Rendimiento</div>
-                    <div class="prediction-level">Rendimiento actual: {{ prediccion.nivel }}</div>
-                    
-                    <div class="prediction-stats">
-                        <div class="prediction-stat-item">
-                            <span class="prediction-stat-lbl">Promedio</span>
-                            <span class="prediction-stat-val">{{ prediccion.promedio|floatformat:1 }}</span>
-                        </div>
-                        <div class="prediction-stat-item">
-                            <span class="prediction-stat-lbl">Asistencia</span>
-                            <span class="prediction-stat-val">{{ prediccion.asistencia|floatformat:0 }}%</span>
-                        </div>
-                    </div>
-
-                    <div class="prediction-advice">
-                        <span class="prediction-icon" aria-hidden="true">
-                            {% if prediccion.check_ok %}✓{% else %}⚠️{% endif %}
+                    <div style="text-align: right; min-width: 150px;">
+                        <span style="display: inline-block; background: #2563eb; color: white; padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">
+                            {{ proxima_clase.get_dia_semana_display }}
                         </span>
-                        <span>{{ prediccion.mensaje }}</span>
+                        <p style="margin: 6px 0 0; font-size: 1.1rem; font-weight: 800; color: #1e3a8a;">
+                            {{ proxima_clase.hora_inicio|time:"H:i" }} - {{ proxima_clase.hora_fin|time:"H:i" }}
+                        </p>
                     </div>
-                </section>
+                </div>
+            {% else %}
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; text-align: center; color: #64748b;">
+                    <span style="font-size: 2rem;">🏖️</span>
+                    <p style="margin: 8px 0 0; font-weight: 600;">No tienes más clases programadas por ahora.</p>
+                </div>
+            {% endif %}
+        </section>
 
-                <!-- Actionable Notifications Section -->
-                <section class="action-notifs-card" aria-label="Notificaciones Accionables">
-                    <h2 class="student-card-title">
-                        <span aria-hidden="true">🔔</span> Notificaciones
-                    </h2>
-
-                    <div class="action-notifs-list">
-                        {% if notificaciones_accionables %}
-                            {% for notif in notificaciones_accionables %}
-                            <div class="action-notif-item">
-                                <div class="action-notif-icon" aria-hidden="true">
-                                    {{ notif.icono }}
-                                </div>
-                                <div class="action-notif-body">
-                                    <div class="action-notif-top">
-                                        <span class="action-notif-name">{{ notif.titulo }}</span>
-                                        <span class="action-notif-date">{{ notif.fecha|timesince }}</span>
-                                    </div>
-                                    <p class="action-notif-text">{{ notif.mensaje }}</p>
-                                    
-                                    <div class="action-notif-btns">
-                                        {% for btn in notif.botones %}
-                                        <a href="{{ btn.url }}" class="action-notif-btn {% if btn.class == 'btn-primary' %}btn-primary{% else %}btn-ghost{% endif %}">
-                                            {{ btn.texto }}
-                                        </a>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="alumno-empty-msg">No tienes notificaciones pendientes</p>
-                        {% endif %}
-                    </div>
-                </section>
-
+        <!-- 2. TAREAS PENDIENTES & ENTREGAS PROGRESS -->
+        <section class="student-card" aria-label="Tareas Pendientes">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                <h2 class="student-card-title" style="margin-bottom: 0;">📝 Tareas Pendientes</h2>
+                <!-- Progreso de entregas -->
+                <div style="font-family: monospace; font-size: 1.15rem; font-weight: bold; color: #2563eb; background: #eff6ff; padding: 8px 16px; border-radius: 12px; border: 1px solid #bfdbfe; display: flex; align-items: center; gap: 10px;">
+                    <span>Tareas [</span><span style="color: #2563eb; letter-spacing: 2px;">{{ progreso_barras }}</span><span>] {{ tareas_entregadas_count }}/{{ total_tareas_curso }} entregadas</span>
+                </div>
             </div>
 
-        </div>
+            {% if tareas_pendientes_lista %}
+                <div class="student-pending-tasks-grid">
+                    {% for tarea in tareas_pendientes_lista %}
+                    <div class="student-task-card" style="border-left: 4px solid {% if tarea.esta_vencida %}#ef4444{% elif tarea.dias_restantes <= 1 %}#f59e0b{% else %}#3b82f6{% endif %};">
+                        <div class="student-task-info">
+                            <div class="student-task-subject-badge" style="background-color: {% if tarea.esta_vencida %}#fef2f2{% elif tarea.dias_restantes <= 1 %}#fffbeb{% else %}#eff6ff{% endif %}; color: {% if tarea.esta_vencida %}#ef4444{% elif tarea.dias_restantes <= 1 %}#d97706{% else %}#2563eb{% endif %};">
+                                {{ tarea.clase.asignatura.nombre }}
+                            </div>
+                            <h3 class="student-task-title">{{ tarea.titulo }}</h3>
+                            <p class="student-task-due">
+                                {% if tarea.esta_vencida %}
+                                    <span style="color: #ef4444; font-weight: 600;">⚠️ Vencida ({{ tarea.fecha_entrega|date:"d/m/Y H:i" }})</span>
+                                {% elif tarea.dias_restantes <= 1 %}
+                                    <span style="color: #d97706; font-weight: 600;">⏰ Vence mañana ({{ tarea.fecha_entrega|date:"d/m/Y H:i" }})</span>
+                                {% else %}
+                                    <span>📅 Vence: {{ tarea.fecha_entrega|date:"d/m/Y H:i" }} (En {{ tarea.dias_restantes }} días)</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="student-task-action">
+                            <button type="button" class="btn btn-primary btn-sm student-task-btn" onclick="mostrarModalEntregarDesdeDashboard({{ tarea.id_tarea }}, '{{ tarea.titulo|escapejs }}', '{{ tarea.clase.asignatura.nombre|escapejs }}')">
+                                📤 Entregar
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 16px; padding: 25px; text-align: center;">
+                    <p style="margin: 0; color: #059669; font-weight: 600; font-size: 1.1rem;">
+                        ¡Excelente! No tienes tareas pendientes 🎉
+                    </p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- 3. ÚLTIMAS NOTAS (Promedio, Evolución y estadísticas) -->
+        <section class="student-card" aria-label="Rendimiento Académico">
+            <h2 class="student-card-title">⭐ Últimas Notas y Rendimiento</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <div style="background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 16px; padding: 18px; text-align: center;">
+                    <div style="font-size: 0.85rem; color: #be185d; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Promedio General</div>
+                    <div style="font-size: 2.2rem; font-weight: 900; color: #9d174d;">{{ promedio_general|floatformat:1 }}</div>
+                </div>
+                <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 16px; padding: 18px; text-align: center;">
+                    <div style="font-size: 0.85rem; color: #065f46; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Asignatura más fuerte</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: #064e3b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ asignatura_fuerte }}">
+                        {{ asignatura_fuerte }}
+                    </div>
+                </div>
+                <div style="background: #fff5f5; border: 1px solid #fed7d7; border-radius: 16px; padding: 18px; text-align: center;">
+                    <div style="font-size: 0.85rem; color: #9b2c2c; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Requiere atención</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: #742a2a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ asignatura_debil }}">
+                        {{ asignatura_debil }}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px; flex-wrap: wrap;">
+                <!-- Line Chart: Evolución de Notas -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.05rem; font-weight: 700; color: #334155;">📈 Evolución de Notas (Últimas evaluaciones)</h3>
+                    <div style="position: relative; height: 200px; width: 100%;">
+                        <canvas id="chartNotas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Lista de Últimas Calificaciones -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.05rem; font-weight: 700; color: #334155;">📌 Calificaciones Recientes</h3>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        {% if ultimas_notas %}
+                            {% for cal in ultimas_notas %}
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9;">
+                                    <div>
+                                        <span style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">{{ cal.evaluacion.clase.asignatura.nombre }}</span>
+                                        <p style="margin: 2px 0 0; font-size: 0.78rem; color: #64748b;">{{ cal.evaluacion.nombre }}</p>
+                                    </div>
+                                    <div style="font-size: 1.2rem; font-weight: 900; color: {% if cal.nota >= 4.0 %}#059669{% else %}#dc2626{% endif %};">
+                                        {{ cal.nota|floatformat:1 }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="font-size: 0.85rem; color: #64748b; text-align: center; margin: 20px 0;">No registras calificaciones este periodo.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. ÚLTIMOS ANUNCIOS -->
+        <section class="student-card" aria-label="Últimos Anuncios">
+            <h2 class="student-card-title">📢 Últimos Anuncios</h2>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% if ultimos_anuncios %}
+                    {% for anuncio in ultimos_anuncios %}
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; transition: border-color 0.2s;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #1e293b;">{{ anuncio.titulo }}</h3>
+                                    <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b; font-weight: 600;">Publicado por: {{ anuncio.publicado_por.get_full_name }}</p>
+                                </div>
+                                <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 500;">
+                                    {{ anuncio.fecha_publicacion|date:"d/m/Y H:i" }}
+                                </span>
+                            </div>
+                            <p style="margin: 0; font-size: 0.9rem; color: #475569; line-height: 1.5; white-space: pre-line;">{{ anuncio.contenido }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="font-size: 0.9rem; color: #64748b; text-align: center; margin: 20px 0;">No hay comunicados o anuncios vigentes.</p>
+                {% endif %}
+            </div>
+        </section>
 
     </div>
 

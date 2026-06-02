@@ -128,6 +128,15 @@
     <div class="entregas-tabla-container">
         <h2>👥 Entregas de Estudiantes</h2>
 
+        <!-- Filtros Rápidos Premium -->
+        <div class="filters-container" style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+            <span style="font-weight: 700; color: #475569; font-size: 0.88rem; margin-right: 5px;">Filtrar por estado:</span>
+            <button type="button" class="filter-btn active" data-filter="todas" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; cursor: pointer; font-weight: 700; font-size: 0.82rem; transition: all 0.2s;">Todas</button>
+            <button type="button" class="filter-btn" data-filter="pendientes" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; cursor: pointer; font-weight: 700; font-size: 0.82rem; transition: all 0.2s;">⏳ Pendientes de Corrección</button>
+            <button type="button" class="filter-btn" data-filter="corregidas" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #bbf7d0; background: #f0fdf4; color: #15803d; cursor: pointer; font-weight: 700; font-size: 0.82rem; transition: all 0.2s;">✓ Corregidas</button>
+            <button type="button" class="filter-btn" data-filter="atrasadas" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #fca5a5; background: #fef2f2; color: #b91c1c; cursor: pointer; font-weight: 700; font-size: 0.82rem; transition: all 0.2s;">⏰ Atrasadas / Tardías</button>
+        </div>
+
         <!-- Action Panel for Bulk Grading ("Corrección Masiva") -->
         <div class="bulk-grade-panel" id="bulkGradePanel" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 18px; margin-bottom: 20px; animation: slideDown 0.2s ease-out;">
             <h3 style="margin-top: 0; color: #1e3a8a; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; font-weight: 800;">
@@ -340,6 +349,51 @@ document.addEventListener('DOMContentLoaded', function() {
             // Sincronizar selectAll
             const allChecked = Array.from(deliveryCheckboxes).every(c => c.checked);
             selectAllCheckbox.checked = allChecked;
+        });
+    });
+
+    // --- Filtros de Entregas ---
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const rows = document.querySelectorAll('.entregas-tabla tbody tr');
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => {
+                b.classList.remove('active');
+                b.style.transform = 'none';
+                b.style.boxShadow = 'none';
+            });
+
+            this.classList.add('active');
+            this.style.transform = 'translateY(-1px)';
+            this.style.boxShadow = '0 4px 10px rgba(0,0,0,0.05)';
+
+            const filter = this.getAttribute('data-filter');
+
+            rows.forEach(row => {
+                if (row.cells.length === 1 && row.cells[0].classList.contains('text-center')) return;
+
+                const hasDelivery = !row.classList.contains('sin-entrega');
+                const badge = row.querySelector('.badge');
+                const badgeText = badge ? badge.textContent.trim().toLowerCase() : '';
+                const califBadge = row.querySelector('.calificacion-badge');
+
+                let match = false;
+                if (filter === 'todas') {
+                    match = true;
+                } else if (filter === 'pendientes') {
+                    match = hasDelivery && !califBadge;
+                } else if (filter === 'corregidas') {
+                    match = hasDelivery && !!califBadge;
+                } else if (filter === 'atrasadas') {
+                    const isTardia = badgeText.includes('tardía') || badgeText.includes('tarde') || badgeText.includes('tardio');
+                    const isSinEntrega = !hasDelivery;
+                    const isTaskVencida = {% if tarea.esta_vencida %}true{% else %}false{% endif %};
+                    match = isTardia || (isSinEntrega && isTaskVencida);
+                }
+
+                row.style.display = match ? '' : 'none';
+            });
         });
     });
 });

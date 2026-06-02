@@ -70,15 +70,26 @@ def gestionar_asistencia(request, colegio, admin_mode=False):
             ).select_related('asignatura', 'curso', 'profesor')
         total_clases = clases.count()
         
-        # Filtros
-        filtro_clase_id = request.GET.get('clase_id', '')
-        filtro_fecha = request.GET.get('fecha', '')
+        # Filtros (con memoria de sesión para reducir clics)
+        filtro_clase_id = request.GET.get('clase_id')
+        filtro_fecha = request.GET.get('fecha')
         
-        # Selección automática si no hay filtro
-        if not filtro_clase_id and clases.exists():
-            filtro_clase_id = str(clases.first().id)
+        if not filtro_clase_id:
+            filtro_clase_id = request.session.get('last_attendance_clase_id', '')
+            if not filtro_clase_id or not clases.filter(id=filtro_clase_id).exists():
+                if clases.exists():
+                    filtro_clase_id = str(clases.first().id)
+                else:
+                    filtro_clase_id = ''
+        
         if not filtro_fecha:
-            filtro_fecha = date.today().strftime('%Y-%m-%d')
+            filtro_fecha = request.session.get('last_attendance_fecha', date.today().strftime('%Y-%m-%d'))
+            
+        # Guardar en sesión para la próxima visita
+        if filtro_clase_id:
+            request.session['last_attendance_clase_id'] = filtro_clase_id
+        if filtro_fecha:
+            request.session['last_attendance_fecha'] = filtro_fecha
         
         estudiantes_con_asistencia = []
         clase_seleccionada = None

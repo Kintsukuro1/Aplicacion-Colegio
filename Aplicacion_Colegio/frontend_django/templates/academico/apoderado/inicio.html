@@ -5,6 +5,36 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'academico/css/apoderado/inicio.css' %}">
+<style>
+.hijo-proxima-prueba {
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 16px 0 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: inset 0 1px 2px rgba(253, 230, 138, 0.2);
+}
+
+.prueba-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #d97706;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.prueba-value {
+    font-size: 0.85rem;
+    color: #78350f;
+    line-height: 1.4;
+}
+</style>
 {% endblock %}
 
 {% block breadcrumbs %}
@@ -84,8 +114,18 @@
                         </span>
                     </div>
                 </div>
+
+                <!-- Próxima Prueba (Reducir clics) -->
+                <div class="hijo-proxima-prueba">
+                    <span class="prueba-label">
+                        <i class="fas fa-exclamation-circle"></i> Próxima prueba:
+                    </span>
+                    <span class="prueba-value">
+                        <strong>{{ estudiante.proxima_evaluacion_asignatura }}:</strong> {{ estudiante.proxima_evaluacion_nombre }} ({{ estudiante.proxima_evaluacion_fecha|date:"d \d\e F" }})
+                    </span>
+                </div>
                 
-                <div class="hijo-actions">
+                <div class="hijo-actions" style="margin-top: 15px;">
                     <a href="{% url 'academico:notas_hijo' %}?estudiante_id={{ estudiante.id }}" class="btn-action">
                         <i class="fas fa-book"></i>
                         Notas
@@ -97,6 +137,9 @@
                     <a href="{% url 'academico:tareas_hijo' %}?estudiante_id={{ estudiante.id }}" class="btn-action">
                         <i class="fas fa-tasks"></i>
                         Tareas
+                    </a>
+                    <a href="{% url 'academico:notas_hijo' %}?estudiante_id={{ estudiante.id }}" class="btn-action card-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; border-radius: 8px;">
+                        Ver detalle →
                     </a>
                 </div>
             </div>

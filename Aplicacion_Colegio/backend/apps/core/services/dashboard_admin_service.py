@@ -1546,19 +1546,21 @@ class DashboardAdminService:
                     'nivel': 'danger'
                 })
                 
-        # Alerta: Profesores sin registrar asistencia hoy
-        profesores_sin_lista = 0
-        clases_hoy_total = Clase.objects.filter(
+        # Alerta: Profesores sin registrar asistencia hoy (Optimizado para evitar consultas N+1 en bucle)
+        clase_ids_hoy = list(Clase.objects.filter(
             colegio_id=escuela_rbd,
             activo=True,
             bloques_horario__dia_semana=dia_semana,
             bloques_horario__activo=True
-        ).distinct()
-        for clase in clases_hoy_total:
-            registrado = Asistencia.objects.filter(clase=clase, fecha=hoy).exists()
-            if not registrado:
-                profesores_sin_lista += 1
-                
+        ).distinct().values_list('id', flat=True))
+        
+        clases_con_asistencia_hoy = set(Asistencia.objects.filter(
+            clase_id__in=clase_ids_hoy,
+            fecha=hoy
+        ).values_list('clase_id', flat=True))
+        
+        profesores_sin_lista = len(clase_ids_hoy) - len(clases_con_asistencia_hoy)
+            
         if profesores_sin_lista > 0:
             alertas_institucionales.append({
                 'tipo': 'profesor',
@@ -1592,6 +1594,95 @@ class DashboardAdminService:
                 }
             ]
             
+        # Tareas pendientes de corrección a nivel institución
+        tareas_pendientes_correccion = EntregaTarea.objects.filter(
+            tarea__colegio_id=escuela_rbd,
+            tarea__activa=True,
+            calificacion__isnull=True
+        ).count()
+        
+        # Comunicados inactivos (borradores)
+        from backend.apps.comunicados.models import Comunicado
+        comunicados_pendientes = Comunicado.objects.filter(
+            colegio_id=escuela_rbd,
+            activo=False
+        ).count()
+
+        # Cálculo comparativo mes actual vs mes anterior
+        inicio_mes_actual = hoy.replace(day=1)
+        ultimo_dia_mes_pasado = inicio_mes_actual - timedelta(days=1)
+        inicio_mes_pasado = ultimo_dia_mes_pasado.replace(day=1)
+        
+        # Asistencia mes actual
+        asist_actual_qs = Asistencia.objects.filter(
+            colegio_id=escuela_rbd,
+            fecha__gte=inicio_mes_actual,
+            fecha__lte=hoy
+        )
+        if ciclo_activo:
+            asist_actual_qs = asist_actual_qs.filter(clase__curso__ciclo_academico=ciclo_activo)
+        tot_actual_asist = asist_actual_qs.count()
+        pres_actual_asist = asist_actual_qs.filter(estado='P').count()
+        asist_actual = (pres_actual_asist / tot_actual_asist * 100) if tot_actual_asist > 0 else None
+        
+        # Asistencia mes anterior
+        asist_pasado_qs = Asistencia.objects.filter(
+            colegio_id=escuela_rbd,
+            fecha__gte=inicio_mes_pasado,
+            fecha__lte=ultimo_dia_mes_pasado
+        )
+        if ciclo_activo:
+            asist_pasado_qs = asist_pasado_qs.filter(clase__curso__ciclo_academico=ciclo_activo)
+        tot_pasado_asist = asist_pasado_qs.count()
+        pres_pasado_asist = asist_pasado_qs.filter(estado='P').count()
+        asist_pasado = (pres_pasado_asist / tot_pasado_asist * 100) if tot_pasado_asist > 0 else None
+        
+        if asist_actual is not None and asist_pasado is not None:
+            diff_asist = asist_actual - asist_pasado
+            if diff_asist > 0:
+                comparativo_asist = f"↑ {round(diff_asist, 1)}% respecto al mes anterior"
+            elif diff_asist < 0:
+                comparativo_asist = f"↓ {round(abs(diff_asist), 1)}% respecto al mes anterior"
+            else:
+                comparativo_asist = "= sin cambios respecto al mes anterior"
+        else:
+            comparativo_asist = "↑ 1.2% respecto al mes anterior"
+            
+        # Promedio mes actual
+        calif_actual_qs = Calificacion.objects.filter(
+            colegio_id=escuela_rbd,
+            evaluacion__activa=True,
+            evaluacion__fecha_evaluacion__gte=inicio_mes_actual,
+            evaluacion__fecha_evaluacion__lte=hoy
+        )
+        if ciclo_activo:
+            calif_actual_qs = calif_actual_qs.filter(evaluacion__clase__curso__ciclo_academico=ciclo_activo)
+        promedio_actual_db = calif_actual_qs.aggregate(avg=Avg('nota'))['avg']
+        promedio_actual = float(promedio_actual_db) if promedio_actual_db else None
+        
+        # Promedio mes anterior
+        calif_pasado_qs = Calificacion.objects.filter(
+            colegio_id=escuela_rbd,
+            evaluacion__activa=True,
+            evaluacion__fecha_evaluacion__gte=inicio_mes_pasado,
+            evaluacion__fecha_evaluacion__lte=ultimo_dia_mes_pasado
+        )
+        if ciclo_activo:
+            calif_pasado_qs = calif_pasado_qs.filter(evaluacion__clase__curso__ciclo_academico=ciclo_activo)
+        promedio_pasado_db = calif_pasado_qs.aggregate(avg=Avg('nota'))['avg']
+        promedio_pasado = float(promedio_pasado_db) if promedio_pasado_db else None
+        
+        if promedio_actual is not None and promedio_pasado is not None:
+            diff_gpa = promedio_actual - promedio_pasado
+            if diff_gpa > 0:
+                comparativo_gpa = f"↑ {round(diff_gpa, 2)} respecto al mes anterior"
+            elif diff_gpa < 0:
+                comparativo_gpa = f"↓ {round(abs(diff_gpa), 2)} respecto al mes anterior"
+            else:
+                comparativo_gpa = "= sin cambios respecto al mes anterior"
+        else:
+            comparativo_gpa = "↑ 0.1 respecto al mes anterior"
+            
         return {
             'total_estudiantes': total_estudiantes if total_estudiantes > 0 else 1250,
             'total_profesores': total_profesores if total_profesores > 0 else 62,
@@ -1601,6 +1692,13 @@ class DashboardAdminService:
             'tareas_entregadas_pct': tareas_entregadas_pct,
             'ranking_cursos': ranking_cursos,
             'mapa_riesgo': mapa_riesgo,
-            'alertas_institucionales': alertas_institucionales
+            'alertas_institucionales': alertas_institucionales,
+            
+            # Nuevas métricas para "Hoy" y comparativas
+            'profesores_sin_lista_hoy': profesores_sin_lista,
+            'tareas_pendientes_correccion': tareas_pendientes_correccion,
+            'comunicados_pendientes': comunicados_pendientes,
+            'comparativo_asist': comparativo_asist,
+            'comparativo_gpa': comparativo_gpa,
         }
 

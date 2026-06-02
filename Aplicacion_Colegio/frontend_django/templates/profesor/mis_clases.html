@@ -37,53 +37,81 @@
         <!-- Grid de Clases -->
         <div class="clases-grid">
             {% for clase in mis_clases %}
-                <a href="{% url 'ver_detalle_clase' clase.id_clase %}" class="clase-card-link">
-                    <div class="clase-card" style="border-left: 4px solid {{ clase.color }}">
-                        <div class="clase-header">
-                            <div class="clase-icon" style="background-color: {{ clase.color }}20; color: {{ clase.color }}">
-                                📖
-                            </div>
-                            <div class="clase-info">
-                                <h3 class="clase-titulo">{{ clase.asignatura }}</h3>
-                                <span class="clase-codigo">{{ clase.codigo }}</span>
-                            </div>
+                <div class="clase-card" style="border-left: 4px solid {{ clase.color }}; cursor: pointer;" onclick="if(!event.target.closest('.card-btn')) window.location.href='{% url 'ver_detalle_clase' clase.id_clase %}';">
+                    <div class="clase-header">
+                        <div class="clase-icon" style="background-color: {{ clase.color }}20; color: {{ clase.color }}">
+                            📖
                         </div>
-                        
-                        <div class="clase-body">
-                            <div class="info-row">
-                                <span class="icon">🎓</span>
-                                <span class="text">{{ clase.curso_nombre }}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="icon">👥</span>
-                                <span class="text">{{ clase.total_estudiantes }} estudiantes</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="icon">⏱️</span>
-                                <span class="text">{{ clase.horas_semanales }} horas semanales</span>
-                            </div>
-                        </div>
-
-                        {% if clase.horarios_por_dia %}
-                            <div class="clase-footer">
-                                <div class="horarios-mini">
-                                    {% for dia, bloques in clase.horarios_por_dia.items %}
-                                        <div class="horario-dia">
-                                            <strong>{{ dia }}:</strong>
-                                            {% for bloque in bloques %}
-                                                <span class="bloque-tag">{{ bloque.hora_inicio }}-{{ bloque.hora_fin }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endif %}
-                        
-                        <div class="clase-action">
-                            <span class="ver-detalle">Ver detalles →</span>
+                        <div class="clase-info">
+                            <h3 class="clase-titulo">{{ clase.asignatura }}</h3>
+                            <span class="clase-codigo">{{ clase.codigo }}</span>
                         </div>
                     </div>
-                </a>
+                    
+                    <div class="clase-body">
+                        <div class="info-row">
+                            <span class="icon">🎓</span>
+                            <span class="text">{{ clase.curso_nombre }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="icon">👥</span>
+                            <span class="text">{{ clase.total_estudiantes }} estudiantes</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="icon">⏱️</span>
+                            <span class="text">{{ clase.horas_semanales }} horas semanales</span>
+                        </div>
+
+                        <!-- Indicadores Dinámicos HSL Premium -->
+                        <div class="clase-indicators" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                            {% if clase.tareas_sin_corregir > 0 %}
+                                <div class="indicator-tag tag-danger" style="background-color: hsla(0, 100%, 97%, 0.85); color: #dc2626; border: 1px solid hsla(0, 100%, 90%, 0.8); padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;" title="Tareas entregadas pendientes de revisión">
+                                    ⚠️ <span>{{ clase.tareas_sin_corregir }} tarea{{ clase.tareas_sin_corregir|pluralize }} sin corregir</span>
+                                </div>
+                            {% else %}
+                                <div class="indicator-tag tag-success" style="background-color: hsla(142, 70%, 97%, 0.85); color: #16a34a; border: 1px solid hsla(142, 70%, 90%, 0.8); padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                    ✅ <span>Al día con correcciones</span>
+                                </div>
+                            {% endif %}
+                            
+                            {% if clase.alumnos_riesgo > 0 %}
+                                <div class="indicator-tag tag-warning" style="background-color: hsla(38, 92%, 97%, 0.85); color: #d97706; border: 1px solid hsla(38, 92%, 90%, 0.8); padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;" title="Alumnos con promedio < 4.5 o asistencia < 80% en esta clase">
+                                    🚨 <span>{{ clase.alumnos_riesgo }} alumno{{ clase.alumnos_riesgo|pluralize }} en riesgo</span>
+                                </div>
+                            {% else %}
+                                <div class="indicator-tag tag-success" style="background-color: hsla(142, 70%, 97%, 0.85); color: #16a34a; border: 1px solid hsla(142, 70%, 90%, 0.8); padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                    🛡️ <span>Sin alumnos en riesgo</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if clase.horarios_por_dia %}
+                        <div class="clase-footer">
+                            <div class="horarios-mini">
+                                {% for dia, bloques in clase.horarios_por_dia.items %}
+                                    <div class="horario-dia">
+                                        <strong>{{ dia }}:</strong>
+                                        {% for bloque in bloques %}
+                                            <span class="bloque-tag">{{ bloque.hora_inicio }}-{{ bloque.hora_fin }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Acciones rápidas (Reducir clics) -->
+                    <div class="clase-quick-actions">
+                        <a href="{% url 'gestionar_tareas_profesor' clase.id_clase %}?crear=1" class="card-btn btn-action-tarea" title="Crear nueva tarea para esta clase">➕ Nueva tarea</a>
+                        <a href="{% url 'registro_asistencia_clase' clase.id_clase %}" class="card-btn btn-action-asistencia" title="Registrar asistencia para esta clase">📋 Asistencia</a>
+                        <a href="{% url 'ver_detalle_clase' clase.id_clase %}?subir_material=1" class="card-btn btn-action-material" title="Subir material para esta clase">📁 Material</a>
+                    </div>
+                    
+                    <div class="clase-action">
+                        <span class="ver-detalle">Ver detalles →</span>
+                    </div>
+                </div>
             {% endfor %}
         </div>
     {% else %}

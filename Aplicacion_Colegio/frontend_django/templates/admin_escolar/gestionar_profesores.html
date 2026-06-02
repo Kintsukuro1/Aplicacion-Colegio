@@ -222,4 +222,15 @@ function abrirModalCrear() {
     alert('Crear nuevo profesor');
     // TODO: Implementar modal de creación
 }
+
+// Auto-open modal if requested via URL params
+window.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const abrirModal = urlParams.get('abrir_modal');
+    if (abrirModal === 'crear') {
+        setTimeout(() => {
+            abrirModalCrear();
+        }, 150);
+    }
+});
 </script>

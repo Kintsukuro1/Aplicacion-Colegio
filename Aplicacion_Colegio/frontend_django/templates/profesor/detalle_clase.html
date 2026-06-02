@@ -2934,6 +2934,16 @@ document.addEventListener('DOMContentLoaded', function() {
             targetButton.click();
         }
     }
+
+    // Auto-abrir pestaña y modal de subir material si ?subir_material=1 (Reducir clics)
+    const subirFromUrl = new URLSearchParams(window.location.search).get('subir_material');
+    if (subirFromUrl === '1') {
+        const targetButton = document.querySelector(`.tab-button[data-tab="materiales"]`);
+        if (targetButton) {
+            targetButton.click();
+        }
+        mostrarModalSubir();
+    }
 });
 
 // Funciones para modal de subir material

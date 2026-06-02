@@ -517,6 +517,48 @@ class AcademicViewService:
         # Get all active classes for teacher (optimized query)
         clases = get_clases_profesor_optimized(user.rbd_colegio, user.id)
 
+        # Precalcular tareas sin corregir y alumnos en riesgo en lote (N+1 safe)
+        from backend.apps.academico.models import EntregaTarea, Calificacion, Asistencia
+        from django.db.models import Count, Avg, Q
+        from collections import defaultdict
+
+        entregas_pendientes = EntregaTarea.objects.filter(
+            tarea__clase__in=clases,
+            calificacion__isnull=True
+        ).values('tarea__clase_id').annotate(count=Count('pk'))
+        tareas_sin_corregir_map = {item['tarea__clase_id']: item['count'] for item in entregas_pendientes}
+
+        clase_estudiantes = ClaseEstudiante._base_manager.filter(
+            clase__in=clases,
+            activo=True
+        ).values('clase_id', 'estudiante_id')
+
+        estudiantes_por_clase = defaultdict(list)
+        for ce in clase_estudiantes:
+            estudiantes_por_clase[ce['clase_id']].append(ce['estudiante_id'])
+
+        calificaciones_bulk = Calificacion.objects.filter(
+            evaluacion__clase__in=clases,
+            evaluacion__activa=True
+        ).values('evaluacion__clase_id', 'estudiante_id').annotate(avg_nota=Avg('nota'))
+
+        promedios_map = defaultdict(dict)
+        for item in calificaciones_bulk:
+            promedios_map[item['evaluacion__clase_id']][item['estudiante_id']] = float(item['avg_nota'])
+
+        asistencias_bulk = Asistencia.objects.filter(
+            clase__in=clases
+        ).values('clase_id', 'estudiante_id').annotate(
+            total=Count('pk'),
+            presentes=Count('pk', filter=Q(estado='P'))
+        )
+
+        asistencia_map = defaultdict(dict)
+        for item in asistencias_bulk:
+            total = item['total']
+            presentes = item['presentes']
+            asistencia_map[item['clase_id']][item['estudiante_id']] = (presentes / total * 100) if total > 0 else 100.0
+
         mis_clases = []
         total_estudiantes_sum = 0
         total_horas_sum = 0
@@ -548,6 +590,14 @@ class AcademicViewService:
             # ClaseEstudiante no tiene colegio_id; usar _base_manager evita filtros tenant inválidos.
             total_estudiantes = ClaseEstudiante._base_manager.filter(clase=clase, activo=True).count()
 
+            tareas_sin_corregir = tareas_sin_corregir_map.get(clase.id, 0)
+            alumnos_riesgo = 0
+            for est_id in estudiantes_por_clase[clase.id]:
+                avg_grade = promedios_map[clase.id].get(est_id, 7.0)
+                asist_rate = asistencia_map[clase.id].get(est_id, 100.0)
+                if avg_grade < 4.5 or asist_rate < 80.0:
+                    alumnos_riesgo += 1
+
             mis_clases.append({
                 'id_clase': clase.id,
                 'asignatura': clase.asignatura.nombre,
@@ -558,6 +608,8 @@ class AcademicViewService:
                 'total_estudiantes': total_estudiantes,
                 'horarios_por_dia': horarios_por_dia,
                 'total_bloques': total_bloques,
+                'tareas_sin_corregir': tareas_sin_corregir,
+                'alumnos_riesgo': alumnos_riesgo,
             })
 
             # Accumulate for statistics

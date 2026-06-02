@@ -523,6 +523,7 @@ class DashboardContextService:
             tareas_vencen_manana = 0
             tareas_del_curso = Tarea.objects.none()
             tareas_con_entrega = []
+            tareas_pendientes_lista = []
             
             if curso_actual:
                 tareas_del_curso = Tarea.objects.filter(
@@ -541,6 +542,25 @@ class DashboardContextService:
                 # Tareas que vencen mañana
                 tomorrow = hoy + timedelta(days=1)
                 tareas_vencen_manana = tareas_pendientes_qs.filter(fecha_entrega__date=tomorrow).count()
+
+                # Obtener primeras 5 tareas pendientes (Reducir clics)
+                for t in list(tareas_pendientes_qs.select_related('clase__asignatura').order_by('fecha_entrega')[:5]):
+                    ahora_tz = timezone.now()
+                    vencida_val = t.fecha_entrega and t.fecha_entrega < ahora_tz
+                    
+                    dias_restantes_val = 0
+                    if t.fecha_entrega:
+                        diff = t.fecha_entrega - ahora_tz
+                        dias_restantes_val = max(diff.days, 0)
+                        
+                    tareas_pendientes_lista.append({
+                        'id_tarea': t.id_tarea,
+                        'titulo': t.titulo,
+                        'clase': t.clase,
+                        'fecha_entrega': t.fecha_entrega,
+                        'esta_vencida': vencida_val,
+                        'dias_restantes': dias_restantes_val,
+                    })
 
             # 3. Promedio general
             promedio = Calificacion.objects.filter(
@@ -582,331 +602,206 @@ class DashboardContextService:
             else:
                 asistencia_mes_pct = porcentaje_asistencia
 
-            # 5. Obtener clases activas del estudiante
-            clases_activas = []
+            # 1. Próxima clase
+            proxima_clase = None
             if curso_actual:
-                clases = list(Clase.objects.filter(
-                    estudiantes__estudiante=user,
-                    estudiantes__activo=True,
+                ahora_tz = timezone.localtime(timezone.now())
+                hora_actual = ahora_tz.time()
+                # Buscar clase que empiece hoy después de la hora actual
+                bloques_hoy = BloqueHorario.objects.filter(
+                    clase__curso=curso_actual,
+                    clase__activo=True,
+                    dia_semana=dia_semana,
+                    hora_inicio__gt=hora_actual,
                     activo=True
-                ).select_related('asignatura', 'profesor').annotate(
-                    total_evaluaciones=Count('evaluaciones', filter=Q(evaluaciones__activa=True), distinct=True)
-                ).order_by('asignatura__nombre')[:6])
-
-                clases_ids = [clase.id for clase in clases]
-                progreso_rows = Calificacion.objects.filter(
-                    estudiante=user,
-                    evaluacion__activa=True,
-                    evaluacion__clase_id__in=clases_ids,
-                ).values('evaluacion__clase_id').annotate(total=Count('pk'))
-                progreso_por_clase = {
-                    row['evaluacion__clase_id']: row['total'] for row in progreso_rows
-                }
+                ).select_related('clase__asignatura', 'clase__profesor').order_by('hora_inicio')
                 
-                gradientes = [
-                    'gradient-orange',
-                    'gradient-blue', 
-                    'gradient-green',
-                    'gradient-purple',
-                    'gradient-yellow',
-                    'gradient-dark'
-                ]
-                
-                for idx, clase in enumerate(clases):
-                    progreso = 60
-                    if hasattr(clase, 'total_evaluaciones') and clase.total_evaluaciones > 0:
-                        calificaciones_estudiante = progreso_por_clase.get(clase.id, 0)
-                        progreso = min(int((calificaciones_estudiante / clase.total_evaluaciones) * 100), 100)
-                        if progreso < 20:
-                            progreso = 20
-                    
-                    clases_activas.append({
-                        'id_clase': clase.id,
-                        'asignatura': clase.asignatura.nombre if clase.asignatura else 'Sin asignatura',
-                        'codigo': getattr(clase.asignatura, 'codigo', 'N/A'),
-                        'profesor': clase.profesor.get_full_name() if clase.profesor else 'Sin profesor',
-                        'gradiente': gradientes[idx % len(gradientes)],
-                        'progreso': progreso
-                    })
+                if bloques_hoy.exists():
+                    proxima_clase = bloques_hoy.first()
+                else:
+                    # Si no hay más hoy, buscar el día más cercano que tenga clases
+                    for dia_offset in range(1, 8):
+                        sig_dia = (dia_semana + dia_offset - 1) % 7 + 1
+                        bloques_sig = BloqueHorario.objects.filter(
+                            clase__curso=curso_actual,
+                            clase__activo=True,
+                            dia_semana=sig_dia,
+                            activo=True
+                        ).select_related('clase__asignatura', 'clase__profesor').order_by('dia_semana', 'hora_inicio')
+                        if bloques_sig.exists():
+                            proxima_clase = bloques_sig.first()
+                            break
 
-            evaluaciones_proximas = []
+            # 2. Tareas pendientes
+            tareas_pendientes = 0
+            tareas_vencen_manana = 0
+            tareas_del_curso = Tarea.objects.none()
+            tareas_con_entrega = []
+            tareas_pendientes_lista = []
+            
+            # Progreso de entregas
+            tareas_entregadas_count = 0
+            total_tareas_curso = 0
+            progreso_barras = "░░░░░░░░░░"
+            progreso_pct = 0
+            
             if curso_actual:
-                from backend.apps.academico.models import Evaluacion
-                evaluaciones_proximas = list(
-                    Evaluacion.objects.filter(
-                        clase__curso=curso_actual,
-                        activa=True,
-                        fecha_evaluacion__gte=hoy,
-                    )
-                    .select_related('clase__asignatura')
-                    .order_by('fecha_evaluacion')[:8]
+                tareas_del_curso = Tarea.objects.filter(
+                    clase__curso=curso_actual,
+                    activa=True,
+                    es_publica=True
                 )
+                tareas_con_entrega = EntregaTarea.objects.filter(
+                    estudiante=user,
+                    tarea__in=tareas_del_curso
+                ).values_list('tarea', flat=True)
 
-            # 6. Timeline Académico (Classroom-Style Feed)
-            timeline = []
-            if curso_actual:
-                # Tareas
-                for t in Tarea.objects.filter(clase__curso=curso_actual, activa=True, es_publica=True).select_related('clase__asignatura', 'creada_por').order_by('-fecha_publicacion')[:3]:
-                    timeline.append({
-                        'tipo': 'tarea',
-                        'badge': 'TAREA',
-                        'titulo': f"Nueva tarea de {t.clase.asignatura.nombre}",
-                        'desc': f"{t.creada_por.get_full_name()} publicó la tarea \"{t.titulo}\". Fecha de entrega: {t.fecha_entrega.strftime('%d/%m/%Y') if t.fecha_entrega else 'Sin fecha'}.",
-                        'fecha': t.fecha_publicacion,
-                        'icono': '📝',
-                        'color': '#3b82f6',
-                        'enlace': '/dashboard/?pagina=mis_tareas'
-                    })
-
-                # Notas
-                for c in Calificacion.objects.filter(estudiante=user, evaluacion__activa=True).select_related('evaluacion__clase__asignatura').order_by('-fecha_creacion')[:3]:
-                    timeline.append({
-                        'tipo': 'nota',
-                        'badge': 'CALIFICACIÓN',
-                        'titulo': f"Nueva calificación en {c.evaluacion.clase.asignatura.nombre}",
-                        'desc': f"Obtuviste un {c.nota:.1f} en la evaluación \"{c.evaluacion.nombre}\".",
-                        'fecha': c.fecha_creacion,
-                        'icono': '⭐',
-                        'color': '#22c55e',
-                        'enlace': '/dashboard/?pagina=mis_notas'
-                    })
-
-                # Comunicados
-                for com in Comunicado.objects.filter(colegio_id=escuela_rbd, activo=True).filter(
-                    Q(destinatario='todos') | 
-                    Q(destinatario='estudiantes') | 
-                    (Q(destinatario='curso_especifico') & Q(cursos_destinatarios=curso_actual))
-                ).select_related('publicado_por').order_by('-fecha_publicacion')[:3]:
-                    timeline.append({
-                        'tipo': 'comunicado',
-                        'badge': 'COMUNICADO',
-                        'titulo': com.titulo,
-                        'desc': com.contenido[:150] + ('...' if len(com.contenido) > 150 else ''),
-                        'fecha': com.fecha_publicacion,
-                        'icono': '📢',
-                        'color': '#f97316',
-                        'enlace': '/comunicados/'
-                    })
-
-                # Materiales
-                for m in MaterialClase.objects.filter(clase__curso=curso_actual, activo=True, es_publico=True).select_related('clase__asignatura', 'subido_por').order_by('-fecha_creacion')[:3]:
-                    timeline.append({
-                        'tipo': 'material',
-                        'badge': 'MATERIAL',
-                        'titulo': f"Nuevo material en {m.clase.asignatura.nombre}",
-                        'desc': f"{m.subido_por.get_full_name()} subió: \"{m.titulo}\".",
-                        'fecha': m.fecha_creacion,
-                        'icono': '📎',
-                        'color': '#8b5cf6',
-                        'enlace': '/dashboard/?pagina=mis_clases'
-                    })
-
-                # Ordenar por fecha descendente
-                timeline.sort(key=lambda x: x['fecha'], reverse=True)
-                timeline = timeline[:6]
-
-            # Fallbacks premium si está vacío
-            if not timeline:
-                timeline = [
-                    {
-                        'tipo': 'tarea',
-                        'badge': 'TAREA',
-                        'titulo': 'Nueva tarea de Matemáticas',
-                        'desc': 'El profesor de Matemáticas publicó la tarea: "Ecuaciones Cuadráticas". Fecha de entrega: 15 de junio.',
-                        'fecha': timezone.now() - timezone.timedelta(hours=2),
-                        'icono': '📝',
-                        'color': '#3b82f6',
-                        'enlace': '/dashboard/?pagina=mis_tareas'
-                    },
-                    {
-                        'tipo': 'nota',
-                        'badge': 'CALIFICACIÓN',
-                        'titulo': 'Nueva calificación en Historia',
-                        'desc': 'Obtuviste un 6.5 en la prueba de Independencia de Chile.',
-                        'fecha': timezone.now() - timezone.timedelta(hours=4),
-                        'icono': '⭐',
-                        'color': '#22c55e',
-                        'enlace': '/dashboard/?pagina=mis_notas'
-                    },
-                    {
-                        'tipo': 'comunicado',
-                        'badge': 'COMUNICADO',
-                        'titulo': 'Horarios del Aniversario Escolar',
-                        'desc': 'Ya se encuentran disponibles los horarios y actividades del aniversario de la escuela.',
-                        'fecha': timezone.now() - timezone.timedelta(days=1),
-                        'icono': '📢',
-                        'color': '#f97316',
-                        'enlace': '/comunicados/'
-                    },
-                    {
-                        'tipo': 'material',
-                        'badge': 'MATERIAL',
-                        'titulo': 'Nuevo material en Ciencias Naturales',
-                        'desc': 'El docente subió la guía: "Proceso de Fotosíntesis".',
-                        'fecha': timezone.now() - timezone.timedelta(days=1, hours=3),
-                        'icono': '📎',
-                        'color': '#8b5cf6',
-                        'enlace': '/dashboard/?pagina=mis_clases'
-                    }
-                ]
-
-            # 7. Predicción de Rendimiento
-            nivel_prediccion = "Bueno"
-            mensaje_prediccion = "Aprobarás todas las asignaturas"
-            check_ok = True
-            
-            avg_val = promedio_general if promedio_general > 0.0 else 6.1
-            asist_val = porcentaje_asistencia if total_asistencias > 0 else 95.0
-            
-            if avg_val >= 6.0 and asist_val >= 90:
-                nivel_prediccion = "Excelente"
-                mensaje_prediccion = "✓ Aprobarás todas las asignaturas con distinción"
-            elif avg_val >= 4.0 and asist_val >= 85:
-                nivel_prediccion = "Bueno"
-                mensaje_prediccion = "✓ Aprobarás todas las asignaturas"
-            else:
-                nivel_prediccion = "En Riesgo"
-                mensaje_prediccion = "⚠️ Estás en riesgo de repetición. Te sugerimos reforzar asignaturas con promedio bajo."
-                check_ok = False
+                tareas_pendientes_qs = tareas_del_curso.exclude(id_tarea__in=tareas_con_entrega)
+                tareas_pendientes = tareas_pendientes_qs.count()
                 
-            prediccion = {
-                'nivel': nivel_prediccion,
-                'promedio': avg_val,
-                'asistencia': asist_val,
-                'mensaje': mensaje_prediccion,
-                'check_ok': check_ok
-            }
+                # Tareas que vencen mañana
+                tomorrow = hoy + timedelta(days=1)
+                tareas_vencen_manana = tareas_pendientes_qs.filter(fecha_entrega__date=tomorrow).count()
 
-            # 8. Gráficos de Evolución Académica (Chart.js points)
+                # Obtener primeras 5 tareas pendientes
+                for t in list(tareas_pendientes_qs.select_related('clase__asignatura').order_by('fecha_entrega')[:5]):
+                    ahora_tz = timezone.now()
+                    vencida_val = t.fecha_entrega and t.fecha_entrega < ahora_tz
+                    
+                    dias_restantes_val = 0
+                    if t.fecha_entrega:
+                        diff = t.fecha_entrega - ahora_tz
+                        dias_restantes_val = max(diff.days, 0)
+                        
+                    tareas_pendientes_lista.append({
+                        'id_tarea': t.id_tarea,
+                        'titulo': t.titulo,
+                        'clase': t.clase,
+                        'fecha_entrega': t.fecha_entrega,
+                        'esta_vencida': vencida_val,
+                        'dias_restantes': dias_restantes_val,
+                    })
+
+                total_tareas_curso = tareas_del_curso.count()
+                tareas_entregadas_count = len(tareas_con_entrega)
+                if total_tareas_curso > 0:
+                    progreso_pct = int((tareas_entregadas_count / total_tareas_curso) * 100)
+                    cant_bloques = int(round((tareas_entregadas_count / total_tareas_curso) * 10))
+                    progreso_barras = "█" * cant_bloques + "░" * (10 - cant_bloques)
+
+            # 3. Promedio general
+            promedio = Calificacion.objects.filter(
+                estudiante=user,
+                colegio_id=escuela_rbd,
+                evaluacion__activa=True
+            ).aggregate(promedio=Avg('nota'))['promedio']
+            promedio_general = round(float(promedio), 1) if promedio else 0.0
+
+            # 4. Porcentaje de asistencia (General)
+            asistencias = Asistencia.objects.filter(
+                estudiante=user,
+                colegio_id=escuela_rbd
+            )
+            porcentaje_asistencia = 100
+            resumen_asistencia = asistencias.aggregate(
+                total=Count('pk'),
+                presentes=Count('pk', filter=Q(estado='P')),
+            )
+            total_asistencias = resumen_asistencia['total'] or 0
+            if total_asistencias > 0:
+                presentes = resumen_asistencia['presentes'] or 0
+                porcentaje_asistencia = round((presentes / total_asistencias) * 100, 0)
+
+            # Asignatura más fuerte y Asignatura que requiere atención
+            asignatura_fuerte = "Ninguna"
+            asignatura_debil = "Ninguna"
+            avg_grades_by_subject = {}
+            
             calificaciones_est = Calificacion.objects.filter(
                 estudiante=user,
                 evaluacion__activa=True
-            ).select_related('evaluacion__clase__asignatura').order_by('evaluacion__fecha_evaluacion', 'fecha_creacion')
+            ).select_related('evaluacion__clase__asignatura')
             
-            grades_by_subject = defaultdict(list)
+            from collections import defaultdict
+            notas_por_asig = defaultdict(list)
             for c in calificaciones_est:
-                asig = c.evaluacion.clase.asignatura
-                if asig:
-                    grades_by_subject[asig.nombre].append(float(c.nota))
-            
-            subject_name = "Matemáticas"
-            recent_grades = []
-            if grades_by_subject:
-                best_subject = max(grades_by_subject, key=lambda k: len(grades_by_subject[k]))
-                subject_name = best_subject
-                recent_grades = grades_by_subject[best_subject][-4:]
-                
-            if not recent_grades:
-                recent_grades = [5.0, 5.5, 6.0, 6.4]
-                subject_name = "Matemáticas"
-                
-            # b) Attendance evolution
-            asistencias_por_mes = asistencias.filter(
-                fecha__year=hoy.year
-            ).annotate(
-                mes=ExtractMonth('fecha')
-            ).values('mes').annotate(
-                total=Count('pk'),
-                presentes=Count('pk', filter=Q(estado='P'))
-            ).order_by('mes')
-            
-            meses_nombres = {
-                1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
-                7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
-            }
-            asistencia_mensual = []
-            for item in asistencias_por_mes:
-                mes_num = item['mes']
-                total = item['total']
-                presentes = item['presentes']
-                pct = round((presentes / total) * 100) if total > 0 else 100
-                asistencia_mensual.append({
-                    'mes': meses_nombres.get(mes_num, str(mes_num)),
-                    'porcentaje': pct
-                })
-            if not asistencia_mensual:
-                asistencia_mensual = [
-                    {'mes': 'Marzo', 'porcentaje': 98},
-                    {'mes': 'Abril', 'porcentaje': 92},
-                    {'mes': 'Mayo', 'porcentaje': 95}
-                ]
-            
-            # 9. Notificaciones Accionables
-            from backend.apps.notificaciones.models import Notificacion
-            notif_qs = Notificacion.objects.filter(
-                destinatario=user,
-                leido=False,
-                tipo__in=['tarea_nueva', 'calificacion', 'evaluacion', 'alerta']
-            ).order_by('-fecha_creacion')[:3]
-            
-            notificaciones_accionables = []
-            for n in notif_qs:
-                botones = []
-                if n.tipo == 'tarea_nueva':
-                    botones = [
-                        {'texto': 'Ver', 'url': '/dashboard/?pagina=mis_tareas', 'class': 'btn-ghost'},
-                        {'texto': 'Entregar', 'url': '/dashboard/?pagina=mis_tareas', 'class': 'btn-primary'}
-                    ]
-                elif n.tipo == 'calificacion':
-                    botones = [
-                        {'texto': 'Ver Nota', 'url': '/dashboard/?pagina=mis_notas', 'class': 'btn-primary'}
-                    ]
-                else:
-                    botones = [
-                        {'texto': 'Revisar', 'url': n.enlace or '#', 'class': 'btn-primary'}
-                    ]
+                if c.evaluacion.clase.asignatura:
+                    notas_por_asig[c.evaluacion.clase.asignatura.nombre].append(float(c.nota))
                     
-                notificaciones_accionables.append({
-                    'id': n.id_notificacion if hasattr(n, 'id_notificacion') else getattr(n, 'id', None),
-                    'titulo': n.titulo,
-                    'mensaje': n.mensaje,
-                    'tipo': n.tipo,
-                    'icono': '📝' if n.tipo == 'tarea_nueva' else '⭐' if n.tipo == 'calificacion' else '🔔',
-                    'fecha': n.fecha_creacion,
-                    'botones': botones
-                })
+            for asig_name, list_notas in notas_por_asig.items():
+                avg_grades_by_subject[asig_name] = sum(list_notas) / len(list_notas)
                 
-            if not notificaciones_accionables:
-                notificaciones_accionables = [
-                    {
-                        'id': 9991,
-                        'titulo': 'Nueva tarea de Matemáticas',
-                        'mensaje': 'El profesor de Matemáticas publicó la tarea: "Ecuaciones Cuadráticas". Fecha de entrega: 15 de junio.',
-                        'tipo': 'tarea_nueva',
-                        'icono': '📝',
-                        'fecha': timezone.now() - timezone.timedelta(minutes=15),
-                        'botones': [
-                            {'texto': 'Ver', 'url': '/dashboard/?pagina=mis_tareas', 'class': 'btn-ghost'},
-                            {'texto': 'Entregar', 'url': '/dashboard/?pagina=mis_tareas', 'class': 'btn-primary'}
-                        ]
-                    },
-                    {
-                        'id': 9992,
-                        'titulo': 'Nueva nota publicada en Historia',
-                        'mensaje': 'Obtuviste un 6.5 en la prueba de Independencia de Chile.',
-                        'tipo': 'calificacion',
-                        'icono': '⭐',
-                        'fecha': timezone.now() - timezone.timedelta(hours=2),
-                        'botones': [
-                            {'texto': 'Ver Nota', 'url': '/dashboard/?pagina=mis_notas', 'class': 'btn-primary'}
-                        ]
-                    }
+            if avg_grades_by_subject:
+                asignatura_fuerte = max(avg_grades_by_subject, key=avg_grades_by_subject.get)
+                asignatura_debil = min(avg_grades_by_subject, key=avg_grades_by_subject.get)
+                
+            # Últimas notas
+            ultimas_notas = list(
+                calificaciones_est.order_by('-fecha_creacion')[:5]
+            )
+
+            # Últimos anuncios
+            ultimos_anuncios = []
+            if curso_actual:
+                ultimos_anuncios = list(Comunicado.objects.filter(
+                    colegio_id=escuela_rbd,
+                    activo=True
+                ).filter(
+                    Q(destinatario='todos') | 
+                    Q(destinatario='estudiantes') | 
+                    (Q(destinatario='curso_especifico') & Q(cursos_destinatarios=curso_actual))
+                ).select_related('publicado_por').order_by('-fecha_publicacion')[:5])
+
+            if not ultimos_anuncios:
+                class DummyAnuncio:
+                    def __init__(self, titulo, contenido, fecha_publicacion, publicado_por_name):
+                        self.titulo = titulo
+                        self.contenido = contenido
+                        self.fecha_publicacion = fecha_publicacion
+                        self.publicado_por_name = publicado_por_name
+                    
+                    @property
+                    def publicado_por(self):
+                        class DummyUser:
+                            def get_full_name(self):
+                                return "Dirección Académica"
+                        return DummyUser()
+                
+                ultimos_anuncios = [
+                    DummyAnuncio(
+                        "Inicio de Evaluaciones Bimestrales",
+                        "Estimados estudiantes, les recordamos que el próximo lunes comienzan las evaluaciones bimestrales. Por favor revisar el calendario.",
+                        timezone.now() - timezone.timedelta(days=1),
+                        "Dirección Académica"
+                    ),
+                    DummyAnuncio(
+                        "Aniversario del Colegio",
+                        "Celebramos nuestro aniversario este viernes. Las actividades comenzarán a las 09:00 hrs. ¡Los esperamos con sus colores de alianza!",
+                        timezone.now() - timezone.timedelta(days=3),
+                        "Dirección Académica"
+                    )
                 ]
 
+            # Recent grades for Chart.js
+            recent_grades = [float(c.nota) for c in reversed(ultimas_notas)] if ultimas_notas else [6.0, 5.8, 5.5, 6.2]
+            subject_name = asignatura_fuerte if asignatura_fuerte != "Ninguna" else "General"
+
             return {
-                'clases_hoy': clases_hoy,
+                'proxima_clase': proxima_clase,
                 'tareas_pendientes': tareas_pendientes,
-                'tareas_vencen_manana': tareas_vencen_manana,
-                'asistencia_mes_pct': asistencia_mes_pct,
+                'tareas_pendientes_lista': tareas_pendientes_lista,
+                'tareas_entregadas_count': tareas_entregadas_count,
+                'total_tareas_curso': total_tareas_curso,
+                'progreso_barras': progreso_barras,
+                'progreso_pct': progreso_pct,
                 'promedio_general': promedio_general,
-                'clases_activas': clases_activas,
-                'evaluaciones_proximas': evaluaciones_proximas,
-                'timeline': timeline,
-                'prediccion': prediccion,
+                'porcentaje_asistencia': porcentaje_asistencia,
+                'asignatura_fuerte': asignatura_fuerte,
+                'asignatura_debil': asignatura_debil,
+                'ultimas_notas': ultimas_notas,
+                'ultimos_anuncios': ultimos_anuncios,
                 'recent_grades': recent_grades,
                 'subject_name': subject_name,
-                'asistencia_mensual': asistencia_mensual,
-                'notificaciones_accionables': notificaciones_accionables,
                 'sin_datos': curso_actual is None,
             }
 
@@ -915,6 +810,7 @@ class DashboardContextService:
                 'clases_hoy': 0,
                 'tareas_pendientes': 0,
                 'tareas_vencen_manana': 0,
+                'tareas_pendientes_lista': [],
                 'asistencia_mes_pct': 100,
                 'promedio_general': 0.0,
                 'clases_activas': [],
@@ -1683,6 +1579,48 @@ class DashboardContextService:
                 activo=True,
             ).select_related('asignatura', 'curso').order_by('curso__nombre', 'asignatura__nombre')
 
+            # Precalcular tareas sin corregir y alumnos en riesgo en lote (N+1 safe)
+            from backend.apps.academico.models import EntregaTarea, Calificacion, Asistencia
+            from django.db.models import Count, Avg, Q
+            from collections import defaultdict
+
+            entregas_pendientes = EntregaTarea.objects.filter(
+                tarea__clase__in=clases,
+                calificacion__isnull=True
+            ).values('tarea__clase_id').annotate(count=Count('pk'))
+            tareas_sin_corregir_map = {item['tarea__clase_id']: item['count'] for item in entregas_pendientes}
+
+            clase_estudiantes = ClaseEstudiante._base_manager.filter(
+                clase__in=clases,
+                activo=True
+            ).values('clase_id', 'estudiante_id')
+
+            estudiantes_por_clase = defaultdict(list)
+            for ce in clase_estudiantes:
+                estudiantes_por_clase[ce['clase_id']].append(ce['estudiante_id'])
+
+            calificaciones_bulk = Calificacion.objects.filter(
+                evaluacion__clase__in=clases,
+                evaluacion__activa=True
+            ).values('evaluacion__clase_id', 'estudiante_id').annotate(avg_nota=Avg('nota'))
+
+            promedios_map = defaultdict(dict)
+            for item in calificaciones_bulk:
+                promedios_map[item['evaluacion__clase_id']][item['estudiante_id']] = float(item['avg_nota'])
+
+            asistencias_bulk = Asistencia.objects.filter(
+                clase__in=clases
+            ).values('clase_id', 'estudiante_id').annotate(
+                total=Count('pk'),
+                presentes=Count('pk', filter=Q(estado='P'))
+            )
+
+            asistencia_map = defaultdict(dict)
+            for item in asistencias_bulk:
+                total = item['total']
+                presentes = item['presentes']
+                asistencia_map[item['clase_id']][item['estudiante_id']] = (presentes / total * 100) if total > 0 else 100.0
+
             mis_clases = []
             total_estudiantes_sum = 0
             total_horas_sum = 0
@@ -1703,6 +1641,14 @@ class DashboardContextService:
                 total_estudiantes = ClaseEstudiante._base_manager.filter(clase=clase, activo=True).count()
                 horas_semanales = getattr(clase.asignatura, 'horas_semanales', 0) or 0
 
+                tareas_sin_corregir = tareas_sin_corregir_map.get(clase.id, 0)
+                alumnos_riesgo = 0
+                for est_id in estudiantes_por_clase[clase.id]:
+                    avg_grade = promedios_map[clase.id].get(est_id, 7.0)
+                    asist_rate = asistencia_map[clase.id].get(est_id, 100.0)
+                    if avg_grade < 4.5 or asist_rate < 80.0:
+                        alumnos_riesgo += 1
+
                 mis_clases.append({
                     'id_clase': clase.id,
                     'asignatura': clase.asignatura.nombre,
@@ -1713,6 +1659,8 @@ class DashboardContextService:
                     'total_estudiantes': total_estudiantes,
                     'horarios_por_dia': horarios_por_dia,
                     'total_bloques': bloques.count(),
+                    'tareas_sin_corregir': tareas_sin_corregir,
+                    'alumnos_riesgo': alumnos_riesgo,
                 })
 
                 total_estudiantes_sum += total_estudiantes
@@ -2304,15 +2252,16 @@ class DashboardContextService:
                 activo=True
             ).values_list('clase_id', flat=True)
         )
-        asistencias_pendientes = 0
-        for clase in clases_hoy_qs:
-            registrado = Asistencia.objects.filter(clase=clase, fecha=hoy).exists()
-            if not registrado:
-                asistencias_pendientes += 1
+        clases_hoy_ids = list(clases_hoy_qs.values_list('id', flat=True))
+        asistencias_registradas = set(Asistencia.objects.filter(
+            clase_id__in=clases_hoy_ids,
+            fecha=hoy
+        ).values_list('clase_id', flat=True))
+        asistencias_pendientes = sum(1 for cid in clases_hoy_ids if cid not in asistencias_registradas)
                 
         # 4. Alertas Académicas & Estudiantes en Riesgo (Calculados)
         clases_prof = Clase.objects.filter(profesor=user, activo=True).select_related('curso')
-        rel_estudiantes = ClaseEstudiante.objects.filter(clase__in=clases_prof, activo=True).select_related('estudiante')
+        rel_estudiantes = ClaseEstudiante.objects.filter(clase__in=clases_prof, activo=True).select_related('estudiante', 'clase', 'clase__curso')
         
         risk_count = 0
         alertas_academicas = []
@@ -2391,26 +2340,37 @@ class DashboardContextService:
             
         # 5. Vista de Curso list
         cursos_dict = {}
+        cursos_ids = list(clases_prof.values_list('curso_id', flat=True).distinct())
+        
+        promedios_curso_db = Calificacion.objects.filter(
+            evaluacion__clase__curso_id__in=cursos_ids,
+            evaluacion__clase__profesor=user,
+            evaluacion__activa=True
+        ).values('evaluacion__clase__curso_id').annotate(avg_nota=Avg('nota'))
+        promedios_curso_map = {item['evaluacion__clase__curso_id']: item['avg_nota'] for item in promedios_curso_db}
+        
+        asistencias_curso_db = Asistencia.objects.filter(
+            clase__curso_id__in=cursos_ids,
+            clase__profesor=user
+        ).values('clase__curso_id').annotate(
+            total=Count('pk'),
+            presentes=Count('pk', filter=Q(estado='P'))
+        )
+        asistencias_curso_map = {}
+        for item in asistencias_curso_db:
+            total = item['total']
+            presentes = item['presentes']
+            asistencias_curso_map[item['clase__curso_id']] = (presentes / total * 100) if total > 0 else 95.0
+            
         for clase in clases_prof.select_related('curso'):
             curso = clase.curso
-            if not curso or curso.id in cursos_dict:
+            if not curso or curso.pk in cursos_dict:
                 continue
                 
-            promedio_curso = Calificacion.objects.filter(
-                evaluacion__clase__curso=curso,
-                evaluacion__clase__profesor=user,
-                evaluacion__activa=True
-            ).aggregate(avg=Avg('nota'))['avg']
+            promedio_curso = promedios_curso_map.get(curso.pk, 6.0)
+            asist_pct = asistencias_curso_map.get(curso.pk, 95.0)
             
-            asist_curso = Asistencia.objects.filter(
-                clase__curso=curso,
-                clase__profesor=user
-            )
-            tot_a = asist_curso.count()
-            pres = asist_curso.filter(estado='P').count()
-            asist_pct = (pres / tot_a * 100) if tot_a > 0 else 95.0
-            
-            cursos_dict[curso.id] = {
+            cursos_dict[curso.pk] = {
                 'nombre': curso.nombre,
                 'promedio': round(float(promedio_curso), 1) if promedio_curso else 6.0,
                 'asistencia': round(float(asist_pct), 0)
@@ -2432,22 +2392,29 @@ class DashboardContextService:
         dias_fechas = [lunes_semana + timedelta(days=i) for i in range(5)]
         
         if clase_sel:
-            estudiantes_clase = ClaseEstudiante.objects.filter(
+            estudiantes_clase = list(ClaseEstudiante.objects.filter(
                 clase=clase_sel,
                 activo=True
-            ).select_related('estudiante')[:8]
+            ).select_related('estudiante')[:8])
+            
+            estudiantes_ids = [rel.estudiante_id for rel in estudiantes_clase]
+            asistencias_heatmap = Asistencia.objects.filter(
+                estudiante_id__in=estudiantes_ids,
+                clase=clase_sel,
+                fecha__in=dias_fechas
+            )
+            asistencias_heatmap_map = {
+                (asist.estudiante_id, asist.fecha): asist.estado
+                for asist in asistencias_heatmap
+            }
             
             for rel in estudiantes_clase:
                 est = rel.estudiante
                 asists_semana = []
                 for f in dias_fechas:
-                    asist_row = Asistencia.objects.filter(
-                        estudiante=est,
-                        clase=clase_sel,
-                        fecha=f
-                    ).first()
-                    if asist_row:
-                        char = '✓' if asist_row.estado == 'P' else 'X'
+                    estado_asist = asistencias_heatmap_map.get((est.id, f))
+                    if estado_asist:
+                        char = '✓' if estado_asist == 'P' else 'X'
                     else:
                         char = '-'
                     asists_semana.append(char)

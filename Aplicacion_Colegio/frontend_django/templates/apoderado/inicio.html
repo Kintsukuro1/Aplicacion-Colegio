@@ -453,69 +453,119 @@
 
     <!-- Estado de mi hijo (KPIs) -->
     <div class="apod-kpi-grid">
-        <!-- Promedio General -->
+        <!-- Promedio General (Estado Académico) -->
         <div class="apod-kpi-card {% if promedio_general < 4.0 %}apod-kpi-card--danger{% elif promedio_general < 5.5 %}apod-kpi-card--warning{% endif %}">
             <div class="apod-kpi-header">
-                <span class="apod-kpi-title">Promedio General</span>
+                <span class="apod-kpi-title">Estado Académico</span>
                 <span class="apod-kpi-icon">📝</span>
             </div>
             <div class="apod-kpi-body">
                 <span class="apod-kpi-value">{{ promedio_general|floatformat:1 }}</span>
                 <span class="apod-kpi-label">/ 7.0</span>
             </div>
-            <div class="apod-kpi-footer">
-                <span>Rendimiento Académico Actual</span>
+            <div class="apod-kpi-footer" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 10px;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: #475569;">
+                    Mes anterior: <strong style="color: #0f172a;">{{ promedio_mes_anterior|floatformat:1 }}</strong>
+                </div>
+                <div style="font-size: 0.76rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; 
+                    {% if comparacion_tendencia == 'mejora' %} background-color: #d1fae5; color: #065f46;
+                    {% elif comparacion_tendencia == 'descenso' %} background-color: #fee2e2; color: #991b1b;
+                    {% else %} background-color: #f1f5f9; color: #334155; {% endif %}">
+                    {{ comparacion_label }}
+                </div>
             </div>
         </div>
 
-        <!-- Asistencia -->
+        <!-- Asistencia (Estado Asistencia) -->
         <div class="apod-kpi-card {% if porcentaje_asistencia < 85 %}apod-kpi-card--danger{% elif porcentaje_asistencia < 90 %}apod-kpi-card--warning{% endif %}">
             <div class="apod-kpi-header">
-                <span class="apod-kpi-title">Asistencia Total</span>
+                <span class="apod-kpi-title">Estado Asistencia</span>
                 <span class="apod-kpi-icon">📅</span>
             </div>
             <div class="apod-kpi-body">
                 <span class="apod-kpi-value">{{ porcentaje_asistencia }}%</span>
             </div>
             <div class="apod-kpi-footer">
-                <span>Asistencia Acumulada</span>
+                <span>Asistencia Acumulada del Periodo</span>
             </div>
         </div>
 
-        <!-- Tareas Pendientes -->
-        <div class="apod-kpi-card {% if tareas_pendientes_count > 0 %}apod-kpi-card--warning{% endif %}">
-            <div class="apod-kpi-header">
-                <span class="apod-kpi-title">Tareas Pendientes</span>
-                <span class="apod-kpi-icon">📋</span>
-            </div>
-            <div class="apod-kpi-body">
-                <span class="apod-kpi-value">{{ tareas_pendientes_count }}</span>
-                <span class="apod-kpi-label">tareas</span>
-            </div>
-            <div class="apod-kpi-footer">
-                <span>Por entregar en plataforma</span>
-            </div>
-        </div>
-
-        <!-- Próxima Evaluación -->
+        <!-- Próximos Eventos -->
         <div class="apod-kpi-card apod-kpi-card--info">
             <div class="apod-kpi-header">
-                <span class="apod-kpi-title">Próxima Evaluación</span>
+                <span class="apod-kpi-title">Próximos Eventos</span>
                 <span class="apod-kpi-icon">🎯</span>
             </div>
             {% if proxima_evaluacion %}
             <div class="apod-eval-badge">
                 <span class="apod-eval-subject">{{ proxima_evaluacion.asignatura }}</span>
                 <span class="apod-eval-date">{{ proxima_evaluacion.fecha|date:"d \d\e F"|default:proxima_evaluacion.fecha }}</span>
+                <span style="font-size: 0.72rem; color: #1e3a8a; font-weight: 600; margin-top: 2px;">{{ proxima_evaluacion.nombre }}</span>
             </div>
             {% else %}
             <div class="apod-kpi-body">
-                <span class="apod-kpi-label text-secondary">Sin evaluaciones programadas</span>
+                <span class="apod-kpi-label text-secondary">Sin eventos programados</span>
             </div>
             {% endif %}
             <div class="apod-kpi-footer">
                 <span>Calendario de Evaluaciones</span>
             </div>
+        </div>
+
+        <!-- Mensajes Nuevos -->
+        <div class="apod-kpi-card {% if mensajes_nuevos_count > 0 %}apod-kpi-card--warning{% endif %}">
+            <div class="apod-kpi-header">
+                <span class="apod-kpi-title">Mensajes Nuevos</span>
+                <span class="apod-kpi-icon">💬</span>
+            </div>
+            <div class="apod-kpi-body">
+                <span class="apod-kpi-value">{{ mensajes_nuevos_count }}</span>
+                <span class="apod-kpi-label">sin leer</span>
+            </div>
+            <div class="apod-kpi-footer">
+                {% if mensajes_nuevos_count > 0 %}
+                    <span style="color: #b45309; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🔔 Tienes chats pendientes</span>
+                {% else %}
+                    <span>Bandeja de entrada al día</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Comunicados Recientes (Vista Resumen e interactiva) -->
+    <div class="apod-chart-card" style="margin-top: 8px;">
+        <h2 class="apod-chart-title">
+            <span>📢</span> Comunicados y Circulares Recientes
+        </h2>
+        <div style="font-size: 0.85rem; color: var(--apod-text-soft); margin-top: -10px; margin-bottom: 20px; font-weight: 600;">
+            Avisos oficiales del colegio y directivos para mantenerte informado.
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            {% for c in comunicados_list %}
+                <div class="comunicado-item-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 16px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                    <div style="display: flex; flex-direction: column; gap: 6px; flex: 1; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <span class="status-badge" style="font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;
+                                {% if c.status == 'urgente' %} background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;
+                                {% elif c.status == 'leido' %} background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;
+                                {% else %} background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; {% endif %}">
+                                {{ c.status_display }}
+                            </span>
+                            <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">{{ c.fecha_publicacion|date:"d M Y H:i" }} · Por: {{ c.publicado_por_name }}</span>
+                        </div>
+                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">{{ c.titulo }}</h3>
+                        <p style="margin: 0; font-size: 0.88rem; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.45;">{{ c.contenido }}</p>
+                    </div>
+                    <button class="apod-btn apod-btn--ghost" onclick="openComunicadoModal('{{ c.id_comunicado }}', '{{ c.titulo|escapejs }}', '{{ c.contenido|escapejs }}', '{{ c.publicado_por_name|escapejs }}', '{{ c.fecha_publicacion|date:"d/m/Y H:i" }}', '{{ c.status_display|escapejs }}')" style="padding: 8px 16px; font-size: 0.82rem; border-radius: 8px; flex-shrink: 0; background: #ffffff; border: 1px solid #cbd5e1; color: #334155; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                        Leer aviso
+                    </button>
+                </div>
+            {% empty %}
+                <div style="text-align: center; padding: 30px; background: #f8fafc; border-radius: 12px; color: #64748b; font-weight: 600;">
+                    No hay comunicados registrados recientemente.
+                </div>
+            {% endfor %}
         </div>
     </div>
 
@@ -544,7 +594,7 @@
 
     <!-- Comunicación Directa -->
     <div class="apod-contact-card">
-        <div class="apod-contact-info">
+        <div class="apod-contact-info" style="text-align: left;">
             <h3>Comunicación Directa con Profesores</h3>
             <p>Envía mensajes de consulta a los docentes de las asignaturas de tu hijo sin demoras.</p>
         </div>
@@ -776,6 +826,51 @@
             }
         });
     });
+</script>
+
+<!-- Modal de Visualizar Comunicado -->
+<div class="apod-modal-backdrop" id="modalVerComunicado">
+    <div class="apod-modal" style="max-width: 600px; text-align: left;">
+        <div class="apod-modal-header">
+            <h2 class="apod-modal-title" id="lblComTitulo">Detalle de Comunicado</h2>
+            <button class="apod-modal-close" onclick="closeComunicadoModal()">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                <span id="lblComAutor">Publicado por: -</span>
+                <span id="lblComFecha">Fecha: -</span>
+            </div>
+            <div id="lblComEstado" style="font-weight: 800; font-size: 0.82rem;"></div>
+            <div id="lblComContenido" style="font-size: 0.95rem; color: #334155; line-height: 1.6; white-space: pre-wrap; max-height: 350px; overflow-y: auto; padding-right: 8px;"></div>
+        </div>
+        <div class="apod-modal-footer">
+            <button type="button" class="apod-btn apod-btn--primary" onclick="closeComunicadoModal()">Entendido</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openComunicadoModal(id, titulo, contenido, autor, fecha, estado) {
+    document.getElementById('lblComTitulo').textContent = titulo;
+    document.getElementById('lblComAutor').textContent = 'Publicado por: ' + autor;
+    document.getElementById('lblComFecha').textContent = 'Fecha: ' + fecha;
+    document.getElementById('lblComContenido').textContent = contenido;
+    
+    const estadoEl = document.getElementById('lblComEstado');
+    estadoEl.innerHTML = '<span style="display: inline-block; padding: 2px 8px; border-radius: 6px; background-color: #f1f5f9; color: #334155;">' + estado + '</span>';
+
+    // Show modal
+    document.getElementById('modalVerComunicado').classList.add('show');
+}
+
+function closeComunicadoModal() {
+    document.getElementById('modalVerComunicado').classList.remove('show');
+}
+
+// Cerrar modal al hacer clic en el backdrop de Ver Comunicado
+document.getElementById('modalVerComunicado').addEventListener('click', function(e) {
+    if (e.target === this) closeComunicadoModal();
+});
 </script>
 
 {% include 'apoderado/_apoderado_wrap_end.html' %}

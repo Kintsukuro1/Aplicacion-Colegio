@@ -290,6 +290,7 @@
     .metric-prueba { border-top-color: #f59e0b; }
     .metric-vencer { border-top-color: #ef4444; }
     .metric-uso { border-top-color: #10b981; }
+    .metric-actividad { border-top-color: #8b5cf6; }
 
     .saas-metric-val {
         font-size: 2rem;
@@ -553,7 +554,7 @@
     </section>
 
     <!-- Métricas SaaS -->
-    <section class="saas-metrics-row" aria-label="Métricas del Negocio SaaS">
+    <section class="saas-metrics-row" aria-label="Métricas del Negocio SaaS" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
         
         <!-- Colegios en Prueba -->
         <article class="saas-metric-card metric-prueba">
@@ -573,12 +574,23 @@
             </div>
         </article>
 
-        <!-- Uso Mensual -->
+        <!-- Almacenamiento Global -->
         <article class="saas-metric-card metric-uso">
-            <div class="saas-metric-lbl">📈 Carga & Uso Mensual</div>
-            <div class="saas-metric-val">{{ uso_mensual|default:"87.5" }}%</div>
+            <div class="saas-metric-lbl">💾 Almacenamiento Global</div>
+            <div class="saas-metric-val" style="font-size: 1.6rem;">{{ uso_almacenamiento_formatted }}</div>
+            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; margin-top: 4px;">Límite del Plan: 500 GB</div>
             <div class="saas-progress-bg" aria-hidden="true">
-                <div class="saas-progress-fill" style="width: {{ uso_mensual }}%; background-color: #10b981;"></div>
+                <div class="saas-progress-fill" style="width: {{ pct_almacenamiento }}%; background-color: #10b981;"></div>
+            </div>
+        </article>
+
+        <!-- Actividad Diaria Hoy -->
+        <article class="saas-metric-card metric-actividad">
+            <div class="saas-metric-lbl">⚡ Actividad Diaria Hoy</div>
+            <div class="saas-metric-val">{{ actividad_diaria }}</div>
+            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; margin-top: 4px;">Acciones de red hoy</div>
+            <div class="saas-progress-bg" aria-hidden="true">
+                <div class="saas-progress-fill" style="width: 100%; background-color: #8b5cf6;"></div>
             </div>
         </article>
 
@@ -694,6 +706,22 @@
                             <span>{{ alert.mensaje }}</span>
                         </div>
                     {% endfor %}
+
+                    <!-- Alertas de Baja Asistencia -->
+                    {% for col in colegios_baja_asistencia %}
+                        <div class="alert-card warning">
+                            <span class="alert-icon" aria-hidden="true">🚨</span>
+                            <span>Baja asistencia en <strong>{{ col.nombre }}</strong>: Promedio general de {{ col.asistencia }}%.</span>
+                        </div>
+                    {% endfor %}
+                    
+                    <!-- Alertas de Usuarios Inactivos / Bloqueados -->
+                    {% if usuarios_bloqueados_count > 0 %}
+                        <div class="alert-card warning">
+                            <span class="alert-icon" aria-hidden="true">🚫</span>
+                            <span>Cuentas inhabilitadas: Hay <strong>{{ usuarios_bloqueados_count }}</strong> usuario(s) bloqueado(s) o inactivo(s).</span>
+                        </div>
+                    {% endif %}
                 </div>
             </section>
 

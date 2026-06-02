@@ -324,6 +324,76 @@
         color: #64748b;
         font-weight: 500;
     }
+
+    /* Hoy Section Styles */
+    .admin-hoy-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 8px;
+    }
+    .admin-hoy-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .admin-hoy-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    @media (max-width: 768px) {
+        .admin-hoy-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .admin-hoy-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .admin-hoy-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+    }
+    .admin-hoy-icon {
+        font-size: 1.5rem;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .card-sin-asistencia .admin-hoy-icon { background: #fffbeb; color: #d97706; }
+    .card-tareas-pendientes .admin-hoy-icon { background: #fdf2f8; color: #db2777; }
+    .card-comunicados-borradores .admin-hoy-icon { background: #f1f5f9; color: #475569; }
+    .admin-hoy-info {
+        display: flex;
+        flex-direction: column;
+    }
+    .admin-hoy-val {
+        font-size: 1.5rem;
+        font-weight: 850;
+        line-height: 1.1;
+        color: #0f172a;
+    }
+    .admin-hoy-lbl {
+        font-size: 0.78rem;
+        color: #64748b;
+        font-weight: 600;
+        margin-top: 2px;
+    }
 </style>
 
 <div class="admin-dashboard">
@@ -336,6 +406,34 @@
         </div>
         <div class="admin-date-badge" aria-hidden="true">
             📅 {% now "l d \d\e F \d\e Y" %}
+        </div>
+    </section>
+
+    <!-- Estado de la Institución Hoy -->
+    <section class="admin-hoy-section" aria-label="Estado de la Institución Hoy">
+        <h2 class="admin-hoy-title">📌 Estado de la Institución Hoy</h2>
+        <div class="admin-hoy-grid">
+            <div class="admin-hoy-card card-sin-asistencia">
+                <div class="admin-hoy-icon" aria-hidden="true">📋</div>
+                <div class="admin-hoy-info">
+                    <span class="admin-hoy-val">{{ profesores_sin_lista_hoy }}</span>
+                    <span class="admin-hoy-lbl">Clases sin Asistencia</span>
+                </div>
+            </div>
+            <div class="admin-hoy-card card-tareas-pendientes">
+                <div class="admin-hoy-icon" aria-hidden="true">⏳</div>
+                <div class="admin-hoy-info">
+                    <span class="admin-hoy-val">{{ tareas_pendientes_correccion }}</span>
+                    <span class="admin-hoy-lbl">Tareas por Corregir</span>
+                </div>
+            </div>
+            <div class="admin-hoy-card card-comunicados-borradores">
+                <div class="admin-hoy-icon" aria-hidden="true">📝</div>
+                <div class="admin-hoy-info">
+                    <span class="admin-hoy-val">{{ comunicados_pendientes }}</span>
+                    <span class="admin-hoy-lbl">Comunicados Borradores</span>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -381,6 +479,9 @@
             <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
                 <div class="admin-kpi-progress-fill" style="width: {{ asistencia_gral }}%; background-color: #0d9488;"></div>
             </div>
+            <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
+                {{ comparativo_asist }}
+            </div>
         </article>
 
         <!-- Promedio General -->
@@ -390,6 +491,9 @@
             <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
                 <div class="admin-kpi-progress-fill" style="width: {% widthratio promedio_gral 7 100 %}%; background-color: #10b981;"></div>
             </div>
+            <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
+                {{ comparativo_gpa }}
+            </div>
         </article>
 
         <!-- Tareas Entregadas -->
@@ -398,6 +502,9 @@
             <div class="admin-kpi-val">{{ tareas_entregadas_pct|floatformat:0 }}%</div>
             <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
                 <div class="admin-kpi-progress-fill" style="width: {{ tareas_entregadas_pct }}%; background-color: #6366f1;"></div>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
+                Al día con entregas activas
             </div>
         </article>
 

@@ -467,5 +467,14 @@ document.addEventListener('DOMContentLoaded', function() {
             selectAnio.addEventListener('change', () => form.submit());
         }
     }
+    
+    // Auto-open modal if requested via URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const abrirModal = urlParams.get('abrir_modal');
+    if (abrirModal === 'crear') {
+        setTimeout(() => {
+            abrirModalCrear();
+        }, 150);
+    }
 });
 </script>
