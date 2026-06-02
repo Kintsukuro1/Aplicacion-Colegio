@@ -28,6 +28,10 @@ def ver_conversacion(request, id_conversacion: int):
 
     # Marcar como leídos usando el service
     MensajeriaService.mark_conversation_as_read(request.user, conversacion)
+    MensajeriaService.mark_mensaje_notifications_read(
+        request.user,
+        conversacion.id_conversacion,
+    )
 
     if request.method == 'POST':
         contenido = (request.POST.get('contenido') or '').strip()
@@ -61,6 +65,7 @@ def ver_conversacion(request, id_conversacion: int):
 
     otro = conversacion.get_otro_participante(request.user)
     uses_mm_bandeja = context['rol'] in {'estudiante', 'apoderado', 'profesor'}
+    clases = list(_get_clases_for_user(request.user))
 
     if uses_mm_bandeja:
         context.update(
@@ -68,6 +73,8 @@ def ver_conversacion(request, id_conversacion: int):
                 request.user,
                 request.GET,
                 conversacion_activa_id=conversacion.id_conversacion,
+                clases=clases,
+                notificaciones_count=context.get('notificaciones_count'),
             ),
         )
 
@@ -78,7 +85,7 @@ def ver_conversacion(request, id_conversacion: int):
             'clase': conversacion.clase,
         },
         'mensajes': mensajes,
-        'clases': list(_get_clases_for_user(request.user)),
+        'clases': clases,
     })
     enrich_apoderado_mensajeria_context(request.user, context)
     return render(request, 'dashboard.html', context)

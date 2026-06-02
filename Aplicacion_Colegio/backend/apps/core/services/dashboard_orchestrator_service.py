@@ -42,6 +42,15 @@ class DashboardOrchestratorService:
 
         pagina_solicitada = request.GET.get('pagina', 'inicio')
 
+        # Fix: enlaces legacy de notificaciones usaban ?pagina=mensajes|mensajeria en el dashboard.
+        if pagina_solicitada in {'mensajes', 'mensajeria'} or (
+            pagina_solicitada.startswith('mensaj')
+        ):
+            conv_id = request.GET.get('conversacion_id') or request.GET.get('id_conversacion')
+            if conv_id and str(conv_id).isdigit():
+                return redirect('mensajeria:ver_conversacion', id_conversacion=int(conv_id))
+            return redirect('mensajeria:bandeja_mensajes')
+
         if (is_system_admin_scope or rol == 'admin_general') and pagina_solicitada == 'escuelas':
             from backend.apps.core.views.admin_general.escuelas import gestionar_escuelas
             return gestionar_escuelas(request)

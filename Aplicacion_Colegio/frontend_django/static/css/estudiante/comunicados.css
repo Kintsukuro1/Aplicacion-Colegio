@@ -1,7 +1,10 @@
 ﻿/* Comunicados — vista estudiante (mc-) */
 
 .mc-page {
-    max-width: 1200px;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 /* Detalle de comunicado */
@@ -358,6 +361,25 @@
     grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
     gap: 18px;
     align-items: start;
+    width: 100%;
+}
+
+/* Ancho completo: lista arriba, resumen y eventos abajo en columnas */
+.mc-layout.mc-layout--comunicados-wide {
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.mc-layout.mc-layout--comunicados-wide .mc-aside {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+
+.mc-layout.mc-layout--comunicados-wide .mc-aside .alumno-section-card {
+    margin-bottom: 0;
+    height: 100%;
 }
 
 .mc-main {
@@ -641,12 +663,16 @@
 }
 
 @media (max-width: 900px) {
-    .mc-layout {
+    .mc-layout:not(.mc-layout--comunicados-wide) {
         grid-template-columns: 1fr;
     }
 
-    .mc-aside {
+    .mc-layout:not(.mc-layout--comunicados-wide) .mc-aside {
         order: -1;
+    }
+
+    .mc-layout.mc-layout--comunicados-wide .mc-aside {
+        grid-template-columns: 1fr;
     }
 }
 

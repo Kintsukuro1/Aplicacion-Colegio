@@ -146,9 +146,99 @@ body.da-page {
     color: #64748b;
 }
 
+.da-intel {
+    margin: 0 0 1rem;
+    padding: 0.85rem 1rem;
+    background: rgba(var(--da-accent-rgb), 0.06);
+    border: 0.5px solid rgba(var(--da-accent-rgb), 0.2);
+    border-radius: var(--da-radius-sm);
+}
+
+.da-intel__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.65rem;
+    margin-bottom: 0.5rem;
+}
+
+.da-intel__badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.da-intel__badge--atencion {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.da-intel__badge--riesgo {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.da-intel__hint {
+    margin: 0.3rem 0 0;
+    font-size: 0.78rem;
+    color: var(--da-text-muted);
+    line-height: 1.45;
+}
+
+.da-intel__schedule {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: flex-start;
+}
+
+.da-intel__schedule-chip {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    border: 0.5px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+}
+
+.da-intel__alertas {
+    margin: 0 0 0.45rem;
+    padding: 0;
+    list-style: none;
+}
+
+.da-intel__alertas li {
+    font-size: 0.76rem;
+    color: #7f1d1d;
+    padding: 0.1rem 0 0.1rem 0.85rem;
+    position: relative;
+}
+
+.da-intel__alertas li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #ef4444;
+}
+
+.da-intel__consejo {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--da-accent-text);
+    line-height: 1.45;
+}
+
 .da-hero__metrics {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 0.6rem;
 }
 
@@ -754,6 +844,95 @@ body.da-page {
     color: var(--da-text-muted);
 }
 
+.da-date--tarea .da-date__cal {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.da-date--evaluacion .da-date__cal {
+    background: rgba(var(--da-accent-rgb), 0.12);
+    color: var(--da-accent-text);
+}
+
+.da-empty--rich {
+    padding: 1.25rem 1rem;
+    text-align: center;
+}
+
+.da-empty__title {
+    margin: 0 0 0.35rem;
+    font-weight: 600;
+    color: var(--da-text);
+}
+
+.da-empty__text {
+    margin: 0.25rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--da-text-muted);
+}
+
+.da-card__subtitle {
+    margin: 1rem 0 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--da-text);
+}
+
+.da-grades-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
+}
+
+.da-grades-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.da-grades-table th,
+.da-grades-table td {
+    padding: 0.55rem 0.65rem;
+    text-align: left;
+    border-bottom: 0.5px solid #f1f5f9;
+}
+
+.da-grades-table th {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #94a3b8;
+}
+
+.da-grade {
+    font-weight: 700;
+}
+
+.da-grade--ok { color: var(--color-text-success); }
+.da-grade--warn { color: var(--color-text-warning); }
+.da-grade--low { color: var(--color-text-danger); }
+
+.da-pending-grades {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.da-pending-grades li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.35rem;
+    padding: 0.5rem 0;
+    border-bottom: 0.5px solid #f1f5f9;
+    font-size: 0.8125rem;
+}
+
+.da-pending-grades li span {
+    color: var(--da-text-muted);
+    font-size: 0.75rem;
+}
+
 .da-resources {
     list-style: none;
     margin: 0;
@@ -798,6 +977,12 @@ body.da-page {
 }
 
 /* Responsive */
+@media (max-width: 1100px) {
+    .da-hero__metrics {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 @media (max-width: 1024px) {
     .da-layout {
         grid-template-columns: 1fr;
@@ -821,6 +1006,10 @@ body.da-page {
 
     .da-hero__metrics {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .da-intel__head {
+        flex-direction: column;
     }
 
     .da-aside {

@@ -1,6 +1,6 @@
 {% load static %}
 {% include 'estudiante/_alumno_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/estudiante/perfil_estudiante.css' %}?v=20260618">
+<link rel="stylesheet" href="{% static 'css/estudiante/perfil_estudiante.css' %}?v=20260602-wide">
 
 <div class="mp-page" id="mpPage">
     {% include 'estudiante/_alumno_hero.html' with hero_title="Mi Perfil" hero_subtitle=hero_subtitle_perfil|default:"Administra tu información personal y preferencias de cuenta" hero_aria="Mi Perfil" metrics_aria="Resumen académico" m1_value=promedio_display|default:"—" m1_label="Promedio general" m1_mod="promedio" m1_progress=promedio_progress|default:"0" m2_value=asistencia_display|default:"—" m2_label="Asistencia" m2_mod="asistencia" m2_progress=asistencia_progress|default:"0" m3_value=total_calificaciones|default:"0" m3_label="Calificaciones" m3_mod="clases" m4_value=total_asignaturas|default:"0" m4_label="Asignaturas" m4_mod="tareas" %}

@@ -4,10 +4,13 @@
 
 <div class="cal-page">
     <section class="alumno-hero cal-hero" aria-label="Mi Calendario">
-        <div class="alumno-hero__content">
-            <h1 class="alumno-hero__title">Mi Calendario</h1>
-            <p class="alumno-hero__meta">Fechas de entrega de tus tareas · planifica tu mes</p>
-        </div>
+        <header class="alumno-hero__head">
+            <div class="alumno-hero__content">
+                <h1 class="alumno-hero__title">Mi Calendario</h1>
+                <p class="alumno-hero__meta">Fechas de entrega de tus tareas · planifica tu mes</p>
+            </div>
+            {% include 'estudiante/_alumno_hero_notif.html' %}
+        </header>
         <div class="alumno-hero__metrics" aria-label="Resumen del mes visible">
             <article class="alumno-hero-metric alumno-hero-metric--clases">
                 <p class="alumno-hero-metric__value" id="calMetricMonth">0</p>

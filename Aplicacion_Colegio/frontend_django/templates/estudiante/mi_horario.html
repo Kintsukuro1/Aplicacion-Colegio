@@ -6,16 +6,19 @@
         <div class="mh-hero__top">
             <a href="{% url 'dashboard' %}?pagina=inicio" class="mh-hero__back">← Volver a Inicio</a>
         </div>
-        <div class="alumno-hero__content">
-            <h1 class="alumno-hero__title">Mi Horario</h1>
-            <p class="alumno-hero__meta">
-                {% if curso_actual %}
-                    {{ curso_actual.nombre }} · Organiza tu semana académica
-                {% else %}
-                    Consulta tu horario de clases semanal
-                {% endif %}
-            </p>
-        </div>
+        <header class="alumno-hero__head">
+            <div class="alumno-hero__content">
+                <h1 class="alumno-hero__title">Mi Horario</h1>
+                <p class="alumno-hero__meta">
+                    {% if curso_actual %}
+                        {{ curso_actual.nombre }} · Organiza tu semana académica
+                    {% else %}
+                        Consulta tu horario de clases semanal
+                    {% endif %}
+                </p>
+            </div>
+            {% include 'estudiante/_alumno_hero_notif.html' %}
+        </header>
         <div class="alumno-hero__metrics" aria-label="Resumen del horario">
             <article class="alumno-hero-metric alumno-hero-metric--clases">
                 <p class="alumno-hero-metric__value" id="mhMetricClasesHoy">0</p>
@@ -42,8 +45,8 @@
         </div>
     </section>
 
-    <div class="mh-layout">
-        <div class="mh-main">
+    <div class="mh-layout mh-layout--wide">
+        <div class="mh-main mh-main--schedule">
             <section class="alumno-section-card mh-card mh-card--table" aria-label="Horario semanal">
                 <header class="mh-card__head mh-card__head--bordered">
                     <div class="mh-card__head-left">
@@ -83,8 +86,8 @@
                                 <td class="mh-td {% if dia_actual_idx and forloop.counter == dia_actual_idx %}mh-td--today{% endif %}">
                                     {% if celda %}
                                     <div class="mh-cell" data-subject="{{ celda.asignatura|lower }}" title="{{ celda.asignatura }} — {{ celda.profesor }}">
-                                        <span class="mh-cell__name">{{ celda.asignatura|slice:":4" }}.</span>
-                                        <span class="mh-cell__prof">{{ celda.profesor|slice:":14" }}</span>
+                                        <span class="mh-cell__name">{{ celda.asignatura|truncatechars:22 }}</span>
+                                        <span class="mh-cell__prof">{{ celda.profesor|truncatechars:24 }}</span>
                                     </div>
                                     {% else %}
                                     <span class="mh-td__empty" aria-hidden="true"></span>
@@ -125,7 +128,7 @@
             </section>
         </div>
 
-        <aside class="mh-sidebar" aria-label="Información rápida">
+        <aside class="mh-sidebar mh-sidebar--below" aria-label="Información rápida">
             <section class="alumno-section-card mh-side-card mh-side-card--next mh-side-card--featured" aria-label="Próxima clase">
                 <h3 class="mh-side-card__title mh-side-card__title--featured">
                     <span class="mh-side-card__title-icon" aria-hidden="true">⏭</span>
@@ -224,14 +227,16 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
 <style>
 /* Mi Horario — refinamiento visual (alineado a Inicio / Mis Clases) */
 .mh-page {
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
     padding: 0 0 2.5rem;
+    box-sizing: border-box;
 }
 
 .mh-hero {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .mh-hero::after {
@@ -242,7 +247,7 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
     width: 280px;
     height: 280px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.45);
     pointer-events: none;
 }
 
@@ -252,14 +257,15 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
 
 .mh-hero__back {
     font-size: 12px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    color: #0369a1;
     text-decoration: none;
     transition: color 0.15s ease;
 }
 
 .mh-hero__back:hover {
-    color: #ffffff;
+    color: #1e3a8a;
+    text-decoration: underline;
 }
 
 .mh-hero-metric__value--sm {
@@ -269,7 +275,7 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
 }
 
 .mh-hero-asist-link {
-    color: #8b5cf6;
+    color: #6d28d9;
     font-weight: 700;
     text-decoration: none;
     font-size: 0.95rem;
@@ -279,18 +285,19 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
     text-decoration: underline;
 }
 
-.mh-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+.mh-layout--wide {
+    display: flex;
+    flex-direction: column;
     gap: 1.35rem;
-    align-items: start;
+    width: 100%;
 }
 
-.mh-main {
+.mh-main--schedule {
     display: flex;
     flex-direction: column;
     gap: 0;
     min-width: 0;
+    width: 100%;
 }
 
 .mh-card {
@@ -365,7 +372,7 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
 
 /* Tabla horario — estilo dashboard moderno */
 .mh-card--table .mh-table-wrap {
-    margin: 0 1.25rem 1.35rem;
+    margin: 0 1rem 1.25rem;
 }
 
 .mh-table-wrap {
@@ -374,6 +381,7 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
     border: 1px solid #e8eef4;
     background: linear-gradient(180deg, #fafbfd 0%, #f4f7fb 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    width: 100%;
 }
 
 .mh-table {
@@ -382,7 +390,7 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
     border-spacing: 0;
     font-size: 13px;
     table-layout: fixed;
-    min-width: 680px;
+    min-width: 100%;
 }
 
 .mh-th {
@@ -406,7 +414,7 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
 }
 
 .mh-th--hora {
-    width: 72px;
+    width: 5.5rem;
     background: #e8eef6;
     color: #64748b;
     text-transform: none;
@@ -446,10 +454,10 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
 }
 
 .mh-td {
-    padding: 10px 8px;
+    padding: 12px 10px;
     vertical-align: middle;
     text-align: center;
-    min-height: 68px;
+    min-height: 76px;
     border-bottom: 1px solid #eef2f7;
     background: #ffffff;
 }
@@ -669,11 +677,12 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
     color: #64748b;
 }
 
-/* Sidebar */
-.mh-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+/* Panel inferior (no compite con el ancho del horario) */
+.mh-sidebar--below {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    width: 100%;
 }
 
 .mh-side-card {
@@ -971,19 +980,15 @@ window.MH_GRID = {{ horario_grid_json|default:"[]"|safe }};
     opacity: 1;
 }
 
-@media (max-width: 1024px) {
-    .mh-layout {
+@media (max-width: 1200px) {
+    .mh-sidebar--below {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .mh-sidebar--below {
         grid-template-columns: 1fr;
-    }
-
-    .mh-sidebar {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1rem;
-    }
-
-    .mh-side-card {
-        margin-bottom: 0;
     }
 }
 

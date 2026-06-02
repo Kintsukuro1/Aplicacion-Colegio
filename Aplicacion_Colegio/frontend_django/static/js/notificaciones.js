@@ -132,8 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 alerta: '/dashboard/?pagina=notas',
                 comunicado_nuevo: '/comunicados/',
                 citacion_nueva: '/dashboard/?pagina=calendario_pupilo',
-                mensaje_nuevo: '/mensajeria/',
-                mensaje: '/mensajeria/',
+                mensaje_nuevo: '/mensajeria/bandeja/',
+                mensaje: '/mensajeria/bandeja/',
                 default: '/dashboard/?pagina=inicio',
             },
             estudiante: {
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tarea_nueva: '/dashboard/?pagina=mis_tareas',
                 tarea_calificada: '/dashboard/?pagina=mis_tareas',
                 comunicado_nuevo: '/comunicados/',
-                mensaje_nuevo: '/mensajeria/',
+                mensaje_nuevo: '/mensajeria/bandeja/',
                 default: '/dashboard/?pagina=inicio',
             },
             profesor: {
@@ -200,11 +200,68 @@ document.addEventListener('DOMContentLoaded', () => {
         return link;
     }
 
+    function isMensajeriaDashboardLink(href) {
+        if (!href || href.indexOf('/dashboard') !== 0) return false;
+        if (/pagina=mensaje/i.test(href)) return true;
+        try {
+            const qs = new URL(href, window.location.origin).searchParams;
+            const pagina = (qs.get('pagina') || '').toLowerCase();
+            return pagina === 'mensajes' || pagina === 'mensajeria' || pagina.indexOf('mensaj') === 0;
+        } catch (_e) {
+            return /pagina=mensaje/i.test(href);
+        }
+    }
+
+    function resolveMensajeriaFromDashboard(href) {
+        try {
+            const qs = new URL(href, window.location.origin).searchParams;
+            const convId = qs.get('conversacion_id') || qs.get('id_conversacion') || qs.get('id');
+            if (convId && /^\d+$/.test(convId)) {
+                return '/mensajeria/conversacion/' + convId + '/';
+            }
+        } catch (_e) { /* ignore */ }
+        return '/mensajeria/bandeja/';
+    }
+
+    function normalizeMensajeriaNotificationLink(link, tipo) {
+        const t = (tipo || '').toLowerCase();
+        const href = String(link || '').trim();
+        const isMensaje = t === 'mensaje_nuevo' || t === 'mensaje';
+
+        const convMatch = href.match(/^\/mensajeria\/conversacion\/(\d+)\/?/i);
+        if (convMatch) {
+            return '/mensajeria/conversacion/' + convMatch[1] + '/';
+        }
+
+        if (isMensajeriaDashboardLink(href)) {
+            return resolveMensajeriaFromDashboard(href);
+        }
+
+        if (
+            isMensaje
+            || /pagina=mensaje/i.test(href)
+            || /^\/mensajeria\/?$/.test(href)
+            || href === '/mensajeria/mensajes/'
+            || (href.indexOf('/mensajeria') === 0 && href.indexOf('conversacion') === -1)
+        ) {
+            if (!href || href === '#' || isMensajeriaDashboardLink(href) || /^\/mensajeria\/?$/.test(href)) {
+                return '/mensajeria/bandeja/';
+            }
+        }
+
+        return href;
+    }
+
     function normalizeNotificationLink(rawLink, notification) {
         const tipo = (notification && notification.tipo) || '';
         let link = String(rawLink || '').trim();
         const role = getPortalRole();
 
+        if (!link) {
+            return resolveDefaultNotificationLink(tipo);
+        }
+
+        link = normalizeMensajeriaNotificationLink(link, tipo);
         if (!link) {
             return resolveDefaultNotificationLink(tipo);
         }

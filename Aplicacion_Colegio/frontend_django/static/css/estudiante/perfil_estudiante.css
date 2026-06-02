@@ -1,7 +1,10 @@
 /* Mi Perfil — vista estudiante (mp-) */
 
 .mp-page {
-    max-width: 1200px;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .mp-empty {
@@ -24,9 +27,17 @@
 
 .mp-layout {
     display: grid;
-    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
-    gap: 18px;
+    grid-template-columns: minmax(280px, min(340px, 24vw)) minmax(0, 1fr);
+    gap: 20px;
     align-items: start;
+    width: 100%;
+}
+
+.mp-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 
 .mp-aside {
@@ -123,13 +134,6 @@
     margin: 0 0 10px;
     font-size: 0.72rem;
     color: #94a3b8;
-}
-
-.mp-main {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    min-width: 0;
 }
 
 .mp-form__subtitle {

@@ -19,14 +19,14 @@
     align-items: center;
     font-size: 0.82rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: #0369a1;
     text-decoration: none;
-    transition: opacity 0.2s;
+    transition: color 0.15s ease;
 }
 
 .tk-hero__back:hover {
-    opacity: 0.85;
-    color: #ffffff;
+    color: #1e3a8a;
+    text-decoration: underline;
 }
 
 /* Filtros */

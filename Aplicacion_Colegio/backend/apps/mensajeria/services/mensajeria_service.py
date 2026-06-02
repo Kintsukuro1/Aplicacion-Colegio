@@ -223,10 +223,115 @@ class MensajeriaService:
         return data
 
     @staticmethod
+    def _build_mensajeria_inteligencia(
+        enriched: List[Dict[str, Any]],
+        clases: Optional[List[Any]],
+        no_leidos_total: int,
+        notificaciones_count: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Sugerencias y contactos docentes para la bandeja MM."""
+        conv_por_clase: Dict[int, Dict[str, Any]] = {}
+        for item in enriched:
+            if not item.get('con_profesor'):
+                continue
+            conv_por_clase[item['conversacion'].clase_id] = item
+
+        profesores_contacto: List[Dict[str, Any]] = []
+        clases_sin_conversar = 0
+        for clase in clases or []:
+            if not getattr(clase, 'profesor_id', None) or not clase.profesor_id:
+                continue
+            existente = conv_por_clase.get(clase.id)
+            tiene_conversacion = bool(existente)
+            if not tiene_conversacion:
+                clases_sin_conversar += 1
+            ultimo = existente['ultimo_mensaje'] if existente else None
+            preview = ''
+            if ultimo and getattr(ultimo, 'contenido', None):
+                preview = (ultimo.contenido or '')[:100]
+            asignatura = clase.asignatura.nombre if getattr(clase, 'asignatura_id', None) else 'Clase'
+            asignatura_color = ''
+            if getattr(clase, 'asignatura_id', None) and getattr(clase.asignatura, 'color', None):
+                asignatura_color = clase.asignatura.color
+            profesores_contacto.append({
+                'clase': clase,
+                'profesor': clase.profesor,
+                'asignatura': asignatura,
+                'asignatura_key': asignatura.lower(),
+                'asignatura_color': asignatura_color,
+                'curso': clase.curso.nombre if getattr(clase, 'curso_id', None) else '',
+                'tiene_conversacion': tiene_conversacion,
+                'conversacion_id': (
+                    existente['conversacion'].id_conversacion if existente else None
+                ),
+                'no_leidos': existente['no_leidos'] if existente else 0,
+                'ultimo_preview': preview,
+            })
+
+        profesores_contacto.sort(
+            key=lambda row: (
+                -row['no_leidos'],
+                0 if row['tiene_conversacion'] else 1,
+                row['asignatura'].lower(),
+            ),
+        )
+
+        conversacion_sugerida = None
+        for item in enriched:
+            if item['no_leidos'] > 0:
+                conversacion_sugerida = item
+                break
+        if conversacion_sugerida is None and enriched:
+            conversacion_sugerida = enriched[0]
+
+        insights: List[Dict[str, Any]] = []
+        if no_leidos_total:
+            insights.append({
+                'tipo': 'alerta',
+                'icono': '📬',
+                'titulo': f'{no_leidos_total} mensaje(s) sin leer',
+                'texto': 'Revisa tus conversaciones con profesores.',
+                'url_name': 'mensajeria:bandeja_mensajes',
+                'url_query': 'estado=sin_leer',
+            })
+        if clases_sin_conversar:
+            insights.append({
+                'tipo': 'sugerencia',
+                'icono': '✉️',
+                'titulo': f'{clases_sin_conversar} materia(s) sin chat',
+                'texto': 'Puedes escribirle al profesor desde el panel lateral.',
+                'url_name': None,
+                'url_query': '',
+            })
+        notif_total = int(notificaciones_count or 0)
+        if notif_total > no_leidos_total:
+            insights.append({
+                'tipo': 'info',
+                'icono': '🔔',
+                'titulo': f'{notif_total} avisos en la campana',
+                'texto': (
+                    'Incluye comunicados, tareas y más. '
+                    'Esta pantalla solo muestra chats directos.'
+                ),
+                'url_name': 'dashboard',
+                'url_query': 'pagina=notificaciones',
+            })
+
+        return {
+            'profesores_contacto': profesores_contacto,
+            'clases_sin_conversar': clases_sin_conversar,
+            'conversacion_sugerida': conversacion_sugerida,
+            'mensajes_insights': insights,
+            'total_profesores_disponibles': len(profesores_contacto),
+        }
+
+    @staticmethod
     def get_alumno_bandeja_context(
         user,
         query_params: Optional[Dict[str, Any]] = None,
         conversacion_activa_id: Optional[int] = None,
+        clases: Optional[List[Any]] = None,
+        notificaciones_count: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Contexto de bandeja para estudiante: métricas, filtros y conversaciones enriquecidas."""
         query_params = query_params or {}
@@ -292,11 +397,30 @@ class MensajeriaService:
             ]
 
         filtros_activos = bool(estado_filtro or busqueda)
+        inteligencia = MensajeriaService._build_mensajeria_inteligencia(
+            enriched,
+            clases,
+            no_leidos_total,
+            notificaciones_count=notificaciones_count,
+        )
+        clases_sin_conversar = inteligencia['clases_sin_conversar']
+        total_profesores = inteligencia['total_profesores_disponibles']
+
         hero_subtitle = 'Comunícate con profesores y la administración del colegio'
         if no_leidos_total:
             hero_subtitle = (
                 f'Tienes {no_leidos_total} mensaje(s) sin leer en '
                 f'{conversaciones_count} conversación(es)'
+            )
+        elif clases_sin_conversar and total_profesores:
+            hero_subtitle = (
+                f'Puedes escribir a {total_profesores} profesor(es); '
+                f'{clases_sin_conversar} materia(s) aún sin conversación'
+            )
+        elif conversaciones_count:
+            hero_subtitle = (
+                f'{conversaciones_count} conversación(es) activa(s) · '
+                f'{total_mensajes} mensaje(s) en total'
             )
 
         return {
@@ -318,6 +442,7 @@ class MensajeriaService:
             'hero_subtitle_mensajes': hero_subtitle,
             'tiene_conversaciones': conversaciones_count > 0,
             'hay_resultados': len(filtradas) > 0,
+            **inteligencia,
         }
 
     @staticmethod
@@ -333,6 +458,18 @@ class MensajeriaService:
             bool: True si tiene acceso
         """
         return user in (conversacion.participante1, conversacion.participante2)
+
+    @staticmethod
+    def mark_mensaje_notifications_read(user, conversacion_id: int) -> None:
+        """Marca notificaciones de esta conversación al abrir el chat."""
+        from backend.apps.notificaciones.models import Notificacion
+
+        Notificacion.objects.filter(
+            destinatario=user,
+            tipo='mensaje_nuevo',
+            leido=False,
+            enlace__icontains=f'/mensajeria/conversacion/{conversacion_id}',
+        ).update(leido=True, fecha_lectura=timezone.now())
 
     @staticmethod
     def mark_conversation_as_read(user, conversacion) -> None:
