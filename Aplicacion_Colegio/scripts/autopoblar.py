@@ -681,7 +681,7 @@ def poblar_colegios():
         {
             'rbd': 10001,
             'rut_establecimiento': '76.123.456-7',
-            'nombre': 'Colegio Santa María',
+            'nombre': 'Raccademy',
             'direccion': 'Av. Libertador Bernardo O\'Higgins 1234',
             'telefono': '+56 2 2234 5678',
             'correo': 'contacto@santamaria.cl',
@@ -2842,7 +2842,7 @@ def poblar_datos_financieros():
     """Crear datos financieros de prueba: Cuotas, Pagos, Estados de Cuenta y Becas"""
     print("💰 Creando Datos Financieros de Prueba...")
     
-    # Obtener colegio Santa María
+    # Obtener colegio Raccademy
     colegio = Colegio.objects.get(rbd=10001)
     
     # Obtener matriculas (ya existentes de poblar_matriculas)
@@ -3500,10 +3500,10 @@ def main():
         print("✅ 28 matrículas ACTIVAS + 1 SUSPENDIDA + 1 RETIRADA (ejemplos)")
         print()
         print("Suscripciones:")
-        print("  Colegio Santa María (RBD 10001): Plan TESTER (Ilimitado)")
+        print("  Raccademy (RBD 10001): Plan TESTER (Ilimitado)")
         print("  Liceo Técnico Industrial (RBD 10002): Plan STANDARD (30 días)")
         print()
-        print("Datos Financieros (Colegio Santa María):")
+        print("Datos Financieros (Raccademy):")
         print("  ✓ 300 cuotas mensuales (10 meses × 30 estudiantes)")
         print("  ✓ Pagos con múltiples métodos (Efectivo, Transferencia, Webpay, etc.)")
         print("  ✓ Estados de cuenta generados (Enero-Agosto 2026)")
