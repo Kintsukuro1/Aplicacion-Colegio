@@ -1,5 +1,6 @@
 {% load static %}
 {% load custom_filters %}
+{% include 'profesor/_personal_wrap_start.html' %}
 
 <link rel="stylesheet" href="{% static 'css/profesor/asistencia.css' %}">
 
@@ -493,3 +494,4 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 {% endif %}
+{% include 'profesor/_personal_wrap_end.html' %}

@@ -1,0 +1,51 @@
+{% if calendario_inteligencia %}
+<section class="acal-intel" aria-label="Resumen inteligente del calendario">
+  <header class="acal-intel__head">
+    <div>
+      <span class="acal-intel__badge">Vista familiar</span>
+      <p class="acal-intel__hint">{{ calendario_inteligencia.consejo }}</p>
+    </div>
+    {% if calendario_inteligencia.tareas_pendientes %}
+    <span class="acal-intel__pill acal-intel__pill--warn">{{ calendario_inteligencia.tareas_pendientes }} tarea(s) pendiente(s)</span>
+    {% elif calendario_inteligencia.evaluaciones_30d %}
+    <span class="acal-intel__pill">{{ calendario_inteligencia.evaluaciones_30d }} evaluación(es) en 30 días</span>
+    {% endif %}
+  </header>
+
+  {% if calendario_inteligencia.alertas %}
+  <ul class="acal-intel__alertas">
+    {% for alerta in calendario_inteligencia.alertas %}
+    <li>{{ alerta }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if calendario_inteligencia.proximo_lejano %}
+  <p class="acal-intel__futuro">
+    <strong>Próxima evaluación (más allá del rango):</strong>
+    {{ calendario_inteligencia.proximo_lejano.asignatura }} — {{ calendario_inteligencia.proximo_lejano.titulo }}
+    ({{ calendario_inteligencia.proximo_lejano.fecha|date:"d/m/Y" }}, en {{ calendario_inteligencia.proximo_lejano.dias }} días)
+  </p>
+  {% endif %}
+
+  {% if calendario_inteligencia.pasados_recientes %}
+  <div class="acal-intel__recientes">
+    <h3 class="acal-intel__recientes-title">Actividad reciente (14 días)</h3>
+    <ul class="acal-intel__recientes-list">
+      {% for ev in calendario_inteligencia.pasados_recientes %}
+      <li>
+        <span class="acal-intel__recientes-date">{{ ev.fecha|date:"d/m" }}</span>
+        <span class="acal-intel__recientes-text">{{ ev.titulo }} · {{ ev.asignatura }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <nav class="acal-intel__links" aria-label="Accesos relacionados">
+    <a href="{% url 'dashboard' %}?pagina=notas&amp;estudiante_id={{ estudiante_seleccionado.id }}">Ver notas</a>
+    <a href="{% url 'dashboard' %}?pagina=asistencia&amp;estudiante_id={{ estudiante_seleccionado.id }}">Ver asistencia</a>
+    <a href="{% url 'mensajeria:bandeja_mensajes' %}">Mensajería</a>
+  </nav>
+</section>
+{% endif %}

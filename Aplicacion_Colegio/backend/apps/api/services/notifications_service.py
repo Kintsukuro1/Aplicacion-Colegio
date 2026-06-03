@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from typing import Iterable
 
+from django.db import close_old_connections, connection
 from django.db.models import QuerySet
 from django.utils import timezone
 
@@ -95,21 +96,28 @@ class NotificationsService:
         keepalive_every = 10
         last_keepalive = 0
 
-        while time.time() < timeout_at:
-            notifications = list(
-                NotificationsService.queryset_for_user(user)
-                .filter(id__gt=last_id)
-                .order_by('id')[:100]
-            )
-            if notifications:
-                for notification in notifications:
-                    last_id = notification.id
-                    yield ('notification', notification.id, notification)
-                continue
+        try:
+            while time.time() < timeout_at:
+                close_old_connections()
+                notifications = list(
+                    NotificationsService.queryset_for_user(user)
+                    .filter(id__gt=last_id)
+                    .order_by('id')[:100]
+                )
+                if notifications:
+                    for notification in notifications:
+                        last_id = notification.id
+                        yield ('notification', notification.id, notification)
+                    connection.close()
+                    continue
 
-            now = time.time()
-            if now - last_keepalive >= keepalive_every:
-                last_keepalive = now
-                yield ('keepalive', None, None)
+                now = time.time()
+                if now - last_keepalive >= keepalive_every:
+                    last_keepalive = now
+                    yield ('keepalive', None, None)
 
-            time.sleep(1)
+                connection.close()
+                time.sleep(1)
+        finally:
+            close_old_connections()
+            connection.close()

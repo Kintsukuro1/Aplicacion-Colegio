@@ -186,7 +186,12 @@ def bandeja_mensajes(request):
 
     if uses_mm_bandeja:
         context.update(
-            MensajeriaService.get_alumno_bandeja_context(request.user, request.GET),
+            MensajeriaService.get_alumno_bandeja_context(
+                request.user,
+                request.GET,
+                clases=clases,
+                notificaciones_count=context.get('notificaciones_count'),
+            ),
         )
         context.update({
             'conversacion_actual': None,

@@ -1,0 +1,53 @@
+{# Capa de insights — no modifica ficha ni listado del compañero #}
+{% if notas_inteligencia %}
+<section class="an-intel" aria-label="Resumen inteligente académico">
+  <header class="an-intel__head">
+    <div class="an-intel__status">
+      <span class="an-intel__badge an-intel__badge--{{ notas_inteligencia.estado }}">{{ notas_inteligencia.estado_label }}</span>
+      <p class="an-intel__hint">{{ notas_inteligencia.estado_hint }}</p>
+    </div>
+    <div class="an-intel__trend an-intel__trend--{{ notas_inteligencia.tendencia }}">
+      <span class="an-intel__trend-label">Tendencia</span>
+      <p class="an-intel__trend-text">{{ notas_inteligencia.tendencia_label }}</p>
+    </div>
+  </header>
+
+  <div class="an-intel__grid">
+    {% if notas_inteligencia.mejor_asignatura %}
+    <article class="an-intel__card an-intel__card--best">
+      <span class="an-intel__card-label">Mejor asignatura</span>
+      <strong class="an-intel__card-title">{{ notas_inteligencia.mejor_asignatura.nombre }}</strong>
+      <span class="an-intel__card-value">{{ notas_inteligencia.mejor_asignatura.promedio|floatformat:1 }}</span>
+    </article>
+    {% endif %}
+    {% if notas_inteligencia.peor_asignatura %}
+    <article class="an-intel__card an-intel__card--focus">
+      <span class="an-intel__card-label">A reforzar</span>
+      <strong class="an-intel__card-title">{{ notas_inteligencia.peor_asignatura.nombre }}</strong>
+      <span class="an-intel__card-value">{{ notas_inteligencia.peor_asignatura.promedio|floatformat:1 }}</span>
+    </article>
+    {% endif %}
+    {% if notas_inteligencia.proxima_evaluacion %}
+    <article class="an-intel__card an-intel__card--next">
+      <span class="an-intel__card-label">Próxima evaluación</span>
+      <strong class="an-intel__card-title">{{ notas_inteligencia.proxima_evaluacion.asignatura }}</strong>
+      <span class="an-intel__card-meta">{{ notas_inteligencia.proxima_evaluacion.nombre }}</span>
+      <span class="an-intel__card-meta">{{ notas_inteligencia.proxima_evaluacion.fecha|date:"d \d\e F" }}{% if notas_inteligencia.proxima_evaluacion.dias <= 7 %} · en {{ notas_inteligencia.proxima_evaluacion.dias }} día{{ notas_inteligencia.proxima_evaluacion.dias|pluralize }}{% endif %}</span>
+    </article>
+    {% endif %}
+  </div>
+
+  {% if notas_inteligencia.alertas %}
+  <ul class="an-intel__alertas">
+    {% for alerta in notas_inteligencia.alertas %}
+    <li>{{ alerta }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <p class="an-intel__consejo">
+    <span class="an-intel__consejo-icon" aria-hidden="true">💡</span>
+    {{ notas_inteligencia.consejo }}
+  </p>
+</section>
+{% endif %}

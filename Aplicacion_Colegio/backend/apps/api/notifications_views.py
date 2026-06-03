@@ -84,16 +84,24 @@ def notifications_sse_stream(request):
         last_id = 0
 
     def event_generator():
-        for event_type, event_id, payload in NotificationsService.stream_events(user=request.user, last_id=last_id):
-            if event_type == 'notification':
-                data = NotificationSerializer(payload).data
-                yield f"id: {event_id}\n"
-                yield 'event: notification\n'
-                yield f"data: {json.dumps(data, ensure_ascii=True)}\n\n"
-                continue
+        try:
+            for event_type, event_id, payload in NotificationsService.stream_events(
+                user=request.user, last_id=last_id
+            ):
+                if event_type == 'notification':
+                    data = NotificationSerializer(payload).data
+                    yield f"id: {event_id}\n"
+                    yield 'event: notification\n'
+                    yield f"data: {json.dumps(data, ensure_ascii=True)}\n\n"
+                    continue
 
-            yield 'event: keepalive\n'
-            yield 'data: {}\n\n'
+                yield 'event: keepalive\n'
+                yield 'data: {}\n\n'
+        finally:
+            from django.db import close_old_connections, connection
+
+            close_old_connections()
+            connection.close()
 
     response = StreamingHttpResponse(event_generator(), content_type='text/event-stream')
     response['Cache-Control'] = 'no-cache'

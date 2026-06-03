@@ -1,4 +1,4 @@
-const APP_VERSION = "2026-06-01-csrf-fix";
+const APP_VERSION = "2026-06-01-offline-fix";
 const CACHE_PREFIX = "sistema-escolar";
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${APP_VERSION}`;
 const PAGES_CACHE = `${CACHE_PREFIX}-pages-${APP_VERSION}`;
@@ -95,10 +95,11 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (isDynamicOrPrivateRequest(request)) {
-    // Only handle navigation requests to provide the offline fallback page, but NEVER cache them!
+    // Dashboard/cuentas: red primero; offline solo si falla la red (no por 500 ni lentitud).
     if (request.mode === "navigate") {
       event.respondWith(
-        withTimeout(fetch(request), 4500)
+        fetch(request)
+          .then((response) => response)
           .catch(async () => {
             const offlinePage = await caches.match(OFFLINE_URL);
             return offlinePage || Response.error();

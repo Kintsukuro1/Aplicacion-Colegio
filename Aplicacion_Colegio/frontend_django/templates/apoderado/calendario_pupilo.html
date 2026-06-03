@@ -1,7 +1,7 @@
 {% load static %}
 {% include 'apoderado/_apoderado_wrap_start.html' %}
-{% include 'apoderado/_apoderado_hero.html' with hero_title="Calendario" hero_subtitle="Eventos y fechas importantes de tus pupilos." hero_aria="Calendario" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
-<link rel="stylesheet" href="{% static 'css/apoderado/calendario_pupilo.css' %}?v=20260614">
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Calendario" hero_subtitle="Eventos y fechas importantes de tus pupilos." hero_aria="Calendario" show_pupil_selector=True selector_pagina='calendario_pupilo' %}
+<link rel="stylesheet" href="{% static 'css/apoderado/calendario_pupilo.css' %}?v=20260702-intel">
 
 <div class="acal-page">
   <section class="apod-section-card acal-panel" aria-label="Calendario por pupilo">
@@ -38,27 +38,33 @@
     {% else %}
       {% with nombre_est=estudiante_seleccionado.get_full_name|default:estudiante_seleccionado.email|default:"Pupilo" %}
 
-      <p class="acal-period-hint">Próximos <strong>30 días</strong> · {{ nombre_est }}</p>
+      <p class="acal-period-hint">Próximos <strong>{{ calendario_rango_dias|default:60 }} días</strong> (+ actividad reciente) · {{ nombre_est }}</p>
+
+      {% include 'apoderado/_apoderado_calendario_inteligencia.html' %}
 
       <div class="acal-kpi-grid" aria-label="Resumen de eventos">
         <article class="acal-kpi-card">
-          <p class="acal-kpi-card__label">Total eventos</p>
-          <p class="acal-kpi-card__value" id="acalKpiTotal">{{ total_eventos|default:0 }}</p>
-          <p class="acal-kpi-card__hint">Evaluaciones y tareas</p>
+          <p class="acal-kpi-card__label">Próximos eventos</p>
+          <p class="acal-kpi-card__value" id="acalKpiTotal">{{ resumen_calendario.total|default:0 }}</p>
+          <p class="acal-kpi-card__hint">En el calendario</p>
         </article>
         <article class="acal-kpi-card">
           <p class="acal-kpi-card__label">Evaluaciones</p>
-          <p class="acal-kpi-card__value acal-kpi-card__value--eval" id="acalKpiEval">0</p>
-          <p class="acal-kpi-card__hint">Próximas en el período</p>
+          <p class="acal-kpi-card__value acal-kpi-card__value--eval" id="acalKpiEval">{{ resumen_calendario.evaluaciones|default:0 }}</p>
+          <p class="acal-kpi-card__hint">Por venir</p>
         </article>
         <article class="acal-kpi-card">
           <p class="acal-kpi-card__label">Tareas</p>
-          <p class="acal-kpi-card__value acal-kpi-card__value--task" id="acalKpiTask">0</p>
+          <p class="acal-kpi-card__value acal-kpi-card__value--task" id="acalKpiTask">{{ resumen_calendario.tareas|default:0 }}</p>
           <p class="acal-kpi-card__hint">Entregas programadas</p>
+        </article>
+        <article class="acal-kpi-card">
+          <p class="acal-kpi-card__label">Colegio</p>
+          <p class="acal-kpi-card__value acal-kpi-card__value--inst">{{ resumen_calendario.institucionales|default:0 }}</p>
+          <p class="acal-kpi-card__hint">Feriados, reuniones, etc.</p>
         </article>
       </div>
 
-      {% if eventos_calendario %}
       <section class="acal-refine" aria-label="Filtrar eventos">
         <div class="acal-refine__head">
           <h2 class="acal-refine__title">Filtrar eventos</h2>
@@ -75,6 +81,7 @@
               <option value="">Todos</option>
               <option value="evaluacion">Evaluación</option>
               <option value="tarea">Tarea</option>
+              <option value="institucional">Colegio / institucional</option>
             </select>
           </div>
           <div class="acal-refine__field">
@@ -121,7 +128,7 @@
             <div class="acal-events" id="acalEventsList" role="list">
               {% for evento in eventos_calendario %}
               <article
-                class="acal-event-card"
+                class="acal-event-card{% if evento.es_pasado %} acal-event-card--past{% endif %}"
                 role="listitem"
                 data-acal-date="{{ evento.fecha|date:'Y-m-d' }}"
                 data-acal-tipo="{{ evento.tipo }}"
@@ -133,9 +140,10 @@
                 </div>
                 <div class="acal-event-card__main">
                   <div class="acal-event-card__head">
-                    <span class="acal-event-card__badge acal-event-card__badge--{% if evento.tipo == 'evaluacion' %}eval{% else %}task{% endif %}">
-                      {% if evento.tipo == 'evaluacion' %}Evaluación{% else %}Tarea{% endif %}
+                    <span class="acal-event-card__badge acal-event-card__badge--{% if evento.tipo == 'evaluacion' %}eval{% elif evento.tipo == 'institucional' %}inst{% else %}task{% endif %}">
+                      {% if evento.tipo == 'evaluacion' %}Evaluación{% elif evento.tipo == 'institucional' %}Colegio{% else %}Tarea{% endif %}
                     </span>
+                    {% if evento.es_pasado %}<span class="acal-event-card__past">Reciente</span>{% endif %}
                   </div>
                   <p class="acal-event-card__title">{{ evento.titulo }}</p>
                   <p class="acal-event-card__meta">
@@ -144,6 +152,10 @@
                   </p>
                 </div>
               </article>
+              {% empty %}
+              <p class="acal-events__empty acal-events__empty--open" id="acalEventsEmptyStatic">
+                No hay eventos en el rango. Revisa el resumen superior o las fechas del colegio.
+              </p>
               {% endfor %}
             </div>
             <p class="acal-events__empty" id="acalEventsEmpty" hidden>No hay eventos con estos filtros.</p>
@@ -151,20 +163,14 @@
         </aside>
       </div>
 
-      {% else %}
-      <div class="acal-empty acal-empty--inline">
-        <span class="acal-empty__icon" aria-hidden="true">📆</span>
-        <h3 class="acal-empty__title">Sin eventos próximos</h3>
-        <p class="acal-empty__text">No hay evaluaciones ni tareas programadas para {{ nombre_est }} en los próximos 30 días.</p>
-      </div>
-      {% endif %}
+      {{ eventos_calendario_json|json_script:"acal-events-data" }}
 
       {% endwith %}
     {% endif %}
   </section>
 </div>
 
-{% if eventos_calendario %}
+{% if estudiante_seleccionado %}
 <script>
 (function () {
   function debounce(fn, wait) {
@@ -210,21 +216,33 @@
   var kpiTotal = document.getElementById('acalKpiTotal');
   var nextCard = document.getElementById('acalNextCard');
   var nextContent = document.getElementById('acalNextContent');
+  var dataEl = document.getElementById('acal-events-data');
 
   var currentYear, currentMonth, selectedDate = '';
 
-  var events = Array.prototype.map.call(cards, function (card) {
-    var titleEl = card.querySelector('.acal-event-card__title');
-    var subjectEl = card.querySelector('.acal-event-card__subject');
-    var whenEl = card.querySelector('.acal-event-card__when');
-    return {
-      tipo: card.getAttribute('data-acal-tipo') || '',
-      fecha: card.getAttribute('data-acal-date') || '',
-      asignatura: subjectEl ? subjectEl.textContent.trim() : (card.getAttribute('data-acal-subject') || ''),
-      titulo: titleEl ? titleEl.textContent.trim() : '',
-      fecha_label: whenEl ? whenEl.textContent.trim() : ''
-    };
-  }).filter(function (ev) { return ev.fecha; });
+  var events = [];
+  if (dataEl && dataEl.textContent) {
+    try {
+      events = JSON.parse(dataEl.textContent) || [];
+    } catch (e) {
+      events = [];
+    }
+  }
+  if (!events.length && cards.length) {
+    events = Array.prototype.map.call(cards, function (card) {
+      var titleEl = card.querySelector('.acal-event-card__title');
+      var subjectEl = card.querySelector('.acal-event-card__subject');
+      var whenEl = card.querySelector('.acal-event-card__when');
+      return {
+        tipo: card.getAttribute('data-acal-tipo') || '',
+        fecha: card.getAttribute('data-acal-date') || '',
+        asignatura: subjectEl ? subjectEl.textContent.trim() : (card.getAttribute('data-acal-subject') || ''),
+        titulo: titleEl ? titleEl.textContent.trim() : '',
+        fecha_label: whenEl ? whenEl.textContent.trim() : '',
+        es_pasado: card.classList.contains('acal-event-card--past')
+      };
+    }).filter(function (ev) { return ev.fecha; });
+  }
 
   function pad(n) {
     return String(n).padStart(2, '0');
@@ -264,7 +282,8 @@
     var q = (searchEl && searchEl.value || '').trim().toLowerCase();
     return events.filter(function (ev) {
       if (tipo && ev.tipo !== tipo) return false;
-      if (q && (ev.asignatura || '').toLowerCase().indexOf(q) === -1) return false;
+      if (q && (ev.asignatura || '').toLowerCase().indexOf(q) === -1
+          && (ev.titulo || '').toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
   }
@@ -333,7 +352,7 @@
   }
 
   function updateKpis() {
-    var filtered = getFilteredEvents();
+    var filtered = getFilteredEvents().filter(function (e) { return !e.es_pasado; });
     var evalN = filtered.filter(function (e) { return e.tipo === 'evaluacion'; }).length;
     var taskN = filtered.filter(function (e) { return e.tipo === 'tarea'; }).length;
     if (kpiEval) kpiEval.textContent = String(evalN);
@@ -346,6 +365,7 @@
     var today = new Date();
     today.setHours(0, 0, 0, 0);
     var upcoming = getFilteredEvents().filter(function (ev) {
+      if (ev.es_pasado) return false;
       return new Date(ev.fecha + 'T12:00:00') >= today;
     }).sort(function (a, b) {
       return new Date(a.fecha) - new Date(b.fecha);
@@ -355,8 +375,8 @@
       return;
     }
     var ev = upcoming[0];
-    var badgeClass = ev.tipo === 'evaluacion' ? 'acal-next__badge--eval' : 'acal-next__badge--task';
-    var badgeLabel = ev.tipo === 'evaluacion' ? 'Evaluación' : 'Tarea';
+    var badgeClass = ev.tipo === 'evaluacion' ? 'acal-next__badge--eval' : (ev.tipo === 'institucional' ? 'acal-next__badge--inst' : 'acal-next__badge--task');
+    var badgeLabel = ev.tipo === 'evaluacion' ? 'Evaluación' : (ev.tipo === 'institucional' ? 'Colegio' : 'Tarea');
     var accent = resolveAccent(ev.asignatura);
     nextCard.hidden = false;
     nextContent.innerHTML =
@@ -381,7 +401,10 @@
     cards.forEach(function (card) {
       var matchDate = !day || card.getAttribute('data-acal-date') === day;
       var matchTipo = !tipo || card.getAttribute('data-acal-tipo') === tipo;
-      var matchSearch = !q || (card.getAttribute('data-acal-subject') || '').indexOf(q) !== -1;
+      var titleText = (card.querySelector('.acal-event-card__title') || {}).textContent || '';
+      var matchSearch = !q
+        || (card.getAttribute('data-acal-subject') || '').indexOf(q) !== -1
+        || titleText.toLowerCase().indexOf(q) !== -1;
       var show = matchDate && matchTipo && matchSearch;
       card.hidden = !show;
       if (show) visible++;
@@ -518,19 +541,24 @@
     });
   }
 
-  document.getElementById('acalPrevMonth').addEventListener('click', function () {
+  var prevBtn = document.getElementById('acalPrevMonth');
+  var nextBtn = document.getElementById('acalNextMonth');
+  var todayBtn = document.getElementById('acalTodayBtn');
+  if (!grid || !prevBtn || !nextBtn || !todayBtn) return;
+
+  prevBtn.addEventListener('click', function () {
     currentMonth--;
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
     renderCalendar();
   });
 
-  document.getElementById('acalNextMonth').addEventListener('click', function () {
+  nextBtn.addEventListener('click', function () {
     currentMonth++;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     renderCalendar();
   });
 
-  document.getElementById('acalTodayBtn').addEventListener('click', function () {
+  todayBtn.addEventListener('click', function () {
     var now = new Date();
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();

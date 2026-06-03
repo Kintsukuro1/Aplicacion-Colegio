@@ -56,8 +56,7 @@ class AttendanceNotificationService:
                     f"{clase.asignatura.nombre} el {fecha}."
                 )
 
-                # Construir enlace a la vista de asistencia en el portal del apoderado
-                enlace = f"/apoderado/estudiante/{estudiante.id}/asistencia"
+                enlace = f"/dashboard/?pagina=asistencia&estudiante_id={estudiante.id}"
 
                 notificacion = Notificacion.objects.create(
                     destinatario=apoderado.user,
@@ -114,7 +113,7 @@ class AttendanceNotificationService:
                     f"{clase.asignatura.nombre} el {fecha}.{obs_text}"
                 )
 
-                enlace = f"/apoderado/estudiante/{estudiante.id}/asistencia"
+                enlace = f"/dashboard/?pagina=asistencia&estudiante_id={estudiante.id}"
 
                 notificacion = Notificacion.objects.create(
                     destinatario=apoderado.user,

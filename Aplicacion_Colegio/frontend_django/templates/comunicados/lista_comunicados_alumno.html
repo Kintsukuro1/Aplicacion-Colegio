@@ -1,6 +1,6 @@
 {% load static %}
 {% include 'estudiante/_alumno_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/estudiante/comunicados.css' %}?v=20260621">
+<link rel="stylesheet" href="{% static 'css/estudiante/comunicados.css' %}?v=20260602-wide">
 
 <div class="mc-page" id="mcPage">
     {% include 'estudiante/_alumno_hero.html' with hero_title="Comunicados" hero_subtitle=hero_subtitle_comunicados|default:"Información oficial, circulares y avisos del colegio" hero_aria="Comunicados" metrics_aria="Resumen de comunicados" m1_value=sin_leer_count m1_label="Sin leer" m1_mod="tareas" m2_value=leidos_count m2_label="Leídos" m2_mod="clases" m3_value=urgentes_count m3_label="Urgentes" m3_mod="tareas" m4_value=total_comunicados m4_label="Total" m4_mod="asistencia" %}
@@ -60,7 +60,7 @@
         {% endif %}
     </section>
 
-    <div class="mc-layout">
+    <div class="mc-layout mc-layout--comunicados-wide">
         <div class="mc-main">
             {% if not tiene_comunicados %}
             <section class="alumno-section-card mc-empty" aria-label="Sin comunicados">

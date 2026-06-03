@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{% static 'css/apoderado/mis_pagos.css' %}?v=20260621">
 
 <div class="apg-page">
-  {% include 'apoderado/_apoderado_hero.html' with hero_title="Mis Pagos" hero_subtitle="Registro de cada pago que hiciste: fecha, método y comprobante." hero_aria="Mis pagos" metrics_aria="Resumen de pagos" m1_value=total_pagado|pesos_cl m1_label="Suma de pagos" m1_mod="pupilos" m2_value=pagos|length m2_label="Movimientos" m2_mod="comunicados" m3_value=pagos|count_estado:"PENDIENTE" m3_label="Por confirmar" m3_mod="firmas" m4_value=pagos|count_estado:"APROBADO" m4_label="Confirmados" m4_mod="cuotas" %}
+  {% include 'apoderado/_apoderado_hero.html' with hero_title="Mis Pagos" hero_subtitle="Registro de cada pago que hiciste: fecha, método y comprobante." hero_aria="Mis pagos" %}
 
   <aside class="apg-purpose" role="note">
     <span class="apg-purpose__icon" aria-hidden="true">🧾</span>

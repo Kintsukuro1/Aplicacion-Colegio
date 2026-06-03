@@ -7,10 +7,13 @@
         <div class="tk-hero__top">
             <a href="{% url 'dashboard' %}?pagina=inicio" class="tk-hero__back">← Volver a Inicio</a>
         </div>
-        <div class="alumno-hero__content">
-            <h1 class="alumno-hero__title">Mis Tareas</h1>
-            <p class="alumno-hero__meta">Tareas asignadas en tus clases · gestiona tus entregas</p>
-        </div>
+        <header class="alumno-hero__head">
+            <div class="alumno-hero__content">
+                <h1 class="alumno-hero__title">Mis Tareas</h1>
+                <p class="alumno-hero__meta">Tareas asignadas en tus clases · gestiona tus entregas</p>
+            </div>
+            {% include 'estudiante/_alumno_hero_notif.html' %}
+        </header>
         <div class="alumno-hero__metrics" aria-label="Resumen de tareas">
             <article class="alumno-hero-metric alumno-hero-metric--clases">
                 <p class="alumno-hero-metric__value">{{ total_tareas }}</p>

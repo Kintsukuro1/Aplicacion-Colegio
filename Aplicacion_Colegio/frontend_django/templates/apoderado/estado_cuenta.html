@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{% static 'css/apoderado/estado_cuenta.css' %}?v=20260621">
 
 <div class="aec-page">
-  {% include 'apoderado/_apoderado_hero.html' with hero_title="Estado de Cuenta" hero_subtitle="Plan de cuotas: qué debes, qué llevas pagado y qué falta por mes." hero_aria="Estado de cuenta" metrics_aria="Resumen financiero" m1_value=totales.total_a_pagar|pesos_cl m1_label="Total a pagar" m1_mod="cuotas" m2_value=totales.total_pagado|pesos_cl m2_label="Total pagado" m2_mod="pupilos" m3_value=totales.saldo_pendiente|pesos_cl m3_label="Saldo pendiente" m3_mod="firmas" m4_value=totales.cuotas_vencidas m4_label="Cuotas vencidas" m4_mod="comunicados" %}
+  {% include 'apoderado/_apoderado_hero.html' with hero_title="Estado de Cuenta" hero_subtitle="Plan de cuotas: qué debes, qué llevas pagado y qué falta por mes." hero_aria="Estado de cuenta" %}
 
   <aside class="aec-purpose aec-purpose--cuotas" role="note">
     <span class="aec-purpose__icon" aria-hidden="true">📋</span>

@@ -3,9 +3,11 @@ Servicio de detalle de clase.
 Centraliza la lógica de negocio de la vista ver_detalle_clase.
 """
 
-from datetime import date
+from datetime import date, timedelta
 from django.contrib import messages
+from django.db.models import Avg, Count, Q
 from django.shortcuts import redirect, render
+from django.utils import timezone
 
 from backend.apps.accounts.models import User, PerfilEstudiante
 from backend.apps.academico.services.material_clase_service import MaterialClaseService
@@ -319,9 +321,190 @@ class ClassDetailService:
             'anuncios': anuncios,
         }
 
+        if is_student or ver_como_alumno:
+            context.update(
+                ClassDetailService._enriquecer_estudiante_detalle_clase(
+                    user=user,
+                    clase=clase,
+                    tareas=tareas,
+                    evaluaciones_proximas=list(evaluaciones_proximas),
+                    calificaciones_detalle=calificaciones_detalle,
+                    progreso=progreso,
+                    nota_actual=nota_actual,
+                    horarios_por_dia=horarios_por_dia,
+                )
+            )
+
         if ver_como_alumno:
             template = 'estudiante/detalle_clase.html'
         else:
             template = 'profesor/detalle_clase.html' if is_teacher else 'estudiante/detalle_clase.html'
 
         return render(request, template, context)
+
+    @staticmethod
+    def _enriquecer_estudiante_detalle_clase(
+        user,
+        clase,
+        tareas,
+        evaluaciones_proximas,
+        calificaciones_detalle,
+        progreso,
+        nota_actual,
+        horarios_por_dia,
+    ):
+        """Métricas e insights reales para detalle de clase (estudiante)."""
+        from backend.apps.academico.models import Asistencia, Evaluacion
+        from backend.common.utils.grade_scale import es_aprobado
+
+        hoy = date.today()
+
+        total_evaluaciones = Evaluacion.objects.filter(clase=clase, activa=True).count()
+        evaluaciones_con_nota = len(calificaciones_detalle)
+        evaluaciones_sin_nota = max(total_evaluaciones - evaluaciones_con_nota, 0)
+
+        tareas_pendientes_count = sum(1 for item in tareas if not item.get('entrega'))
+        tareas_entregadas_count = len(tareas) - tareas_pendientes_count
+
+        tareas_vencen_pronto = 0
+        proxima_tarea = None
+        for item in tareas:
+            if item.get('entrega'):
+                continue
+            tarea = item['tarea']
+            if not tarea.fecha_entrega:
+                continue
+            if tarea.fecha_entrega.date() < hoy:
+                tareas_vencen_pronto += 1
+            elif proxima_tarea is None or tarea.fecha_entrega < proxima_tarea.fecha_entrega:
+                proxima_tarea = tarea
+
+        asist_row = Asistencia.objects.filter(
+            estudiante=user,
+            clase=clase,
+        ).aggregate(
+            total=Count('pk'),
+            presentes=Count('pk', filter=Q(estado='P')),
+        )
+        porcentaje_asistencia = None
+        if asist_row['total']:
+            porcentaje_asistencia = round(
+                (asist_row['presentes'] / asist_row['total']) * 100, 0
+            )
+
+        fechas_proximas = []
+        for ev in evaluaciones_proximas[:6]:
+            fechas_proximas.append(
+                {
+                    'tipo': 'evaluacion',
+                    'fecha': ev.fecha_evaluacion,
+                    'titulo': ev.nombre,
+                    'subtipo': ev.get_tipo_evaluacion_display(),
+                }
+            )
+        for item in tareas:
+            if item.get('entrega'):
+                continue
+            tarea = item['tarea']
+            if not tarea.fecha_entrega:
+                continue
+            f = tarea.fecha_entrega.date()
+            if f < hoy or f > hoy + timedelta(days=21):
+                continue
+            fechas_proximas.append(
+                {
+                    'tipo': 'tarea',
+                    'fecha': f,
+                    'titulo': tarea.titulo,
+                    'subtipo': 'Entrega',
+                }
+            )
+        fechas_proximas.sort(key=lambda x: x['fecha'])
+
+        profesor = clase.profesor
+        profesor_display = profesor.get_full_name() if profesor else 'Sin profesor'
+        if profesor_display.endswith(' Docente'):
+            profesor_display = profesor_display[:-8].strip()
+
+        horario_resumen = []
+        for dia, info in horarios_por_dia.items():
+            horario_resumen.append(f'{dia} {info["hora_inicio"]}–{info["hora_fin"]}')
+
+        estado = 'estable'
+        estado_label = 'Vas al día en esta asignatura'
+        estado_hint = 'Revisa materiales y prepara las próximas evaluaciones.'
+        if nota_actual is not None and not es_aprobado(nota_actual, getattr(user, 'colegio', None)):
+            estado = 'riesgo'
+            estado_label = 'Nota bajo el mínimo de aprobación'
+            estado_hint = 'Prioriza estudiar para las evaluaciones pendientes y consulta al profesor.'
+        elif tareas_vencen_pronto or (porcentaje_asistencia is not None and porcentaje_asistencia < 85):
+            estado = 'atencion'
+            estado_label = 'Hay puntos que requieren atención'
+            estado_hint = 'Revisa tareas vencidas o tu asistencia en esta asignatura.'
+
+        alertas = []
+        if evaluaciones_sin_nota:
+            alertas.append(
+                f'{evaluaciones_sin_nota} evaluación(es) aún sin nota publicada.'
+            )
+        if tareas_pendientes_count:
+            alertas.append(
+                f'{tareas_pendientes_count} tarea(s) por entregar en esta asignatura.'
+            )
+        if tareas_vencen_pronto:
+            alertas.append(f'{tareas_vencen_pronto} tarea(s) con fecha de entrega vencida.')
+        if evaluaciones_proximas:
+            ev = evaluaciones_proximas[0]
+            dias = (ev.fecha_evaluacion - hoy).days
+            cuando = 'hoy' if dias == 0 else ('mañana' if dias == 1 else f'en {dias} días')
+            alertas.append(f'Próxima evaluación {cuando}: {ev.nombre}.')
+        if porcentaje_asistencia is not None and porcentaje_asistencia < 90:
+            alertas.append(f'Tu asistencia en esta clase es {porcentaje_asistencia}%.')
+
+        consejo = 'Explora las pestañas Materiales, Tareas y Calificaciones para estar al día.'
+        if proxima_tarea and tareas_pendientes_count:
+            consejo = (
+                f'La entrega más cercana es «{proxima_tarea.titulo}» '
+                f'({proxima_tarea.fecha_entrega.strftime("%d/%m %H:%M")}).'
+            )
+        elif evaluaciones_proximas:
+            consejo = f'Prepárate para «{evaluaciones_proximas[0].nombre}» del {evaluaciones_proximas[0].fecha_evaluacion.strftime("%d/%m")}.'
+
+        evaluaciones_pendientes_lista = []
+        calificados_nombres = {c['nombre'] for c in calificaciones_detalle}
+        for ev in Evaluacion.objects.filter(clase=clase, activa=True).order_by('fecha_evaluacion'):
+            if ev.nombre in calificados_nombres:
+                continue
+            evaluaciones_pendientes_lista.append(
+                {
+                    'nombre': ev.nombre,
+                    'fecha': ev.fecha_evaluacion,
+                    'tipo': ev.get_tipo_evaluacion_display(),
+                }
+            )
+
+        return {
+            'profesor_display': profesor_display,
+            'total_evaluaciones': total_evaluaciones,
+            'evaluaciones_con_nota': evaluaciones_con_nota,
+            'evaluaciones_sin_nota': evaluaciones_sin_nota,
+            'tareas_pendientes_count': tareas_pendientes_count,
+            'tareas_entregadas_count': tareas_entregadas_count,
+            'tareas_vencen_pronto': tareas_vencen_pronto,
+            'porcentaje_asistencia': porcentaje_asistencia,
+            'progreso_detalle': (
+                f'{evaluaciones_con_nota}/{total_evaluaciones} evaluaciones con nota'
+                if total_evaluaciones
+                else 'Sin evaluaciones activas'
+            ),
+            'fechas_proximas': fechas_proximas,
+            'horario_resumen': horario_resumen,
+            'evaluaciones_pendientes_lista': evaluaciones_pendientes_lista,
+            'detalle_clase_inteligencia': {
+                'estado': estado,
+                'estado_label': estado_label,
+                'estado_hint': estado_hint,
+                'alertas': alertas,
+                'consejo': consejo,
+            },
+        }

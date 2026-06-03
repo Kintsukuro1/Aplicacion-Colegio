@@ -1,4 +1,5 @@
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260629">
 
 <style>
     /* Premium Teacher Dashboard Styles */
@@ -492,8 +493,11 @@
             <h1>¡Hola, Profesor(a) {{ nombre_usuario }}! 🎓</h1>
             <p>Portal Académico Escolar · Resumen del Día</p>
         </div>
-        <div class="prof-date-badge" aria-hidden="true">
-            📅 {% now "l d \d\e F \d\e Y" %}
+        <div class="portal-welcome-actions">
+            {% include 'includes/_portal_welcome_notif.html' with theme='profesor' %}
+            <div class="prof-date-badge" aria-hidden="true">
+                📅 {% now "l d \d\e F \d\e Y" %}
+            </div>
         </div>
     </section>
 

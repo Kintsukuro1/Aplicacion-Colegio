@@ -7,8 +7,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
-<link rel="stylesheet" href="{% static 'css/dashboard_apoderado.css' %}?v=20260518">
-<script>document.body.classList.add('vista-apoderado');</script>
+{% include 'apoderado/_apoderado_portal_styles.html' %}
 <script>
 (function () {
     var current = (document.title || '').trim();

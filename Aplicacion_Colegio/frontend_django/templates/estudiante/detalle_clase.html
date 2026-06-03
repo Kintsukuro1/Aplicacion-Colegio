@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ asignatura.nombre }} — Detalle</title>
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
-    <link rel="stylesheet" href="{% static 'css/estudiante/detalle_clase.css' %}?v=20260530">
+    <link rel="stylesheet" href="{% static 'css/estudiante/detalle_clase.css' %}?v=20260602-intel">
 </head>
 <body class="da-page"
       data-asignatura="{{ asignatura.nombre|lower }}"
@@ -39,8 +39,10 @@
 
                 <h1 class="da-hero__title">{{ asignatura.nombre }}</h1>
                 <p class="da-hero__subtitle">
-                    Prof. {{ profesor.get_full_name }}{% if curso %} · {{ curso.nombre }}{% endif %}
+                    Prof. {{ profesor_display|default:profesor.get_full_name }}{% if curso %} · {{ curso.nombre }}{% endif %}
                 </p>
+
+                {% include 'estudiante/_estudiante_detalle_clase_inteligencia.html' %}
 
                 <div class="da-hero__metrics" aria-label="Indicadores del curso">
                     <article class="da-metric da-metric--accent">
@@ -57,17 +59,28 @@
                     </article>
                     <article class="da-metric">
                         <span class="da-metric__label">Evaluaciones</span>
-                        <span class="da-metric__value">{{ evaluaciones_proximas|length }}</span>
-                        <span class="da-metric__hint">este semestre</span>
+                        <span class="da-metric__value">{{ evaluaciones_con_nota|default:0 }}/{{ total_evaluaciones|default:0 }}</span>
+                        <span class="da-metric__hint">con nota publicada</span>
                     </article>
-                    <article class="da-metric da-metric--tasks" id="daMetricTasks">
+                    <article class="da-metric da-metric--tasks{% if tareas_pendientes_count %} da-metric--warn{% endif %}" id="daMetricTasks">
                         <span class="da-metric__label">Tareas pendientes</span>
-                        <span class="da-metric__value" id="daPendingTasksCount">0</span>
-                        <span class="da-metric__hint" id="daPendingTasksHint">por entregar</span>
+                        <span class="da-metric__value" id="daPendingTasksCount">{{ tareas_pendientes_count|default:0 }}</span>
+                        <span class="da-metric__hint" id="daPendingTasksHint">{% if tareas_entregadas_count %}{{ tareas_entregadas_count }} entregada{{ tareas_entregadas_count|pluralize:"s" }}{% else %}por entregar{% endif %}</span>
                     </article>
                     <article class="da-metric">
-                        <span class="da-metric__label">Avance</span>
+                        <span class="da-metric__label">Asistencia</span>
+                        {% if porcentaje_asistencia != None %}
+                        <span class="da-metric__value">{{ porcentaje_asistencia }}%</span>
+                        <span class="da-metric__hint">en esta asignatura</span>
+                        {% else %}
+                        <span class="da-metric__value da-metric__value--none">—</span>
+                        <span class="da-metric__hint">sin registros</span>
+                        {% endif %}
+                    </article>
+                    <article class="da-metric">
+                        <span class="da-metric__label">Avance evaluaciones</span>
                         <span class="da-metric__value">{{ progreso|default:"0" }}%</span>
+                        <span class="da-metric__hint">{{ progreso_detalle|default:"Sin evaluaciones" }}</span>
                         <span class="da-metric__progress" role="progressbar" aria-valuenow="{{ progreso|default:0 }}" aria-valuemin="0" aria-valuemax="100">
                             <span class="da-metric__progress-fill" style="width: {{ progreso|default:0 }}%;"></span>
                         </span>
@@ -148,7 +161,19 @@
                                         <span class="da-activity__status">{% if item.entrega %}Completado{% else %}Pendiente{% endif %}</span>
                                     </div>
                             {% empty %}
-                            <p class="da-empty">Aún no hay unidades publicadas en el programa.</p>
+                            <div class="da-empty da-empty--rich">
+                                <p class="da-empty__title">Sin actividades en el programa</p>
+                                <p class="da-empty__text">
+                                    {% if total_materiales %}
+                                    Hay {{ total_materiales }} material{{ total_materiales|pluralize:"es" }} en la pestaña Materiales.
+                                    {% else %}
+                                    El profesor aún no publica actividades para esta asignatura.
+                                    {% endif %}
+                                </p>
+                                {% if fechas_proximas %}
+                                <p class="da-empty__text">Revisa «Próximas fechas» en el panel derecho.</p>
+                                {% endif %}
+                            </div>
                             {% endfor %}
                             {% if tareas %}</div></div>{% endif %}
                         </div>
@@ -210,7 +235,46 @@
                 <div class="da-tab-panel" id="tab-grades" role="tabpanel" hidden>
                     <section class="da-card">
                         <h2 class="da-card__title">Calificaciones</h2>
-                        <p class="da-empty">Las calificaciones se mostrarán aquí cuando el profesor las publique.</p>
+                        {% if calificaciones_detalle %}
+                        <div class="da-grades-table-wrap">
+                            <table class="da-grades-table">
+                                <thead>
+                                    <tr>
+                                        <th>Evaluación</th>
+                                        <th>Fecha</th>
+                                        <th>Nota</th>
+                                        <th>Ponderación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in calificaciones_detalle %}
+                                    <tr>
+                                        <td>{{ c.nombre }}</td>
+                                        <td>{{ c.fecha|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <span class="da-grade da-grade--{% if c.nota >= 5.0 %}ok{% elif c.nota >= 4.0 %}warn{% else %}low{% endif %}">{{ c.nota|floatformat:1 }}</span>
+                                        </td>
+                                        <td>{{ c.ponderacion|floatformat:0 }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="da-empty">Aún no hay notas publicadas para esta asignatura.</p>
+                        {% endif %}
+
+                        {% if evaluaciones_pendientes_lista %}
+                        <h3 class="da-card__subtitle">Evaluaciones sin nota</h3>
+                        <ul class="da-pending-grades">
+                            {% for ev in evaluaciones_pendientes_lista %}
+                            <li>
+                                <strong>{{ ev.nombre }}</strong>
+                                <span>{{ ev.fecha|date:"d/m/Y" }} · {{ ev.tipo }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
                     </section>
                 </div>
             </main>
@@ -232,17 +296,17 @@
 
                 <section class="da-card da-card--aside">
                     <h3 class="da-aside__title">Próximas fechas</h3>
-                    {% if evaluaciones_proximas %}
+                    {% if fechas_proximas %}
                     <ul class="da-dates">
-                        {% for evaluacion in evaluaciones_proximas|slice:":4" %}
-                        <li class="da-date">
+                        {% for item in fechas_proximas|slice:":5" %}
+                        <li class="da-date da-date--{{ item.tipo }}">
                             <div class="da-date__cal" aria-hidden="true">
-                                <span class="da-date__day">{{ evaluacion.fecha_evaluacion|date:"d" }}</span>
-                                <span class="da-date__month">{{ evaluacion.fecha_evaluacion|date:"M" }}</span>
+                                <span class="da-date__day">{{ item.fecha|date:"d" }}</span>
+                                <span class="da-date__month">{{ item.fecha|date:"M" }}</span>
                             </div>
                             <div class="da-date__body">
-                                <p class="da-date__name">{{ evaluacion.nombre }}</p>
-                                <p class="da-date__type">{{ evaluacion.get_tipo_evaluacion_display }}</p>
+                                <p class="da-date__name">{{ item.titulo }}</p>
+                                <p class="da-date__type">{{ item.subtipo }}</p>
                             </div>
                         </li>
                         {% endfor %}
@@ -253,34 +317,25 @@
                 </section>
 
                 <section class="da-card da-card--aside">
-                    <h3 class="da-aside__title">Recursos rápidos</h3>
+                    <h3 class="da-aside__title">Accesos rápidos</h3>
                     <ul class="da-resources">
-                        {% for material in materiales|slice:":1" %}
+                        <li class="da-resource">
+                            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="da-resource__link">← Mis clases</a>
+                        </li>
+                        <li class="da-resource">
+                            <a href="{% url 'dashboard' %}?pagina=mis_notas" class="da-resource__link">Mis notas</a>
+                        </li>
+                        <li class="da-resource">
+                            <a href="{% url 'dashboard' %}?pagina=mi_horario" class="da-resource__link">Mi horario</a>
+                        </li>
+                        {% for material in materiales|slice:":2" %}
                         <li class="da-resource">
                             <a href="{{ material.archivo.url }}" class="da-resource__link" download>
-                                <span class="da-resource__icon" aria-hidden="true">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                </span>
-                                Programa del curso
+                                <span class="da-resource__icon" aria-hidden="true">📄</span>
+                                {{ material.titulo|truncatechars:28 }}
                             </a>
                         </li>
                         {% endfor %}
-                        <li class="da-resource">
-                            <span class="da-resource__link da-resource__link--muted">
-                                <span class="da-resource__icon" aria-hidden="true">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                                </span>
-                                Foro de discusión
-                            </span>
-                        </li>
-                        <li class="da-resource">
-                            <span class="da-resource__link da-resource__link--muted">
-                                <span class="da-resource__icon" aria-hidden="true">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                </span>
-                                Preguntas frecuentes
-                            </span>
-                        </li>
                     </ul>
                 </section>
             </aside>

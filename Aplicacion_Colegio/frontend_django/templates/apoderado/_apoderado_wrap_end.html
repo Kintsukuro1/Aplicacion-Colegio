@@ -2,3 +2,18 @@
 </div>
 </div>
 </div>
+{% load static %}
+<script src="{% static 'js/notificaciones.js' %}?v=20260630-links"></script>
+<script>
+(function () {
+    var selector = document.getElementById('apodPupilSelector');
+    if (!selector) return;
+    selector.addEventListener('change', function () {
+        var pagina = selector.getAttribute('data-pagina') || 'inicio';
+        var estudianteId = selector.value;
+        if (!estudianteId) return;
+        var url = '/dashboard/?pagina=' + encodeURIComponent(pagina) + '&estudiante_id=' + encodeURIComponent(estudianteId);
+        window.location.assign(url);
+    });
+})();
+</script>

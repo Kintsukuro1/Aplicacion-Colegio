@@ -1,0 +1,27 @@
+{% load static %}
+{# layout docente: sidebar + paleta lavanda (vista-personal) #}
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260606">
+<link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260629">
+<script>document.body.classList.add('vista-personal');</script>
+<script>
+(function () {
+    var current = (document.title || '').trim();
+    if (current.indexOf('Portal Académico') !== -1) return;
+    document.title = 'Portal Académico - Profesor';
+})();
+</script>
+<div class="personal-dashboard perfil-personal vista-personal">
+<div class="dashboard-personal-layout">
+{% include 'profesor/_sidebar.html' %}
+<div class="pers-main">
+{% if pagina_actual != 'inicio' %}
+<header class="pers-main-header pers-main-header--compact" aria-label="Notificaciones del portal">
+    <div class="pers-main-header__actions">
+        <div class="portal-notif portal-notif--profesor portal-welcome-notif">
+            {% include 'includes/_portal_notifications.html' %}
+        </div>
+    </div>
+</header>
+{% endif %}
+<div class="pers-main__body pers-page-content">

@@ -96,7 +96,7 @@
 /* KPI */
 .acal-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.75rem;
     margin-bottom: 1.15rem;
 }
@@ -132,6 +132,10 @@
 
 .acal-kpi-card__value--task {
     color: #4a7c62;
+}
+
+.acal-kpi-card__value--inst {
+    color: #6366f1;
 }
 
 .acal-kpi-card__hint {
@@ -588,6 +592,25 @@
     border: 1px solid #cfe5d6;
 }
 
+.acal-event-card__badge--inst {
+    color: #4338ca;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+}
+
+.acal-event-card__past {
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #94a3b8;
+    letter-spacing: 0.04em;
+}
+
+.acal-event-card--past {
+    opacity: 0.88;
+    background: #f8fafc;
+}
+
 .acal-event-card__title {
     margin: 0;
     font-size: 0.86rem;
@@ -686,5 +709,151 @@
 
     .acal-day {
         min-height: 2.8rem;
+    }
+}
+
+/* Resumen inteligente */
+.acal-intel {
+    margin-bottom: 1rem;
+    padding: 1rem 1.1rem;
+    background: linear-gradient(135deg, #f0fdf9 0%, #ecfdf5 100%);
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+}
+
+.acal-intel__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem;
+    margin-bottom: 0.55rem;
+}
+
+.acal-intel__badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #166534;
+    background: #dcfce7;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+}
+
+.acal-intel__hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+    color: #475569;
+    line-height: 1.45;
+    max-width: 40rem;
+}
+
+.acal-intel__pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1e40af;
+    white-space: nowrap;
+}
+
+.acal-intel__pill--warn {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.acal-intel__alertas {
+    margin: 0 0 0.55rem;
+    padding: 0;
+    list-style: none;
+}
+
+.acal-intel__alertas li {
+    font-size: 0.78rem;
+    color: #7f1d1d;
+    padding: 0.2rem 0 0.2rem 0.9rem;
+    position: relative;
+}
+
+.acal-intel__alertas li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #ef4444;
+}
+
+.acal-intel__futuro {
+    margin: 0 0 0.55rem;
+    font-size: 0.8rem;
+    color: #334155;
+    line-height: 1.45;
+}
+
+.acal-intel__recientes-title {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.acal-intel__recientes-list {
+    margin: 0 0 0.55rem;
+    padding: 0;
+    list-style: none;
+}
+
+.acal-intel__recientes-list li {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: #475569;
+    padding: 0.2rem 0;
+}
+
+.acal-intel__recientes-date {
+    font-weight: 700;
+    color: #166534;
+    min-width: 2.5rem;
+}
+
+.acal-intel__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+}
+
+.acal-intel__links a {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #059669;
+    text-decoration: none;
+}
+
+.acal-intel__links a:hover {
+    text-decoration: underline;
+}
+
+.acal-events__empty--open {
+    display: block;
+    margin: 0;
+    padding: 0.75rem 0;
+    font-size: 0.82rem;
+    color: #64748b;
+    font-style: italic;
+}
+
+.acal-next__badge--inst {
+    background: #eef2ff;
+    color: #4338ca;
+}
+
+@media (max-width: 900px) {
+    .acal-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

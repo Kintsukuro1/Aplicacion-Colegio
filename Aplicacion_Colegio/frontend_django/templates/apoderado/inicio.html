@@ -16,70 +16,6 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Selector de Pupilo Premium */
-    .apod-welcome-bar {
-        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-        border: 1px solid var(--apod-border);
-        border-radius: 16px;
-        padding: 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        box-shadow: var(--apod-shadow);
-    }
-
-    .apod-welcome-text h1 {
-        margin: 0;
-        font-size: 1.75rem;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        color: var(--apod-text);
-    }
-
-    .apod-welcome-text p {
-        margin: 4px 0 0;
-        font-size: 0.9rem;
-        color: var(--apod-text-soft);
-        font-weight: 500;
-    }
-
-    .apod-selector-card {
-        background: var(--apod-surface);
-        border: 1px solid var(--apod-border);
-        padding: 8px 16px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        box-shadow: 0 4px 12px rgba(20, 83, 45, 0.05);
-    }
-
-    .apod-selector-card label {
-        font-weight: 700;
-        font-size: 0.85rem;
-        color: var(--apod-text-soft);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .apod-select-pupilo {
-        border: 1px solid var(--apod-border);
-        background: transparent;
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-weight: 600;
-        color: var(--apod-text);
-        outline: none;
-        cursor: pointer;
-        transition: border-color 0.2s;
-    }
-
-    .apod-select-pupilo:focus {
-        border-color: var(--apod-accent);
-    }
-
     /* Grid de Estado de Mi Hijo */
     .apod-kpi-grid {
         display: grid;
@@ -604,25 +540,7 @@
 
 <div class="apod-dashboard-container">
     
-    <!-- Barra de bienvenida y selector -->
-    <div class="apod-welcome-bar">
-        <div class="apod-welcome-text">
-            <h1>¡Bienvenido/a al Portal Familiar, {{ nombre_usuario }}!</h1>
-            <p>{% now "l d \d\e F \d\e Y" %} · Resumen académico de tus pupilos</p>
-        </div>
-        {% if estudiantes and estudiantes|length > 1 %}
-        <div class="apod-selector-card">
-            <label for="studentSelector">Visualizar Pupilo:</label>
-            <select id="studentSelector" class="apod-select-pupilo" aria-label="Seleccionar estudiante">
-                {% for est in estudiantes %}
-                <option value="{{ est.id }}" {% if est.id == estudiante_seleccionado.id %}selected{% endif %}>
-                     {{ est.get_full_name|default:est.nombre }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-        {% endif %}
-    </div>
+    {% include 'apoderado/_apoderado_welcome_bar.html' with welcome_inicio=True welcome_subtitle="Resumen académico de tus pupilos" welcome_aria="Inicio portal familiar" show_pupil_selector=True selector_pagina='inicio' %}
 
     <!-- Centro de Pendientes -->
     <section class="pending-center-section" aria-label="Centro de Pendientes">
@@ -873,18 +791,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Selector de Pupilo (Múltiples hijos)
-        const studentSelector = document.getElementById('studentSelector');
-        if (studentSelector) {
-            studentSelector.addEventListener('change', function () {
-                const studentId = this.value;
-                const url = new URL(window.location.href);
-                url.searchParams.set('estudiante_id', studentId);
-                url.searchParams.set('pagina', 'inicio');
-                window.location.href = url.toString();
-            });
-        }
-
         // --- Gráficos del Dashboard ---
         
         // Datos de Notas

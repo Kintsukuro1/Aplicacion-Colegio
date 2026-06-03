@@ -1,9 +1,12 @@
-{# Hero unificado (mismas clases que Inicio / Mis Clases). Variables: hero_title, hero_subtitle, hero_aria, metrics_aria, m1..m4 _value/_label/_mod (--clases|--tareas|--promedio|--asistencia), m*_progress opcional #}
+{# Hero unificado (estilo Inicio). Variables: hero_title, hero_subtitle, hero_aria, metrics_aria, m1..m4 #}
 <section class="alumno-hero" aria-label="{{ hero_aria|default:hero_title }}">
-    <div class="alumno-hero__content">
-        <h1 class="alumno-hero__title">{{ hero_title }}</h1>
-        <p class="alumno-hero__meta">{{ hero_subtitle }}</p>
-    </div>
+    <header class="alumno-hero__head">
+        <div class="alumno-hero__content">
+            <h1 class="alumno-hero__title">{{ hero_title }}</h1>
+            <p class="alumno-hero__meta">{{ hero_subtitle }}</p>
+        </div>
+        {% include 'estudiante/_alumno_hero_notif.html' %}
+    </header>
     <div class="alumno-hero__metrics" aria-label="{{ metrics_aria|default:'Resumen' }}">
         <article class="alumno-hero-metric alumno-hero-metric--{{ m1_mod|default:'clases' }}">
             <p class="alumno-hero-metric__value">{{ m1_value }}</p>

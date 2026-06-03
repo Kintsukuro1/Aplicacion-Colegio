@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{% static 'css/apoderado/mensajeria.css' %}?v=20260618">
 
 <div class="amm-page" id="ammPage">
-    {% include 'apoderado/_apoderado_hero.html' with hero_title="Mensajería Institucional" hero_subtitle="Comunicación directa con profesores y administración de tus pupilos." hero_aria="Mensajería apoderado" metrics_aria="Resumen de mensajería" m1_value=no_leidos_count|default:"0" m1_label="No leídos" m1_mod="firmas" m2_value=conversaciones_count|default:"0" m2_label="Conversaciones" m2_mod="comunicados" m3_value=con_profesores_count|default:"0" m3_label="Con docentes" m3_mod="pupilos" m4_value=total_mensajes_count|default:"0" m4_label="Mensajes" m4_mod="cuotas" %}
+    {% include 'apoderado/_apoderado_hero.html' with hero_title="Mensajería Institucional" hero_subtitle="Comunicación directa con profesores y administración de tus pupilos." hero_aria="Mensajería apoderado" %}
 
     <nav class="amm-chips" aria-label="Accesos rápidos">
         <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="amm-chips__chip{% if not estado_filtro %} amm-chips__chip--active{% endif %}">Todas ({{ conversaciones_count|default:"0" }})</a>

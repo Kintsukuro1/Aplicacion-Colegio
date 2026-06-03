@@ -103,13 +103,18 @@ class DashboardContextService:
         # Get 5 most recent notifications
         recent_notifications = Notificacion.objects.filter(destinatario=user).order_by('-fecha_creacion')[:5]
         
+        from backend.apps.notificaciones.services.notification_link_service import (
+            normalize_notification_enlace,
+        )
+
         formatted_notifications = []
         for notif in recent_notifications:
             # Map notification type to icon
             icono = 'star' if getattr(notif, 'tipo', '') == 'calificacion' else 'bell'
-            url = getattr(notif, 'enlace', '')
-            if not url:
-                url = '#'
+            url = normalize_notification_enlace(
+                getattr(notif, 'enlace', ''),
+                getattr(notif, 'tipo', ''),
+            )
                 
             formatted_notifications.append({
                 'id': notif.id if hasattr(notif, 'id') else getattr(notif, 'id_notificacion', None),
@@ -144,12 +149,17 @@ class DashboardContextService:
             
         notifications = queryset.order_by('-fecha_creacion')
         
+        from backend.apps.notificaciones.services.notification_link_service import (
+            normalize_notification_enlace,
+        )
+
         formatted_notifications = []
         for notif in notifications:
             icono = 'star' if getattr(notif, 'tipo', '') == 'calificacion' else 'bell'
-            url = getattr(notif, 'enlace', '')
-            if not url:
-                url = '#'
+            url = normalize_notification_enlace(
+                getattr(notif, 'enlace', ''),
+                getattr(notif, 'tipo', ''),
+            )
                 
             formatted_notifications.append({
                 'id': notif.id if hasattr(notif, 'id') else getattr(notif, 'id_notificacion', None),
@@ -203,7 +213,7 @@ class DashboardContextService:
         elif pagina_solicitada == 'asistencia':
             context.update(DashboardContextService._get_estudiante_asistencia_context(user, request_get_params))
         elif pagina_solicitada == 'mis_clases':
-            context.update(DashboardContextService._get_estudiante_clases_context(user))
+            context.update(DashboardContextService._get_estudiante_clases_context(user, escuela_rbd))
         elif pagina_solicitada == 'mis_notas':
             context.update(DashboardContextService._get_estudiante_notas_context(user))
         elif pagina_solicitada == 'mi_horario':
@@ -1134,103 +1144,215 @@ class DashboardContextService:
         }
 
     @staticmethod
-    def _get_estudiante_clases_context(user):
-        """Get clases context for estudiante"""
-        from backend.apps.cursos.models import Clase, BloqueHorario, ClaseEstudiante
+    def _get_estudiante_clases_context(user, escuela_rbd=None):
+        """Clases del estudiante con métricas reales e insights."""
+        from backend.apps.cursos.models import Clase, BloqueHorario
         from backend.apps.accounts.models import PerfilEstudiante
-        from backend.apps.academico.models import Calificacion
-        from datetime import date
+        from backend.apps.academico.models import (
+            Calificacion,
+            Asistencia,
+            Tarea,
+            EntregaTarea,
+            Evaluacion,
+        )
+        from backend.common.utils.grade_scale import es_aprobado
         import logging
-        logger = logging.getLogger(__name__)
 
+        logger = logging.getLogger(__name__)
         hoy = date.today()
         dia_semana = hoy.weekday() + 1
+        colegio_id = escuela_rbd or getattr(user, 'colegio_id', None)
 
-        # Get student profile
+        empty = {
+            'mis_clases': [],
+            'curso_actual': None,
+            'total_clases': 0,
+            'clases_hoy': 0,
+            'tareas_pendientes': 0,
+            'promedio_general': 0.0,
+            'porcentaje_asistencia': 100,
+            'evaluaciones_proximas': [],
+            'mis_clases_inteligencia': {},
+        }
+
         try:
             perfil = PerfilEstudiante.objects.get(user=user)
             curso_actual = perfil.curso_actual
-            logger.info(f"Estudiante {user.email}: curso_actual={curso_actual}")
         except PerfilEstudiante.DoesNotExist:
-            logger.error(f"Estudiante {user.email} NO tiene PerfilEstudiante")
-            return {
-                'mis_clases': [],
-                'curso_actual': None,
-                'total_clases': 0,
-            }
+            logger.error('Estudiante %s sin PerfilEstudiante', user.email)
+            return empty
 
-        # Get classes where the student is enrolled via ClaseEstudiante
-        clases = list(Clase.objects.filter(
-            estudiantes__estudiante=user,
-            estudiantes__activo=True,
-            activo=True
-        ).select_related(
-            'asignatura', 'profesor'
-        ).prefetch_related(
-            Prefetch(
-                'bloques_horario',
-                queryset=BloqueHorario.objects.filter(activo=True).order_by('dia_semana', 'hora_inicio'),
-                to_attr='bloques_horario_activos',
+        clases = list(
+            Clase.objects.filter(
+                estudiantes__estudiante=user,
+                estudiantes__activo=True,
+                activo=True,
             )
-        ).annotate(
-            total_evaluaciones=Count('evaluaciones', filter=Q(evaluaciones__activa=True), distinct=True)
-        ).order_by('asignatura__nombre'))
+            .select_related('asignatura', 'profesor')
+            .prefetch_related(
+                Prefetch(
+                    'bloques_horario',
+                    queryset=BloqueHorario.objects.filter(activo=True).order_by(
+                        'dia_semana', 'hora_inicio'
+                    ),
+                    to_attr='bloques_horario_activos',
+                )
+            )
+            .annotate(
+                total_evaluaciones=Count(
+                    'evaluaciones', filter=Q(evaluaciones__activa=True), distinct=True
+                )
+            )
+            .order_by('asignatura__nombre')
+        )
 
-        logger.info(f"Estudiante {user.email}: encontradas {len(clases)} clases vía ClaseEstudiante")
+        if not clases:
+            return {**empty, 'curso_actual': curso_actual}
 
-        clases_ids = [clase.id for clase in clases]
-        progreso_rows = Calificacion.objects.filter(
+        clases_ids = [c.id for c in clases]
+
+        clases_hoy = (
+            BloqueHorario.objects.filter(
+                clase_id__in=clases_ids,
+                dia_semana=dia_semana,
+                activo=True,
+            )
+            .values('clase_id')
+            .distinct()
+            .count()
+        )
+
+        tareas_qs = Tarea.objects.filter(
+            clase_id__in=clases_ids,
+            activa=True,
+            es_publica=True,
+        )
+        entregadas = set(
+            EntregaTarea.objects.filter(
+                estudiante=user,
+                tarea__clase_id__in=clases_ids,
+            ).values_list('tarea_id', flat=True)
+        )
+        tareas_pendientes_qs = tareas_qs.exclude(id_tarea__in=entregadas)
+        tareas_pendientes = tareas_pendientes_qs.count()
+
+        tareas_pend_por_clase = {
+            row['clase_id']: row['total']
+            for row in tareas_pendientes_qs.values('clase_id').annotate(total=Count('pk'))
+        }
+
+        prom_agg = Calificacion.objects.filter(
             estudiante=user,
             evaluacion__activa=True,
             evaluacion__clase_id__in=clases_ids,
-        ).values('evaluacion__clase_id').annotate(total=Count('pk'))
-        progreso_por_clase = {row['evaluacion__clase_id']: row['total'] for row in progreso_rows}
+        ).aggregate(promedio=Avg('nota'))
+        promedio_general = round(float(prom_agg['promedio']), 1) if prom_agg['promedio'] else 0.0
 
-        # Gradientes para las tarjetas
+        asist_global = Asistencia.objects.filter(
+            estudiante=user,
+            clase_id__in=clases_ids,
+        ).aggregate(
+            total=Count('pk'),
+            presentes=Count('pk', filter=Q(estado='P')),
+        )
+        porcentaje_asistencia = 100
+        if asist_global['total']:
+            porcentaje_asistencia = round(
+                (asist_global['presentes'] / asist_global['total']) * 100, 0
+            )
+
+        notas_por_clase = {
+            row['evaluacion__clase_id']: round(float(row['promedio']), 1)
+            for row in Calificacion.objects.filter(
+                estudiante=user,
+                evaluacion__activa=True,
+                evaluacion__clase_id__in=clases_ids,
+            )
+            .values('evaluacion__clase_id')
+            .annotate(promedio=Avg('nota'))
+        }
+
+        asist_por_clase = {}
+        for row in (
+            Asistencia.objects.filter(estudiante=user, clase_id__in=clases_ids)
+            .values('clase_id')
+            .annotate(
+                total=Count('pk'),
+                presentes=Count('pk', filter=Q(estado='P')),
+            )
+        ):
+            if row['total']:
+                asist_por_clase[row['clase_id']] = round(
+                    (row['presentes'] / row['total']) * 100, 0
+                )
+
+        calif_count_por_clase = {
+            row['evaluacion__clase_id']: row['total']
+            for row in Calificacion.objects.filter(
+                estudiante=user,
+                evaluacion__activa=True,
+                evaluacion__clase_id__in=clases_ids,
+            )
+            .values('evaluacion__clase_id')
+            .annotate(total=Count('pk'))
+        }
+
+        evaluaciones_proximas = list(
+            Evaluacion.objects.filter(
+                clase_id__in=clases_ids,
+                activa=True,
+                fecha_evaluacion__gte=hoy,
+                fecha_evaluacion__lte=hoy + timedelta(days=21),
+            )
+            .select_related('clase', 'clase__asignatura')
+            .order_by('fecha_evaluacion')[:6]
+        )
+
+        prox_eval_por_clase = {}
+        for ev in evaluaciones_proximas:
+            if ev.clase_id not in prox_eval_por_clase:
+                prox_eval_por_clase[ev.clase_id] = ev
+
         gradientes = [
             'gradient-orange',
             'gradient-blue',
             'gradient-green',
             'gradient-purple',
             'gradient-yellow',
-            'gradient-dark'
+            'gradient-dark',
         ]
 
         mis_clases = []
         for idx, clase in enumerate(clases):
             bloques = getattr(clase, 'bloques_horario_activos', [])
-            
-            # Group blocks by day with consolidated time ranges
             horarios_por_dia = {}
-            total_bloques = len(bloques)
-
             for bloque in bloques:
                 dia_nombre = bloque.get_dia_semana_display()
                 if dia_nombre not in horarios_por_dia:
                     horarios_por_dia[dia_nombre] = {
                         'bloques': [],
                         'hora_inicio': bloque.hora_inicio.strftime('%H:%M'),
-                        'hora_fin': bloque.hora_fin.strftime('%H:%M')
+                        'hora_fin': bloque.hora_fin.strftime('%H:%M'),
                     }
                 else:
-                    # Update hora_fin to the last block's end time
-                    horarios_por_dia[dia_nombre]['hora_fin'] = bloque.hora_fin.strftime('%H:%M')
-                
-                horarios_por_dia[dia_nombre]['bloques'].append({
-                    'bloque_numero': bloque.bloque_numero,
-                    'hora_inicio': bloque.hora_inicio.strftime('%H:%M'),
-                    'hora_fin': bloque.hora_fin.strftime('%H:%M'),
-                })
+                    horarios_por_dia[dia_nombre]['hora_fin'] = bloque.hora_fin.strftime(
+                        '%H:%M'
+                    )
+                horarios_por_dia[dia_nombre]['bloques'].append(
+                    {
+                        'bloque_numero': bloque.bloque_numero,
+                        'hora_inicio': bloque.hora_inicio.strftime('%H:%M'),
+                        'hora_fin': bloque.hora_fin.strftime('%H:%M'),
+                    }
+                )
 
-            # Calcular progreso
-            progreso = 65  # Por defecto
-            if hasattr(clase, 'total_evaluaciones') and clase.total_evaluaciones > 0:
-                calificaciones_estudiante = progreso_por_clase.get(clase.id, 0)
-                progreso = min(int((calificaciones_estudiante / clase.total_evaluaciones) * 100), 100)
-                if progreso < 15:
-                    progreso = 15  # Mínimo para visibilidad
+            total_eval = int(getattr(clase, 'total_evaluaciones', 0) or 0)
+            calif_count = calif_count_por_clase.get(clase.id, 0)
+            if total_eval > 0:
+                progreso = min(int((calif_count / total_eval) * 100), 100)
+            else:
+                progreso = 0
 
-            # Determinar color de progreso
             if progreso < 40:
                 color_progreso = 'progress-low'
             elif progreso < 70:
@@ -1238,25 +1360,156 @@ class DashboardContextService:
             else:
                 color_progreso = 'progress-high'
 
-            mis_clases.append({
-                'id_clase': clase.id,
-                'asignatura': clase.asignatura.nombre,
-                'codigo': getattr(clase.asignatura, 'codigo', ''),
-                'color': getattr(clase.asignatura, 'color', '#3b82f6'),
-                'horas_semanales': getattr(clase.asignatura, 'horas_semanales', total_bloques),
-                'profesor_nombre': clase.profesor.get_full_name() if clase.profesor else 'Sin profesor',
-                'profesor_email': clase.profesor.email if clase.profesor else '',
-                'horarios_por_dia': horarios_por_dia,
-                'total_bloques': total_bloques,
-                'gradiente': gradientes[idx % len(gradientes)],
-                'progreso': progreso,
-                'color_progreso': color_progreso,
-            })
+            nota = notas_por_clase.get(clase.id)
+            pct_asist = asist_por_clase.get(clase.id)
+            tareas_clase = tareas_pend_por_clase.get(clase.id, 0)
+            prox_ev = prox_eval_por_clase.get(clase.id)
+
+            estado_clase = 'sin_nota'
+            if nota is not None:
+                estado_clase = (
+                    'ok' if es_aprobado(nota, getattr(user, 'colegio', None)) else 'atencion'
+                )
+
+            prox_eval_label = None
+            if prox_ev:
+                dias = (prox_ev.fecha_evaluacion - hoy).days
+                if dias == 0:
+                    prox_eval_label = f'Hoy · {prox_ev.nombre}'
+                elif dias == 1:
+                    prox_eval_label = f'Mañana · {prox_ev.nombre}'
+                else:
+                    prox_eval_label = (
+                        f'{prox_ev.fecha_evaluacion.strftime("%d/%m")} · {prox_ev.nombre}'
+                    )
+
+            mis_clases.append(
+                {
+                    'id_clase': clase.id,
+                    'asignatura': clase.asignatura.nombre,
+                    'codigo': getattr(clase.asignatura, 'codigo', ''),
+                    'color': getattr(clase.asignatura, 'color', '#3b82f6'),
+                    'horas_semanales': getattr(
+                        clase.asignatura, 'horas_semanales', len(bloques)
+                    ),
+                    'profesor_nombre': (
+                        clase.profesor.get_full_name() if clase.profesor else 'Sin profesor'
+                    ),
+                    'profesor_email': clase.profesor.email if clase.profesor else '',
+                    'horarios_por_dia': horarios_por_dia,
+                    'total_bloques': len(bloques),
+                    'gradiente': gradientes[idx % len(gradientes)],
+                    'progreso': progreso,
+                    'color_progreso': color_progreso,
+                    'progreso_detalle': (
+                        f'{calif_count}/{total_eval} evaluaciones con nota'
+                        if total_eval
+                        else 'Sin evaluaciones activas'
+                    ),
+                    'nota': nota,
+                    'asistencia_pct': pct_asist,
+                    'tareas_pendientes': tareas_clase,
+                    'proxima_evaluacion': prox_eval_label,
+                    'estado_clase': estado_clase,
+                }
+            )
+
+        inteligencia = DashboardContextService._build_estudiante_mis_clases_inteligencia(
+            mis_clases=mis_clases,
+            promedio_general=promedio_general,
+            porcentaje_asistencia=porcentaje_asistencia,
+            tareas_pendientes=tareas_pendientes,
+            evaluaciones_proximas=evaluaciones_proximas,
+            hoy=hoy,
+        )
 
         return {
             'mis_clases': mis_clases,
             'curso_actual': curso_actual,
             'total_clases': len(mis_clases),
+            'clases_hoy': clases_hoy,
+            'tareas_pendientes': tareas_pendientes,
+            'promedio_general': promedio_general,
+            'porcentaje_asistencia': porcentaje_asistencia,
+            'evaluaciones_proximas': evaluaciones_proximas,
+            'mis_clases_inteligencia': inteligencia,
+        }
+
+    @staticmethod
+    def _build_estudiante_mis_clases_inteligencia(
+        mis_clases,
+        promedio_general,
+        porcentaje_asistencia,
+        tareas_pendientes,
+        evaluaciones_proximas,
+        hoy,
+    ):
+        """Resumen inteligente para la vista Mis Clases."""
+        con_nota = [c for c in mis_clases if c.get('nota') is not None]
+        sin_nota = [c for c in mis_clases if c.get('nota') is None]
+        atencion = [c for c in mis_clases if c.get('estado_clase') == 'atencion']
+
+        mejor = max(con_nota, key=lambda c: c['nota']) if con_nota else None
+        peor = min(con_nota, key=lambda c: c['nota']) if con_nota else None
+
+        estado = 'estable'
+        estado_label = 'Rendimiento en curso normal'
+        estado_hint = 'Revisa el detalle de cada asignatura para preparar evaluaciones y entregas.'
+        if promedio_general and promedio_general < 4.0 or len(atencion) >= 2:
+            estado = 'riesgo'
+            estado_label = 'Conviene reforzar varias asignaturas'
+            estado_hint = (
+                'Tienes asignaturas bajo el nivel de aprobación: prioriza estudio y consulta al docente.'
+            )
+        elif promedio_general and promedio_general < 4.5 or tareas_pendientes >= 3:
+            estado = 'atencion'
+            estado_label = 'Hay puntos a mejorar'
+            estado_hint = 'Revisa tareas pendientes y las próximas evaluaciones del panel lateral.'
+
+        alertas = []
+        if tareas_pendientes:
+            alertas.append(
+                f'{tareas_pendientes} tarea(s) pendiente(s) de entrega en tus asignaturas.'
+            )
+        if evaluaciones_proximas:
+            prox = evaluaciones_proximas[0]
+            dias = (prox.fecha_evaluacion - hoy).days
+            cuando = 'hoy' if dias == 0 else ('mañana' if dias == 1 else f'en {dias} días')
+            alertas.append(
+                f'Próxima evaluación {cuando}: {prox.nombre} ({prox.clase.asignatura.nombre}).'
+            )
+        if porcentaje_asistencia < 90:
+            alertas.append(f'Asistencia general {porcentaje_asistencia}% en el período registrado.')
+        if sin_nota and len(sin_nota) <= 3:
+            nombres = ', '.join(c['asignatura'] for c in sin_nota[:3])
+            alertas.append(f'Sin nota publicada aún en: {nombres}.')
+
+        consejo = 'Usa los filtros para encontrar una asignatura o ver las que requieren atención.'
+        if peor and peor.get('nota') is not None:
+            consejo = (
+                f'En {peor["asignatura"]} tu promedio es {peor["nota"]}: '
+                'entra al detalle de la clase y revisa materiales y tareas.'
+            )
+        elif tareas_pendientes:
+            consejo = (
+                f'Tienes {tareas_pendientes} tarea(s) por entregar: '
+                'ordénalas por fecha en el detalle de cada asignatura.'
+            )
+
+        return {
+            'estado': estado,
+            'estado_label': estado_label,
+            'estado_hint': estado_hint,
+            'alertas': alertas,
+            'consejo': consejo,
+            'mejor_asignatura': (
+                {'nombre': mejor['asignatura'], 'nota': mejor['nota']} if mejor else None
+            ),
+            'peor_asignatura': (
+                {'nombre': peor['asignatura'], 'nota': peor['nota']} if peor else None
+            ),
+            'asignaturas_sin_nota': len(sin_nota),
+            'asignaturas_atencion': len(atencion),
         }
 
     @staticmethod

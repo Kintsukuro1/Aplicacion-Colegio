@@ -1,11 +1,9 @@
-{# Hero unificado portal apoderado. Variables: hero_title, hero_subtitle, hero_aria, metrics_aria, m1..m4 _value/_label/_mod, m*_progress opcional #}
-<section class="apod-hero" aria-label="{{ hero_aria|default:hero_title }}">
-    <div class="apod-hero__content">
-        <h1 class="apod-hero__title">{{ hero_title }}</h1>
-        <p class="apod-hero__meta">{{ hero_subtitle }}</p>
-    </div>
-    {% if m1_value or m1_value == 0 or m2_value or m2_value == 0 or m3_value or m3_value == 0 or m4_value or m4_value == 0 %}
-    <div class="apod-hero__metrics" aria-label="{{ metrics_aria|default:'Resumen' }}">
+{# Hero portal apoderado: barra menta (como Inicio) + métricas opcionales #}
+{% include 'apoderado/_apoderado_welcome_bar.html' with welcome_title=hero_title welcome_subtitle=hero_subtitle welcome_aria=hero_aria show_pupil_selector=show_pupil_selector selector_pagina=selector_pagina %}
+
+{% if m1_value or m1_value == 0 or m2_value or m2_value == 0 or m3_value or m3_value == 0 or m4_value or m4_value == 0 %}
+<section class="apod-hero apod-hero--metrics-only" aria-label="{{ metrics_aria|default:'Resumen' }}">
+    <div class="apod-hero__metrics">
         {% if m1_value or m1_value == 0 %}
         <article class="apod-hero-metric apod-hero-metric--{{ m1_mod|default:'pupilos' }}">
             <p class="apod-hero-metric__value">{{ m1_value }}</p>
@@ -67,5 +65,5 @@
         </article>
         {% endif %}
     </div>
-    {% endif %}
 </section>
+{% endif %}

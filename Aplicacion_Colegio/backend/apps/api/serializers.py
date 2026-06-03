@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from backend.apps.notificaciones.models import DispositivoMovil, Notificacion
+from backend.apps.notificaciones.services.notification_link_service import normalize_notification_enlace
 
 
 class UserContextSerializer(serializers.Serializer):
@@ -25,6 +26,8 @@ class UserContextSerializer(serializers.Serializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    enlace = serializers.SerializerMethodField()
+
     class Meta:
         model = Notificacion
         fields = [
@@ -38,6 +41,9 @@ class NotificationSerializer(serializers.ModelSerializer):
             'fecha_creacion',
             'fecha_lectura',
         ]
+
+    def get_enlace(self, obj: Notificacion) -> str:
+        return normalize_notification_enlace(obj.enlace, obj.tipo)
 
 
 class DeviceRegistrationSerializer(serializers.Serializer):
