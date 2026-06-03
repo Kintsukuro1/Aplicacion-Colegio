@@ -639,6 +639,13 @@
           return;
         }
 
+        var studentName = document.getElementById('modal-student-name').textContent;
+        var courseName = document.getElementById('modal-course-name').textContent;
+        var confirmed = confirm(`¿Desea confirmar la firma del contrato de matrícula para "${studentName}" en el curso "${courseName}"?`);
+        if (!confirmed) {
+          return;
+        }
+
         btn.disabled = true;
         btn.textContent = 'Verificando…';
 

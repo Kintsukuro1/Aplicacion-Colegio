@@ -16,6 +16,7 @@ from backend.apps.core.services.admin_general_escuelas_query_service import Admi
 from backend.apps.core.services.colegio_service import ColegioService
 from backend.apps.core.services.dashboard_auth_service import DashboardAuthService
 from backend.common.services.policy_service import PolicyService
+from backend.apps.core.views import load_dashboard_context
 
 logger = logging.getLogger(__name__)
 
@@ -59,15 +60,12 @@ def gestionar_escuelas(request):
     regiones, tipos_establecimiento, dependencias = AdminGeneralEscuelasQueryService.list_filter_data()
 
     # Usar el contexto del dashboard para mantener consistencia
-    user_context_data = user_context['data']
-    rol = user_context_data['rol']
+    base_context = load_dashboard_context(request)
 
     context = {
-        **user_context_data,
+        **base_context,
         'pagina_actual': 'escuelas',
-        'sidebar_template': DashboardAuthService.get_sidebar_template(rol),
         'content_template': 'admin/escuelas.html',
-        'year': datetime.now().year,
         'escuelas': page_obj,
         'regiones': regiones,
         'tipos_establecimiento': tipos_establecimiento,
@@ -125,15 +123,12 @@ def agregar_escuela(request):
     regiones, tipos_establecimiento, dependencias = AdminGeneralEscuelasQueryService.list_filter_data(include_comunas=True)
 
     # Usar el contexto del dashboard
-    user_context_data = user_context['data']
-    rol = user_context_data['rol']
+    base_context = load_dashboard_context(request)
 
     context = {
-        **user_context_data,
+        **base_context,
         'pagina_actual': 'escuelas',
-        'sidebar_template': DashboardAuthService.get_sidebar_template(rol),
         'content_template': 'admin/escuela_form.html',
-        'year': datetime.now().year,
         'regiones': regiones,
         'tipos_establecimiento': tipos_establecimiento,
         'dependencias': dependencias,
@@ -190,15 +185,12 @@ def editar_escuela(request, rbd):
     regiones, tipos_establecimiento, dependencias = AdminGeneralEscuelasQueryService.list_filter_data(include_comunas=True)
 
     # Usar el contexto del dashboard
-    user_context_data = user_context['data']
-    rol = user_context_data['rol']
+    base_context = load_dashboard_context(request)
 
     context = {
-        **user_context_data,
+        **base_context,
         'pagina_actual': 'escuelas',
-        'sidebar_template': DashboardAuthService.get_sidebar_template(rol),
         'content_template': 'admin/escuela_form.html',
-        'year': datetime.now().year,
         'escuela': escuela,
         'regiones': regiones,
         'tipos_establecimiento': tipos_establecimiento,
@@ -229,15 +221,12 @@ def detalle_escuela(request, rbd):
     total_usuarios, total_profesores, total_estudiantes = AdminGeneralEscuelasQueryService.get_user_counts_by_school(rbd)
 
     # Usar el contexto del dashboard
-    user_context_data = user_context['data']
-    rol = user_context_data['rol']
+    base_context = load_dashboard_context(request)
 
     context = {
-        **user_context_data,
+        **base_context,
         'pagina_actual': 'escuelas',
-        'sidebar_template': DashboardAuthService.get_sidebar_template(rol),
         'content_template': 'admin/escuela_detalle.html',
-        'year': datetime.now().year,
         'escuela': escuela,
         'total_usuarios': total_usuarios,
         'total_profesores': total_profesores,

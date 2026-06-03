@@ -44,7 +44,13 @@
               {{ doc.tipo }}{% if doc.estudiante_nombre %} · {{ doc.estudiante_nombre }}{% endif %}
             </p>
           </div>
-          <button type="button" class="af-btn af-btn--primary" data-doc-id="{{ doc.id }}">Firmar</button>
+          <button type="button" class="af-btn af-btn--primary btn-firmar-citacion"
+                  data-doc-id="{{ doc.id }}"
+                  data-doc-tipo="{{ doc.tipo_raw }}"
+                  data-doc-titulo="{{ doc.titulo }}"
+                  data-estudiante-id="{{ doc.estudiante_id }}">
+              Firmar
+          </button>
         </article>
         {% endfor %}
       </div>
@@ -375,5 +381,62 @@
 })();
 </script>
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const btnFirmarList = document.querySelectorAll('.btn-firmar-citacion');
+  btnFirmarList.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const docId = this.getAttribute('data-doc-id');
+      const docTipo = this.getAttribute('data-doc-tipo');
+      const docTitulo = this.getAttribute('data-doc-titulo');
+      const estudianteId = this.getAttribute('data-estudiante-id');
+      
+      const confirmed = confirm(`¿Desea firmar digitalmente el documento "${docTitulo}"?`);
+      if (!confirmed) {
+        return;
+      }
+      
+      this.disabled = true;
+      this.textContent = 'Firmando...';
+      
+      const payload = {
+        tipo_documento: docTipo,
+        titulo: docTitulo,
+        contenido: `Firma digital de conformidad para el documento: ${docTitulo}`,
+        estudiante_id: estudianteId,
+        documento_id: parseInt(docId),
+        documento_tipo_modelo: 'core.CitacionApoderado'
+      };
+      
+      fetch('{% url "api_apoderado_firmar_documento" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Documento firmado con éxito.');
+          window.location.reload();
+        } else {
+          alert(data.error || 'Error al firmar el documento.');
+          this.disabled = false;
+          this.textContent = 'Firmar';
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Error de conexión al firmar el documento.');
+        this.disabled = false;
+        this.textContent = 'Firmar';
+      });
+    });
+  });
+});
+</script>
 
 {% include 'apoderado/_apoderado_wrap_end.html' %}

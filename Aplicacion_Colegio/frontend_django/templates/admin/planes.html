@@ -1,228 +1,644 @@
-<div class="container-fluid">
-    <div class="row">
+<div class="container-fluid py-4">
+    <!-- Breadcrumbs & Header -->
+    <div class="row mb-4">
         <div class="col-12">
-            <!-- Planes Section -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-list"></i> Planes Disponibles
-                        <span class="badge badge-primary ml-2">{{ planes|length }}</span>
-                    </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addPlanModal">
-                            <i class="fas fa-plus"></i> Agregar Plan
-                        </button>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800 fw-bold">
+                        <i class="bi bi-credit-card-2-front text-primary me-2"></i> Gestión de Planes y Suscripciones
+                    </h1>
+                    <p class="text-muted mb-0">Catálogo de planes comerciales del sistema y control de suscripciones activas por colegio.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Total Planes -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #2563eb !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Planes Registrados</span>
+                        <div class="bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-box-seam text-primary fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-1">{{ planes|length }}</h2>
+                    <span class="text-muted small">Planes en el catálogo comercial</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suscripciones Activas -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #16a34a !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Suscripciones Activas</span>
+                        <div class="bg-success bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-check-circle text-success fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-1">{{ suscripciones|length }}</h2>
+                    <span class="text-muted small">Colegios bajo contrato activo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colegios sin Suscripción -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #ea580c !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Colegios sin Suscripción</span>
+                        <div class="bg-warning bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-1 text-warning">{{ colegios_sin_suscripcion|length }}</h2>
+                    <span class="text-muted small">Colegios pendientes de plan comercial</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Planes Section -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h3 class="card-title h5 mb-0 fw-bold text-gray-800">
+                <i class="bi bi-list-task text-primary me-2"></i> Planes Disponibles
+            </h3>
+            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+                <i class="bi bi-plus-lg me-1"></i> Agregar Plan
+            </button>
+        </div>
+        <div class="card-body p-0">
+            {% if planes %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4">Nombre</th>
+                                <th>Código</th>
+                                <th>Descripción</th>
+                                <th>Precio Mensual</th>
+                                <th>Tipo</th>
+                                <th>Duración</th>
+                                <th class="text-end px-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in planes %}
+                            <tr>
+                                <td class="px-4 fw-semibold">{{ plan.nombre }}</td>
+                                <td>
+                                    <span class="badge bg-info text-dark">{{ plan.get_codigo_display }}</span>
+                                </td>
+                                <td class="text-muted">{{ plan.descripcion|truncatechars:50|default:"-" }}</td>
+                                <td class="fw-medium">
+                                    {% if plan.is_unlimited %}
+                                        <span class="text-success">Ilimitado</span>
+                                    {% else %}
+                                        ${{ plan.precio_mensual }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if plan.is_unlimited %}
+                                        <span class="badge bg-success">Ilimitado</span>
+                                    {% elif plan.is_trial %}
+                                        <span class="badge bg-warning text-dark">Prueba</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">Pago</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if plan.duracion_dias %}
+                                        {{ plan.duracion_dias }} días
+                                    {% else %}
+                                        Mensual
+                                    {% endif %}
+                                </td>
+                                <td class="text-end px-4">
+                                    <div class="d-inline-flex gap-2 align-items-center">
+                                        <button onclick="verDetallePlan(this)" 
+                                                class="btn btn-light btn-sm text-primary border" 
+                                                title="Ver detalles"
+                                                data-nombre="{{ plan.nombre }}"
+                                                data-codigo="{{ plan.get_codigo_display }}"
+                                                data-descripcion="{{ plan.descripcion|default:'-' }}"
+                                                data-precio="{{ plan.precio_mensual }}"
+                                                data-unlimited="{% if plan.is_unlimited %}Sí{% else %}No{% endif %}"
+                                                data-trial="{% if plan.is_trial %}Sí{% else %}No{% endif %}"
+                                                data-duracion="{% if plan.duracion_dias %}{{ plan.duracion_dias }} días{% else %}Mensual{% endif %}"
+                                                data-max-estudiantes="{{ plan.max_estudiantes }}"
+                                                data-max-profesores="{{ plan.max_profesores }}"
+                                                data-max-cursos="{{ plan.max_cursos }}">
+                                            <i class="bi bi-eye me-1"></i> Ver
+                                        </button>
+                                        <button onclick="abrirEditarPlan(this)" 
+                                                class="btn btn-light btn-sm text-warning border" 
+                                                title="Editar"
+                                                data-id="{{ plan.id }}"
+                                                data-nombre="{{ plan.nombre }}"
+                                                data-descripcion="{{ plan.descripcion|default:'' }}"
+                                                data-precio="{{ plan.precio_mensual }}">
+                                            <i class="bi bi-pencil me-1"></i> Editar
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-info-circle fs-3 d-block mb-2"></i> No hay planes registrados en el sistema.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Suscripciones Section -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h3 class="card-title h5 mb-0 fw-bold text-gray-800">
+                <i class="bi bi-credit-card text-success me-2"></i> Suscripciones Activas
+            </h3>
+            <button type="button" class="btn btn-success btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addSubscriptionModal">
+                <i class="bi bi-plus-lg me-1"></i> Nueva Suscripción
+            </button>
+        </div>
+        <div class="card-body p-0">
+            {% if suscripciones %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4">Colegio</th>
+                                <th>Plan</th>
+                                <th>Estado</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Próximo Pago</th>
+                                <th>Auto Renovar</th>
+                                <th class="text-end px-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for suscripcion in suscripciones %}
+                            <tr id="sub-row-{{ suscripcion.id }}">
+                                <td class="px-4 fw-semibold">{{ suscripcion.colegio.nombre }}</td>
+                                <td>{{ suscripcion.plan.nombre }}</td>
+                                <td>
+                                    {% if suscripcion.status == 'active' %}
+                                        <span class="badge bg-success">Activa</span>
+                                    {% elif suscripcion.status == 'expired' %}
+                                        <span class="badge bg-danger">Vencida</span>
+                                    {% elif suscripcion.status == 'cancelled' %}
+                                        <span class="badge bg-secondary">Cancelada</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">{{ suscripcion.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ suscripcion.fecha_inicio|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if suscripcion.fecha_fin %}
+                                        {{ suscripcion.fecha_fin|date:"d/m/Y" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if suscripcion.proximo_pago %}
+                                        {{ suscripcion.proximo_pago|date:"d/m/Y" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if suscripcion.auto_renovar %}
+                                        <span class="text-success fw-medium"><i class="bi bi-check-circle-fill me-1"></i>Sí</span>
+                                    {% else %}
+                                        <span class="text-danger fw-medium"><i class="bi bi-x-circle-fill me-1"></i>No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end px-4">
+                                    {% if suscripcion.status == 'active' %}
+                                    <button onclick="toggleSuscripcion({{ suscripcion.id }}, '{{ suscripcion.colegio.nombre }}', true)" 
+                                            class="btn btn-outline-danger btn-sm" 
+                                            title="Suspender Suscripción">
+                                        <i class="bi bi-pause-fill me-1"></i> Suspender
+                                    </button>
+                                    {% elif suscripcion.status == 'suspended' %}
+                                    <button onclick="toggleSuscripcion({{ suscripcion.id }}, '{{ suscripcion.colegio.nombre }}', false)" 
+                                            class="btn btn-outline-success btn-sm" 
+                                            title="Reactivar Suscripción">
+                                        <i class="bi bi-play-fill me-1"></i> Reactivar
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-credit-card fs-3 d-block mb-2"></i> No hay suscripciones registradas en el sistema.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Detalles Plan -->
+<div class="modal fade" id="viewPlanModal" tabindex="-1" aria-labelledby="viewPlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="viewPlanModalLabel"><i class="bi bi-info-circle me-2"></i> Detalles del Plan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless align-middle mb-0">
+                        <tbody>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold" style="width: 40%;">Nombre</th><td class="py-2 fw-bold text-gray-800" id="pdet-nombre"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Código</th><td class="py-2" id="pdet-codigo"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Descripción</th><td class="py-2 text-secondary" id="pdet-desc"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Precio Mensual</th><td class="py-2 fw-medium text-success" id="pdet-precio"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Ilimitado</th><td class="py-2" id="pdet-unlimited"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Prueba</th><td class="py-2" id="pdet-trial"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Duración</th><td class="py-2" id="pdet-duracion"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Máx. Estudiantes</th><td class="py-2" id="pdet-maxest"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Máx. Profesores</th><td class="py-2" id="pdet-maxprof"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Máx. Cursos</th><td class="py-2" id="pdet-maxcur"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Plan -->
+<div class="modal fade" id="editPlanModal" tabindex="-1" aria-labelledby="editPlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark border-0 py-3">
+                <h5 class="modal-title fw-bold" id="editPlanModalLabel"><i class="bi bi-pencil-square me-2"></i> Editar Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="editPlanId">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editPlanNombre" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Descripción</label>
+                    <textarea class="form-control" id="editPlanDesc" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Precio Mensual <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control" id="editPlanPrecio" step="0.01" required>
                     </div>
                 </div>
-                <div class="card-body">
-                    {% if planes %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Código</th>
-                                        <th>Descripción</th>
-                                        <th>Precio Mensual</th>
-                                        <th>Tipo</th>
-                                        <th>Duración</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for plan in planes %}
-                                    <tr>
-                                        <td>{{ plan.nombre }}</td>
-                                        <td>
-                                            <span class="badge badge-info">{{ plan.get_codigo_display }}</span>
-                                        </td>
-                                        <td>{{ plan.descripcion|truncatechars:50|default:"-" }}</td>
-                                        <td>
-                                            {% if plan.is_unlimited %}
-                                                <span class="text-success">Ilimitado</span>
-                                            {% else %}
-                                                ${{ plan.precio_mensual }}
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if plan.is_unlimited %}
-                                                <span class="badge badge-success">Ilimitado</span>
-                                            {% elif plan.is_trial %}
-                                                <span class="badge badge-warning">Prueba</span>
-                                            {% else %}
-                                                <span class="badge badge-primary">Pago</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if plan.duracion_dias %}
-                                                {{ plan.duracion_dias }} días
-                                            {% else %}
-                                                Mensual
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-info btn-sm" title="Ver detalles">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <button class="btn btn-warning btn-sm" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No hay planes registrados en el sistema.
-                        </div>
-                    {% endif %}
-                </div>
             </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="guardarEdicionPlan()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Suscripciones Section -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-credit-card"></i> Suscripciones Activas
-                        <span class="badge badge-success ml-2">{{ suscripciones|length }}</span>
-                    </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addSubscriptionModal">
-                            <i class="fas fa-plus"></i> Nueva Suscripción
-                        </button>
+<!-- Modal Agregar Plan -->
+<div class="modal fade" id="addPlanModal" tabindex="-1" aria-labelledby="addPlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="addPlanModalLabel"><i class="bi bi-plus-circle me-2"></i> Agregar Nuevo Plan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div>
+                            <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="newPlanNombre" placeholder="Ej: Premium Anual" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div>
+                            <label class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                            <select class="form-select" id="newPlanCodigo">
+                                <option value="basic">Básico</option>
+                                <option value="standard">Estándar</option>
+                                <option value="premium">Premium</option>
+                                <option value="enterprise">Enterprise</option>
+                                <option value="trial">Prueba (30 días)</option>
+                                <option value="tester">Tester (Ilimitado)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    {% if suscripciones %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Colegio</th>
-                                        <th>Plan</th>
-                                        <th>Estado</th>
-                                        <th>Fecha Inicio</th>
-                                        <th>Fecha Fin</th>
-                                        <th>Próximo Pago</th>
-                                        <th>Auto Renovar</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for suscripcion in suscripciones %}
-                                    <tr>
-                                        <td>{{ suscripcion.colegio.nombre }}</td>
-                                        <td>{{ suscripcion.plan.nombre }}</td>
-                                        <td>
-                                            {% if suscripcion.status == 'active' %}
-                                                <span class="badge badge-success">{{ suscripcion.get_status_display }}</span>
-                                            {% elif suscripcion.status == 'expired' %}
-                                                <span class="badge badge-danger">{{ suscripcion.get_status_display }}</span>
-                                            {% elif suscripcion.status == 'cancelled' %}
-                                                <span class="badge badge-secondary">{{ suscripcion.get_status_display }}</span>
-                                            {% else %}
-                                                <span class="badge badge-warning">{{ suscripcion.get_status_display }}</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ suscripcion.fecha_inicio|date:"d/m/Y" }}</td>
-                                        <td>
-                                            {% if suscripcion.fecha_fin %}
-                                                {{ suscripcion.fecha_fin|date:"d/m/Y" }}
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if suscripcion.proximo_pago %}
-                                                {{ suscripcion.proximo_pago|date:"d/m/Y" }}
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if suscripcion.auto_renovar %}
-                                                <i class="fas fa-check text-success"></i> Sí
-                                            {% else %}
-                                                <i class="fas fa-times text-danger"></i> No
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-info btn-sm" title="Ver detalles">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <button class="btn btn-warning btn-sm" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                {% if suscripcion.status == 'active' %}
-                                                <button class="btn btn-danger btn-sm" title="Suspender">
-                                                    <i class="fas fa-pause"></i>
-                                                </button>
-                                                {% else %}
-                                                <button class="btn btn-success btn-sm" title="Activar">
-                                                    <i class="fas fa-play"></i>
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Descripción</label>
+                    <textarea class="form-control" id="newPlanDesc" rows="2" placeholder="Detalles del plan comercial..."></textarea>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Precio Mensual</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="newPlanPrecio" step="0.01" value="0">
+                            </div>
                         </div>
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No hay suscripciones registradas en el sistema.
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Duración (días)</label>
+                            <input type="number" class="form-control" id="newPlanDuracion" placeholder="Vacío = mensual">
+                            <div class="form-text">Si está vacío, se asume cobro recurrente mensual.</div>
                         </div>
-                    {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3 pt-md-4">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="newPlanTrial">
+                                <label class="form-check-label fw-medium" for="newPlanTrial">Es plan de prueba</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="newPlanUnlimited">
+                                <label class="form-check-label fw-medium" for="newPlanUnlimited">Es ilimitado</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal for adding new plan -->
-<div class="modal fade" id="addPlanModal" tabindex="-1" role="dialog" aria-labelledby="addPlanModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addPlanModalLabel">Agregar Nuevo Plan</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 text-white" onclick="crearPlan()">
+                    <i class="bi bi-save me-1"></i> Crear Plan
                 </button>
-            </div>
-            <div class="modal-body">
-                <p>Funcionalidad de agregar plan próximamente...</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary">Guardar</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal for adding new subscription -->
-<div class="modal fade" id="addSubscriptionModal" tabindex="-1" role="dialog" aria-labelledby="addSubscriptionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addSubscriptionModalLabel">Nueva Suscripción</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+<!-- Modal Nueva Suscripción -->
+<div class="modal fade" id="addSubscriptionModal" tabindex="-1" aria-labelledby="addSubscriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="addSubscriptionModalLabel"><i class="bi bi-credit-card me-2"></i> Nueva Suscripción</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Colegio <span class="text-danger">*</span></label>
+                    <select class="form-select" id="newSubColegio">
+                        <option value="">Seleccione un colegio...</option>
+                        {% for col in colegios_sin_suscripcion %}
+                        <option value="{{ col.rbd }}">{{ col.nombre }} (RBD: {{ col.rbd }})</option>
+                        {% endfor %}
+                    </select>
+                    {% if not colegios_sin_suscripcion %}
+                    <div class="alert alert-warning py-2 mt-2 mb-0 small border-0">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Todos los colegios ya tienen una suscripción asignada.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Plan <span class="text-danger">*</span></label>
+                    <select class="form-select" id="newSubPlan">
+                        <option value="">Seleccione un plan...</option>
+                        {% for plan in planes %}
+                        <option value="{{ plan.id }}">{{ plan.nombre }} - ${{ plan.precio_mensual }}/mes</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="newSubAutoRenovar" checked>
+                    <label class="form-check-label fw-medium" for="newSubAutoRenovar">Auto renovar al vencimiento</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 text-white" onclick="crearSuscripcion()">
+                    <i class="bi bi-save me-1"></i> Crear Suscripción
                 </button>
-            </div>
-            <div class="modal-body">
-                <p>Funcionalidad de nueva suscripción próximamente...</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary">Guardar</button>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+let viewPlanModalInstance = null;
+let editPlanModalInstance = null;
+const csrfToken = '{{ csrf_token }}';
+
+function showFeedback(message, type = 'success') {
+    let container = document.getElementById('feedback-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'feedback-container';
+        container.style.position = 'fixed';
+        container.style.top = '20px';
+        container.style.right = '20px';
+        container.style.zIndex = '9999';
+        container.style.width = '350px';
+        document.body.appendChild(container);
+    }
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show shadow-lg border-0 rounded-3`;
+    alertDiv.role = 'alert';
+    
+    let iconClass = 'bi-check-circle-fill';
+    if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill';
+    else if (type === 'info') iconClass = 'bi-info-circle-fill';
+    
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi ${iconClass} me-2 fs-5"></i>
+            <div class="small fw-medium">${message}</div>
+        </div>
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    container.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(alertDiv);
+        if (bsAlert) bsAlert.close();
+    }, 4000);
+}
+
+function verDetallePlan(button) {
+    const data = button.dataset;
+    document.getElementById('pdet-nombre').textContent = data.nombre;
+    document.getElementById('pdet-codigo').textContent = data.codigo;
+    document.getElementById('pdet-desc').textContent = data.descripcion;
+    document.getElementById('pdet-precio').textContent = '$' + data.precio;
+    document.getElementById('pdet-unlimited').textContent = data.unlimited;
+    document.getElementById('pdet-trial').textContent = data.trial;
+    document.getElementById('pdet-duracion').textContent = data.duracion;
+    
+    const maxEst = parseInt(data.maxEstudiantes) || 0;
+    const maxProf = parseInt(data.maxProfesores) || 0;
+    const maxCur = parseInt(data.maxCursos) || 0;
+    
+    document.getElementById('pdet-maxest').textContent = maxEst >= 999999 ? 'Ilimitado' : maxEst;
+    document.getElementById('pdet-maxprof').textContent = maxProf >= 999999 ? 'Ilimitado' : maxProf;
+    document.getElementById('pdet-maxcur').textContent = maxCur >= 999999 ? 'Ilimitado' : maxCur;
+    
+    if (!viewPlanModalInstance) {
+        viewPlanModalInstance = new bootstrap.Modal(document.getElementById('viewPlanModal'));
+    }
+    viewPlanModalInstance.show();
+}
+
+function abrirEditarPlan(button) {
+    const data = button.dataset;
+    document.getElementById('editPlanId').value = data.id;
+    document.getElementById('editPlanNombre').value = data.nombre;
+    document.getElementById('editPlanDesc').value = data.descripcion;
+    document.getElementById('editPlanPrecio').value = data.precio;
+    
+    if (!editPlanModalInstance) {
+        editPlanModalInstance = new bootstrap.Modal(document.getElementById('editPlanModal'));
+    }
+    editPlanModalInstance.show();
+}
+
+function guardarEdicionPlan() {
+    const id = document.getElementById('editPlanId').value;
+    const nombre = document.getElementById('editPlanNombre').value;
+    const precio = parseFloat(document.getElementById('editPlanPrecio').value) || 0;
+
+    if (!nombre) {
+        showFeedback('El nombre del plan es obligatorio', 'danger');
+        return;
+    }
+
+    fetch('/api/admin-general/planes/' + id + '/editar/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+        body: JSON.stringify({
+            nombre: nombre,
+            descripcion: document.getElementById('editPlanDesc').value,
+            precio_mensual: precio,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showFeedback(data.message, 'success');
+            if (editPlanModalInstance) editPlanModalInstance.hide();
+            setTimeout(() => { location.reload(); }, 1200);
+        } else {
+            showFeedback('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(() => showFeedback('Error de conexión con el servidor', 'danger'));
+}
+
+function crearPlan() {
+    const nombre = document.getElementById('newPlanNombre').value;
+    const codigo = document.getElementById('newPlanCodigo').value;
+    if (!nombre || !codigo) {
+        showFeedback('Nombre y código son obligatorios', 'danger');
+        return;
+    }
+
+    fetch('/api/admin-general/planes/crear/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+        body: JSON.stringify({
+            nombre: nombre,
+            codigo: codigo,
+            descripcion: document.getElementById('newPlanDesc').value,
+            precio_mensual: parseFloat(document.getElementById('newPlanPrecio').value) || 0,
+            duracion_dias: parseInt(document.getElementById('newPlanDuracion').value) || null,
+            is_trial: document.getElementById('newPlanTrial').checked,
+            is_unlimited: document.getElementById('newPlanUnlimited').checked,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showFeedback(data.message, 'success');
+            const modalEl = document.getElementById('addPlanModal');
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) bsModal.hide();
+            setTimeout(() => { location.reload(); }, 1200);
+        } else {
+            showFeedback('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(() => showFeedback('Error de conexión con el servidor', 'danger'));
+}
+
+function crearSuscripcion() {
+    const colegioRbd = document.getElementById('newSubColegio').value;
+    const planId = document.getElementById('newSubPlan').value;
+    if (!colegioRbd || !planId) {
+        showFeedback('Seleccione colegio y plan obligatoriamente', 'danger');
+        return;
+    }
+
+    fetch('/api/admin-general/suscripciones/crear/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+        body: JSON.stringify({
+            colegio_rbd: colegioRbd,
+            plan_id: planId,
+            auto_renovar: document.getElementById('newSubAutoRenovar').checked,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showFeedback(data.message, 'success');
+            const modalEl = document.getElementById('addSubscriptionModal');
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) bsModal.hide();
+            setTimeout(() => { location.reload(); }, 1200);
+        } else {
+            showFeedback('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(() => showFeedback('Error de conexión con el servidor', 'danger'));
+}
+
+function toggleSuscripcion(id, nombre, isSuspend) {
+    const accion = isSuspend ? 'suspender' : 'reactivar';
+    if (!confirm('¿Desea ' + accion + ' la suscripción de "' + nombre + '"?')) return;
+
+    fetch('/api/admin-general/suscripciones/' + id + '/toggle-estado/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showFeedback(data.message, 'success');
+            setTimeout(() => { location.reload(); }, 1200);
+        } else {
+            showFeedback('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(() => showFeedback('Error al cambiar el estado de la suscripción', 'danger'));
+}
+</script>

@@ -129,6 +129,8 @@ def firmar_documento(request):
         titulo = body.get('titulo', '')
         contenido = body.get('contenido', '')
         estudiante_id = body.get('estudiante_id')
+        documento_id = body.get('documento_id')
+        documento_tipo_modelo = body.get('documento_tipo_modelo')
 
         if not tipo_documento or not titulo:
             return JsonResponse({'success': False, 'error': 'Datos incompletos'}, status=400)
@@ -155,6 +157,8 @@ def firmar_documento(request):
             ip_address=ip_address,
             user_agent=user_agent,
             estudiante=estudiante,
+            documento_id=documento_id,
+            documento_tipo_modelo=documento_tipo_modelo,
         )
 
         return JsonResponse({

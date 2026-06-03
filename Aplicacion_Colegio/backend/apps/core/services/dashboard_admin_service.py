@@ -1315,10 +1315,12 @@ class DashboardAdminService:
             for c in clases_con_promedio:
                 prom = round(float(c.promedio), 2) if c.promedio is not None else None
                 lista_asignaturas_data.append({
+                    'clase_id': c.id,
                     'nombre': c.asignatura.nombre,
                     'promedio': prom,
                     'color': c.asignatura.color or '#6366f1',
                     'profesor': c.profesor.get_full_name() if c.profesor else 'Sin docente',
+                    'profesor_id': c.profesor.id if c.profesor else None,
                     'total_evaluaciones': c.evaluaciones.filter(activa=True).count()
                 })
                 if prom is not None:
@@ -1389,12 +1391,16 @@ class DashboardAdminService:
             cursos_filter['ciclo_academico'] = ciclo_activo
         total_cursos = Curso.objects.filter(**cursos_filter).count()
         
-        # Asistencia General
+        # Asistencia General (Optimized count)
         asistencia_qs = Asistencia.objects.filter(colegio_id=escuela_rbd)
         if ciclo_activo:
             asistencia_qs = asistencia_qs.filter(clase__curso__ciclo_academico=ciclo_activo)
-        tot_asist = asistencia_qs.count()
-        pres_asist = asistencia_qs.filter(estado='P').count()
+        asist_stats = asistencia_qs.aggregate(
+            total=Count('id_asistencia'),
+            presentes=Count('id_asistencia', filter=Q(estado='P'))
+        )
+        tot_asist = asist_stats['total']
+        pres_asist = asist_stats['presentes']
         asistencia_gral = round((pres_asist / tot_asist * 100), 1) if tot_asist > 0 else 92.0
         
         # Promedio General
@@ -1404,15 +1410,21 @@ class DashboardAdminService:
         promedio_db = calificaciones_qs.aggregate(avg=Avg('nota'))['avg']
         promedio_gral = round(float(promedio_db), 1) if promedio_db else 5.8
         
-        # Tareas Entregadas %
+        # Tareas Entregadas % (Optimized)
         tareas_qs = Tarea.objects.filter(colegio_id=escuela_rbd, activa=True)
         if ciclo_activo:
             tareas_qs = tareas_qs.filter(clase__curso__ciclo_academico=ciclo_activo)
         
-        tot_potenciales_entregas = 0
-        for t in tareas_qs:
-            tot_potenciales_entregas += ClaseEstudiante.objects.filter(clase=t.clase, activo=True).count()
+        clase_ids = set(tareas_qs.values_list('clase_id', flat=True))
+        clase_counts_dict = {}
+        if clase_ids:
+            clase_counts = ClaseEstudiante.objects.filter(
+                clase_id__in=clase_ids,
+                activo=True
+            ).values('clase_id').annotate(num_estudiantes=Count('id_clase_estudiante'))
+            clase_counts_dict = {item['clase_id']: item['num_estudiantes'] for item in clase_counts}
             
+        tot_potenciales_entregas = sum(clase_counts_dict.get(t.clase_id, 0) for t in tareas_qs)
         tot_entregas_reales = EntregaTarea.objects.filter(tarea__in=tareas_qs).count()
         
         if tot_potenciales_entregas > 0:
@@ -1420,19 +1432,25 @@ class DashboardAdminService:
         else:
             tareas_entregadas_pct = 87.0
             
-        # 2. Ranking de Cursos
+        # 2. Ranking de Cursos (Optimized)
+        avg_grades = Calificacion.objects.filter(
+            colegio_id=escuela_rbd,
+            evaluacion__activa=True
+        )
+        if ciclo_activo:
+            avg_grades = avg_grades.filter(evaluacion__clase__curso__ciclo_academico=ciclo_activo)
+        avg_grades = avg_grades.values(
+            'evaluacion__clase__curso_id',
+            'evaluacion__clase__curso__nombre'
+        ).annotate(avg_nota=Avg('nota'))
+        
         ranking_cursos = []
-        cursos_list = Curso.objects.filter(**cursos_filter)
-        for curso in cursos_list:
-            avg_nota = Calificacion.objects.filter(
-                evaluacion__clase__curso=curso,
-                evaluacion__activa=True
-            ).aggregate(avg=Avg('nota'))['avg']
-            
-            if avg_nota:
+        for item in avg_grades:
+            avg_val = item['avg_nota']
+            if avg_val:
                 ranking_cursos.append({
-                    'nombre': curso.nombre,
-                    'promedio': round(float(avg_nota), 1)
+                    'nombre': item['evaluacion__clase__curso__nombre'],
+                    'promedio': round(float(avg_val), 1)
                 })
                 
         ranking_cursos.sort(key=lambda x: x['promedio'], reverse=True)
@@ -1446,7 +1464,7 @@ class DashboardAdminService:
                 {'nombre': '4º Medio B', 'promedio': 5.5}
             ]
             
-        # 3. Mapa de Riesgo
+        # 3. Mapa de Riesgo (Optimized)
         mapa_riesgo = []
         estudiantes_colegio = User.objects.filter(
             rbd_colegio=escuela_rbd,
@@ -1454,25 +1472,78 @@ class DashboardAdminService:
             is_active=True
         ).select_related('perfil_estudiante', 'perfil_estudiante__curso_actual_id')[:15]
         
+        estudiante_ids = [est.id for est in estudiantes_colegio]
+        
+        # Batch Calificaciones
+        grades_dict = {}
+        if estudiante_ids:
+            grades_qs = (
+                Calificacion.objects.filter(
+                    estudiante_id__in=estudiante_ids,
+                    evaluacion__activa=True
+                )
+                .values('estudiante_id')
+                .annotate(avg=Avg('nota'))
+            )
+            grades_dict = {item['estudiante_id']: item['avg'] for item in grades_qs}
+            
+        # Batch Asistencias
+        asistencia_dict = {}
+        if estudiante_ids:
+            asist_qs = (
+                Asistencia.objects.filter(estudiante_id__in=estudiante_ids)
+                .values('estudiante_id')
+                .annotate(
+                    total=Count('id_asistencia'),
+                    presentes=Count('id_asistencia', filter=Q(estado='P'))
+                )
+            )
+            asistencia_dict = {
+                item['estudiante_id']: (item['total'], item['presentes'])
+                for item in asist_qs
+            }
+            
+        # Batch Entregas Tareas
+        entregas_dict = {}
+        if estudiante_ids:
+            entregas_qs = (
+                EntregaTarea.objects.filter(estudiante_id__in=estudiante_ids)
+                .values('estudiante_id')
+                .annotate(total=Count('id_entrega'))
+            )
+            entregas_dict = {item['estudiante_id']: item['total'] for item in entregas_qs}
+            
+        # Batch Tareas por Curso
+        curso_ids = {
+            est.perfil_estudiante.curso_actual_id_id
+            for est in estudiantes_colegio
+            if est.perfil_estudiante.curso_actual_id_id is not None
+        }
+        tareas_curso_dict = {}
+        if curso_ids:
+            tareas_curso_qs = (
+                Tarea.objects.filter(clase__curso_id__in=curso_ids, activa=True)
+                .values('clase__curso_id')
+                .annotate(total=Count('id_tarea'))
+            )
+            tareas_curso_dict = {item['clase__curso_id']: item['total'] for item in tareas_curso_qs}
+            
         risk_student_count = 0
         for est in estudiantes_colegio:
             # Nota avg
-            avg_grade_db = Calificacion.objects.filter(
-                estudiante=est,
-                evaluacion__activa=True
-            ).aggregate(avg=Avg('nota'))['avg']
+            avg_grade_db = grades_dict.get(est.id)
             avg_grade = round(float(avg_grade_db), 1) if avg_grade_db else 6.0
             
             # Asistencia avg
-            asists_est = Asistencia.objects.filter(estudiante=est)
-            tot_asist_est = asists_est.count()
-            pres_est = asists_est.filter(estado='P').count()
+            asist_info = asistencia_dict.get(est.id, (0, 0))
+            tot_asist_est = asist_info[0]
+            pres_est = asist_info[1]
             asist_rate = (pres_est / tot_asist_est * 100) if tot_asist_est > 0 else 95.0
             
             # Tareas rate
-            entregas_count = EntregaTarea.objects.filter(estudiante=est).count()
+            entregas_count = entregas_dict.get(est.id, 0)
             curso_est = est.perfil_estudiante.curso_actual
-            tareas_curso_count = Tarea.objects.filter(clase__curso=curso_est, activa=True).count()
+            tareas_curso_count = tareas_curso_dict.get(est.perfil_estudiante.curso_actual_id_id, 0) if est.perfil_estudiante.curso_actual_id_id else 0
             if tareas_curso_count > 0:
                 entregas_rate = (entregas_count / tareas_curso_count * 100)
             else:
@@ -1530,21 +1601,32 @@ class DashboardAdminService:
             ]
             risk_student_count = 12
             
-        # 4. Alertas Institucionales
+        # 4. Alertas Institucionales (Optimized)
         alertas_institucionales = []
         
-        # Alerta: Cursos con asistencia < 80%
-        for curso in Curso.objects.filter(**cursos_filter):
-            asist_curso = Asistencia.objects.filter(clase__curso=curso)
-            tot_ac = asist_curso.count()
-            pres_ac = asist_curso.filter(estado='P').count()
-            asist_pct = (pres_ac / tot_ac * 100) if tot_ac > 0 else 95.0
-            if asist_pct < 80.0:
-                alertas_institucionales.append({
-                    'tipo': 'asistencia',
-                    'mensaje': f"Curso {curso.nombre} tiene asistencia menor al {round(asist_pct, 0)}%",
-                    'nivel': 'danger'
-                })
+        # Alerta: Cursos con asistencia < 80% (Optimized)
+        asist_cursos = Asistencia.objects.filter(clase__curso__colegio_id=escuela_rbd)
+        if ciclo_activo:
+            asist_cursos = asist_cursos.filter(clase__curso__ciclo_academico=ciclo_activo)
+            
+        asist_cursos = (
+            asist_cursos.values('clase__curso_id', 'clase__curso__nombre')
+            .annotate(
+                total=Count('id_asistencia'),
+                presentes=Count('id_asistencia', filter=Q(estado='P'))
+            )
+        )
+        
+        for item in asist_cursos:
+            tot_ac = item['total']
+            if tot_ac > 0:
+                asist_pct = (item['presentes'] / tot_ac) * 100
+                if asist_pct < 80.0:
+                    alertas_institucionales.append({
+                        'tipo': 'asistencia',
+                        'mensaje': f"Curso {item['clase__curso__nombre']} tiene asistencia menor al {round(asist_pct, 0)}%",
+                        'nivel': 'danger'
+                    })
                 
         # Alerta: Profesores sin registrar asistencia hoy (Optimizado para evitar consultas N+1 en bucle)
         clase_ids_hoy = list(Clase.objects.filter(
@@ -1621,8 +1703,12 @@ class DashboardAdminService:
         )
         if ciclo_activo:
             asist_actual_qs = asist_actual_qs.filter(clase__curso__ciclo_academico=ciclo_activo)
-        tot_actual_asist = asist_actual_qs.count()
-        pres_actual_asist = asist_actual_qs.filter(estado='P').count()
+        asist_actual_stats = asist_actual_qs.aggregate(
+            total=Count('id_asistencia'),
+            presentes=Count('id_asistencia', filter=Q(estado='P'))
+        )
+        tot_actual_asist = asist_actual_stats['total']
+        pres_actual_asist = asist_actual_stats['presentes']
         asist_actual = (pres_actual_asist / tot_actual_asist * 100) if tot_actual_asist > 0 else None
         
         # Asistencia mes anterior
@@ -1633,8 +1719,12 @@ class DashboardAdminService:
         )
         if ciclo_activo:
             asist_pasado_qs = asist_pasado_qs.filter(clase__curso__ciclo_academico=ciclo_activo)
-        tot_pasado_asist = asist_pasado_qs.count()
-        pres_pasado_asist = asist_pasado_qs.filter(estado='P').count()
+        asist_pasado_stats = asist_pasado_qs.aggregate(
+            total=Count('id_asistencia'),
+            presentes=Count('id_asistencia', filter=Q(estado='P'))
+        )
+        tot_pasado_asist = asist_pasado_stats['total']
+        pres_pasado_asist = asist_pasado_stats['presentes']
         asist_pasado = (pres_pasado_asist / tot_pasado_asist * 100) if tot_pasado_asist > 0 else None
         
         if asist_actual is not None and asist_pasado is not None:

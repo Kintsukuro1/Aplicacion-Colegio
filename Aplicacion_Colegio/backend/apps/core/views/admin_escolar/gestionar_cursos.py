@@ -75,7 +75,7 @@ def gestionar_cursos(request):
 
             if not nombre or not nivel_id or not anio_escolar:
                 messages.error(request, "Faltan campos obligatorios")
-                return redirect("dashboard" + "?pagina=gestionar_cursos")
+                return redirect("/dashboard/?pagina=gestionar_cursos")
 
             try:
                 CursoService.create(
@@ -98,7 +98,7 @@ def gestionar_cursos(request):
 
             if not curso_id or not nombre or not nivel_id or not anio_escolar:
                 messages.error(request, "Faltan campos obligatorios")
-                return redirect("dashboard" + "?pagina=gestionar_cursos")
+                return redirect("/dashboard/?pagina=gestionar_cursos")
 
             try:
                 CursoService.update(
@@ -116,7 +116,7 @@ def gestionar_cursos(request):
             curso_id = int(request.POST.get("id") or 0)
             if not curso_id:
                 messages.error(request, "Curso inválido")
-                return redirect("dashboard" + "?pagina=gestionar_cursos")
+                return redirect("/dashboard/?pagina=gestionar_cursos")
 
             with transaction.atomic():
                 curso = CursoService.delete(
@@ -141,13 +141,13 @@ def gestionar_cursos(request):
 
             if not curso_id:
                 messages.error(request, "Curso inválido")
-                return redirect("dashboard" + "?pagina=gestionar_cursos")
+                return redirect("/dashboard/?pagina=gestionar_cursos")
 
             try:
                 curso = ORMAccessService.get(Curso, id_curso=curso_id, colegio=colegio, activo=True)
             except Exception:
                 messages.error(request, "Curso inválido")
-                return redirect("dashboard" + "?pagina=gestionar_cursos")
+                return redirect("/dashboard/?pagina=gestionar_cursos")
 
             # Solo asigna estudiantes de la escuela actual
             ids_int = []
@@ -159,7 +159,7 @@ def gestionar_cursos(request):
 
             if not ids_int:
                 messages.error(request, "No seleccionaste estudiantes")
-                return redirect("dashboard" + "?pagina=gestionar_cursos")
+                return redirect("/dashboard/?pagina=gestionar_cursos")
 
             with transaction.atomic():
                 CursoService.assign_students(
@@ -186,7 +186,7 @@ def gestionar_cursos(request):
 
             if not curso_id or not asignatura_id or not profesor_id:
                 messages.error(request, "Faltan datos para asignar profesor")
-                return redirect("dashboard" + "?pagina=gestionar_cursos")
+                return redirect("/dashboard/?pagina=gestionar_cursos")
 
             try:
                 ClaseService.create(
@@ -207,4 +207,4 @@ def gestionar_cursos(request):
     except Exception:
         messages.error(request, "No se pudo procesar la solicitud")
 
-    return redirect("dashboard" + "?pagina=gestionar_cursos")
+    return redirect("/dashboard/?pagina=gestionar_cursos")

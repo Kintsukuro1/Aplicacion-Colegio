@@ -1,25 +1,316 @@
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Reportes Financieros Globales</h3>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h1 class="h3 mb-0 text-gray-800 fw-bold">
+                    <i class="bi bi-wallet2 text-primary me-2"></i> Reportes Financieros Globales
+                </h1>
+                <p class="text-muted mb-0">Métricas de facturación mensual recurrente (MRR), planes de suscripción y renovaciones.</p>
+            </div>
+            <div>
+                <a href="/api/admin-general/reportes-financieros/exportar/?plan_id={{ filtros.plan_id }}&status={{ filtros.status }}&fecha_inicio={{ filtros.fecha_inicio }}&fecha_fin={{ filtros.fecha_fin }}" 
+                   class="btn btn-success shadow-sm d-inline-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> Exportar a CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="" class="row g-3 align-items-end">
+                <input type="hidden" name="pagina" value="reportes_financieros">
+                
+                <div class="col-md-3">
+                    <label for="plan_id" class="form-label fw-bold text-secondary small">Plan de Suscripción</label>
+                    <select class="form-select form-select-sm" id="plan_id" name="plan_id">
+                        <option value="">Todos los planes</option>
+                        {% for plan in planes_choices %}
+                            <option value="{{ plan.id }}" {% if filtros.plan_id == plan.id|stringformat:"s" %}selected{% endif %}>
+                                {{ plan.nombre }} (${{ plan.precio_mensual|floatformat:0 }}/mes)
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
+
+                <div class="col-md-2">
+                    <label for="status" class="form-label fw-bold text-secondary small">Estado</label>
+                    <select class="form-select form-select-sm" id="status" name="status">
+                        <option value="">Todos</option>
+                        {% for code, label in status_choices %}
+                            <option value="{{ code }}" {% if filtros.status == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2.5">
+                    <label for="fecha_inicio" class="form-label fw-bold text-secondary small">Fecha Inicio Desde</label>
+                    <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" value="{{ filtros.fecha_inicio }}">
+                </div>
+
+                <div class="col-md-2.5">
+                    <label for="fecha_fin" class="form-label fw-bold text-secondary small">Fecha Inicio Hasta</label>
+                    <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" value="{{ filtros.fecha_fin }}">
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-funnel-fill me-1"></i> Filtrar
+                    </button>
+                    <a href="?pagina=reportes_financieros" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="bi bi-x-circle me-1"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPI Cards Grid -->
+    <div class="row g-4 mb-4">
+        <!-- MRR Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #2563eb !important;">
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="card bg-success text-white">
-                                <div class="card-body text-center">
-                                    <h5>Ingresos Totales</h5>
-                                    <h3>${{ ingresos_totales|floatformat:0|default:0 }}</h3>
-                                    <small>Por suscripciones activas</small>
-                                </div>
-                            </div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Ingresos Proyectados (MRR)</span>
+                        <div class="bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-currency-dollar text-primary fs-4"></i>
                         </div>
                     </div>
-                    <!-- TODO: Implementar reportes financieros detallados -->
+                    <h2 class="fw-bold mb-1">${{ ingresos_totales|floatformat:0|default:"0" }}</h2>
+                    <span class="text-success small fw-semibold">
+                        <i class="bi bi-arrow-up-right-circle-fill me-1"></i> Facturación activa mensual
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suscripciones Activas Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #16a34a !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Suscripciones Activas</span>
+                        <div class="bg-success bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-check-circle text-success fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-1">{{ suscripciones_activas|default:"0" }} <span class="fs-6 text-muted">/ {{ total_suscripciones|default:"0" }}</span></h2>
+                    <span class="text-muted small">Colegios bajo contrato activo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suscripciones Próximas a Vencer Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #ea580c !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Por Vencer (< 30 días)</span>
+                        <div class="bg-warning bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-1 text-warning">{{ proximas_vencer|length }}</h2>
+                    <span class="text-muted small">Suscripciones activas próximas</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planes Card -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #7c3aed !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Planes Ofrecidos</span>
+                        <div class="bg-purple bg-opacity-10 p-2 rounded" style="background-color: rgba(124, 58, 237, 0.1);">
+                            <i class="bi bi-box-seam text-purple fs-4" style="color: #7c3aed;"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-1">{{ ingresos_por_plan|length }}</h2>
+                    <span class="text-muted small">Tipos de planes en catálogo</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row g-4">
+        <!-- Tables column -->
+        <div class="col-lg-8">
+            <!-- Ingresos por Plan -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold text-gray-800">
+                        <i class="bi bi-grid-3x3-gap text-primary me-2"></i> Distribución por Plan de Suscripción
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Plan</th>
+                                    <th>Código</th>
+                                    <th>Suscripciones Activas</th>
+                                    <th class="text-end pe-4">Ingresos Mensuales</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if ingresos_por_plan %}
+                                    {% for item in ingresos_por_plan %}
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-dark">{{ item.plan__nombre }}</td>
+                                        <td><code class="text-purple">{{ item.plan__codigo }}</code></td>
+                                        <td>{{ item.cantidad }} colegios</td>
+                                        <td class="text-end pe-4 fw-bold text-success">${{ item.total_ingresos|floatformat:0 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">
+                                            <i class="bi bi-info-circle me-1"></i> No hay datos de suscripciones activas por plan
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Próximas a vencer -->
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold text-gray-800">
+                        <i class="bi bi-clock-history text-warning me-2"></i> Renovaciones y Expiraciones Próximas
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Colegio</th>
+                                    <th>Plan</th>
+                                    <th>Vencimiento</th>
+                                    <th>Auto-Renovar</th>
+                                    <th class="text-end pe-4">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if proximas_vencer %}
+                                    {% for sub in proximas_vencer %}
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-dark">{{ sub.colegio.nombre }}</td>
+                                        <td><span class="badge bg-secondary">{{ sub.plan.nombre }}</span></td>
+                                        <td>{{ sub.fecha_fin|date:"d/m/Y" }}</td>
+                                        <td>
+                                            {% if sub.auto_renovar %}
+                                                <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-repeat me-1"></i>Sí</span>
+                                            {% else %}
+                                                <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-x-circle me-1"></i>No</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a href="{% url 'dashboard' %}?pagina=planes" class="btn btn-sm btn-outline-primary">
+                                                Gestionar Suscripción
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            <i class="bi bi-shield-check text-success me-1"></i> Ninguna suscripción activa expira en los próximos 30 días
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart and Stats Column -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold text-gray-800">
+                        <i class="bi bi-pie-chart text-primary me-2"></i> Gráfico de Ingresos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Representación proporcional de los ingresos mensuales por tipo de plan de suscripción.</p>
+                    
+                    <div class="mt-4">
+                        {% if ingresos_por_plan %}
+                            {% for item in ingresos_por_plan %}
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold text-dark">{{ item.plan__nombre }}</span>
+                                    <span class="text-muted small fw-bold">${{ item.total_ingresos|floatformat:0 }}</span>
+                                </div>
+                                <div class="progress rounded-pill" style="height: 12px; background-color: #f3f4f6;">
+                                    <div class="progress-bar rounded-pill bg-primary" 
+                                         role="progressbar" 
+                                         style="width: 0%;" 
+                                         data-total="{{ item.total_ingresos }}" 
+                                         data-max="{{ ingresos_totales }}"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-pie-chart fs-1 mb-2 d-block"></i>
+                                Sin datos de distribución
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Financial Summary Card inside Sidebar -->
+                    <div class="bg-light p-3 rounded-3 mt-4 border border-light-subtle">
+                        <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-info-circle-fill text-info me-1"></i> Resumen de Facturación</h6>
+                        <ul class="list-unstyled small mb-0 d-flex flex-column gap-2 text-muted">
+                            <li class="d-flex justify-content-between">
+                                <span>Tasa de Churn Proyectada:</span>
+                                <span class="fw-bold text-dark">0.0%</span>
+                            </li>
+                            <li class="d-flex justify-content-between">
+                                <span>Ingreso Promedio por Escuela (ARPU):</span>
+                                <span class="fw-bold text-dark" id="arpu-val">$0</span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calculate progress bar widths dynamically
+        document.querySelectorAll('.progress-bar').forEach(function(bar) {
+            const total = parseFloat(bar.dataset.total) || 0;
+            const max = parseFloat(bar.dataset.max) || 1;
+            const pct = max > 0 ? (total / max) * 100 : 0;
+            bar.style.width = pct.toFixed(1) + '%';
+            
+            // Assign different colors based on progress index/level if wanted
+            // Bootstrap colors palette
+            const colors = ['#2563eb', '#7c3aed', '#16a34a', '#ea580c', '#06b6d4'];
+            const idx = Array.from(bar.parentNode.parentNode.parentNode.children).indexOf(bar.parentNode.parentNode);
+            bar.style.backgroundColor = colors[idx % colors.length];
+        });
+
+        // Calculate ARPU: total_revenues / total_active_subscriptions
+        const totalRevenues = parseFloat("{{ ingresos_totales }}") || 0;
+        const activeSubs = parseInt("{{ suscripciones_activas }}") || 0;
+        const arpu = activeSubs > 0 ? Math.round(totalRevenues / activeSubs) : 0;
+        document.getElementById('arpu-val').textContent = '$' + arpu.toLocaleString();
+    });
+</script>

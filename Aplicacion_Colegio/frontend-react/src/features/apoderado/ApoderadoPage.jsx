@@ -169,13 +169,33 @@ export default function ApoderadoPage() {
   const [contractSaving, setContractSaving] = useState(false);
   const [contractResult, setContractResult] = useState(null);
 
+  const handleDownloadPdf = async (studentId, path, docName) => {
+    try {
+      const blob = await apiClient.downloadBlob(`/api/v1/pdf/${path}/${studentId}/`);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${docName}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error('No se pudo descargar el certificado.');
+    }
+  };
+
   const { data: justData, isLoading: justLoading, error: justErrorObj } = useQuery({
     queryKey: ['apoderado-justificativos'],
-    queryFn: () => apiClient.get('/api/apoderado/justificativos/')
+    queryFn: () => apiClient.get('/api/v1/apoderado/justificativos/')
   });
   const { data: signData, isLoading: signLoading, error: signErrorObj } = useQuery({
     queryKey: ['apoderado-firmas'],
-    queryFn: () => apiClient.get('/api/apoderado/firmas/')
+    queryFn: () => apiClient.get('/api/v1/apoderado/firmas/')
+  });
+  const { data: admissionOptions } = useQuery({
+    queryKey: ['apoderado-admision-opciones'],
+    queryFn: () => apiClient.get('/api/v1/apoderado/admision/opciones/')
   });
   const { data: pupilsData, isLoading: pupilsLoading, error: pupilsErrorObj } = useQuery({
     queryKey: ['apoderado-pupilos'],
@@ -363,7 +383,7 @@ export default function ApoderadoPage() {
     setSaving(true);
 
     try {
-      const payload = await apiClient.post('/api/apoderado/firmas/firmar/', {
+      const payload = await apiClient.post('/api/v1/apoderado/firmas/firmar/', {
         tipo_documento: signForm.tipo_documento,
         titulo: signForm.titulo,
         contenido: signForm.contenido,
@@ -446,7 +466,7 @@ export default function ApoderadoPage() {
     if (!justificationForm.fecha_ausencia || !justificationForm.motivo || !selectedPupilId) return;
     setSubmittingJustification(true);
     try {
-      await apiClient.post('/api/apoderado/justificativos/', {
+      await apiClient.post('/api/v1/apoderado/justificativos/', {
         estudiante_id: Number(selectedPupilId),
         fecha_ausencia: justificationForm.fecha_ausencia,
         motivo: justificationForm.motivo,
@@ -475,24 +495,8 @@ export default function ApoderadoPage() {
         formData.append(key, value);
       });
 
-      const access = getAccessToken();
-      const headers = {};
-      if (access) {
-        headers.Authorization = `Bearer ${access}`;
-      }
+      const payload = await apiClient.postFormData('/api/apoderado/admisiones/solicitar/', formData);
 
-      const response = await fetch(`${apiClient.baseUrl}/api/apoderado/admisiones/solicitar/`, {
-        method: 'POST',
-        headers,
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const detail = await parseErrorPayload(response);
-        throw new Error(detail || 'No se pudo enviar la solicitud de admision.');
-      }
-
-      const payload = await response.json();
       setAdmissionResult({ type: 'success', message: payload?.message || 'Solicitud enviada correctamente.' });
       setAdmissionForm({
         curso_id: '',
@@ -510,7 +514,7 @@ export default function ApoderadoPage() {
         certificado_medico: null,
       });
     } catch (err) {
-      setAdmissionResult({ type: 'error', message: err.message || 'No se pudo enviar la solicitud.' });
+      setAdmissionResult({ type: 'error', message: resolveError(err, 'No se pudo enviar la solicitud.') });
     } finally {
       setAdmissionSaving(false);
     }
@@ -971,9 +975,33 @@ export default function ApoderadoPage() {
                   <li key={studentId}>
                     <strong>{getPupilName(item)}</strong>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.5rem' }}>
-                      <a href={buildPdfUrl(studentId, 'certificado-notas')} target="_blank" rel="noreferrer">Certificado de notas</a>
-                      <a href={buildPdfUrl(studentId, 'certificado-matricula')} target="_blank" rel="noreferrer">Certificado de matricula</a>
-                      <a href={buildPdfUrl(studentId, 'informe-rendimiento')} target="_blank" rel="noreferrer">Informe de rendimiento</a>
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDownloadPdf(studentId, 'certificado-notas', `Certificado_Notas_${studentId}`);
+                        }}
+                      >
+                        Certificado de notas
+                      </a>
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDownloadPdf(studentId, 'certificado-matricula', `Certificado_Matricula_${studentId}`);
+                        }}
+                      >
+                        Certificado de matrícula
+                      </a>
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDownloadPdf(studentId, 'informe-rendimiento', `Informe_Rendimiento_${studentId}`);
+                        }}
+                      >
+                        Informe de rendimiento
+                      </a>
                     </div>
                   </li>
                 );
@@ -993,26 +1021,34 @@ export default function ApoderadoPage() {
               </p>
             ) : null}
             <label>
-              Curso ID
-              <input
-                type="number"
-                min="1"
+              Curso
+              <select
                 value={admissionForm.curso_id}
                 onChange={(event) => onAdmissionChange('curso_id', event.target.value)}
                 required
                 disabled={admissionSaving}
-              />
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(148, 163, 184, 0.2)', background: 'rgba(255, 255, 255, 0.05)', color: 'inherit' }}
+              >
+                <option value="">Seleccione un curso...</option>
+                {admissionOptions?.cursos?.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
             </label>
             <label>
-              Ciclo ID
-              <input
-                type="number"
-                min="1"
+              Ciclo Académico
+              <select
                 value={admissionForm.ciclo_id}
                 onChange={(event) => onAdmissionChange('ciclo_id', event.target.value)}
                 required
                 disabled={admissionSaving}
-              />
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(148, 163, 184, 0.2)', background: 'rgba(255, 255, 255, 0.05)', color: 'inherit' }}
+              >
+                <option value="">Seleccione un ciclo...</option>
+                {admissionOptions?.ciclos?.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre} {c.estado === 'ACTIVO' ? '(Activo)' : ''}</option>
+                ))}
+              </select>
             </label>
             <label>
               Nombre estudiante
