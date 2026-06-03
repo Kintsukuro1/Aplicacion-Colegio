@@ -7,7 +7,7 @@ Solo manejan HTTP, validaciones de entrada, y respuestas al usuario.
 Migrando desde: sistema_antiguo/core/views.py (líneas 1306-1567)
 """
 
-from django.shortcuts import redirect
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -43,7 +43,7 @@ def gestionar_estudiantes(request):
         else:
             messages.error(request, result['message'])
         
-        return redirect('dashboard' + '?pagina=gestionar_estudiantes')
+        return redirect('/dashboard/?pagina=gestionar_estudiantes')
     
     # GET: Cargar datos para mostrar
     # Obtener filtros
@@ -89,6 +89,8 @@ def gestionar_estudiantes(request):
         'filtro_busqueda': filtro_busqueda,
     }
     
-    # Retornar JSON si se solicita, sino retornar contexto para template
-    return JsonResponse(context, safe=False) if request.GET.get('json') else context
+    # Retornar JSON si se solicita, sino retornar render de la vista
+    if request.GET.get('json'):
+        return JsonResponse(context, safe=False)
+    return render(request, 'admin_escolar/gestionar_estudiantes.html', context)
 

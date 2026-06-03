@@ -25,7 +25,7 @@
                     <select name="tipo" id="tipo" class="form-control" required>
                         <option value="">Selecciona un tipo</option>
                         {% for value, label in tipos %}
-                        <option value="{{ value }}">{{ label }}</option>
+                        <option value="{{ value }}" {% if default_tipo == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -35,16 +35,16 @@
                     <select name="destinatario" id="destinatario" class="form-control" required onchange="toggleCursosGrid()">
                         <option value="">Selecciona destinatarios</option>
                         {% for value, label in destinatarios %}
-                        <option value="{{ value }}">{{ label }}</option>
+                        <option value="{{ value }}" {% if default_destinatario == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
 
-            <div id="cursosGrid" class="cursos-grid">
+            <div id="cursosGrid" class="cursos-grid {% if default_destinatario == 'curso_especifico' %}visible{% endif %}">
                 {% for curso in cursos %}
                 <div class="curso-checkbox">
-                    <input type="checkbox" name="cursos" value="{{ curso.id_curso }}" id="curso_{{ curso.id_curso }}">
+                    <input type="checkbox" name="cursos" value="{{ curso.id_curso }}" id="curso_{{ curso.id_curso }}" {% if default_curso_id == curso.id_curso|stringformat:"s" %}checked{% endif %}>
                     <label for="curso_{{ curso.id_curso }}">{{ curso.nombre_curso }}</label>
                 </div>
                 {% endfor %}
@@ -52,12 +52,12 @@
 
             <div class="form-group">
                 <label for="titulo">Título <span class="required">*</span></label>
-                <input type="text" name="titulo" id="titulo" class="form-control" required maxlength="200">
+                <input type="text" name="titulo" id="titulo" class="form-control" required maxlength="200" value="{{ default_titulo }}">
             </div>
 
             <div class="form-group">
                 <label for="contenido">Contenido <span class="required">*</span></label>
-                <textarea name="contenido" id="contenido" class="form-control" required></textarea>
+                <textarea name="contenido" id="contenido" class="form-control" required>{{ default_contenido }}</textarea>
                 <span class="help-text">Describe el comunicado con el mayor detalle posible</span>
             </div>
 

@@ -1,31 +1,5 @@
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Datos - {{ colegio.nombre }}</title>
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-    <link rel="stylesheet" href="{% static 'css/admin_escolar/importar_datos.css' %}">
-    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
-    
-</head>
-<body>
-    <div class="dashboard-container">
-        {% include 'sidebars/sidebar_admin_escuela.html' %}
-        
-        <main class="main-content">
-            {% if messages %}
-                <div class="messages-container">
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-            
-            <div class="data-management-container">
+<div class="data-management-container">
                 <div class="page-header">
                     <h1>📥 Gestión de Datos</h1>
                     <p>Importa o inserta datos de estudiantes, profesores y apoderados de forma manual o masiva</p>
@@ -277,8 +251,4 @@
                     </ul>
                 </div>
             </div>
-        </main>
-    </div>
-    <script src="{% static 'js/dashboard.js' %}"></script>
-</body>
-</html>
+<!-- Fin de data-management-container -->

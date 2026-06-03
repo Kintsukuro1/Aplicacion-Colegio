@@ -1466,6 +1466,7 @@ body.pagina-mis_pupilos .main-content {
     flex-direction: column;
     align-items: flex-end;
     gap: 15px;
+    pointer-events: none;
 }
 
 .quick-action-fab-trigger {
@@ -1482,6 +1483,7 @@ body.pagina-mis_pupilos .main-content {
     box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: auto;
 }
 
 .quick-action-fab-trigger span {
@@ -1539,6 +1541,7 @@ body.pagina-mis_pupilos .main-content {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateX(15px);
     opacity: 0;
+    pointer-events: auto;
 }
 
 .quick-action-fab-container.active .quick-action-item {

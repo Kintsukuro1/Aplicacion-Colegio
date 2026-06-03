@@ -1,31 +1,5 @@
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importar {{ tipo_usuario }} - {{ colegio.nombre }}</title>
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-    <link rel="stylesheet" href="{% static 'css/admin_escolar/importar_csv.css' %}">
-    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
-    
-</head>
-<body>
-    <div class="dashboard-container">
-        {% include 'sidebars/sidebar_admin_escuela.html' %}
-        
-        <main class="main-content">
-            {% if messages %}
-                <div class="messages-container">
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-            
-            <div class="import-container">
+<div class="import-container">
                 <div class="page-header">
                     <h1>📄 Importar {{ tipo_usuario }} desde CSV</h1>
                     <a href="{% url 'importar_datos' %}" class="back-button">
@@ -442,6 +416,4 @@
             document.body.removeChild(link);
         }
     </script>
-    <script src="{% static 'js/dashboard.js' %}"></script>
-</body>
-</html>
+<!-- Fin de import-container -->

@@ -94,4 +94,4 @@ def gestionar_apoderados(request):
     except Exception:
         messages.error(request, "No se pudo procesar la solicitud")
 
-    return redirect("dashboard" + "?pagina=gestionar_apoderados")
+    return redirect("/dashboard/?pagina=gestionar_apoderados")

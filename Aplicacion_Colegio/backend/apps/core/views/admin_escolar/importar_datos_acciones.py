@@ -21,7 +21,7 @@ def _redirect_dashboard(pagina: str, extra_query: str | None = None):
 def _has_admin_escolar_access(user) -> bool:
     can_configure = PolicyService.has_capability(user, "SYSTEM_CONFIGURE")
     is_system_admin = PolicyService.has_capability(user, "SYSTEM_ADMIN")
-    return can_configure and not is_system_admin
+    return can_configure or is_system_admin
 
 
 @login_required
@@ -54,10 +54,29 @@ def importar_estudiantes_csv(request):
         messages.error(request, "No tienes permisos para acceder a esta sección")
         return redirect("dashboard")
 
-    colegio = getattr(request.user, "colegio", None)
+    from backend.apps.core.views.school_context import resolve_request_rbd
+    from backend.apps.institucion.models import Colegio
+    from backend.common.utils.dashboard_helpers import build_dashboard_context
+
+    is_system_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
+    if is_system_admin:
+        rbd = request.session.get('admin_rbd_activo')
+        if not rbd:
+            messages.warning(request, "Debe seleccionar un colegio primero para gestionar e importar datos.")
+            return redirect('seleccionar_escuela')
+    else:
+        rbd = resolve_request_rbd(request)
+
+    colegio = None
+    if rbd:
+        try:
+            colegio = Colegio.objects.get(rbd=rbd)
+        except Colegio.DoesNotExist:
+            pass
+
     if colegio is None:
-        messages.error(request, "No se pudo determinar el colegio del usuario")
-        return redirect("dashboard")
+        messages.error(request, "No se pudo determinar el colegio del usuario o no existe.")
+        return redirect("seleccionar_escuela" if is_system_admin else "dashboard")
 
     if request.method == "POST":
         archivo = request.FILES.get("archivo_csv")
@@ -91,13 +110,20 @@ def importar_estudiantes_csv(request):
         return redirect("importar_datos")
 
     # GET request - mostrar formulario
-    context = {
+    context, redirect_response = build_dashboard_context(
+        request,
+        pagina_actual="importar_datos",
+        content_template="admin_escolar/importar_csv.html"
+    )
+    if redirect_response:
+        return redirect_response
+
+    context.update({
         "colegio": colegio,
         "tipo_usuario": "Estudiantes",
         "plantilla_csv": ImportacionCSVService.generar_plantilla_estudiantes(),
-        "pagina_actual": "importar_datos",
-    }
-    return render(request, "admin_escolar/importar_csv.html", context)
+    })
+    return render(request, "dashboard.html", context)
 
 
 @login_required
@@ -107,10 +133,29 @@ def importar_profesores_csv(request):
         messages.error(request, "No tienes permisos para acceder a esta sección")
         return redirect("dashboard")
 
-    colegio = getattr(request.user, "colegio", None)
+    from backend.apps.core.views.school_context import resolve_request_rbd
+    from backend.apps.institucion.models import Colegio
+    from backend.common.utils.dashboard_helpers import build_dashboard_context
+
+    is_system_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
+    if is_system_admin:
+        rbd = request.session.get('admin_rbd_activo')
+        if not rbd:
+            messages.warning(request, "Debe seleccionar un colegio primero para gestionar e importar datos.")
+            return redirect('seleccionar_escuela')
+    else:
+        rbd = resolve_request_rbd(request)
+
+    colegio = None
+    if rbd:
+        try:
+            colegio = Colegio.objects.get(rbd=rbd)
+        except Colegio.DoesNotExist:
+            pass
+
     if colegio is None:
-        messages.error(request, "No se pudo determinar el colegio del usuario")
-        return redirect("dashboard")
+        messages.error(request, "No se pudo determinar el colegio del usuario o no existe.")
+        return redirect("seleccionar_escuela" if is_system_admin else "dashboard")
 
     if request.method == "POST":
         archivo = request.FILES.get("archivo_csv")
@@ -144,13 +189,20 @@ def importar_profesores_csv(request):
         return redirect("importar_datos")
 
     # GET request - mostrar formulario
-    context = {
+    context, redirect_response = build_dashboard_context(
+        request,
+        pagina_actual="importar_datos",
+        content_template="admin_escolar/importar_csv.html"
+    )
+    if redirect_response:
+        return redirect_response
+
+    context.update({
         "colegio": colegio,
         "tipo_usuario": "Profesores",
         "plantilla_csv": ImportacionCSVService.generar_plantilla_profesores(),
-        "pagina_actual": "importar_datos",
-    }
-    return render(request, "admin_escolar/importar_csv.html", context)
+    })
+    return render(request, "dashboard.html", context)
 
 
 @login_required
@@ -160,10 +212,29 @@ def importar_apoderados_csv(request):
         messages.error(request, "No tienes permisos para acceder a esta sección")
         return redirect("dashboard")
 
-    colegio = getattr(request.user, "colegio", None)
+    from backend.apps.core.views.school_context import resolve_request_rbd
+    from backend.apps.institucion.models import Colegio
+    from backend.common.utils.dashboard_helpers import build_dashboard_context
+
+    is_system_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
+    if is_system_admin:
+        rbd = request.session.get('admin_rbd_activo')
+        if not rbd:
+            messages.warning(request, "Debe seleccionar un colegio primero para gestionar e importar datos.")
+            return redirect('seleccionar_escuela')
+    else:
+        rbd = resolve_request_rbd(request)
+
+    colegio = None
+    if rbd:
+        try:
+            colegio = Colegio.objects.get(rbd=rbd)
+        except Colegio.DoesNotExist:
+            pass
+
     if colegio is None:
-        messages.error(request, "No se pudo determinar el colegio del usuario")
-        return redirect("dashboard")
+        messages.error(request, "No se pudo determinar el colegio del usuario o no existe.")
+        return redirect("seleccionar_escuela" if is_system_admin else "dashboard")
 
     if request.method == "POST":
         archivo = request.FILES.get("archivo_csv")
@@ -197,13 +268,20 @@ def importar_apoderados_csv(request):
         return redirect("importar_datos")
 
     # GET request - mostrar formulario
-    context = {
+    context, redirect_response = build_dashboard_context(
+        request,
+        pagina_actual="importar_datos",
+        content_template="admin_escolar/importar_csv.html"
+    )
+    if redirect_response:
+        return redirect_response
+
+    context.update({
         "colegio": colegio,
         "tipo_usuario": "Apoderados",
         "plantilla_csv": ImportacionCSVService.generar_plantilla_apoderados(),
-        "pagina_actual": "importar_datos",
-    }
-    return render(request, "admin_escolar/importar_csv.html", context)
+    })
+    return render(request, "dashboard.html", context)
 
 
 @login_required

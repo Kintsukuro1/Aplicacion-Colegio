@@ -163,8 +163,10 @@ class ApoderadoApiService:
             pendientes.append({
                 'id': cit.id_citacion,
                 'tipo': 'Citación',
+                'tipo_raw': 'citacion',
                 'titulo': f"Citación - {cit.estudiante.get_full_name()} ({cit.fecha_citacion.strftime('%d/%m/%Y')})",
                 'estudiante_nombre': cit.estudiante.get_full_name(),
+                'estudiante_id': cit.estudiante.id,
                 'fecha_citacion': cit.fecha_citacion.strftime('%d/%m/%Y %H:%M'),
                 'motivo': cit.motivo,
             })
@@ -173,7 +175,7 @@ class ApoderadoApiService:
 
     @staticmethod
     def firmar_documento(*, apoderado, tipo_documento: str, titulo: str, contenido: str,
-                         ip_address: str, user_agent: str, estudiante=None):
+                         ip_address: str, user_agent: str, estudiante=None, documento_id=None, documento_tipo_modelo=None):
         """Crea una FirmaDigitalApoderado y retorna la instancia."""
         from backend.apps.accounts.models import FirmaDigitalApoderado
 
@@ -185,6 +187,8 @@ class ApoderadoApiService:
             ip_address=ip_address,
             user_agent=user_agent,
             estudiante=estudiante,
+            documento_id=documento_id,
+            documento_tipo_modelo=documento_tipo_modelo,
         )
 
     @staticmethod

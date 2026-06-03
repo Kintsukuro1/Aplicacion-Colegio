@@ -224,10 +224,21 @@ def crear_comunicado(request):
     # GET - Mostrar formulario
     cursos = ComunicadosService.get_active_courses_for_user(request.user)
 
+    default_tipo = request.GET.get('tipo', '')
+    default_destinatario = request.GET.get('destinatario', '')
+    default_titulo = request.GET.get('titulo', '')
+    default_contenido = request.GET.get('contenido', '')
+    default_curso_id = request.GET.get('curso_id', '')
+
     context = {
         'tipos': Comunicado.TIPOS,
         'destinatarios': Comunicado.DESTINATARIOS,
         'cursos': cursos,
+        'default_tipo': default_tipo,
+        'default_destinatario': default_destinatario,
+        'default_titulo': default_titulo,
+        'default_contenido': default_contenido,
+        'default_curso_id': default_curso_id,
         **shell_context,
     }
 

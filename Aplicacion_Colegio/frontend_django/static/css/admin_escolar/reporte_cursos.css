@@ -420,3 +420,91 @@
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
+.page-header {
+    margin-bottom: 2rem;
+    animation: fadeIn 0.5s ease-out;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* Botones de acción */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-success {
+    background-color: #10b981;
+    color: #ffffff;
+}
+
+.btn-success:hover {
+    background-color: #0d9488;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.btn-outline-primary {
+    background-color: transparent;
+    border: 1px solid #6366f1;
+    color: #6366f1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #6366f1;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.btn-link-action {
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: color 0.2s ease;
+}
+
+.btn-link-action:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.btn-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    background-color: rgba(99, 102, 241, 0.08);
+    color: #6366f1;
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-contact:hover {
+    background-color: #6366f1;
+    color: #ffffff;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}

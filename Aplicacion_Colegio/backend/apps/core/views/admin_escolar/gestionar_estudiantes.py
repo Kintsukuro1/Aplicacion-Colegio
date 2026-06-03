@@ -108,4 +108,4 @@ def gestionar_estudiantes(request):
     except Exception:
         messages.error(request, "No se pudo procesar la solicitud")
 
-    return redirect("dashboard" + "?pagina=gestionar_estudiantes")
+    return redirect("/dashboard/?pagina=gestionar_estudiantes")

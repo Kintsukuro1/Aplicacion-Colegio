@@ -18,6 +18,12 @@
             <li class="nav-section">
                 <span class="section-title">Sistema</span>
             </li>
+            <li>
+                <a href="{% url 'seleccionar_escuela' %}">
+                    <span class="icon">🔄</span>
+                    <span>Cambiar Colegio</span>
+                </a>
+            </li>
             {% if 'escuelas' in paginas_habilitadas %}
             <li {% if pagina_actual == 'escuelas' %}class="active"{% endif %}>
                 <a href="{% url 'dashboard' %}?pagina=escuelas">

@@ -707,7 +707,20 @@ document.addEventListener('keydown', function(e) {
             });
         });
         
-        formCalif.addEventListener('submit', () => {
+        formCalif.addEventListener('submit', (e) => {
+            let count = 0;
+            document.querySelectorAll('.input-nota').forEach(i => {
+                if (i.value.trim() !== '') {
+                    count++;
+                }
+            });
+            const evalNombre = "{{ evaluacion_seleccionada.nombre|escapejs }}";
+            const cursoNombre = "{{ clase_seleccionada.curso.nombre|escapejs }}";
+            const confirmed = confirm(`¿Desea publicar ${count} calificaciones para la evaluación "${evalNombre}" del curso "${cursoNombre}"?`);
+            if (!confirmed) {
+                e.preventDefault();
+                return false;
+            }
             formModificado = false;
         });
         

@@ -265,9 +265,6 @@ class PermissionService:
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
-                if len(args) < 1:
-                    raise ValueError("El método decorado debe recibir al menos un argumento")
-
                 # Determinar el usuario según el contexto
                 user = None
                 
@@ -280,6 +277,12 @@ class PermissionService:
                 # Caso 3: Método de instancia - segundo argumento es user
                 elif len(args) > 1 and hasattr(args[1], 'is_authenticated'):
                     user = args[1]
+                # Caso 4: User pasado como kwarg
+                elif 'user' in kwargs and hasattr(kwargs['user'], 'is_authenticated'):
+                    user = kwargs['user']
+                # Caso 5: Request pasado como kwarg
+                elif 'request' in kwargs and hasattr(kwargs['request'], 'user') and hasattr(kwargs['request'].user, 'is_authenticated'):
+                    user = kwargs['request'].user
 
                 if not user:
                     raise ValueError("No se pudo determinar el usuario en el método decorado")

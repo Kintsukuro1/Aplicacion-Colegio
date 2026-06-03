@@ -4,8 +4,17 @@
 
 <div class="content-wrapper">
     <div class="page-header">
-        <h1>📈 Rendimiento Académico por Cursos</h1>
-        <p class="subtitle">Análisis comparativo de asignaturas y distribución de calificaciones</p>
+        <div>
+            <h1>📈 Rendimiento Académico por Cursos</h1>
+            <p class="subtitle">Análisis comparativo de asignaturas y distribución de calificaciones</p>
+        </div>
+        {% if curso_seleccionado %}
+        <div class="header-actions">
+            <a href="/api/admin-escolar/reportes/cursos/exportar/?curso_id={{ filtro_curso_id }}" class="btn-action btn-success">
+                📥 Exportar Reporte a CSV
+            </a>
+        </div>
+        {% endif %}
     </div>
 
     {# Filtros de Selección #}
@@ -119,7 +128,14 @@
                         <div class="destacado-item">
                             <div class="destacado-info">
                                 <span class="destacado-nombre">{{ item.nombre }}</span>
-                                <span class="destacado-profesor">{{ item.profesor }}</span>
+                                <span class="destacado-profesor">
+                                    {{ item.profesor }}
+                                    {% if item.profesor_id %}
+                                    <a href="{% url 'comunicados:crear' %}?destinatario=profesores&tipo=comunicado&titulo=Consulta: Rendimiento en {{ item.nombre }} - {{ curso_seleccionado.nombre }}&curso_id={{ filtro_curso_id }}" class="btn-contact" title="Contactar Docente">
+                                        ✉️ Contactar
+                                    </a>
+                                    {% endif %}
+                                </span>
                             </div>
                             <span class="destacado-nota">{{ item.promedio }}</span>
                         </div>
@@ -136,7 +152,14 @@
                         <div class="destacado-item">
                             <div class="destacado-info">
                                 <span class="destacado-nombre">{{ item.nombre }}</span>
-                                <span class="destacado-profesor">{{ item.profesor }}</span>
+                                <span class="destacado-profesor">
+                                    {{ item.profesor }}
+                                    {% if item.profesor_id %}
+                                    <a href="{% url 'comunicados:crear' %}?destinatario=profesores&tipo=comunicado&titulo=Consulta: Rendimiento en {{ item.nombre }} - {{ curso_seleccionado.nombre }}&curso_id={{ filtro_curso_id }}" class="btn-contact" title="Contactar Docente">
+                                        ✉️ Contactar
+                                    </a>
+                                    {% endif %}
+                                </span>
                             </div>
                             <span class="destacado-nota">{{ item.promedio }}</span>
                         </div>
@@ -160,6 +183,7 @@
                             <th>Evaluaciones</th>
                             <th>Promedio Curso</th>
                             <th>Estado General</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -193,10 +217,25 @@
                                     <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
+                            <td class="text-end">
+                                <div class="actions-cell justify-content-end" style="justify-content: flex-end;">
+                                    {% if item.clase_id %}
+                                    <a href="?pagina=notas&clase_id={{ item.clase_id }}" class="btn-link-action">
+                                        🔍 Ver Notas
+                                    </a>
+                                    {% endif %}
+                                    {% if item.profesor_id %}
+                                    <span style="color: #cbd5e1; margin: 0 0.25rem;">|</span>
+                                    <a href="{% url 'comunicados:crear' %}?destinatario=profesores&tipo=comunicado&titulo=Consulta: Rendimiento en {{ item.nombre }} - {{ curso_seleccionado.nombre }}&curso_id={{ filtro_curso_id }}" class="btn-link-action" style="color: #10b981;">
+                                        ✉️ Contactar
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted">No se encontraron asignaturas asignadas a este curso.</td>
+                            <td colspan="6" class="text-center text-muted">No se encontraron asignaturas asignadas a este curso.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

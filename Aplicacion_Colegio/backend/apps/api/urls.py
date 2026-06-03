@@ -11,12 +11,20 @@ from backend.apps.api.auth import (
 from backend.apps.api.upload_views import upload_image
 from backend.apps.api.apoderado_views import (
     apoderado_comunicados,
-    apoderado_crear_justificativo,
+    apoderado_justificativos,
     apoderado_mis_pupilos,
     apoderado_pagos_estado,
     apoderado_pupilo_anotaciones,
     apoderado_pupilo_asistencia,
     apoderado_pupilo_notas,
+    apoderado_listar_firmas,
+    apoderado_firmar_documento,
+    apoderado_opciones_admision,
+)
+from backend.apps.api.pdf_views import (
+    api_descargar_certificado_matricula,
+    api_descargar_certificado_notas,
+    api_descargar_informe_rendimiento,
 )
 from backend.apps.api.domain_views import (
     AnotacionConvivenciaViewSet,
@@ -257,7 +265,13 @@ urlpatterns = [
     path('apoderado/pupilo/<int:student_id>/notas/', apoderado_pupilo_notas, name='apoderado_pupilo_notas'),
     path('apoderado/pupilo/<int:student_id>/asistencia/', apoderado_pupilo_asistencia, name='apoderado_pupilo_asistencia'),
     path('apoderado/pupilo/<int:student_id>/anotaciones/', apoderado_pupilo_anotaciones, name='apoderado_pupilo_anotaciones'),
-    path('apoderado/justificativos/', apoderado_crear_justificativo, name='apoderado_crear_justificativo'),
+    path('apoderado/justificativos/', apoderado_justificativos, name='apoderado_justificativos'),
+    path('apoderado/firmas/', apoderado_listar_firmas, name='apoderado_listar_firmas'),
+    path('apoderado/firmas/firmar/', apoderado_firmar_documento, name='apoderado_firmar_documento'),
+    path('apoderado/admision/opciones/', apoderado_opciones_admision, name='apoderado_opciones_admision'),
+    path('pdf/certificado-notas/<int:estudiante_id>/', api_descargar_certificado_notas, name='api_descargar_certificado_notas'),
+    path('pdf/certificado-matricula/<int:estudiante_id>/', api_descargar_certificado_matricula, name='api_descargar_certificado_matricula'),
+    path('pdf/informe-rendimiento/<int:estudiante_id>/', api_descargar_informe_rendimiento, name='api_descargar_informe_rendimiento'),
     path('apoderado/comunicados/', apoderado_comunicados, name='apoderado_comunicados'),
     path('apoderado/pagos/estado/', apoderado_pagos_estado, name='apoderado_pagos_estado'),
     path('apoderado/pupilo/<int:student_id>/materiales/', apoderado_pupilo_materiales, name='apoderado_pupilo_materiales'),
