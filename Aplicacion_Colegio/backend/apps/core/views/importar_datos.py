@@ -23,14 +23,41 @@ def importar_datos(request):
         messages.error(request, "No tienes permisos para acceder a esta sección")
         return redirect("dashboard")
 
-    colegio = getattr(request.user, "colegio", None)
+    from backend.apps.core.views.school_context import resolve_request_rbd
+    from backend.apps.institucion.models import Colegio
+    from backend.common.utils.dashboard_helpers import build_dashboard_context
+
+    if is_system_admin:
+        # Administrador General debe haber seleccionado un colegio explícitamente en la sesión
+        rbd = request.session.get('admin_rbd_activo')
+        if not rbd:
+            messages.warning(request, "Debe seleccionar un colegio primero para gestionar e importar datos.")
+            return redirect('seleccionar_escuela')
+    else:
+        rbd = resolve_request_rbd(request)
+
+    colegio = None
+    if rbd:
+        try:
+            colegio = Colegio.objects.get(rbd=rbd)
+        except Colegio.DoesNotExist:
+            pass
+
     if colegio is None:
-        messages.error(request, "No se pudo determinar el colegio del usuario")
-        return redirect("dashboard")
+        messages.error(request, "No se pudo determinar el colegio del usuario o no existe.")
+        return redirect("seleccionar_escuela" if is_system_admin else "dashboard")
 
     dashboard_data = ImportacionCSVService.get_importar_datos_dashboard(colegio.rbd)
 
-    context = {
+    context, redirect_response = build_dashboard_context(
+        request,
+        pagina_actual="importar_datos",
+        content_template="admin_escolar/importar_datos.html"
+    )
+    if redirect_response:
+        return redirect_response
+
+    context.update({
         "colegio": colegio,
         "estudiantes": dashboard_data["estudiantes"],
         "profesores": dashboard_data["profesores"],
@@ -38,7 +65,6 @@ def importar_datos(request):
         "total_estudiantes": dashboard_data["total_estudiantes"],
         "total_profesores": dashboard_data["total_profesores"],
         "total_apoderados": dashboard_data["total_apoderados"],
-        "pagina_actual": "importar_datos",
-    }
+    })
 
-    return render(request, "admin_escolar/importar_datos.html", context)
+    return render(request, "dashboard.html", context)

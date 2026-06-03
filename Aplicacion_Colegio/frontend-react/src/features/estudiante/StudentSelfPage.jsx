@@ -7,6 +7,8 @@ import { useToast } from '../../components/feedback/Toast';
 import { SummarySkeleton } from '../../components/feedback/TableLoadingState';
 import { formatNumber, formatGrade, normalizeGrade } from '../../utils/formatters';
 import { EmptySection, SectionStatus } from './StudentSelfCommon';
+import GradesChart from './GradesChart';
+import AttendanceChart from './AttendanceChart';
 
 function formatPercentage(value) {
   if (value === null || value === undefined || value === '') {
@@ -140,6 +142,26 @@ export default function StudentSelfPage() {
   const [webpayExpiry, setWebpayExpiry] = useState('');
   const [webpayCvv, setWebpayCvv] = useState('');
   const [webpayProcessing, setWebpayProcessing] = useState(false);
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [newChatClassId, setNewChatClassId] = useState('');
+  const [newChatText, setNewChatText] = useState('');
+  const [creatingChat, setCreatingChat] = useState(false);
+
+  const handleDownloadPdf = async (studentId, path, docName) => {
+    try {
+      const blob = await apiClient.downloadBlob(`/api/v1/pdf/${path}/${studentId}/`);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${docName}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error('No se pudo descargar el certificado.');
+    }
+  };
 
   const LOW_GRADE_THRESHOLD = 4;
   const LOW_ATTENDANCE_THRESHOLD = 85;
@@ -202,6 +224,55 @@ export default function StudentSelfPage() {
   const comunicados = Array.isArray(comunicadosData?.comunicados) ? comunicadosData.comunicados : [];
   const conversaciones = Array.isArray(conversationsData) ? conversationsData : [];
   const mensajes = Array.isArray(messagesData) ? messagesData : [];
+
+  const generalGradesChartData = useMemo(() => {
+    if (!grades || grades.length === 0) return null;
+
+    const sortedGrades = grades.toSorted((a, b) => {
+      const dateA = new Date(a.fecha_evaluacion || a.fecha_creacion || 0);
+      const dateB = new Date(b.fecha_evaluacion || b.fecha_creacion || 0);
+      return dateA - dateB;
+    });
+
+    const labels = sortedGrades.map((g, i) => g.evaluacion_nombre || g.evaluacion || g.nombre || `Nota ${i + 1}`);
+    const data = sortedGrades.map((g) => normalizeGrade(g.nota ?? g.promedio));
+    const pointColors = data.map((value) => (value !== null && value < 4 ? '#ef4444' : '#2563eb'));
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Evolución de Notas',
+          data,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.3,
+          fill: true,
+          pointBackgroundColor: pointColors,
+          pointBorderColor: pointColors,
+        }
+      ]
+    };
+  }, [grades]);
+
+  const attendanceChartData = useMemo(() => {
+    if (!attendance || attendance.length === 0) return null;
+    const totalClasses = attendance.length;
+    const presentCount = attendance.filter((a) => a.estado === 'P' || a.estado === 'T').length;
+    const absentCount = totalClasses - presentCount;
+
+    return {
+      labels: ['Presente/Tarde', 'Ausente/Inasistente'],
+      datasets: [
+        {
+          data: [presentCount, absentCount],
+          backgroundColor: ['rgba(34, 197, 94, 0.85)', 'rgba(239, 68, 68, 0.85)'],
+          borderColor: ['#22c55e', '#ef4444'],
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [attendance]);
 
   const academicAnnotations = useMemo(() => {
     return attendance
@@ -293,6 +364,43 @@ export default function StudentSelfPage() {
       toast.error(resolveError(err, 'No se pudo enviar el mensaje.'));
     } finally {
       setSendingMessage(false);
+    }
+  }
+
+  async function handleCreateChat(e) {
+    e.preventDefault();
+    if (!newChatClassId || !newChatText.trim()) return;
+
+    const selectedClass = classes.find(c => String(c.clase_id) === String(newChatClassId));
+    if (!selectedClass) {
+      toast.error('Clase no válida.');
+      return;
+    }
+
+    setCreatingChat(true);
+    try {
+      const conversation = await apiClient.post('/api/v1/mensajeria/conversaciones/', {
+        clase_id: Number(newChatClassId),
+        destinatario_id: Number(selectedClass.profesor_id),
+      });
+
+      const convId = conversation.id_conversacion || conversation.id;
+
+      await apiClient.post(`/api/v1/mensajeria/conversaciones/${convId}/mensajes/`, {
+        contenido: newChatText,
+      });
+
+      toast.success('Conversación iniciada con éxito.');
+      setNewChatClassId('');
+      setNewChatText('');
+      setIsNewChatOpen(false);
+
+      await queryClient.invalidateQueries({ queryKey: ['student-conversaciones'] });
+      setSelectedConversationId(String(convId));
+    } catch (err) {
+      toast.error(resolveError(err, 'No se pudo iniciar la conversación.'));
+    } finally {
+      setCreatingChat(false);
     }
   }
 
@@ -512,25 +620,84 @@ export default function StudentSelfPage() {
               <div className="error-box" role="alert" aria-live="assertive">{conversationsError}</div>
             ) : loadingConversations ? (
               <SectionStatus title="Cargando conversaciones" description="Buscando mensajes recientes." loading />
-            ) : conversaciones.length === 0 ? (
-              <EmptySection title="Sin conversaciones" description="No hay conversaciones activas por ahora." />
-            ) : (
-              <>
+            ) : isNewChatOpen ? (
+              <form onSubmit={handleCreateChat} className="stack" style={{ gap: '1rem', marginTop: '1rem' }}>
+                <h4>Nueva conversación con profesor</h4>
                 <label>
-                  Conversacion
-                  <select value={selectedConversationId} onChange={(event) => onConversationChange(event.target.value)}>
-                    <option value="">Seleccionar</option>
-                    {conversaciones.map((item) => {
-                      const convId = item.id_conversacion || item.id;
-                      const unread = item.no_leidos ? ` (${item.no_leidos})` : '';
-                      return (
-                        <option key={convId} value={convId}>
-                          {item.otro_participante_nombre || 'Conversacion'}{unread}
-                        </option>
-                      );
-                    })}
+                  Asignatura / Profesor
+                  <select
+                    value={newChatClassId}
+                    onChange={(e) => setNewChatClassId(e.target.value)}
+                    required
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(148, 163, 184, 0.2)', background: 'rgba(255, 255, 255, 0.05)', color: 'inherit' }}
+                  >
+                    <option value="">Seleccionar asignatura...</option>
+                    {classes.map((cls) => (
+                      <option key={cls.clase_id} value={cls.clase_id}>
+                        {cls.asignatura_nombre} - {cls.profesor_nombre}
+                      </option>
+                    ))}
                   </select>
                 </label>
+                <label>
+                  Mensaje inicial
+                  <textarea
+                    rows={3}
+                    placeholder="Escribe tu mensaje aquí..."
+                    value={newChatText}
+                    onChange={(e) => setNewChatText(e.target.value)}
+                    required
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(148, 163, 184, 0.2)', background: 'rgba(255, 255, 255, 0.05)', color: 'inherit', resize: 'vertical' }}
+                  />
+                </label>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button type="submit" disabled={creatingChat} className="badge badge-warning" style={{ border: 'none', cursor: 'pointer', padding: '0.5rem 1.25rem' }}>
+                    {creatingChat ? 'Iniciando...' : 'Iniciar Conversación'}
+                  </button>
+                  <button type="button" onClick={() => setIsNewChatOpen(false)} className="badge" style={{ border: '1px solid rgba(148, 163, 184, 0.3)', background: 'transparent', cursor: 'pointer', padding: '0.5rem 1.25rem', color: 'inherit' }}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            ) : conversaciones.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                <EmptySection title="Sin conversaciones" description="No hay conversaciones activas por ahora." />
+                <button
+                  type="button"
+                  onClick={() => setIsNewChatOpen(true)}
+                  className="badge badge-warning"
+                  style={{ border: 'none', cursor: 'pointer', padding: '0.75rem 1.5rem', alignSelf: 'center' }}
+                >
+                  Iniciar Nueva Conversación
+                </button>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <label style={{ flex: 1, margin: 0 }}>
+                    Conversacion
+                    <select value={selectedConversationId} onChange={(event) => onConversationChange(event.target.value)} style={{ width: '100%' }}>
+                      <option value="">Seleccionar</option>
+                      {conversaciones.map((item) => {
+                        const convId = item.id_conversacion || item.id;
+                        const unread = item.no_leidos ? ` (${item.no_leidos})` : '';
+                        return (
+                          <option key={convId} value={convId}>
+                            {item.otro_participante_nombre || 'Conversacion'}{unread}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewChatOpen(true)}
+                    className="badge badge-warning"
+                    style={{ border: 'none', cursor: 'pointer', padding: '0.6rem 1rem', marginLeft: '1rem', alignSelf: 'flex-end', height: 'fit-content' }}
+                  >
+                    Nueva
+                  </button>
+                </div>
                 {messagesError ? (
                   <div className="error-box" role="alert" aria-live="assertive">{messagesError}</div>
                 ) : loadingMessages ? (
@@ -591,7 +758,15 @@ export default function StudentSelfPage() {
                       <h4 style={{ margin: '0 0 0.5rem 0' }}>📄 Certificado de Notas</h4>
                       <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)' }}>Detalle oficial de las calificaciones obtenidas en el ciclo académico actual.</p>
                     </div>
-                    <a href={`${apiClient.baseUrl}/pdf/certificado-notas/${profile.id}/`} target="_blank" rel="noreferrer" className="badge badge-warning" style={{ alignSelf: 'flex-start', textDecoration: 'none', marginTop: '1rem', textAlign: 'center', width: 'auto' }}>
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDownloadPdf(profile.id, 'certificado-notas', `Certificado_Notas_${profile.id}`);
+                      }}
+                      className="badge badge-warning"
+                      style={{ alignSelf: 'flex-start', textDecoration: 'none', marginTop: '1rem', textAlign: 'center', width: 'auto' }}
+                    >
                       Descargar PDF
                     </a>
                   </article>
@@ -600,7 +775,15 @@ export default function StudentSelfPage() {
                       <h4 style={{ margin: '0 0 0.5rem 0' }}>📄 Certificado de Matrícula</h4>
                       <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)' }}>Documento que acredita la condición de alumno regular matriculado en el establecimiento.</p>
                     </div>
-                    <a href={`${apiClient.baseUrl}/pdf/certificado-matricula/${profile.id}/`} target="_blank" rel="noreferrer" className="badge badge-warning" style={{ alignSelf: 'flex-start', textDecoration: 'none', marginTop: '1rem', textAlign: 'center', width: 'auto' }}>
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDownloadPdf(profile.id, 'certificado-matricula', `Certificado_Matricula_${profile.id}`);
+                      }}
+                      className="badge badge-warning"
+                      style={{ alignSelf: 'flex-start', textDecoration: 'none', marginTop: '1rem', textAlign: 'center', width: 'auto' }}
+                    >
                       Descargar PDF
                     </a>
                   </article>
@@ -609,7 +792,15 @@ export default function StudentSelfPage() {
                       <h4 style={{ margin: '0 0 0.5rem 0' }}>📄 Informe de Rendimiento</h4>
                       <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--muted)' }}>Resumen consolidado de rendimiento escolar y porcentajes de asistencia anuales.</p>
                     </div>
-                    <a href={`${apiClient.baseUrl}/pdf/informe-rendimiento/${profile.id}/`} target="_blank" rel="noreferrer" className="badge badge-warning" style={{ alignSelf: 'flex-start', textDecoration: 'none', marginTop: '1rem', textAlign: 'center', width: 'auto' }}>
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDownloadPdf(profile.id, 'informe-rendimiento', `Informe_Rendimiento_${profile.id}`);
+                      }}
+                      className="badge badge-warning"
+                      style={{ alignSelf: 'flex-start', textDecoration: 'none', marginTop: '1rem', textAlign: 'center', width: 'auto' }}
+                    >
                       Descargar PDF
                     </a>
                   </article>
@@ -832,19 +1023,29 @@ export default function StudentSelfPage() {
         )}
         {activeTab === 'student-dashboard' && (
           <article className="card section-card">
-            <h3>Graficos del Dashboard</h3>
-            <div className="summary-grid">
-              {summaryLoading
-                ? Array.from({ length: 4 }).map((_, index) => (
-                    <SummarySkeleton key={index} />
-                  ))
-                : profileCards.map((item) => (
-                    <article key={item.title} className="summary-tile">
-                      <small>{item.title}</small>
-                      <strong>{item.value}</strong>
-                      <span>{item.subtitle}</span>
-                    </article>
-                  ))}
+            <h3>Gráficos del Dashboard</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginTop: '1.5rem' }}>
+              <div className="card" style={{ padding: '1.5rem', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(148, 163, 184, 0.1)' }}>
+                <h4 style={{ margin: '0 0 1rem 0', textAlign: 'center' }}>📈 Evolución Académica General</h4>
+                {loadingGrades ? (
+                  <div style={{ height: '300px', display: 'grid', placeItems: 'center' }}>Cargando notas...</div>
+                ) : generalGradesChartData ? (
+                  <GradesChart chartData={generalGradesChartData} />
+                ) : (
+                  <EmptySection title="Sin datos" description="No hay notas registradas para graficar." />
+                )}
+              </div>
+
+              <div className="card" style={{ padding: '1.5rem', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(148, 163, 184, 0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <h4 style={{ margin: '0 0 1rem 0', textAlign: 'center' }}>📊 Distribución de Asistencia</h4>
+                {loadingAttendance ? (
+                  <div style={{ height: '300px', display: 'grid', placeItems: 'center' }}>Cargando asistencia...</div>
+                ) : attendanceChartData ? (
+                  <AttendanceChart chartData={attendanceChartData} totalClasses={attendance.length} />
+                ) : (
+                  <EmptySection title="Sin datos" description="No hay registros de asistencia para graficar." />
+                )}
+              </div>
             </div>
           </article>
         )}

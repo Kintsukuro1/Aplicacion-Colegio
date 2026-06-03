@@ -726,6 +726,37 @@
             </div>
         </section>
 
+        <!-- Centro de Pendientes -->
+        <section class="pending-center-section" aria-label="Centro de Pendientes">
+            <h2 class="student-card-title">🚨 Centro de Pendientes</h2>
+            <div class="pending-center-grid">
+                <a href="?pagina=mis_tareas" class="pending-card card-tasks">
+                    <div class="pending-card-icon">📝</div>
+                    <div class="pending-card-info">
+                        <span class="pending-card-count">{{ tareas_pendientes }}</span>
+                        <span class="pending-card-label">Tareas por entregar</span>
+                    </div>
+                    <div class="pending-card-arrow">→</div>
+                </a>
+                <a href="?pagina=mis_evaluaciones" class="pending-card card-exams">
+                    <div class="pending-card-icon">📅</div>
+                    <div class="pending-card-info">
+                        <span class="pending-card-count">{{ evaluaciones_proximas_count }}</span>
+                        <span class="pending-card-label">Evaluaciones próximas</span>
+                    </div>
+                    <div class="pending-card-arrow">→</div>
+                </a>
+                <a href="{% url 'comunicados:lista' %}" class="pending-card card-announcements">
+                    <div class="pending-card-icon">📢</div>
+                    <div class="pending-card-info">
+                        <span class="pending-card-count">{{ comunicados_sin_leer_count }}</span>
+                        <span class="pending-card-label">Comunicados sin leer</span>
+                    </div>
+                    <div class="pending-card-arrow">→</div>
+                </a>
+            </div>
+        </section>
+
         <!-- 1. PRÓXIMA CLASE -->
         <section class="student-card" aria-label="Próxima Clase">
             <h2 class="student-card-title">📖 Próxima Clase</h2>

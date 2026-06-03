@@ -1,112 +1,512 @@
-<div class="container-fluid">
-    <div class="row">
+<div class="container-fluid py-4">
+    <!-- Breadcrumbs & Header -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-users"></i> Usuarios del Sistema
-                        <span class="badge badge-primary ml-2">{{ usuarios|length }}</span>
-                    </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addUserModal">
-                            <i class="fas fa-plus"></i> Agregar Usuario
-                        </button>
-                    </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800 fw-bold">
+                        <i class="bi bi-people-fill text-primary me-2"></i> Gestión de Usuarios
+                    </h1>
+                    <p class="text-muted mb-0">Administración global de cuentas de usuario, roles y asignación de colegios.</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Total Usuarios -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #2563eb !important;">
                 <div class="card-body">
-                    {% if usuarios %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre Completo</th>
-                                        <th>Email</th>
-                                        <th>Rol</th>
-                                        <th>Colegio</th>
-                                        <th>Estado</th>
-                                        <th>Fecha Creación</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for usuario in usuarios %}
-                                    <tr>
-                                        <td>{{ usuario.get_full_name }}</td>
-                                        <td>{{ usuario.email }}</td>
-                                        <td>
-                                            {% if usuario.role %}
-                                                <span class="badge badge-info">{{ usuario.role.nombre }}</span>
-                                            {% else %}
-                                                <span class="badge badge-secondary">Sin rol</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if usuario.colegio %}
-                                                {{ usuario.colegio.nombre }}
-                                            {% else %}
-                                                Sistema
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if usuario.is_active %}
-                                                <span class="badge badge-success">Activo</span>
-                                            {% else %}
-                                                <span class="badge badge-danger">Inactivo</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ usuario.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-info btn-sm" title="Ver detalles">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <button class="btn btn-warning btn-sm" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                {% if usuario.is_active %}
-                                                <button class="btn btn-danger btn-sm" title="Desactivar">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                                {% else %}
-                                                <button class="btn btn-success btn-sm" title="Activar">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Usuarios del Sistema</span>
+                        <div class="bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-people text-primary fs-4"></i>
                         </div>
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No hay usuarios registrados en el sistema.
-                        </div>
-                    {% endif %}
+                    </div>
+                    <h2 class="fw-bold mb-1">{{ usuarios|length }}</h2>
+                    <span class="text-muted small">Cuentas creadas en la plataforma</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Colegios Registrados -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #16a34a !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Colegios Activos</span>
+                        <div class="bg-success bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-building text-success fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-1">{{ colegios|length }}</h2>
+                    <span class="text-muted small">Establecimientos educacionales</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Roles del Sistema -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #7c3aed !important;">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-uppercase fw-semibold text-muted small">Roles Definidos</span>
+                        <div class="bg-purple bg-opacity-10 p-2 rounded" style="background-color: rgba(124, 58, 237, 0.1);">
+                            <i class="bi bi-shield-lock text-purple fs-4" style="color: #7c3aed;"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-1" style="color: #7c3aed;">{{ roles|length }}</h2>
+                    <span class="text-muted small">Perfiles de seguridad configurados</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usuarios Section -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h3 class="card-title h5 mb-0 fw-bold text-gray-800">
+                <i class="bi bi-list-stars text-primary me-2"></i> Listado de Usuarios
+            </h3>
+            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="bi bi-person-plus-fill me-1"></i> Agregar Usuario
+            </button>
+        </div>
+        <div class="card-body p-0">
+            {% if usuarios %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4">Nombre Completo</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Colegio</th>
+                                <th>Estado</th>
+                                <th>Fecha Creación</th>
+                                <th class="text-end px-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr id="user-row-{{ usuario.id }}">
+                                <td class="px-4 fw-semibold text-gray-800">{{ usuario.get_full_name }}</td>
+                                <td>{{ usuario.email }}</td>
+                                <td>
+                                    {% if usuario.role %}
+                                        <span class="badge bg-info text-dark">{{ usuario.role.nombre }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Sin rol</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if usuario.colegio %}
+                                        <span class="fw-medium text-secondary">{{ usuario.colegio.nombre }}</span>
+                                    {% else %}
+                                        <span class="text-muted small"><i class="bi bi-cpu me-1"></i>Sistema</span>
+                                    {% endif %}
+                                </td>
+                                <td id="user-status-{{ usuario.id }}">
+                                    {% if usuario.is_active %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ usuario.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                <td class="text-end px-4">
+                                    <div class="d-inline-flex gap-2 align-items-center">
+                                        <button onclick="verDetalleUsuario(this)" 
+                                                class="btn btn-light btn-sm text-primary border" 
+                                                title="Ver detalles"
+                                                data-nombre="{{ usuario.get_full_name }}"
+                                                data-email="{{ usuario.email }}"
+                                                data-rut="{{ usuario.rut|default:'-' }}"
+                                                data-rol="{{ usuario.role.nombre|default:'Sin rol' }}"
+                                                data-colegio="{% if usuario.colegio %}{{ usuario.colegio.nombre }}{% else %}Sistema{% endif %}"
+                                                data-estado="{% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}"
+                                                data-creado="{{ usuario.fecha_creacion|date:'d/m/Y H:i' }}"
+                                                data-ultimo="{{ usuario.last_login|date:'d/m/Y H:i'|default:'Nunca' }}">
+                                            <i class="bi bi-eye me-1"></i> Ver
+                                        </button>
+                                        <button onclick="abrirEditarUsuario(this)" 
+                                                class="btn btn-light btn-sm text-warning border" 
+                                                title="Editar"
+                                                data-id="{{ usuario.id }}"
+                                                data-nombre="{{ usuario.nombre }}"
+                                                data-ap-paterno="{{ usuario.apellido_paterno }}"
+                                                data-ap-materno="{{ usuario.apellido_materno|default:'' }}"
+                                                data-rol="{{ usuario.role.id|default:'' }}"
+                                                data-colegio="{{ usuario.rbd_colegio|default:'' }}">
+                                            <i class="bi bi-pencil me-1"></i> Editar
+                                        </button>
+                                        <button onclick="toggleEstadoUsuario(this)" 
+                                                class="btn btn-sm {% if usuario.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" 
+                                                title="{% if usuario.is_active %}Desactivar{% else %}Activar{% endif %}"
+                                                data-id="{{ usuario.id }}"
+                                                data-nombre="{{ usuario.get_full_name }}"
+                                                data-active="{% if usuario.is_active %}true{% else %}false{% endif %}">
+                                            {% if usuario.is_active %}
+                                                <i class="bi bi-person-x me-1"></i> Desactivar
+                                            {% else %}
+                                                <i class="bi bi-person-check me-1"></i> Activar
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-info-circle fs-3 d-block mb-2"></i> No hay usuarios registrados en el sistema.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Detalles -->
+<div class="modal fade" id="viewUserModal" tabindex="-1" aria-labelledby="viewUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="viewUserModalLabel"><i class="bi bi-info-circle me-2"></i> Detalles del Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless align-middle mb-0">
+                        <tbody>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold" style="width: 40%;">Nombre Completo</th><td class="py-2 fw-bold text-gray-800" id="det-nombre"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Email</th><td class="py-2 text-primary" id="det-email"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">RUT</th><td class="py-2 fw-medium" id="det-rut"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Rol</th><td class="py-2" id="det-rol"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Colegio</th><td class="py-2 text-secondary" id="det-colegio"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Estado</th><td class="py-2" id="det-estado"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Fecha Creación</th><td class="py-2 text-muted" id="det-creado"></td></tr>
+                            <tr class="border-bottom"><th class="py-2 text-muted fw-semibold">Último Acceso</th><td class="py-2 text-muted" id="det-ultimo"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal for adding new user -->
-<div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addUserModalLabel">Agregar Nuevo Usuario</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark border-0 py-3">
+                <h5 class="modal-title fw-bold" id="editUserModalLabel"><i class="bi bi-pencil-square me-2"></i> Editar Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p>Funcionalidad de agregar usuario próximamente...</p>
+            <div class="modal-body p-4">
+                <input type="hidden" id="editUserId">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editNombre" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Apellido Paterno <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editApPaterno" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Apellido Materno</label>
+                    <input type="text" class="form-control" id="editApMaterno">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Rol</label>
+                    <select class="form-select" id="editRol">
+                        <option value="">Sin rol</option>
+                        {% for rol in roles %}
+                        <option value="{{ rol.id }}">{{ rol.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Colegio</label>
+                    <select class="form-select" id="editColegio">
+                        <option value="">Sistema (sin colegio)</option>
+                        {% for col in colegios %}
+                        <option value="{{ col.rbd }}">{{ col.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary">Guardar</button>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="guardarEdicionUsuario()">Guardar Cambios</button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal Agregar Usuario -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="addUserModalLabel"><i class="bi bi-person-plus me-2"></i> Agregar Nuevo Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div>
+                            <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="newEmail" required placeholder="usuario@ejemplo.com">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div>
+                            <label class="form-label fw-semibold">RUT</label>
+                            <input type="text" class="form-control" id="newRut" placeholder="12.345.678-9">
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <div>
+                            <label class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="newNombre" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <label class="form-label fw-semibold">Apellido Paterno <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="newApPaterno" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <label class="form-label fw-semibold">Apellido Materno</label>
+                            <input type="text" class="form-control" id="newApMaterno">
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div>
+                            <label class="form-label fw-semibold">Rol</label>
+                            <select class="form-select" id="newRol">
+                                <option value="">Sin rol</option>
+                                {% for rol in roles %}
+                                <option value="{{ rol.id }}">{{ rol.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <label class="form-label fw-semibold">Colegio</label>
+                            <select class="form-select" id="newColegio">
+                                <option value="">Sistema (sin colegio)</option>
+                                {% for col in colegios %}
+                                <option value="{{ col.rbd }}">{{ col.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div>
+                            <label class="form-label fw-semibold">Contraseña</label>
+                            <input type="password" class="form-control" id="newPassword" placeholder="Dejar vacío para temporal">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 text-white" onclick="crearUsuario()">
+                    <i class="bi bi-save me-1"></i> Crear Usuario
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let viewUserModalInstance = null;
+let editUserModalInstance = null;
+const csrfToken = '{{ csrf_token }}';
+
+function showFeedback(message, type = 'success') {
+    let container = document.getElementById('feedback-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'feedback-container';
+        container.style.position = 'fixed';
+        container.style.top = '20px';
+        container.style.right = '20px';
+        container.style.zIndex = '9999';
+        container.style.width = '350px';
+        document.body.appendChild(container);
+    }
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show shadow-lg border-0 rounded-3`;
+    alertDiv.role = 'alert';
+    
+    let iconClass = 'bi-check-circle-fill';
+    if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill';
+    else if (type === 'info') iconClass = 'bi-info-circle-fill';
+    
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi ${iconClass} me-2 fs-5"></i>
+            <div class="small fw-medium">${message}</div>
+        </div>
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    container.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(alertDiv);
+        if (bsAlert) bsAlert.close();
+    }, 4000);
+}
+
+function verDetalleUsuario(button) {
+    const data = button.dataset;
+    document.getElementById('det-nombre').textContent = data.nombre;
+    document.getElementById('det-email').textContent = data.email;
+    document.getElementById('det-rut').textContent = data.rut;
+    document.getElementById('det-rol').textContent = data.rol;
+    document.getElementById('det-colegio').textContent = data.colegio;
+    document.getElementById('det-estado').textContent = data.estado;
+    document.getElementById('det-creado').textContent = data.creado;
+    document.getElementById('det-ultimo').textContent = data.ultimo;
+    
+    if (!viewUserModalInstance) {
+        viewUserModalInstance = new bootstrap.Modal(document.getElementById('viewUserModal'));
+    }
+    viewUserModalInstance.show();
+}
+
+function abrirEditarUsuario(button) {
+    const data = button.dataset;
+    document.getElementById('editUserId').value = data.id;
+    document.getElementById('editNombre').value = data.nombre;
+    document.getElementById('editApPaterno').value = data.apPaterno;
+    document.getElementById('editApMaterno').value = data.apMaterno;
+    document.getElementById('editRol').value = data.rol;
+    document.getElementById('editColegio').value = data.colegio;
+    
+    if (!editUserModalInstance) {
+        editUserModalInstance = new bootstrap.Modal(document.getElementById('editUserModal'));
+    }
+    editUserModalInstance.show();
+}
+
+function guardarEdicionUsuario() {
+    const id = document.getElementById('editUserId').value;
+    const nombre = document.getElementById('editNombre').value;
+    const apPaterno = document.getElementById('editApPaterno').value;
+    
+    if (!nombre || !apPaterno) {
+        showFeedback('Nombre y Apellido Paterno son obligatorios', 'danger');
+        return;
+    }
+
+    const data = {
+        nombre: nombre,
+        apellido_paterno: apPaterno,
+        apellido_materno: document.getElementById('editApMaterno').value,
+        rol_id: document.getElementById('editRol').value,
+        colegio_rbd: document.getElementById('editColegio').value,
+    };
+
+    fetch('/api/admin-general/usuarios/' + id + '/editar/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showFeedback(data.message, 'success');
+            if (editUserModalInstance) editUserModalInstance.hide();
+            setTimeout(() => { location.reload(); }, 1200);
+        } else {
+            showFeedback('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(() => showFeedback('Error de conexión con el servidor', 'danger'));
+}
+
+function toggleEstadoUsuario(button) {
+    const data = button.dataset;
+    const id = data.id;
+    const nombre = data.nombre;
+    const isActive = data.active === 'true';
+    const accion = isActive ? 'desactivar' : 'activar';
+    
+    if (!confirm('¿Desea ' + accion + ' al usuario "' + nombre + '"?')) return;
+
+    fetch('/api/admin-general/usuarios/' + id + '/toggle-estado/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showFeedback(data.message, 'success');
+            setTimeout(() => { location.reload(); }, 1200);
+        } else {
+            showFeedback('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(() => showFeedback('Error al cambiar el estado del usuario', 'danger'));
+}
+
+function crearUsuario() {
+    const email = document.getElementById('newEmail').value;
+    const nombre = document.getElementById('newNombre').value;
+    const apPaterno = document.getElementById('newApPaterno').value;
+
+    if (!email || !nombre || !apPaterno) {
+        showFeedback('Complete los campos obligatorios: Email, Nombre y Apellido Paterno', 'danger');
+        return;
+    }
+
+    const data = {
+        email: email,
+        rut: document.getElementById('newRut').value,
+        nombre: nombre,
+        apellido_paterno: apPaterno,
+        apellido_materno: document.getElementById('newApMaterno').value,
+        rol_id: document.getElementById('newRol').value,
+        colegio_rbd: document.getElementById('newColegio').value,
+        password: document.getElementById('newPassword').value,
+    };
+
+    fetch('/api/admin-general/usuarios/crear/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showFeedback(data.message, 'success');
+            const modalEl = document.getElementById('addUserModal');
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) bsModal.hide();
+            setTimeout(() => { location.reload(); }, 1200);
+        } else {
+            showFeedback('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(() => showFeedback('Error de conexión con el servidor', 'danger'));
+}
+</script>

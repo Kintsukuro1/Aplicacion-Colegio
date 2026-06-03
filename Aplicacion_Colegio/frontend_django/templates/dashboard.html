@@ -54,6 +54,10 @@
     <link rel="stylesheet" href="{% static 'css/profesor/mensajeria.css' %}?v=20260604-mm-hero-notif">
     {% endif %}
     {% endif %}
+    {% if pagina_actual == 'importar_datos' %}
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/importar_datos.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/importar_csv.css' %}">
+    {% endif %}
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
 </head>
 

@@ -394,6 +394,67 @@
         font-weight: 600;
         margin-top: 2px;
     }
+    /* Quick Actions */
+    .admin-quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 8px;
+    }
+    
+    @media (max-width: 1024px) {
+        .admin-quick-actions {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 640px) {
+        .admin-quick-actions {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .quick-action-card-school {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #334155;
+        text-decoration: none !important;
+        font-weight: 700;
+        font-size: 0.92rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+        transition: all 0.2s ease;
+    }
+    
+    .quick-action-card-school:hover {
+        transform: translateY(-2px);
+        background-color: #f0fdfa;
+        border-color: #99f6e4;
+        color: #0f766e !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+    }
+    
+    .quick-action-icon-school {
+        font-size: 1.3rem;
+        width: 36px;
+        height: 36px;
+        background-color: #f0fdfa;
+        color: #0f766e;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .clickable-kpi {
+        text-decoration: none !important;
+        color: inherit !important;
+        cursor: pointer;
+    }
 </style>
 
 <div class="admin-dashboard">
@@ -441,72 +502,125 @@
     <section class="admin-stats-grid" aria-label="Scorecard Ejecutivo">
         
         <!-- Estudiantes -->
-        <article class="admin-stat-card stat-estudiantes">
-            <div class="admin-stat-icon" aria-hidden="true">👥</div>
-            <div class="admin-stat-info">
-                <span class="admin-stat-val">{{ total_estudiantes|default:"1.250" }}</span>
-                <span class="admin-stat-lbl">Estudiantes</span>
-            </div>
-        </article>
+        <a href="?pagina=gestionar_estudiantes" class="clickable-kpi">
+            <article class="admin-stat-card stat-estudiantes">
+                <div class="admin-stat-icon" aria-hidden="true">👥</div>
+                <div class="admin-stat-info">
+                    <span class="admin-stat-val">{{ total_estudiantes|default:"1.250" }}</span>
+                    <span class="admin-stat-lbl">Estudiantes</span>
+                </div>
+            </article>
+        </a>
 
         <!-- Profesores -->
-        <article class="admin-stat-card stat-profesores">
-            <div class="admin-stat-icon" aria-hidden="true">👨‍🏫</div>
-            <div class="admin-stat-info">
-                <span class="admin-stat-val">{{ total_profesores|default:"62" }}</span>
-                <span class="admin-stat-lbl">Profesores</span>
-            </div>
-        </article>
+        <a href="?pagina=gestionar_profesores" class="clickable-kpi">
+            <article class="admin-stat-card stat-profesores">
+                <div class="admin-stat-icon" aria-hidden="true">👨‍🏫</div>
+                <div class="admin-stat-info">
+                    <span class="admin-stat-val">{{ total_profesores|default:"62" }}</span>
+                    <span class="admin-stat-lbl">Profesores</span>
+                </div>
+            </article>
+        </a>
 
         <!-- Cursos -->
-        <article class="admin-stat-card stat-cursos">
-            <div class="admin-stat-icon" aria-hidden="true">🏫</div>
-            <div class="admin-stat-info">
-                <span class="admin-stat-val">{{ total_cursos|default:"34" }}</span>
-                <span class="admin-stat-lbl">Cursos</span>
-            </div>
-        </article>
+        <a href="?pagina=gestionar_cursos" class="clickable-kpi">
+            <article class="admin-stat-card stat-cursos">
+                <div class="admin-stat-icon" aria-hidden="true">🏫</div>
+                <div class="admin-stat-info">
+                    <span class="admin-stat-val">{{ total_cursos|default:"34" }}</span>
+                    <span class="admin-stat-lbl">Cursos</span>
+                </div>
+            </article>
+        </a>
 
+    </section>
+
+    <!-- Accesos Rápidos -->
+    <section class="admin-card" aria-label="Accesos Rápidos">
+        <h2 class="admin-card-title">
+            <span>⚡ Accesos Rápidos de Gestión Escolar</span>
+        </h2>
+        <div class="admin-quick-actions">
+            <a href="?pagina=mi_escuela" class="quick-action-card-school">
+                <span class="quick-action-icon-school"><i class="bi bi-building-gear"></i></span>
+                <span>Mi Escuela</span>
+            </a>
+            <a href="?pagina=gestionar_estudiantes" class="quick-action-card-school">
+                <span class="quick-action-icon-school"><i class="bi bi-people-fill"></i></span>
+                <span>Matricular Estudiante</span>
+            </a>
+            <a href="?pagina=gestionar_profesores" class="quick-action-card-school">
+                <span class="quick-action-icon-school"><i class="bi bi-person-badge"></i></span>
+                <span>Gestionar Profesores</span>
+            </a>
+            <a href="?pagina=gestionar_cursos" class="quick-action-card-school">
+                <span class="quick-action-icon-school"><i class="bi bi-tags-fill"></i></span>
+                <span>Gestionar Cursos</span>
+            </a>
+            <a href="?pagina=gestionar_asignaturas" class="quick-action-card-school">
+                <span class="quick-action-icon-school"><i class="bi bi-journal-bookmark-fill"></i></span>
+                <span>Asignaturas y Horarios</span>
+            </a>
+            <a href="?pagina=gestionar_finanzas" class="quick-action-card-school">
+                <span class="quick-action-icon-school"><i class="bi bi-cash-stack"></i></span>
+                <span>Finanzas y Recaudación</span>
+            </a>
+            <a href="?pagina=reporte_cursos" class="quick-action-card-school">
+                <span class="quick-action-icon-school"><i class="bi bi-bar-chart-line-fill"></i></span>
+                <span>Rendimiento de Cursos</span>
+            </a>
+            <a href="?pagina=libro_clases" class="quick-action-card-school">
+                <span class="quick-action-icon-school"><i class="bi bi-book-half"></i></span>
+                <span>Libro de Clases</span>
+            </a>
+        </div>
     </section>
 
     <!-- Indicadores Generales -->
     <section class="admin-kpi-grid" aria-label="Indicadores Institucionales">
         
         <!-- Asistencia General -->
-        <article class="admin-kpi-card kpi-asistencia">
-            <div class="admin-kpi-lbl">📋 Asistencia General</div>
-            <div class="admin-kpi-val">{{ asistencia_gral|floatformat:0 }}%</div>
-            <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
-                <div class="admin-kpi-progress-fill" style="width: {{ asistencia_gral }}%; background-color: #0d9488;"></div>
-            </div>
-            <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
-                {{ comparativo_asist }}
-            </div>
-        </article>
+        <a href="?pagina=reportes&tipo=asistencia" class="clickable-kpi">
+            <article class="admin-kpi-card kpi-asistencia">
+                <div class="admin-kpi-lbl">📋 Asistencia General</div>
+                <div class="admin-kpi-val">{{ asistencia_gral|floatformat:0 }}%</div>
+                <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
+                    <div class="admin-kpi-progress-fill" style="width: {{ asistencia_gral }}%; background-color: #0d9488;"></div>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
+                    {{ comparativo_asist }}
+                </div>
+            </article>
+        </a>
 
         <!-- Promedio General -->
-        <article class="admin-kpi-card kpi-promedio">
-            <div class="admin-kpi-lbl">⭐ Promedio General</div>
-            <div class="admin-kpi-val">{{ promedio_gral|floatformat:1 }}</div>
-            <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
-                <div class="admin-kpi-progress-fill" style="width: {% widthratio promedio_gral 7 100 %}%; background-color: #10b981;"></div>
-            </div>
-            <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
-                {{ comparativo_gpa }}
-            </div>
-        </article>
+        <a href="?pagina=reporte_cursos" class="clickable-kpi">
+            <article class="admin-kpi-card kpi-promedio">
+                <div class="admin-kpi-lbl">⭐ Promedio General</div>
+                <div class="admin-kpi-val">{{ promedio_gral|floatformat:1 }}</div>
+                <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
+                    <div class="admin-kpi-progress-fill" style="width: {% widthratio promedio_gral 7 100 %}%; background-color: #10b981;"></div>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
+                    {{ comparativo_gpa }}
+                </div>
+            </article>
+        </a>
 
         <!-- Tareas Entregadas -->
-        <article class="admin-kpi-card kpi-tareas">
-            <div class="admin-kpi-lbl">📝 Tareas Entregadas</div>
-            <div class="admin-kpi-val">{{ tareas_entregadas_pct|floatformat:0 }}%</div>
-            <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
-                <div class="admin-kpi-progress-fill" style="width: {{ tareas_entregadas_pct }}%; background-color: #6366f1;"></div>
-            </div>
-            <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
-                Al día con entregas activas
-            </div>
-        </article>
+        <a href="?pagina=reportes&tipo=tareas" class="clickable-kpi">
+            <article class="admin-kpi-card kpi-tareas">
+                <div class="admin-kpi-lbl">📝 Tareas Entregadas</div>
+                <div class="admin-kpi-val">{{ tareas_entregadas_pct|floatformat:0 }}%</div>
+                <div class="admin-kpi-progress-bg" aria-hidden="true" style="margin-top: 10px;">
+                    <div class="admin-kpi-progress-fill" style="width: {{ tareas_entregadas_pct }}%; background-color: #6366f1;"></div>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.78rem; font-weight: 700; color: #4b5563;">
+                    Al día con entregas activas
+                </div>
+            </article>
+        </a>
 
     </section>
 
@@ -533,13 +647,16 @@
                                 <th>Asist.</th>
                                 <th>Tareas</th>
                                 <th>Detalles del Riesgo</th>
+                                <th class="text-end">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in mapa_riesgo %}
                                 <tr>
                                     <td>
-                                        <strong>{{ item.nombre }}</strong>
+                                        <a href="?pagina=gestionar_estudiantes&busqueda={{ item.nombre }}" class="fw-bold text-dark" style="text-decoration: none;">
+                                            {{ item.nombre }}
+                                        </a>
                                     </td>
                                     <td>
                                         <span class="rank-badge">{{ item.curso }}</span>
@@ -561,6 +678,11 @@
                                     </td>
                                     <td>
                                         <span class="risk-badge">{{ item.riesgo_detalles }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="?pagina=comunicados" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 0.8rem;">
+                                            Alertar
+                                        </a>
                                     </td>
                                 </tr>
                             {% endfor %}

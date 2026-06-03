@@ -383,11 +383,164 @@
     .cell-none {
         color: #94a3b8;
     }
+
+    /* Centro de Pendientes Premium Glassmorphism */
+    .pending-center-section {
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.04);
+        margin-bottom: 8px;
+    }
+    
+    .pending-center-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-top: 16px;
+    }
+    
+    .pending-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pending-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+        z-index: 1;
+        transition: opacity 0.3s ease;
+    }
+    
+    .pending-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+    }
+    
+    .pending-card-icon {
+        font-size: 2rem;
+        background: #ffffff;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
+        z-index: 2;
+        transition: transform 0.3s ease;
+    }
+
+    .pending-card:hover .pending-card-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .pending-card-info {
+        flex: 1;
+        margin-left: 16px;
+        display: flex;
+        flex-direction: column;
+        z-index: 2;
+    }
+    
+    .pending-card-count {
+        font-size: 1.8rem;
+        font-weight: 900;
+        line-height: 1.1;
+    }
+    
+    .pending-card-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-top: 4px;
+        opacity: 0.8;
+    }
+    
+    .pending-card-arrow {
+        font-size: 1.2rem;
+        font-weight: 700;
+        opacity: 0.5;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        z-index: 2;
+    }
+    
+    .pending-card:hover .pending-card-arrow {
+        transform: translateX(4px);
+        opacity: 1;
+    }
+    
+    /* Specific Colors */
+    .card-tasks {
+        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+        border-color: #fed7aa;
+    }
+    .card-tasks .pending-card-count, .card-tasks .pending-card-label, .card-tasks .pending-card-arrow {
+        color: #c2410c;
+    }
+    
+    .card-attendance {
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+        border-color: #ddd6fe;
+    }
+    .card-attendance .pending-card-count, .card-attendance .pending-card-label, .card-attendance .pending-card-arrow {
+        color: #6d28d9;
+    }
+    
+    .card-messages {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-color: #bfdbfe;
+    }
+    .card-messages .pending-card-count, .card-messages .pending-card-label, .card-messages .pending-card-arrow {
+        color: #1e40af;
+    }
 </style>
 
 <div class="prof-dashboard">
 
     {% include 'profesor/_profesor_hero.html' with hero_greeting=1 hero_subtitle="Portal Académico Escolar · Resumen del Día" hero_aria="Bienvenida docente" metrics_aria="Resumen de operaciones" m1_value=clases_hoy m1_label="Clases hoy" m1_mod="clases" m2_value=tareas_por_corregir m2_label="Por corregir" m2_mod="tareas" m3_value=estudiantes_riesgo m3_label="En riesgo" m3_mod="riesgo" m4_value=asistencias_pendientes m4_label="Sin pasar lista" m4_mod="asistencia" %}
+
+    <section class="pending-center-section" aria-label="Centro de Pendientes">
+        <h2 class="prof-card-title" style="margin-bottom: 0;">Centro de pendientes</h2>
+        <div class="pending-center-grid">
+            <a href="?pagina=tareas_consolidado" class="pending-card card-tasks">
+                <div class="pending-card-icon">📝</div>
+                <div class="pending-card-info">
+                    <span class="pending-card-count">{{ tareas_por_corregir }}</span>
+                    <span class="pending-card-label">Tareas por corregir</span>
+                </div>
+                <div class="pending-card-arrow">→</div>
+            </a>
+            <a href="?pagina=libro_clases" class="pending-card card-attendance">
+                <div class="pending-card-icon">📋</div>
+                <div class="pending-card-info">
+                    <span class="pending-card-count">{{ asistencias_pendientes }}</span>
+                    <span class="pending-card-label">Asistencias sin registrar</span>
+                </div>
+                <div class="pending-card-arrow">→</div>
+            </a>
+            <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="pending-card card-messages">
+                <div class="pending-card-icon">💬</div>
+                <div class="pending-card-info">
+                    <span class="pending-card-count">{{ mensajes_sin_responder }}</span>
+                    <span class="pending-card-label">Mensajes sin responder</span>
+                </div>
+                <div class="pending-card-arrow">→</div>
+            </a>
+        </div>
+    </section>
 
     <!-- Main Dashboard Grid Layout -->
     <div class="prof-grid">

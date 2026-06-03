@@ -798,6 +798,31 @@ class DashboardContextService:
             recent_grades = [float(c.nota) for c in reversed(ultimas_notas)] if ultimas_notas else [6.0, 5.8, 5.5, 6.2]
             subject_name = asignatura_fuerte if asignatura_fuerte != "Ninguna" else "General"
 
+            # Evaluar y crear/actualizar alertas académicas
+            from backend.apps.notificaciones.services.academic_alerts_service import AcademicAlertsService
+            try:
+                AcademicAlertsService.evaluate_student_alerts(user)
+            except Exception as e:
+                logger.error(f"Error al evaluar alertas del estudiante {user.id}: {e}", exc_info=True)
+
+            # Contar evaluaciones próximas (siguientes 7 días)
+            from backend.apps.academico.models import Evaluacion
+            limite_proxima = hoy + timedelta(days=7)
+            evaluaciones_proximas_count = Evaluacion.objects.filter(
+                clase__curso=curso_actual,
+                activa=True,
+                fecha_evaluacion__gte=hoy,
+                fecha_evaluacion__lte=limite_proxima
+            ).count() if curso_actual else 0
+
+            # Contar comunicados sin leer
+            from backend.apps.comunicados.services.comunicados_service import ComunicadosService
+            try:
+                comunicados_ctx = ComunicadosService.get_alumno_comunicados_context(user)
+                comunicados_sin_leer_count = comunicados_ctx.get('sin_leer_count', 0)
+            except Exception:
+                comunicados_sin_leer_count = 0
+
             return {
                 'proxima_clase': proxima_clase,
                 'tareas_pendientes': tareas_pendientes,
@@ -815,6 +840,8 @@ class DashboardContextService:
                 'recent_grades': recent_grades,
                 'subject_name': subject_name,
                 'sin_datos': curso_actual is None,
+                'evaluaciones_proximas_count': evaluaciones_proximas_count,
+                'comunicados_sin_leer_count': comunicados_sin_leer_count,
             }
 
         except PerfilEstudiante.DoesNotExist:
@@ -834,6 +861,8 @@ class DashboardContextService:
                 'asistencia_mensual': [{'mes': 'Marzo', 'porcentaje': 98}, {'mes': 'Abril', 'porcentaje': 92}, {'mes': 'Mayo', 'porcentaje': 95}],
                 'notificaciones_accionables': [],
                 'sin_datos': True,
+                'evaluaciones_proximas_count': 0,
+                'comunicados_sin_leer_count': 0,
             }
 
     @staticmethod
@@ -2692,6 +2721,13 @@ class DashboardContextService:
                 {'nombre': 'Diego Carrasco', 'asistencias': ['✓', '✓', '✓', '✓', 'X']}
             ]
             
+        # Mensajes sin responder
+        from backend.apps.mensajeria.models import Mensaje
+        try:
+            mensajes_sin_responder = Mensaje.objects.filter(receptor=user, leido=False).count()
+        except Exception:
+            mensajes_sin_responder = 0
+
         return {
             'clases_hoy': clases_hoy,
             'tareas_por_corregir': tareas_por_corregir,
@@ -2702,6 +2738,7 @@ class DashboardContextService:
             'heatmap_data': heatmap_data,
             'heatmap_clase_nombre': clase_sel.asignatura.nombre if (clase_sel and clase_sel.asignatura) else 'Clase',
             'heatmap_curso_nombre': clase_sel.curso.nombre if (clase_sel and clase_sel.curso) else 'Curso',
-            'dias_nombres': dias_nombres
+            'dias_nombres': dias_nombres,
+            'mensajes_sin_responder': mensajes_sin_responder,
         }
 

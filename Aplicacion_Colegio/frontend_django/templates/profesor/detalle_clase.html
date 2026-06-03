@@ -200,7 +200,7 @@
                                             {% if material.es_publico %}Hacer privado{% else %}Hacer público{% endif %}
                                         </button>
                                     </form>
-                                    <form method="post" class="m-0" onsubmit="return confirm('¿Eliminar este material?');">
+                                    <form method="post" class="m-0" onsubmit="return confirm('¿Está seguro de que desea eliminar permanentemente el material &quot;{{ material.titulo|escapejs }}&quot;?');">
                                         {% csrf_token %}
                                         <input type="hidden" name="accion" value="eliminar_material">
                                         <input type="hidden" name="material_id" value="{{ material.id_material }}">

@@ -235,21 +235,23 @@
     </div>
 </div>
 
+<div class="d-none">
+    {% csrf_token %}
+</div>
+
 <!-- Modal de confirmación -->
 <div class="modal fade" id="confirmSaveModal" tabindex="-1" role="dialog" aria-labelledby="confirmSaveModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="confirmSaveModalLabel">Confirmar Cambios</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 ¿Está seguro de que desea guardar los cambios en la configuración del sistema?
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="btnConfirmSave">Guardar</button>
             </div>
         </div>
@@ -257,29 +259,50 @@
 </div>
 
 <script>
-// Configuración de auditoría - funcionalidad básica
-document.getElementById('btnGuardarConfig').addEventListener('click', function() {
-    // Mostrar modal de confirmación
-    $('#confirmSaveModal').modal('show');
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const modalElement = document.getElementById('confirmSaveModal');
+    const confirmModal = new bootstrap.Modal(modalElement);
 
-document.getElementById('btnConfirmSave').addEventListener('click', function() {
-    // Aquí iría la lógica para guardar la configuración
-    // Por ahora solo mostramos un mensaje
-    alert('Funcionalidad de guardar configuración próximamente disponible');
-    $('#confirmSaveModal').modal('hide');
-});
-
-// Los checkboxes de configuración están marcados como data-field para futura implementación
-document.querySelectorAll('.config-checkbox').forEach(function(checkbox) {
-    checkbox.addEventListener('change', function() {
-        console.log('Configuración cambiada:', this.dataset.field, this.checked);
+    document.getElementById('btnGuardarConfig').addEventListener('click', function() {
+        confirmModal.show();
     });
-});
 
-document.querySelectorAll('.config-input').forEach(function(input) {
-    input.addEventListener('change', function() {
-        console.log('Configuración cambiada:', this.dataset.field, this.value);
+    document.getElementById('btnConfirmSave').addEventListener('click', function() {
+        const payload = {
+            auditar_academico: document.getElementById('auditarAcademico') ? document.getElementById('auditarAcademico').checked : false,
+            auditar_asistencia: document.getElementById('auditarAsistencia') ? document.getElementById('auditarAsistencia').checked : false,
+            auditar_comunicacion: document.getElementById('auditarComunicacion') ? document.getElementById('auditarComunicacion').checked : false,
+            auditar_estudiantes: document.getElementById('auditarEstudiantes') ? document.getElementById('auditarEstudiantes').checked : false,
+            auditar_usuarios: document.getElementById('auditarUsuarios') ? document.getElementById('auditarUsuarios').checked : false,
+            capturar_ip: document.getElementById('capturarIP') ? document.getElementById('capturarIP').checked : false,
+            dias_retencion: document.getElementById('diasRetencion') ? parseInt(document.getElementById('diasRetencion').value) : 30
+        };
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('/api/admin-general/configuracion/auditoria/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            confirmModal.hide();
+            if (data.success) {
+                alert('✔ ' + (data.message || 'Configuración guardada exitosamente.'));
+                window.location.reload();
+            } else {
+                alert('❌ Error: ' + (data.error || 'No se pudo guardar la configuración.'));
+            }
+        })
+        .catch(err => {
+            confirmModal.hide();
+            console.error('Error al guardar configuración:', err);
+            alert('❌ Error de comunicación con el servidor.');
+        });
     });
 });
 </script>

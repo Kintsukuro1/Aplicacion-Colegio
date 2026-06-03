@@ -10,11 +10,14 @@ describe('ApoderadoPage', () => {
     vi.restoreAllMocks();
 
     getMock.mockImplementation((path) => {
-      if (path === '/api/apoderado/justificativos/') {
+      if (path === '/api/v1/apoderado/justificativos/') {
         return Promise.resolve({ justificativos: [{ id_justificativo: 2, fecha_ausencia: '2026-03-01', estado: 'PENDIENTE' }] });
       }
-      if (path === '/api/apoderado/firmas/') {
+      if (path === '/api/v1/apoderado/firmas/') {
         return Promise.resolve({ pendientes: [{ id: 10 }], firmados: [{ id: 20 }] });
+      }
+      if (path === '/api/v1/apoderado/admision/opciones/') {
+        return Promise.resolve({ cursos: [{ id: 1, nombre: '1° Básico' }], ciclos: [{ id: 2, nombre: '2026' }] });
       }
       return Promise.resolve({});
     });
@@ -25,8 +28,8 @@ describe('ApoderadoPage', () => {
 
     // Wait for the GET calls to be made
     await waitFor(() => {
-      expect(getMock).toHaveBeenCalledWith('/api/apoderado/justificativos/');
-      expect(getMock).toHaveBeenCalledWith('/api/apoderado/firmas/');
+      expect(getMock).toHaveBeenCalledWith('/api/v1/apoderado/justificativos/');
+      expect(getMock).toHaveBeenCalledWith('/api/v1/apoderado/firmas/');
     });
 
     // Wait for the data to be rendered
@@ -50,7 +53,7 @@ describe('ApoderadoPage', () => {
     await user.click(screen.getByRole('button', { name: 'Firmar' }));
 
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('/api/apoderado/firmas/firmar/', {
+      expect(postMock).toHaveBeenCalledWith('/api/v1/apoderado/firmas/firmar/', {
         tipo_documento: 'AUTORIZACION',
         titulo: 'Autorizacion salida',
         contenido: 'Autorizo salida anticipada',

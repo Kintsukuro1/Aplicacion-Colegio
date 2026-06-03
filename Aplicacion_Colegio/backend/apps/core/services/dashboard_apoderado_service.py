@@ -59,9 +59,16 @@ class DashboardApoderadoService:
         
         try:
             # Obtener pupilos usando la relación correcta: RelacionApoderadoEstudiante.apoderado -> Apoderado.user
+            # Optimizado con select_related para evitar N+1 queries al acceder a perfil y curso
             relaciones_qs = (
                 RelacionApoderadoEstudiante.objects
-                .select_related('estudiante', 'apoderado', 'apoderado__user')
+                .select_related(
+                    'estudiante',
+                    'estudiante__perfil_estudiante',
+                    'estudiante__perfil_estudiante__curso_actual_id',
+                    'apoderado',
+                    'apoderado__user'
+                )
                 .filter(
                     apoderado__user=user,
                     apoderado__activo=True,
@@ -87,7 +94,6 @@ class DashboardApoderadoService:
             })
             
             # Inicio/perfil page
-            # Inicio/perfil page
             if pagina_solicitada in ['inicio', 'perfil']:
                 pendientes_count = 0
                 if hasattr(user, 'perfil_apoderado'):
@@ -100,37 +106,92 @@ class DashboardApoderadoService:
                 from backend.apps.academico.models import Calificacion, Asistencia, Evaluacion, Tarea, EntregaTarea
                 from backend.apps.cursos.models import ClaseEstudiante
                 from django.utils import timezone
+                from collections import defaultdict
+                
+                # OPTIMIZACIÓN BULK: Obtener datos de todos los pupilos en pocas queries consolidándolos.
+                est_ids = [est.id for est in estudiantes]
+                
+                # 1. Promedios en una sola query
+                promedios_query = Calificacion.objects.filter(
+                    estudiante_id__in=est_ids,
+                    evaluacion__activa=True
+                ).values('estudiante_id').annotate(avg_nota=Avg('nota'))
+                promedios_map = {p['estudiante_id']: p['avg_nota'] for p in promedios_query}
+                
+                # 2. Asistencias en una sola query
+                asistencia_query = Asistencia.objects.filter(
+                    estudiante_id__in=est_ids
+                ).values('estudiante_id').annotate(
+                    total=Count('pk'),
+                    presentes=Count('pk', filter=Q(estado='P'))
+                )
+                asistencia_map = {
+                    a['estudiante_id']: round((a['presentes'] / a['total']) * 100) if a['total'] > 0 else 94
+                    for a in asistencia_query
+                }
+                
+                # 3. Clases de pupilos en una sola query
+                clases_est = ClaseEstudiante.objects.filter(
+                    estudiante_id__in=est_ids,
+                    activo=True,
+                    clase__activo=True
+                ).values('estudiante_id', 'clase_id')
+                
+                est_clase_ids = defaultdict(list)
+                all_clase_ids = set()
+                for ce in clases_est:
+                    est_clase_ids[ce['estudiante_id']].append(ce['clase_id'])
+                    all_clase_ids.add(ce['clase_id'])
+                    
+                # 4. Próximas evaluaciones en una sola query
+                future_evaluaciones = list(Evaluacion.objects.filter(
+                    clase_id__in=all_clase_ids,
+                    activa=True,
+                    fecha_evaluacion__gte=timezone.now().date()
+                ).select_related('clase__asignatura').order_by('fecha_evaluacion'))
+                
+                # 5. Ausencias del mes para las alertas académicas en una sola query
+                hoy = timezone.now().date()
+                ausencias_mes_query = Asistencia.objects.filter(
+                    estudiante_id__in=est_ids,
+                    estado='A',
+                    fecha__year=hoy.year,
+                    fecha__month=hoy.month
+                ).values('estudiante_id').annotate(count_ausencias=Count('pk'))
+                ausencias_mes_map = {a['estudiante_id']: a['count_ausencias'] for a in ausencias_mes_query}
+                
+                # 6. Tareas pendientes y entregadas en bulk para calcular count para alertas
+                tareas_query = Tarea.objects.filter(
+                    clase_id__in=all_clase_ids,
+                    es_publica=True,
+                    activa=True
+                ).values('id_tarea', 'clase_id')
+                
+                clase_tareas = defaultdict(list)
+                for t in tareas_query:
+                    clase_tareas[t['clase_id']].append(t['id_tarea'])
+                
+                entregas_query = EntregaTarea.objects.filter(
+                    estudiante_id__in=est_ids,
+                    tarea__clase_id__in=all_clase_ids,
+                    estado__in=['entregada', 'revisada']
+                ).values('estudiante_id', 'tarea_id')
+                
+                est_entregas = defaultdict(set)
+                for e in entregas_query:
+                    est_entregas[e['estudiante_id']].add(e['tarea_id'])
                 
                 for est in estudiantes:
                     # 1. Promedio
-                    promedio_val = Calificacion.objects.filter(
-                        estudiante=est,
-                        evaluacion__activa=True
-                    ).aggregate(Avg('nota'))['nota__avg']
+                    promedio_val = promedios_map.get(est.id)
                     est.promedio = round(float(promedio_val), 1) if promedio_val is not None else 6.1
                     
                     # 2. Asistencia
-                    asist_row = Asistencia.objects.filter(estudiante=est).aggregate(
-                        total=Count('pk'),
-                        presentes=Count('pk', filter=Q(estado='P'))
-                    )
-                    if asist_row['total'] > 0:
-                        est.asistencia_porcentaje = round((asist_row['presentes'] / asist_row['total']) * 100)
-                    else:
-                        est.asistencia_porcentaje = 94
-                        
-                    # 3. Próxima prueba/evaluación
-                    clase_ids = ClaseEstudiante.objects.filter(
-                        estudiante=est, 
-                        activo=True, 
-                        clase__activo=True
-                    ).values_list('clase_id', flat=True)
+                    est.asistencia_porcentaje = asistencia_map.get(est.id, 94)
                     
-                    proxima_ev = Evaluacion.objects.filter(
-                        clase_id__in=clase_ids,
-                        activa=True,
-                        fecha_evaluacion__gte=timezone.now().date()
-                    ).select_related('clase__asignatura').order_by('fecha_evaluacion').first()
+                    # 3. Próxima prueba/evaluación
+                    student_classes = set(est_clase_ids.get(est.id, []))
+                    proxima_ev = next((ev for ev in future_evaluaciones if ev.clase_id in student_classes), None)
                     
                     if proxima_ev:
                         est.proxima_evaluacion_nombre = proxima_ev.nombre
@@ -141,15 +202,76 @@ class DashboardApoderadoService:
                         est.proxima_evaluacion_fecha = timezone.now().date() + timezone.timedelta(days=14)
                         est.proxima_evaluacion_asignatura = 'Matemáticas'
 
+                    # 4. Curso actual
+                    curso_actual = getattr(est.perfil_estudiante, 'curso_actual', None) if hasattr(est, 'perfil_estudiante') else None
+
+                    # 5. Tareas pendientes count para alertas
+                    student_tareas = []
+                    for cid in student_classes:
+                        student_tareas.extend(clase_tareas.get(cid, []))
+                    entregadas = est_entregas.get(est.id, set())
+                    pending_count = sum(1 for tid in student_tareas if tid not in entregadas)
+
+                    # 6. Ausencias mes count para alertas
+                    ausencias_mes = ausencias_mes_map.get(est.id, 0)
+
+                    # Evaluar alertas académicas para este pupilo (pasando parámetros optimizados)
+                    from backend.apps.notificaciones.services.academic_alerts_service import AcademicAlertsService
+                    try:
+                        student_relations = [rel for rel in relaciones_qs if rel.estudiante_id == est.id]
+                        AcademicAlertsService.evaluate_student_alerts(
+                            student=est,
+                            curso_actual=curso_actual,
+                            relaciones=student_relations,
+                            promedio_general=est.promedio,
+                            porcentaje_asistencia=float(est.asistencia_porcentaje),
+                            pending_count=pending_count,
+                            ausencias_mes=ausencias_mes
+                        )
+                    except Exception as e:
+                        logger.error(f"Error al evaluar alertas del pupilo {est.id}: {e}", exc_info=True)
+
                 # Fetch detailed dashboard metrics for the selected student
+                # OPTIMIZACIÓN BULK: Obtener comunicados y confirmaciones una única vez
+                from backend.apps.comunicados.services.comunicados_service import ComunicadosService
+                from backend.apps.comunicados.models import ConfirmacionLectura
+
+                try:
+                    comunicados_list = list(ComunicadosService.get_comunicados_for_user(user))
+                    comunicado_ids = [c.id_comunicado for c in comunicados_list]
+                    confirmaciones = list(ConfirmacionLectura.objects.filter(usuario=user, comunicado_id__in=comunicado_ids))
+                    confirmaciones_map = {c.comunicado_id: c for c in confirmaciones}
+                except Exception as e:
+                    logger.error(f"Error fetching comunicados/confirmaciones: {e}", exc_info=True)
+                    comunicados_list = []
+                    confirmaciones_map = {}
+
                 extra_dashboard_context = DashboardApoderadoService._get_apoderado_inicio_dashboard_context(
-                    user, estudiantes, estudiante_id_param
+                    user, estudiantes, estudiante_id_param,
+                    comunicados_list=comunicados_list,
+                    confirmaciones_map=confirmaciones_map
                 )
+
+                # Calcular métricas de comunicación y citaciones en memoria
+                comunicados_sin_leer_count = 0
+                citaciones_sin_confirmar_count = 0
+                for c in comunicados_list:
+                    conf = confirmaciones_map.get(c.id_comunicado)
+                    is_leido = conf.leido if conf else False
+                    if not is_leido:
+                        comunicados_sin_leer_count += 1
+                    
+                    if c.tipo == 'citacion' and c.requiere_confirmacion:
+                        is_confirmado = conf.confirmado if conf else False
+                        if not is_confirmado:
+                            citaciones_sin_confirmar_count += 1
                 
                 context.update({
                     'total_pupilos': len(estudiantes),
-                    'comunicados_nuevos': 0,  # TODO: Implement real count
+                    'comunicados_nuevos': comunicados_sin_leer_count,
+                    'comunicados_sin_leer_count': comunicados_sin_leer_count,
                     'pendientes_firma': pendientes_count,
+                    'citaciones_sin_confirmar_count': citaciones_sin_confirmar_count,
                     'cuotas_pendientes': 0,  # TODO: Implement real count
                     **extra_dashboard_context
                 })
@@ -248,7 +370,7 @@ class DashboardApoderadoService:
         return context
 
     @staticmethod
-    def _get_apoderado_inicio_dashboard_context(user, estudiantes, estudiante_id_param):
+    def _get_apoderado_inicio_dashboard_context(user, estudiantes, estudiante_id_param, comunicados_list=None, confirmaciones_map=None):
         from backend.apps.academico.models import Calificacion, Asistencia, Tarea, EntregaTarea, Evaluacion
         from backend.apps.cursos.models import ClaseEstudiante
         from django.utils import timezone
@@ -307,7 +429,9 @@ class DashboardApoderadoService:
             if count_asignaturas > 0:
                 promedio_general = round(total_promedio / count_asignaturas, 1)
             else:
-                direct_avg = calificaciones.aggregate(Avg('nota'))['nota__avg']
+                # Evitar query de agregación agregando en memoria los datos ya cargados
+                calif_list = list(calificaciones)
+                direct_avg = sum(c.nota for c in calif_list) / len(calif_list) if calif_list else None
                 if direct_avg is not None:
                     promedio_general = round(float(direct_avg), 1)
             
@@ -387,10 +511,14 @@ class DashboardApoderadoService:
             context['alerta_inasistencia_consecutiva'] = (consecutive_absences >= 3)
             
             # b) Average drop
-            califs = list(Calificacion.objects.filter(
-                estudiante=estudiante_seleccionado,
-                evaluacion__activa=True
-            ).order_by('evaluacion__fecha_evaluacion', 'fecha_creacion'))
+            # Evitar consultar a la base de datos de nuevo, reordenando en memoria calificaciones
+            califs = sorted(
+                list(calificaciones),
+                key=lambda c: (
+                    getattr(getattr(c, 'evaluacion', None), 'fecha_evaluacion', None) or timezone.now().date(),
+                    getattr(c, 'fecha_creacion', None) or timezone.now()
+                )
+            )
             
             promedio_drop_alert = None
             if len(califs) >= 2:
@@ -411,9 +539,23 @@ class DashboardApoderadoService:
             
             # 6. Evolución Académica (Charts)
             # a) Grades (Notas)
-            recent_grades = [float(c.nota) for c in califs[-6:]]
+            recent_grades = []
+            for c in califs[-6:]:
+                clase = getattr(c.evaluacion, 'clase', None)
+                asignatura = getattr(clase, 'asignatura', None)
+                recent_grades.append({
+                    'nota': float(c.nota),
+                    'asignatura': asignatura.nombre if asignatura else 'General',
+                    'evaluacion': c.evaluacion.nombre if c.evaluacion else 'Evaluación'
+                })
+            
             if not recent_grades:
-                recent_grades = [6.0, 5.8, 5.5, 5.1]
+                recent_grades = [
+                    {'nota': 6.0, 'asignatura': 'Matemáticas', 'evaluacion': 'Control 1'},
+                    {'nota': 5.8, 'asignatura': 'Lenguaje', 'evaluacion': 'Control 2'},
+                    {'nota': 5.5, 'asignatura': 'Historia', 'evaluacion': 'Ensayo 1'},
+                    {'nota': 5.1, 'asignatura': 'Ciencias', 'evaluacion': 'Laboratorio 1'}
+                ]
             context['recent_grades'] = recent_grades
             
             # b) Attendance (Asistencia)
@@ -525,30 +667,50 @@ class DashboardApoderadoService:
             context['mensajes_nuevos_count'] = mensajes_nuevos_count
 
             # 10. Comunicados con estado (Leído, Pendiente, Urgente)
-            from backend.apps.comunicados.models import Comunicado, ConfirmacionLectura
+            if (comunicados_list is None) or (confirmaciones_map is None):
+                from backend.apps.comunicados.models import Comunicado, ConfirmacionLectura
+                
+                perfil_est = getattr(estudiante_seleccionado, 'perfil_estudiante', None)
+                curso_est = getattr(perfil_est, 'curso_actual', None) if perfil_est else None
+                
+                comunicados_qs = Comunicado.objects.filter(
+                    colegio_id=user.rbd_colegio,
+                    activo=True
+                ).filter(
+                    Q(destinatario='todos') | 
+                    Q(destinatario='apoderados') | 
+                    (Q(destinatario='curso_especifico') & Q(cursos_destinatarios=curso_est) if curso_est else Q())
+                ).select_related('publicado_por').order_by('-fecha_publicacion')[:5]
+                
+                confirmaciones_qs = ConfirmacionLectura.objects.filter(
+                    usuario=user,
+                    comunicado__in=comunicados_qs
+                )
+                confirmaciones_map_local = {c.comunicado_id: c for c in confirmaciones_qs}
+                top_comunicados = list(comunicados_qs)
+            else:
+                confirmaciones_map_local = confirmaciones_map
+                
+                perfil_est = getattr(estudiante_seleccionado, 'perfil_estudiante', None)
+                curso_est = getattr(perfil_est, 'curso_actual', None) if perfil_est else None
+                curso_est_id = getattr(curso_est, 'id_curso', getattr(curso_est, 'id', None)) if curso_est else None
+                
+                student_comunicados = []
+                for c in comunicados_list:
+                    if c.destinatario in ['todos', 'apoderados']:
+                        student_comunicados.append(c)
+                    elif c.destinatario == 'curso_especifico':
+                        c_cursos = {getattr(cur, 'id_curso', getattr(cur, 'id', None)) for cur in c.cursos_destinatarios.all()}
+                        if curso_est_id in c_cursos:
+                            student_comunicados.append(c)
+                
+                student_comunicados.sort(key=lambda x: x.fecha_publicacion, reverse=True)
+                top_comunicados = student_comunicados[:5]
             
-            perfil_est = getattr(estudiante_seleccionado, 'perfil_estudiante', None)
-            curso_est = getattr(perfil_est, 'curso_actual', None) if perfil_est else None
-            
-            comunicados_qs = Comunicado.objects.filter(
-                colegio_id=user.rbd_colegio,
-                activo=True
-            ).filter(
-                Q(destinatario='todos') | 
-                Q(destinatario='apoderados') | 
-                (Q(destinatario='curso_especifico') & Q(cursos_destinatarios=curso_est) if curso_est else Q())
-            ).select_related('publicado_por').order_by('-fecha_publicacion')[:5]
-            
-            confirmaciones = ConfirmacionLectura.objects.filter(
-                usuario=user,
-                comunicado__in=comunicados_qs
-            )
-            confirmaciones_map = {c.comunicado_id: c for c in confirmaciones}
-            
-            comunicados_list = []
+            comunicados_dashboard_list = []
             comunicados_nuevos = 0
-            for c in comunicados_qs:
-                conf = confirmaciones_map.get(c.id_comunicado)
+            for c in top_comunicados:
+                conf = confirmaciones_map_local.get(c.id_comunicado)
                 is_leido = conf.leido if conf else False
                 if not is_leido:
                     comunicados_nuevos += 1
@@ -563,20 +725,20 @@ class DashboardApoderadoService:
                     status = 'pendiente'
                     status_display = '⏳ Pendiente'
                     
-                comunicados_list.append({
+                comunicados_dashboard_list.append({
                     'id_comunicado': c.id_comunicado,
                     'titulo': c.titulo,
                     'contenido': c.contenido,
                     'tipo': c.tipo,
                     'fecha_publicacion': c.fecha_publicacion,
-                    'publicado_por_name': c.publicado_por.get_full_name(),
+                    'publicado_por_name': c.publicado_por.get_full_name() if c.publicado_por else 'Sistema',
                     'status': status,
                     'status_display': status_display,
                     'requiere_confirmacion': c.requiere_confirmacion,
                     'confirmado': conf.confirmado if conf else False,
                 })
             
-            context['comunicados_list'] = comunicados_list
+            context['comunicados_list'] = comunicados_dashboard_list
             context['comunicados_nuevos'] = comunicados_nuevos
             
         return context

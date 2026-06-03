@@ -273,14 +273,30 @@ def apoderado_pupilo_anotaciones(request, student_id):
     )
 
 
-@api_view(["POST"])
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
-def apoderado_crear_justificativo(request):
+def apoderado_justificativos(request):
     profile_error = _forbidden_if_not_guardian(request.user)
     if profile_error:
         return profile_error
 
+    if request.method == "GET":
+        from backend.apps.core.views.school_context import resolve_request_rbd
+        from backend.apps.core.services.apoderado_api_service import ApoderadoApiService
+        rbd = resolve_request_rbd(request)
+        if not rbd:
+            relaciones = list(_guardian_relations(request.user))
+            if relaciones:
+                rbd = relaciones[0].estudiante.rbd_colegio
+        
+        if not rbd:
+            return Response({"success": True, "justificativos": []})
+
+        data = ApoderadoApiService.list_justificativos(request.user, rbd)
+        return Response({"success": True, "justificativos": data})
+
+    # POST method (Create justificativo)
     student_id = request.data.get("estudiante_id") or request.data.get("pupilo_id")
     if not student_id:
         return Response({"detail": "Debe enviar 'estudiante_id' o 'pupilo_id'."}, status=status.HTTP_400_BAD_REQUEST)
@@ -333,6 +349,125 @@ def apoderado_crear_justificativo(request):
         },
         status=status.HTTP_201_CREATED,
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def apoderado_listar_firmas(request):
+    profile_error = _forbidden_if_not_guardian(request.user)
+    if profile_error:
+        return profile_error
+
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        apoderado = request.user.perfil_apoderado
+        from backend.apps.core.services.apoderado_api_service import ApoderadoApiService
+        pendientes, firmados = ApoderadoApiService.list_firmas_apoderado(apoderado)
+        return Response({
+            "success": True,
+            "pendientes": pendientes,
+            "firmados": firmados,
+        })
+    except Exception as e:
+        logger.exception("Error listando documentos de firma")
+        return Response({"detail": "Error interno del servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def apoderado_firmar_documento(request):
+    profile_error = _forbidden_if_not_guardian(request.user)
+    if profile_error:
+        return profile_error
+
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        tipo_documento = request.data.get("tipo_documento")
+        titulo = request.data.get("titulo", "")
+        contenido = request.data.get("contenido", "")
+        estudiante_id = request.data.get("estudiante_id")
+        documento_id = request.data.get("documento_id")
+        documento_tipo_modelo = request.data.get("documento_tipo_modelo")
+
+        if not tipo_documento or not titulo:
+            return Response({"detail": "Datos incompletos"}, status=status.HTTP_400_BAD_REQUEST)
+
+        apoderado = request.user.perfil_apoderado
+        ip_address = request.META.get("REMOTE_ADDR", "0.0.0.0")
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
+
+        from backend.apps.core.services.apoderado_api_service import ApoderadoApiService
+        estudiante = None
+        if estudiante_id:
+            est_ids = ApoderadoApiService.get_estudiante_ids_for_apoderado(request.user)
+            if int(estudiante_id) not in est_ids:
+                return Response({"detail": "Estudiante no autorizado"}, status=status.HTTP_403_FORBIDDEN)
+            
+            from backend.apps.accounts.models import User as DjangoUser
+            try:
+                estudiante = DjangoUser.objects.get(id=int(estudiante_id))
+            except DjangoUser.DoesNotExist:
+                return Response({"detail": "Estudiante no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+
+        firma = ApoderadoApiService.firmar_documento(
+            apoderado=apoderado,
+            tipo_documento=tipo_documento,
+            titulo=titulo,
+            contenido=contenido,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            estudiante=estudiante,
+            documento_id=documento_id,
+            documento_tipo_modelo=documento_tipo_modelo,
+        )
+
+        return Response({
+            "success": True,
+            "message": "Documento firmado correctamente",
+            "firma_id": firma.id,
+        })
+    except Exception as e:
+        logger.exception("Error firmando documento")
+        return Response({"detail": "Error interno del servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def apoderado_opciones_admision(request):
+    profile_error = _forbidden_if_not_guardian(request.user)
+    if profile_error:
+        return profile_error
+
+    from backend.apps.core.views.school_context import resolve_request_rbd
+    rbd = resolve_request_rbd(request)
+    if not rbd:
+        relaciones = list(_guardian_relations(request.user))
+        if relaciones:
+            rbd = relaciones[0].estudiante.rbd_colegio
+            
+    if not rbd:
+        rbd = request.user.rbd_colegio
+
+    if not rbd:
+        return Response({"cursos": [], "ciclos": []})
+
+    from backend.apps.cursos.models import Curso
+    from backend.apps.institucion.models import CicloAcademico
+
+    cursos = Curso.objects.filter(colegio_id=rbd, activo=True).order_by("nombre")
+    ciclos = CicloAcademico.objects.filter(colegio_id=rbd).order_by("-fecha_inicio")
+
+    cursos_data = [{"id": c.id_curso, "nombre": c.nombre} for c in cursos]
+    ciclos_data = [{"id": c.id, "nombre": c.nombre, "estado": c.estado} for c in ciclos]
+
+    return Response({
+        "cursos": cursos_data,
+        "ciclos": ciclos_data
+    })
 
 
 @api_view(["GET"])

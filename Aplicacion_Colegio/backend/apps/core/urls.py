@@ -33,6 +33,7 @@ from backend.apps.core.views.admin_escolar.actualizar_escuela import actualizar_
 from backend.apps.core.views.admin_escolar.gestionar_infraestructura import gestionar_infraestructura
 from backend.apps.core.views.admin_escolar.generar_informe_academico import generar_informe_academico
 from backend.apps.core.views.admin_escolar.gestionar_estudiantes import gestionar_estudiantes
+from backend.apps.core.views.admin_escolar.gestionar_profesores import gestionar_profesores
 from backend.apps.core.views.admin_escolar.gestionar_apoderados import gestionar_apoderados
 from backend.apps.core.views.admin_escolar.gestionar_cursos import gestionar_cursos
 from backend.apps.core.views.admin_escolar.gestionar_ciclos import gestionar_ciclos
@@ -67,6 +68,20 @@ from backend.apps.core.views.admin_general.escuelas import (
     eliminar_escuela,
     ajax_comunas_por_region,
 )
+from backend.apps.core.views.admin_general.api import (
+    crear_usuario as admin_crear_usuario,
+    toggle_estado_usuario,
+    editar_usuario as admin_editar_usuario,
+    crear_plan,
+    editar_plan,
+    crear_suscripcion,
+    toggle_estado_suscripcion,
+    guardar_configuracion_auditoria,
+    exportar_auditoria_csv,
+    exportar_estadisticas_globales_csv,
+    exportar_reportes_financieros_csv,
+)
+from backend.apps.core.views.admin_escolar.reportes_api import exportar_reporte_cursos_csv
 from backend.apps.core.views.profesor.gestionar_tareas import (
     gestionar_tareas_profesor,
     ver_entregas_tarea,
@@ -275,6 +290,7 @@ urlpatterns = [
 
     # Admin escolar: endpoint POST para acciones del módulo gestionar_estudiantes
     path('gestionar-estudiantes/', gestionar_estudiantes, name='gestionar_estudiantes'),
+    path('gestionar-profesores/', gestionar_profesores, name='gestionar_profesores'),
 
     # Admin escolar: endpoint POST para acciones del módulo gestionar_apoderados
     path('gestionar-apoderados/', gestionar_apoderados, name='gestionar_apoderados'),
@@ -336,6 +352,19 @@ urlpatterns = [
     path('admin-general/eliminar-escuela/<int:rbd>/', eliminar_escuela, name='admin_general_eliminar_escuela'),
     path('admin-general/comunas-por-region/<int:region_id>/', ajax_comunas_por_region, name='admin_general_comunas_por_region'),
 
+    # Admin General — APIs (usuarios, planes, suscripciones, config)
+    path('api/admin-general/usuarios/crear/', admin_crear_usuario, name='api_admin_general_crear_usuario'),
+    path('api/admin-general/usuarios/<int:user_id>/toggle-estado/', toggle_estado_usuario, name='api_admin_general_toggle_estado_usuario'),
+    path('api/admin-general/usuarios/<int:user_id>/editar/', admin_editar_usuario, name='api_admin_general_editar_usuario'),
+    path('api/admin-general/planes/crear/', crear_plan, name='api_admin_general_crear_plan'),
+    path('api/admin-general/planes/<int:plan_id>/editar/', editar_plan, name='api_admin_general_editar_plan'),
+    path('api/admin-general/suscripciones/crear/', crear_suscripcion, name='api_admin_general_crear_suscripcion'),
+    path('api/admin-general/suscripciones/<int:subscription_id>/toggle-estado/', toggle_estado_suscripcion, name='api_admin_general_toggle_suscripcion'),
+    path('api/admin-general/configuracion/auditoria/', guardar_configuracion_auditoria, name='api_admin_general_config_auditoria'),
+    path('api/admin-general/auditoria/exportar/', exportar_auditoria_csv, name='api_admin_general_exportar_auditoria'),
+    path('api/admin-general/estadisticas/exportar/', exportar_estadisticas_globales_csv, name='api_admin_general_exportar_estadisticas'),
+    path('api/admin-general/reportes-financieros/exportar/', exportar_reportes_financieros_csv, name='api_admin_general_exportar_reportes_financieros'),
+
     # -------------------------------------------------------------------
     # Inspector Convivencia — APIs
     # -------------------------------------------------------------------
@@ -385,6 +414,7 @@ urlpatterns = [
     path('api/admin-escolar/finanzas/registrar-pago/', registrar_pago_manual, name='api_admin_registrar_pago'),
     path('api/admin-escolar/finanzas/cuotas-estudiante/', listar_cuotas_estudiante, name='api_admin_cuotas_estudiante'),
     path('api/admin-escolar/finanzas/condonar-cuota/', admin_condonar_cuota, name='api_admin_condonar_cuota'),
+    path('api/admin-escolar/reportes/cursos/exportar/', exportar_reporte_cursos_csv, name='api_admin_escolar_exportar_reporte_cursos'),
 
     # -------------------------------------------------------------------
     # Soporte Técnico Escolar — APIs

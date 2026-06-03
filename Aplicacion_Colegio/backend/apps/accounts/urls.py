@@ -20,5 +20,5 @@ urlpatterns = [
     path('perfil/profesor/cambiar-password/', profile.cambiar_password_profesor, name='cambiar_password_profesor'),
     
     # Gestión de Estudiantes (Admin)
-    path('estudiantes/gestionar/', student.gestionar_estudiantes, name='gestionar_estudiantes'),
+    path('estudiantes/gestionar/', student.gestionar_estudiantes, name='accounts_gestionar_estudiantes'),
 ]

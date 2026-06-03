@@ -451,6 +451,62 @@
         border-radius: 4px;
         flex-shrink: 0;
     }
+
+    /* Quick Actions Styles */
+    .saas-quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 8px;
+    }
+    
+    @media (max-width: 1024px) {
+        .saas-quick-actions {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 640px) {
+        .saas-quick-actions {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .quick-action-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #334155;
+        text-decoration: none !important;
+        font-weight: 700;
+        font-size: 0.92rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+        transition: all 0.2s ease;
+    }
+    
+    .quick-action-card:hover {
+        transform: translateY(-2px);
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        color: #2563eb !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+    }
+    
+    .quick-action-icon {
+        font-size: 1.3rem;
+        width: 36px;
+        height: 36px;
+        background-color: #eff6ff;
+        color: #2563eb;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 
 <div class="saas-dashboard">
@@ -470,41 +526,90 @@
     <section class="saas-stats-grid" aria-label="Scorecards de Ecosistema">
         
         <!-- Colegios Activos -->
-        <article class="saas-stat-card stat-colegios">
-            <div class="saas-stat-icon" aria-hidden="true">🏫</div>
-            <div class="saas-stat-info">
-                <span class="saas-stat-val">{{ colegios_activos|default:"24" }}</span>
-                <span class="saas-stat-lbl">Colegios Activos</span>
-            </div>
-        </article>
+        <a href="?pagina=escuelas" class="text-decoration-none color-inherit" style="color: inherit;">
+            <article class="saas-stat-card stat-colegios" style="cursor: pointer;">
+                <div class="saas-stat-icon" aria-hidden="true">🏫</div>
+                <div class="saas-stat-info">
+                    <span class="saas-stat-val">{{ colegios_activos|default:"24" }}</span>
+                    <span class="saas-stat-lbl">Colegios Activos</span>
+                </div>
+            </article>
+        </a>
 
         <!-- Usuarios del Sistema -->
-        <article class="saas-stat-card stat-usuarios">
-            <div class="saas-stat-icon" aria-hidden="true">👥</div>
-            <div class="saas-stat-info">
-                <span class="saas-stat-val">{{ total_usuarios|default:"18.000" }}</span>
-                <span class="saas-stat-lbl">Usuarios</span>
-            </div>
-        </article>
+        <a href="?pagina=usuarios" class="text-decoration-none color-inherit" style="color: inherit;">
+            <article class="saas-stat-card stat-usuarios" style="cursor: pointer;">
+                <div class="saas-stat-icon" aria-hidden="true">👥</div>
+                <div class="saas-stat-info">
+                    <span class="saas-stat-val">{{ total_usuarios|default:"18.000" }}</span>
+                    <span class="saas-stat-lbl">Usuarios</span>
+                </div>
+            </article>
+        </a>
 
         <!-- Profesores -->
-        <article class="saas-stat-card stat-profesores">
-            <div class="saas-stat-icon" aria-hidden="true">👨‍🏫</div>
-            <div class="saas-stat-info">
-                <span class="saas-stat-val">{{ total_profesores|default:"1.100" }}</span>
-                <span class="saas-stat-lbl">Profesores</span>
-            </div>
-        </article>
+        <a href="?pagina=usuarios" class="text-decoration-none color-inherit" style="color: inherit;">
+            <article class="saas-stat-card stat-profesores" style="cursor: pointer;">
+                <div class="saas-stat-icon" aria-hidden="true">👨‍🏫</div>
+                <div class="saas-stat-info">
+                    <span class="saas-stat-val">{{ total_profesores|default:"1.100" }}</span>
+                    <span class="saas-stat-lbl">Profesores</span>
+                </div>
+            </article>
+        </a>
 
         <!-- Estudiantes -->
-        <article class="saas-stat-card stat-estudiantes">
-            <div class="saas-stat-icon" aria-hidden="true">🎓</div>
-            <div class="saas-stat-info">
-                <span class="saas-stat-val">{{ total_estudiantes|default:"15.000" }}</span>
-                <span class="saas-stat-lbl">Estudiantes</span>
-            </div>
-        </article>
+        <a href="?pagina=usuarios" class="text-decoration-none color-inherit" style="color: inherit;">
+            <article class="saas-stat-card stat-estudiantes" style="cursor: pointer;">
+                <div class="saas-stat-icon" aria-hidden="true">🎓</div>
+                <div class="saas-stat-info">
+                    <span class="saas-stat-val">{{ total_estudiantes|default:"15.000" }}</span>
+                    <span class="saas-stat-lbl">Estudiantes</span>
+                </div>
+            </article>
+        </a>
 
+    </section>
+
+    <!-- Accesos Rápidos -->
+    <section class="saas-card" aria-label="Accesos Rápidos">
+        <h2 class="saas-card-title">
+            <span class="title-text">⚡ Accesos Rápidos de Gestión</span>
+        </h2>
+        <div class="saas-quick-actions">
+            <a href="?pagina=escuelas" class="quick-action-card">
+                <span class="quick-action-icon"><i class="bi bi-building"></i></span>
+                <span>Gestionar Escuelas</span>
+            </a>
+            <a href="?pagina=usuarios" class="quick-action-card">
+                <span class="quick-action-icon"><i class="bi bi-people"></i></span>
+                <span>Gestionar Usuarios</span>
+            </a>
+            <a href="?pagina=planes" class="quick-action-card">
+                <span class="quick-action-icon"><i class="bi bi-credit-card"></i></span>
+                <span>Planes de Pago</span>
+            </a>
+            <a href="?pagina=auditoria" class="quick-action-card">
+                <span class="quick-action-icon"><i class="bi bi-shield-lock"></i></span>
+                <span>Auditoría (Logs)</span>
+            </a>
+            <a href="?pagina=estadisticas_globales" class="quick-action-card">
+                <span class="quick-action-icon"><i class="bi bi-bar-chart-line"></i></span>
+                <span>Estadísticas de Uso</span>
+            </a>
+            <a href="?pagina=reportes_financieros" class="quick-action-card">
+                <span class="quick-action-icon"><i class="bi bi-currency-dollar"></i></span>
+                <span>Reporte Financiero</span>
+            </a>
+            <a href="?pagina=monitoreo_seguridad" class="quick-action-card">
+                <span class="quick-action-icon"><i class="bi bi-shield-exclamation"></i></span>
+                <span>Monitoreo Seguridad</span>
+            </a>
+            <a href="?pagina=configuracion" class="quick-action-card">
+                <span class="quick-action-icon"><i class="bi bi-gear"></i></span>
+                <span>Configuración Global</span>
+            </a>
+        </div>
     </section>
 
     <!-- Estado de la Plataforma -->
@@ -559,18 +664,18 @@
         <!-- Colegios en Prueba -->
         <article class="saas-metric-card metric-prueba">
             <div class="saas-metric-lbl">🧪 Colegios en Prueba</div>
-            <div class="saas-metric-val">{{ colegios_prueba|default:"5" }}</div>
+            <div class="saas-metric-val">{{ colegios_prueba|default:"0" }}</div>
             <div class="saas-progress-bg" aria-hidden="true">
-                <div class="saas-progress-fill" style="width: 20%; background-color: #f59e0b;"></div>
+                <div class="saas-progress-fill" style="width: {{ pct_colegios_prueba|default:'0' }}%; background-color: #f59e0b;"></div>
             </div>
         </article>
 
         <!-- Licencias por vencer -->
         <article class="saas-metric-card metric-vencer">
             <div class="saas-metric-lbl">⚠️ Licencias por Vencer</div>
-            <div class="saas-metric-val">{{ licencias_vencer|default:"3" }}</div>
+            <div class="saas-metric-val">{{ licencias_vencer|default:"0" }}</div>
             <div class="saas-progress-bg" aria-hidden="true">
-                <div class="saas-progress-fill" style="width: 12.5%; background-color: #ef4444;"></div>
+                <div class="saas-progress-fill" style="width: {{ pct_licencias_vencer|default:'0' }}%; background-color: #ef4444;"></div>
             </div>
         </article>
 
@@ -664,29 +769,28 @@
                     <!-- SVG Chart that acts as a sleek premium Donut chart representing SaaS plans -->
                     <svg viewBox="0 0 100 100" width="160" height="160">
                         <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f1f5f9" stroke-width="12"/>
-                        <!-- Enterprise Plan (33%): HSL(224, 76%, 48%) -->
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="hsl(224, 76%, 48%)" stroke-width="12"
-                                stroke-dasharray="83 251.2" stroke-dashoffset="0"/>
-                        <!-- Premium Plan (41.6%): HSL(262, 83%, 58%) -->
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="hsl(262, 83%, 58%)" stroke-width="12"
-                                stroke-dasharray="105 251.2" stroke-dashoffset="-83"/>
-                        <!-- Standard Plan (16.6%): HSL(142, 72%, 29%) -->
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="hsl(142, 72%, 29%)" stroke-width="12"
-                                stroke-dasharray="42 251.2" stroke-dashoffset="-188"/>
-                        <!-- Trial Plan (8.3%): HSL(38, 92%, 50%) -->
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="hsl(38, 92%, 50%)" stroke-width="12"
-                                stroke-dasharray="21 251.2" stroke-dashoffset="-230"/>
-                        
+                        {% if total_active_subs > 0 %}
+                            {% for pl in distribucion_planes %}
+                                <circle cx="50" cy="50" r="40" fill="transparent" stroke="{{ pl.color }}" stroke-width="12"
+                                        stroke-dasharray="{{ pl.dash_array }}" stroke-dashoffset="{{ pl.dash_offset }}"/>
+                            {% endfor %}
+                        {% endif %}
                         <text x="50" y="55" font-family="'Inter', sans-serif" font-weight="900" font-size="12" fill="#0f172a" text-anchor="middle">SaaS</text>
                     </svg>
 
                     <div class="chart-legend">
-                        {% for pl in distribucion_planes %}
-                            <div class="legend-item">
-                                <span class="legend-dot" style="background-color: {{ pl.color }};"></span>
-                                <span>{{ pl.plan }} ({{ pl.cantidad }})</span>
+                        {% if total_active_subs > 0 %}
+                            {% for pl in distribucion_planes %}
+                                <div class="legend-item">
+                                    <span class="legend-dot" style="background-color: {{ pl.color }};"></span>
+                                    <span>{{ pl.plan }} ({{ pl.cantidad }})</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div style="grid-column: span 2; text-align: center; color: #64748b; font-size: 0.85rem; font-weight: 500;">
+                                No hay suscripciones activas
                             </div>
-                        {% endfor %}
+                        {% endif %}
                     </div>
                 </div>
             </section>
