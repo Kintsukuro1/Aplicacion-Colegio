@@ -2,63 +2,16 @@
 {% load custom_filters %}
 {% include 'profesor/_personal_wrap_start.html' %}
 
-<link rel="stylesheet" href="{% static 'css/profesor/notas.css' %}">
+<link rel="stylesheet" href="{% static 'css/profesor/notas.css' %}?v=20260603-close">
 
-<div class="notas-container">
-    <!-- Encabezado y Estadísticas -->
-    <div class="header-section">
-        <div class="titulo-modulo">
-            <i class="fas fa-graduation-cap"></i>
-            <h2>{% if modo == 'calificar' %}Ingresar Calificaciones{% else %}Gestión de Evaluaciones{% endif %}</h2>
-        </div>
-        
-        <!-- Estadísticas Generales - Siempre visibles -->
-        <div class="estadisticas-grid">
-            <div class="stat-card blue">
-                <div class="stat-icon">
-                    📝
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_evaluaciones|default:0 }}</span>
-                    <span class="stat-label">Evaluaciones Activas</span>
-                </div>
-            </div>
-            
-            <div class="stat-card green">
-                <div class="stat-icon">
-                    ✅
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_calificaciones|default:0 }}</span>
-                    <span class="stat-label">Calificaciones Registradas</span>
-                </div>
-            </div>
-            
-            <div class="stat-card purple">
-                <div class="stat-icon">
-                    📊
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ promedio_general|default:0 }}</span>
-                    <span class="stat-label">Promedio General</span>
-                </div>
-            </div>
-            
-            <div class="stat-card orange">
-                <div class="stat-icon">
-                    🎯
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{% if promedio_general >= 4.0 %}🟢{% else %}🔴{% endif %}</span>
-                    <span class="stat-label">Estado Curso</span>
-                </div>
-            </div>
-        </div>
-        
-        {% if clase_seleccionada %}
-        <!-- Estadísticas específicas de la clase seleccionada (si se necesitan en el futuro) -->
-        {% endif %}
-    </div>
+<div class="notas-container notas-page">
+    {% if modo == 'calificar' %}
+    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Portal docente" hero_title="Ingresar calificaciones" hero_subtitle=notas_intel_resumen hero_aria="Calificaciones" metrics_aria="Resumen de la evaluación" m1_value=notas_hero_evaluaciones|default:0 m1_label="Evaluaciones" m1_mod="clases" m2_value=notas_hero_calificaciones|default:0 m2_label="Notas registradas" m2_mod="tareas" m3_value=notas_hero_promedio|default:0 m3_label="Promedio" m3_mod="neutral" m4_value=notas_hero_pendientes|default:0 m4_label="Por completar" m4_mod="riesgo" m4_alert=notas_hero_pendientes %}
+    {% else %}
+    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Portal docente" hero_title="Evaluaciones y notas" hero_subtitle=notas_intel_resumen hero_aria="Gestión de evaluaciones" metrics_aria="Resumen académico" m1_value=notas_hero_evaluaciones|default:0 m1_label="Evaluaciones activas" m1_mod="clases" m2_value=notas_hero_calificaciones|default:0 m2_label="Calificaciones" m2_mod="tareas" m3_value=notas_hero_promedio|default:0 m3_label="Promedio" m3_mod="neutral" m4_value=notas_hero_pendientes|default:0 m4_label="Incompletas" m4_mod="riesgo" m4_alert=notas_hero_pendientes %}
+    {% endif %}
+
+    {% include 'profesor/_notas_intel_panel.html' %}
 
     <!-- Filtros y Selección -->
     <div class="filtros-section">
@@ -483,8 +436,8 @@
     <div class="modal-content" style="max-width:720px;">
         <div class="modal-header">
             <h3>Nueva Evaluación</h3>
-            <button class="btn-close-modal" onclick="cerrarModal('modalOpcionEvaluacion')">
-                <i class="fas fa-times"></i>
+            <button type="button" class="btn-close-modal" onclick="cerrarModal('modalOpcionEvaluacion')" aria-label="Cerrar">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
         <div class="modal-body">
@@ -509,8 +462,8 @@
     <div class="modal-content" style="max-width:860px;">
         <div class="modal-header">
             <h3>Cargar evaluación PDF</h3>
-            <button class="btn-close-modal" onclick="cerrarModal('modalPdfEvaluacion')">
-                <i class="fas fa-times"></i>
+            <button type="button" class="btn-close-modal" onclick="cerrarModal('modalPdfEvaluacion')" aria-label="Cerrar">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
         <form method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}" enctype="multipart/form-data">

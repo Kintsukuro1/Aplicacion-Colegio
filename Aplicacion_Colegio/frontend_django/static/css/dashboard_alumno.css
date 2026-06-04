@@ -69,21 +69,31 @@ body.pagina-inicio:has(.vista-alumno) .navbar,
 body.pagina-inicio:has(.vista-alumno) .top-header,
 body.pagina-inicio:has(.perfil-alumno) .navbar-top,
 body.pagina-inicio:has(.perfil-alumno) .navbar,
-body.pagina-inicio:has(.perfil-alumno) .top-header {
+body.pagina-inicio:has(.perfil-alumno) .top-header,
+body.pagina-notificaciones:has(.vista-alumno) .navbar-top,
+body.pagina-notificaciones:has(.vista-alumno) .navbar,
+body.pagina-notificaciones:has(.vista-alumno) .top-header,
+body.pagina-notificaciones:has(.perfil-alumno) .navbar-top,
+body.pagina-notificaciones:has(.perfil-alumno) .navbar,
+body.pagina-notificaciones:has(.perfil-alumno) .top-header {
     display: none !important;
 }
 
 body.vista-alumno .dashboard-container > .sidebar,
 body:has(.perfil-alumno) .dashboard-container > .sidebar,
 body.pagina-inicio:has(.vista-alumno) .dashboard-container > .sidebar,
-body.pagina-inicio:has(.perfil-alumno) .dashboard-container > .sidebar {
+body.pagina-inicio:has(.perfil-alumno) .dashboard-container > .sidebar,
+body.pagina-notificaciones:has(.vista-alumno) .dashboard-container > .sidebar,
+body.pagina-notificaciones:has(.perfil-alumno) .dashboard-container > .sidebar {
     display: none !important;
 }
 
 body.vista-alumno .main-content,
 body:has(.perfil-alumno) .main-content,
 body.pagina-inicio:has(.vista-alumno) .main-content,
-body.pagina-inicio:has(.perfil-alumno) .main-content {
+body.pagina-inicio:has(.perfil-alumno) .main-content,
+body.pagina-notificaciones:has(.vista-alumno) .main-content,
+body.pagina-notificaciones:has(.perfil-alumno) .main-content {
     margin-left: 0 !important;
     width: 100% !important;
     background: var(--alumno-bg) !important;
@@ -93,7 +103,10 @@ body.vista-alumno .content-area,
 body:has(.perfil-alumno) .content-area,
 body.pagina-inicio:has(.vista-alumno) .content-area,
 body.pagina-inicio:has(.perfil-alumno) .content-area,
-body.vista-alumno.pagina-inicio .content-area {
+body.vista-alumno.pagina-inicio .content-area,
+body.pagina-notificaciones:has(.vista-alumno) .content-area,
+body.pagina-notificaciones:has(.perfil-alumno) .content-area,
+body.vista-alumno.pagina-notificaciones .content-area {
     padding: 0 !important;
     background: var(--alumno-bg) !important;
     max-width: none !important;
@@ -106,7 +119,10 @@ body.vista-alumno .dashboard-container,
 body:has(.perfil-alumno) .dashboard-container,
 body.pagina-inicio:has(.vista-alumno) .dashboard-container,
 body.pagina-inicio:has(.perfil-alumno) .dashboard-container,
-body.vista-alumno.pagina-inicio .dashboard-container {
+body.vista-alumno.pagina-inicio .dashboard-container,
+body.pagina-notificaciones:has(.vista-alumno) .dashboard-container,
+body.pagina-notificaciones:has(.perfil-alumno) .dashboard-container,
+body.vista-alumno.pagina-notificaciones .dashboard-container {
     width: 100% !important;
     max-width: none !important;
     min-height: 100vh;

@@ -75,3 +75,24 @@ class TestNormalizeNotificationEnlace:
             )
             == '/estudiante/clase/5/?tarea=30'
         )
+
+    def test_estudiante_inicio_tareas_redirige_a_mis_tareas(self):
+        assert (
+            normalize_notification_enlace('/estudiante/inicio', 'tarea_nueva')
+            == '/dashboard/?pagina=mis_tareas'
+        )
+
+    def test_estudiante_inicio_alerta_redirige_a_inicio_dashboard(self):
+        assert (
+            normalize_notification_enlace('/estudiante/inicio', 'alerta')
+            == '/dashboard/?pagina=inicio'
+        )
+
+    def test_apoderado_inicio_legacy_con_estudiante_id(self):
+        assert (
+            normalize_notification_enlace(
+                '/apoderado/inicio?estudiante_id=12',
+                'alerta',
+            )
+            == '/dashboard/?pagina=inicio&estudiante_id=12'
+        )

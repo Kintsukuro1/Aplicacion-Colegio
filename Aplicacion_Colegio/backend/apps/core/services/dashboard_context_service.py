@@ -103,29 +103,13 @@ class DashboardContextService:
         # Get 5 most recent notifications
         recent_notifications = Notificacion.objects.filter(destinatario=user).order_by('-fecha_creacion')[:5]
         
-        from backend.apps.notificaciones.services.notification_link_service import (
-            normalize_notification_enlace,
+        from backend.apps.notificaciones.services.notification_display_service import (
+            format_notification_for_ui,
         )
 
-        formatted_notifications = []
-        for notif in recent_notifications:
-            # Map notification type to icon
-            icono = 'star' if getattr(notif, 'tipo', '') == 'calificacion' else 'bell'
-            url = normalize_notification_enlace(
-                getattr(notif, 'enlace', ''),
-                getattr(notif, 'tipo', ''),
-            )
-                
-            formatted_notifications.append({
-                'id': notif.id if hasattr(notif, 'id') else getattr(notif, 'id_notificacion', None),
-                'titulo': notif.titulo,
-                'mensaje': notif.mensaje,
-                'fecha_creacion': notif.fecha_creacion,
-                'icono': icono,
-                'url': url,
-                'enlace': url,
-                'leido': notif.leido,
-            })
+        formatted_notifications = [
+            format_notification_for_ui(notif) for notif in recent_notifications
+        ]
             
         return {
             'notificaciones_count': unread_count,
@@ -139,43 +123,41 @@ class DashboardContextService:
         request_get_params = params.get('request_get_params') or {}
         from backend.apps.notificaciones.models import Notificacion
         
-        # Filter by read/unread if requested
-        filtro_estado = request_get_params.get('estado')
-        queryset = Notificacion.objects.filter(destinatario=user)
-        
+        from backend.apps.notificaciones.services.notification_display_service import (
+            build_notifications_page_summary,
+            format_notification_for_ui,
+        )
+
+        filtro_estado = (request_get_params.get('estado') or '').strip()
+        base_qs = Notificacion.objects.filter(destinatario=user)
+        total = base_qs.count()
+        no_leidas = base_qs.filter(leido=False).count()
+
+        queryset = base_qs
         if filtro_estado == 'leidas':
             queryset = queryset.filter(leido=True)
         elif filtro_estado == 'no_leidas':
             queryset = queryset.filter(leido=False)
-            
-        notifications = queryset.order_by('-fecha_creacion')
-        
-        from backend.apps.notificaciones.services.notification_link_service import (
-            normalize_notification_enlace,
-        )
 
-        formatted_notifications = []
-        for notif in notifications:
-            icono = 'star' if getattr(notif, 'tipo', '') == 'calificacion' else 'bell'
-            url = normalize_notification_enlace(
-                getattr(notif, 'enlace', ''),
-                getattr(notif, 'tipo', ''),
-            )
-                
-            formatted_notifications.append({
-                'id': notif.id if hasattr(notif, 'id') else getattr(notif, 'id_notificacion', None),
-                'titulo': notif.titulo,
-                'mensaje': notif.mensaje,
-                'fecha_creacion': notif.fecha_creacion,
-                'icono': icono,
-                'url': url,
-                'enlace': url,
-                'leido': notif.leido,
-            })
-            
+        notifications = queryset.order_by('-fecha_creacion')
+        formatted_notifications = [
+            format_notification_for_ui(notif) for notif in notifications
+        ]
+        prioritarias = [n for n in formatted_notifications if n.get('requiere_atencion')]
+        resto = [n for n in formatted_notifications if not n.get('requiere_atencion')]
+
         return {
             'notificaciones_todas': formatted_notifications,
-            'filtro_estado': filtro_estado or 'todas',
+            'notificaciones_prioritarias': prioritarias,
+            'notificaciones_resto': resto,
+            'notificaciones_total': total,
+            'notificaciones_no_leidas': no_leidas,
+            'notificaciones_filtro_estado': filtro_estado,
+            'notificaciones_resumen': build_notifications_page_summary(
+                formatted_notifications,
+                total=total,
+                no_leidas=no_leidas,
+            ),
         }
 
     @staticmethod
@@ -2019,7 +2001,7 @@ class DashboardContextService:
         from backend.apps.cursos.models import Clase, ClaseEstudiante
         from backend.apps.academico.models import Evaluacion, Calificacion
         from django.db.models import Avg, Count
-        from datetime import date
+        from datetime import date, timedelta
 
         clases = Clase.objects.filter(
             profesor=user,
@@ -2047,6 +2029,26 @@ class DashboardContextService:
                 evaluacion__clase__colegio=colegio
             ).aggregate(avg_nota=Avg('nota'))
             promedio_general = round(avg_result['avg_nota'] or 0, 1)
+
+        hoy = date.today()
+        evaluaciones_proximas_globales = list(
+            Evaluacion.objects.filter(
+                clase__profesor=user,
+                clase__colegio=colegio,
+                activa=True,
+                fecha_evaluacion__gte=hoy,
+                fecha_evaluacion__lte=hoy + timedelta(days=14),
+            )
+            .select_related('clase__asignatura', 'clase__curso')
+            .order_by('fecha_evaluacion')[:8]
+        )
+
+        total_estudiantes_clase = 0
+        evaluaciones_incompletas = 0
+        notas_bajas_clase = 0
+        ponderacion_clase_total = 0
+        promedio_clase = None
+        total_calificaciones_clase = 0
 
         filtro_clase_id = request_get_params.get('clase_id', '')
         modo = request_get_params.get('modo', 'evaluaciones')
@@ -2103,6 +2105,28 @@ class DashboardContextService:
                     'estudiante__apellido_materno',
                     'estudiante__nombre'
                 )
+
+                total_estudiantes_clase = estudiantes_rel.count()
+                evaluaciones_incompletas = sum(
+                    1 for evaluacion in evaluaciones
+                    if evaluacion.total_calificaciones < total_estudiantes_clase
+                ) if total_estudiantes_clase else 0
+                ponderacion_clase_total = sum(
+                    float(evaluacion.ponderacion or 0) for evaluacion in evaluaciones
+                )
+                if evaluaciones:
+                    notas_bajas_clase = Calificacion.objects.filter(
+                        evaluacion__in=evaluaciones,
+                        nota__lt=4,
+                    ).count()
+                    total_calificaciones_clase = Calificacion.objects.filter(
+                        evaluacion__in=evaluaciones,
+                    ).count()
+                    if total_calificaciones_clase:
+                        avg_clase = Calificacion.objects.filter(
+                            evaluacion__in=evaluaciones,
+                        ).aggregate(avg_nota=Avg('nota'))
+                        promedio_clase = round(avg_clase['avg_nota'] or 0, 1)
 
                 calificaciones = Calificacion.objects.filter(
                     evaluacion__in=evaluaciones
@@ -2175,6 +2199,28 @@ class DashboardContextService:
             except Exception:
                 pass
 
+        intel = DashboardContextService._build_profesor_notas_inteligencia(
+            clase_seleccionada=clase_seleccionada,
+            evaluaciones=evaluaciones,
+            evaluaciones_proximas_globales=evaluaciones_proximas_globales,
+            total_estudiantes_clase=total_estudiantes_clase,
+            evaluaciones_incompletas=evaluaciones_incompletas,
+            notas_bajas_clase=notas_bajas_clase,
+            ponderacion_clase_total=ponderacion_clase_total,
+            promedio_clase=promedio_clase,
+            total_calificaciones_clase=total_calificaciones_clase,
+            modo=modo,
+        )
+
+        hero_evaluaciones = len(evaluaciones) if clase_seleccionada else total_evaluaciones
+        hero_calificaciones = (
+            total_calificaciones_clase if clase_seleccionada else total_calificaciones_general
+        )
+        hero_promedio = promedio_clase if clase_seleccionada and promedio_clase is not None else promedio_general
+        hero_pendientes = (
+            evaluaciones_incompletas if clase_seleccionada else intel.get('evaluaciones_incompletas_global', 0)
+        )
+
         return {
             'clases': clases,
             'filtro_clase_id': filtro_clase_id,
@@ -2188,10 +2234,138 @@ class DashboardContextService:
             'evaluacion_seleccionada': evaluacion_seleccionada,
             'clase_seleccionada': clase_seleccionada,
             'fecha_hoy': date.today().strftime('%Y-%m-%d'),
-            # Estadísticas generales para dashboard
             'total_evaluaciones': total_evaluaciones,
             'total_calificaciones': total_calificaciones_general,
-            'promedio_general': promedio_general,  # Fix: KPI del dashboard de notas del profesor.
+            'promedio_general': promedio_general,
+            'evaluaciones_proximas_globales': evaluaciones_proximas_globales,
+            'notas_hero_evaluaciones': hero_evaluaciones,
+            'notas_hero_calificaciones': hero_calificaciones,
+            'notas_hero_promedio': hero_promedio,
+            'notas_hero_pendientes': hero_pendientes,
+            **intel,
+        }
+
+    @staticmethod
+    def _build_profesor_notas_inteligencia(
+        *,
+        clase_seleccionada,
+        evaluaciones,
+        evaluaciones_proximas_globales,
+        total_estudiantes_clase,
+        evaluaciones_incompletas,
+        notas_bajas_clase,
+        ponderacion_clase_total,
+        promedio_clase,
+        total_calificaciones_clase,
+        modo,
+    ):
+        """Textos y alertas accionables para la vista de notas del profesor."""
+        alertas = []
+        sugerencias = []
+        resumen = 'Gestiona evaluaciones, calificaciones y el seguimiento por curso.'
+
+        if not clase_seleccionada:
+            prox_count = len(evaluaciones_proximas_globales or [])
+            if prox_count:
+                prox = evaluaciones_proximas_globales[0]
+                asignatura = getattr(getattr(prox.clase, 'asignatura', None), 'nombre', 'Clase')
+                resumen = (
+                    f'Tienes {prox_count} evaluación(es) en los próximos 14 días. '
+                    f'La más cercana es {prox.nombre} en {asignatura}.'
+                )
+            else:
+                resumen = 'Selecciona una clase para ver pendientes de calificación y próximas evaluaciones.'
+            return {
+                'notas_intel_resumen': resumen,
+                'notas_intel_alertas': alertas,
+                'notas_intel_sugerencias': sugerencias,
+                'evaluaciones_incompletas_global': 0,
+            }
+
+        asignatura = getattr(getattr(clase_seleccionada, 'asignatura', None), 'nombre', 'esta clase')
+        curso = getattr(getattr(clase_seleccionada, 'curso', None), 'nombre', '')
+
+        if not evaluaciones:
+            resumen = f'En {asignatura} ({curso}) aún no hay evaluaciones registradas.'
+            sugerencias.append({
+                'icono': '📝',
+                'texto': 'Crea la primera evaluación para comenzar a registrar notas.',
+                'accion': 'crear_evaluacion',
+            })
+        else:
+            partes = [f'{len(evaluaciones)} evaluación(es) activa(s) en {asignatura}.']
+            if evaluaciones_incompletas:
+                partes.append(
+                    f'{evaluaciones_incompletas} requieren completar calificaciones.'
+                )
+            if promedio_clase is not None:
+                partes.append(f'Promedio del curso: {promedio_clase}.')
+            resumen = ' '.join(partes)
+
+        if evaluaciones_incompletas:
+            alertas.append({
+                'tipo': 'warn',
+                'icono': '✏️',
+                'titulo': 'Calificaciones incompletas',
+                'texto': (
+                    f'{evaluaciones_incompletas} evaluación(es) no tienen notas '
+                    f'para todos los estudiantes ({total_estudiantes_clase} alumnos).'
+                ),
+            })
+
+        if notas_bajas_clase:
+            alertas.append({
+                'tipo': 'danger',
+                'icono': '⚠️',
+                'titulo': 'Notas bajo 4.0',
+                'texto': f'{notas_bajas_clase} calificación(es) requieren seguimiento académico.',
+            })
+
+        if evaluaciones and total_estudiantes_clase:
+            ponderacion = float(ponderacion_clase_total or 0)
+            if ponderacion < 99.5:
+                alertas.append({
+                    'tipo': 'info',
+                    'icono': '🎯',
+                    'titulo': 'Ponderación del periodo',
+                    'texto': f'Suma {ponderacion:.0f}% — aún puedes agregar evaluaciones para completar el 100%.',
+                })
+            elif ponderacion > 100.5:
+                alertas.append({
+                    'tipo': 'danger',
+                    'icono': '🎯',
+                    'titulo': 'Ponderación excedida',
+                    'texto': f'La suma de ponderaciones es {ponderacion:.0f}%. Revisa los pesos de las evaluaciones.',
+                })
+
+        proximas_clase = [
+            ev for ev in (evaluaciones_proximas_globales or [])
+            if ev.clase_id == clase_seleccionada.id
+        ]
+        for ev in proximas_clase[:3]:
+            sugerencias.append({
+                'icono': '📅',
+                'texto': f'{ev.nombre} — {ev.fecha_evaluacion.strftime("%d/%m/%Y")}',
+                'accion': 'evaluacion',
+                'evaluacion_id': ev.id_evaluacion,
+            })
+
+        if modo == 'calificar' and evaluaciones_incompletas == 0 and evaluaciones:
+            sugerencias.append({
+                'icono': '✅',
+                'texto': 'Todas las evaluaciones visibles tienen notas registradas para esta clase.',
+                'accion': None,
+            })
+
+        return {
+            'notas_intel_resumen': resumen,
+            'notas_intel_alertas': alertas,
+            'notas_intel_sugerencias': sugerencias,
+            'evaluaciones_incompletas_global': evaluaciones_incompletas,
+            'total_estudiantes_clase': total_estudiantes_clase,
+            'ponderacion_clase_total': ponderacion_clase_total,
+            'promedio_clase': promedio_clase,
+            'notas_bajas_clase': notas_bajas_clase,
         }
 
     # --- Contextos profesor restaurados (libro_clases, reportes, disponibilidad) ---

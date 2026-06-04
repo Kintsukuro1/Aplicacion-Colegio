@@ -3,9 +3,130 @@
    =========================== */
 
 .notas-container {
-    padding: 20px;
-    max-width: 1600px;
-    margin: 0 auto;
+    padding: 0;
+    max-width: none;
+    margin: 0;
+}
+
+.notas-page {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.notas-page .prof-hero {
+    margin-bottom: 0;
+}
+
+.notas-page .filtros-section {
+    margin-top: 0;
+}
+
+/* Panel inteligencia académica */
+.notas-intel {
+    display: grid;
+    gap: 1rem;
+}
+
+.notas-intel__alertas {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.notas-intel-card {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--prof-border, #e8e4f0);
+    background: #fff;
+}
+
+.notas-intel-card--warn {
+    border-color: #fed7aa;
+    background: linear-gradient(90deg, #fffaf5 0%, #fff 70%);
+}
+
+.notas-intel-card--danger {
+    border-color: #fecaca;
+    background: linear-gradient(90deg, #fef2f2 0%, #fff 70%);
+}
+
+.notas-intel-card--info {
+    border-color: #bfdbfe;
+    background: linear-gradient(90deg, #eff6ff 0%, #fff 70%);
+}
+
+.notas-intel-card__icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.notas-intel-card__title {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.notas-intel-card__text {
+    margin: 0.2rem 0 0;
+    font-size: 0.86rem;
+    color: #475569;
+    line-height: 1.45;
+}
+
+.notas-intel__heading {
+    margin: 0 0 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.notas-intel-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.notas-intel-list__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--prof-border, #e8e4f0);
+    font-size: 0.88rem;
+    color: #334155;
+}
+
+.notas-intel-list__item a,
+.notas-intel-link {
+    color: var(--prof-accent-deep, #4c3d7a);
+    font-weight: 600;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+}
+
+.notas-intel-list__item a:hover,
+.notas-intel-link:hover {
+    text-decoration: underline;
+}
+
+.notas-intel__proximas {
+    padding: 0.85rem 1rem;
+    border-radius: 16px;
+    border: 1px dashed var(--prof-border, #e8e4f0);
+    background: rgba(255, 255, 255, 0.45);
 }
 
 /* ===========================
@@ -760,15 +881,41 @@
     height: 36px;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+/* Font Awesome no está cargado en el portal docente; cruz dibujada en CSS */
+.btn-close-modal i {
+    display: none;
+}
+
+.btn-close-modal::before,
+.btn-close-modal::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 1px;
+}
+
+.btn-close-modal::before {
+    transform: rotate(45deg);
+}
+
+.btn-close-modal::after {
+    transform: rotate(-45deg);
 }
 
 .btn-close-modal:hover {
     background: #dc2626;
-    color: white;
+    color: #fff;
     transform: rotate(90deg);
 }
 

@@ -306,6 +306,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return '/dashboard/?pagina=inicio';
         }
 
+        if (/^\/estudiante\/inicio\/?$/i.test(link)) {
+            const t = (tipo || '').toLowerCase();
+            if (t === 'tarea_nueva' || t === 'tarea_calificada' || t === 'tarea_entregada') {
+                return '/dashboard/?pagina=mis_tareas';
+            }
+            return '/dashboard/?pagina=inicio';
+        }
+
+        const apoderadoInicio = link.match(/^\/apoderado\/inicio\/?(\?.*)?$/i);
+        if (apoderadoInicio) {
+            const qs = apoderadoInicio[1] || '';
+            return '/dashboard/?pagina=inicio' + (qs ? (qs.startsWith('?') ? qs.replace('?', '&') : '&' + qs.replace(/^\?/, '')) : '');
+        }
+
         return link;
     }
 
@@ -620,6 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('[Notificaciones] Error al marcar todas:', error);
         }
     }
+
+    window.portalMarkAllNotificationsRead = markAllRead;
 
     const isOpen = () => !dropdown.classList.contains('d-none');
 

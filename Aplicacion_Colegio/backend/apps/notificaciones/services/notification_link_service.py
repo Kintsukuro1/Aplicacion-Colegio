@@ -7,6 +7,9 @@ from typing import Optional
 from urllib.parse import parse_qs, urlencode, urlparse
 
 _CONVERSACION_RE = re.compile(r'^/mensajeria/conversacion/(\d+)/?', re.IGNORECASE)
+_ESTUDIANTE_INICIO_RE = re.compile(r'^/estudiante/inicio/?$', re.IGNORECASE)
+_APODERADO_INICIO_RE = re.compile(r'^/apoderado/inicio/?', re.IGNORECASE)
+_TAREA_TIPOS = frozenset({'tarea_nueva', 'tarea_calificada', 'tarea_entregada'})
 _MENSAJE_TIPOS = frozenset({'mensaje_nuevo', 'mensaje'})
 _MENSAJE_DASHBOARD_PAGINAS = frozenset({'mensajes', 'mensajeria', 'mensajería'})
 _MENSAJERIA_BANDEJA = '/mensajeria/bandeja/'
@@ -74,6 +77,20 @@ def _is_mensajeria_dashboard_link(link: str) -> bool:
     return pagina in _MENSAJE_DASHBOARD_PAGINAS or pagina.startswith('mensaj')
 
 
+def _resolve_estudiante_inicio(tipo: Optional[str]) -> str:
+    if (tipo or '').strip().lower() in _TAREA_TIPOS:
+        return '/dashboard/?pagina=mis_tareas'
+    return '/dashboard/?pagina=inicio'
+
+
+def _resolve_apoderado_inicio(link: str) -> str:
+    parsed = urlparse(link)
+    base = '/dashboard/?pagina=inicio'
+    if not parsed.query:
+        return base
+    return f'{base}&{parsed.query}'
+
+
 def _resolve_mensajeria_from_dashboard(link: str) -> str:
     parsed = urlparse(link)
     qs = parse_qs(parsed.query)
@@ -111,5 +128,11 @@ def normalize_notification_enlace(enlace: Optional[str], tipo: Optional[str] = N
 
     if _is_clase_dashboard_link(link):
         return _resolve_clase_from_dashboard(link)
+
+    if _ESTUDIANTE_INICIO_RE.match(link):
+        return _resolve_estudiante_inicio(tipo_norm)
+
+    if _APODERADO_INICIO_RE.match(link):
+        return _resolve_apoderado_inicio(link)
 
     return link or '#'

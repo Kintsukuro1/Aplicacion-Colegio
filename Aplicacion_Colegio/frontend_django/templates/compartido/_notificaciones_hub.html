@@ -1,0 +1,165 @@
+{% load static %}
+{% with resumen=notificaciones_resumen hub_theme=hub_theme|default:"default" %}
+<div class="notifications-hub notifications-hub--{{ hub_theme }}{% if hub_layout == 'embedded' %} notifications-hub--embedded{% endif %}" id="notificationsHub">
+
+    {% if hub_layout != 'embedded' %}
+    <header class="nh-hero">
+        <div class="nh-hero__top">
+            <div>
+                <h1 class="nh-hero__title">Centro de notificaciones</h1>
+                <p class="nh-hero__subtitle">
+                    {% if notificaciones_no_leidas %}
+                        Tienes {{ notificaciones_no_leidas }} aviso{% if notificaciones_no_leidas != 1 %}s{% endif %} sin leer.
+                        {% if resumen.sugerencia_texto %}{{ resumen.sugerencia_texto }}{% endif %}
+                    {% else %}
+                        Estás al día. Aquí puedes revisar el historial de avisos del portal.
+                    {% endif %}
+                </p>
+            </div>
+            <div class="nh-hero__actions">
+                {% if notificaciones_no_leidas %}
+                <button type="button" class="nh-btn" id="nhMarkAllRead" data-mark-all>
+                    Marcar todas leídas
+                </button>
+                {% endif %}
+                {% if resumen.sugerencia_url and notificaciones_no_leidas %}
+                <a href="{{ resumen.sugerencia_url }}" class="nh-btn nh-btn--primary">
+                    Ir a lo prioritario →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="nh-kpis" aria-label="Resumen de notificaciones">
+            <div class="nh-kpi">
+                <div class="nh-kpi__value">{{ notificaciones_total|default:0 }}</div>
+                <div class="nh-kpi__label">Total</div>
+            </div>
+            <div class="nh-kpi nh-kpi--warn">
+                <div class="nh-kpi__value">{{ notificaciones_no_leidas|default:0 }}</div>
+                <div class="nh-kpi__label">Sin leer</div>
+            </div>
+            <div class="nh-kpi">
+                <div class="nh-kpi__value">{{ resumen.leidas|default:0 }}</div>
+                <div class="nh-kpi__label">Leídas</div>
+            </div>
+            <div class="nh-kpi">
+                <div class="nh-kpi__value">{{ resumen.urgentes|default:0 }}</div>
+                <div class="nh-kpi__label">Prioritarias</div>
+            </div>
+        </div>
+
+        {% if resumen.sugerencia_texto and notificaciones_no_leidas %}
+        <div class="nh-intel">
+            <p class="nh-intel__text">💡 {{ resumen.sugerencia_texto }}</p>
+            {% if resumen.sugerencia_url %}
+            <a href="{{ resumen.sugerencia_url }}" class="nh-intel__link">Ver recomendado →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </header>
+    {% else %}
+    <div class="nh-toolbar">
+        {% if resumen.sugerencia_texto and notificaciones_no_leidas %}
+        <div class="nh-intel nh-intel--compact">
+            <p class="nh-intel__text">💡 {{ resumen.sugerencia_texto }}</p>
+            {% if resumen.sugerencia_url %}
+            <a href="{{ resumen.sugerencia_url }}" class="nh-intel__link">Ver recomendado →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        <div class="nh-toolbar__actions">
+            {% if notificaciones_no_leidas %}
+            <button type="button" class="nh-btn" id="nhMarkAllRead" data-mark-all>
+                Marcar todas leídas
+            </button>
+            {% endif %}
+            {% if resumen.sugerencia_url and notificaciones_no_leidas %}
+            <a href="{{ resumen.sugerencia_url }}" class="nh-btn nh-btn--primary">
+                Ir a lo prioritario →
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <nav class="nh-filters" aria-label="Filtrar notificaciones">
+        <a href="{% url 'dashboard' %}?pagina=notificaciones" class="nh-filter {% if not notificaciones_filtro_estado %}active{% endif %}">
+            Todas<span class="nh-filter__count">({{ notificaciones_total|default:0 }})</span>
+        </a>
+        <a href="{% url 'dashboard' %}?pagina=notificaciones&amp;estado=no_leidas" class="nh-filter {% if notificaciones_filtro_estado == 'no_leidas' %}active{% endif %}">
+            No leídas<span class="nh-filter__count">({{ notificaciones_no_leidas|default:0 }})</span>
+        </a>
+        <a href="{% url 'dashboard' %}?pagina=notificaciones&amp;estado=leidas" class="nh-filter {% if notificaciones_filtro_estado == 'leidas' %}active{% endif %}">
+            Leídas<span class="nh-filter__count">({{ resumen.leidas|default:0 }})</span>
+        </a>
+    </nav>
+
+    {% if notificaciones_todas %}
+        {% if notificaciones_prioritarias and not notificaciones_filtro_estado == 'leidas' %}
+        <section class="nh-section" aria-label="Requieren atención">
+            <h2 class="nh-section-title">Requieren tu atención</h2>
+            <div class="nh-list">
+                {% for n in notificaciones_prioritarias %}
+                {% include 'compartido/_notificacion_card.html' with n=n %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if notificaciones_resto or notificaciones_filtro_estado == 'leidas' %}
+        <section class="nh-section" aria-label="Historial">
+            {% if notificaciones_prioritarias and not notificaciones_filtro_estado == 'leidas' %}
+            <h2 class="nh-section-title">Historial reciente</h2>
+            {% endif %}
+            <div class="nh-list">
+                {% if notificaciones_filtro_estado == 'leidas' %}
+                    {% for n in notificaciones_todas %}
+                    {% include 'compartido/_notificacion_card.html' with n=n %}
+                    {% endfor %}
+                {% else %}
+                    {% for n in notificaciones_resto %}
+                    {% include 'compartido/_notificacion_card.html' with n=n %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+    {% else %}
+        <div class="nh-empty">
+            <div class="nh-empty__icon">🔔</div>
+            <p class="nh-empty__title">No hay notificaciones para este filtro</p>
+            <p>Cuando recibas tareas, mensajes o comunicados, aparecerán aquí con el detalle y un acceso directo.</p>
+        </div>
+    {% endif %}
+</div>
+{% endwith %}
+
+<script>
+(function () {
+    const btn = document.getElementById('nhMarkAllRead');
+    if (!btn) return;
+    if (typeof window.portalMarkAllNotificationsRead === 'function') {
+        btn.addEventListener('click', function () {
+            window.portalMarkAllNotificationsRead().then(function () {
+                window.location.reload();
+            });
+        });
+        return;
+    }
+    btn.addEventListener('click', async function () {
+        const csrf = document.cookie.match(/csrftoken=([^;]+)/);
+        try {
+            await fetch('/api/v1/notificaciones/marcar-todas-leidas/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrf ? csrf[1] : '',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+            window.location.reload();
+        } catch (e) { /* ignore */ }
+    });
+})();
+</script>
