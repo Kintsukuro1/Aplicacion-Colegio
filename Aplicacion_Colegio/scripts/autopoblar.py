@@ -223,11 +223,11 @@ def limpiar_base_datos():
         'planificacion_evaluacion',
         'planificacion_objetivo',
         'planificacion_recurso',
-        # Financiero
+        # Financiero (hijos antes que padres)
         'detalle_informe_academico',
+        'boleta',
         'pago',
         'cuota',
-        'boleta',
         'estado_cuenta',
         'beca',
         'informe_academico',
@@ -256,13 +256,15 @@ def limpiar_base_datos():
         'perfil_estudiante',
         'perfil_profesor',
         'disponibilidad_profesor',
+        'solicitud_reunion',
         'apoderado',
-        # Estructura académica
+        # Estructura académica (bloque_horario referencia clase)
+        'bloque_horario',
         'clase',
         'asignatura',
-        'bloque_horario',
         'curso',
         # Suscripciones
+        'payment',
         'subscription',
         'plan',
         # Ciclos / estados
@@ -2397,23 +2399,25 @@ def poblar_apoderados():
         puede_firmar = random.random() > 0.1  # 90% puede firmar
         puede_autorizar_salidas = random.random() > 0.5  # 50% puede autorizar salidas
         
-        apoderado = Apoderado.objects.create(
+        apoderado, _ = Apoderado.objects.get_or_create(
             user=usuario_apod,
-            fecha_nacimiento=fecha_nac,
-            direccion=f'Av. Principal {random.randint(100, 999)}, Santiago',
-            telefono=f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
-            telefono_movil=f'+56 9 {random.randint(8000, 9999)} {random.randint(1000, 9999)}',
-            ocupacion=random.choice(ocupaciones),
-            lugar_trabajo=f'Empresa {random.choice(["A", "B", "C", "D"])} Ltda.',
-            telefono_trabajo=f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
-            puede_ver_notas=True,
-            puede_ver_asistencia=True,
-            puede_recibir_comunicados=True,
-            puede_firmar_citaciones=puede_firmar,
-            puede_autorizar_salidas=puede_autorizar_salidas,
-            puede_ver_tareas=True,
-            puede_ver_materiales=True,
-            activo=True
+            defaults={
+                'fecha_nacimiento': fecha_nac,
+                'direccion': f'Av. Principal {random.randint(100, 999)}, Santiago',
+                'telefono': f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
+                'telefono_movil': f'+56 9 {random.randint(8000, 9999)} {random.randint(1000, 9999)}',
+                'ocupacion': random.choice(ocupaciones),
+                'lugar_trabajo': f'Empresa {random.choice(["A", "B", "C", "D"])} Ltda.',
+                'telefono_trabajo': f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
+                'puede_ver_notas': True,
+                'puede_ver_asistencia': True,
+                'puede_recibir_comunicados': True,
+                'puede_firmar_citaciones': puede_firmar,
+                'puede_autorizar_salidas': puede_autorizar_salidas,
+                'puede_ver_tareas': True,
+                'puede_ver_materiales': True,
+                'activo': True,
+            },
         )
         apoderados_creados += 1
         

@@ -25,12 +25,12 @@
         <div class="stat-card">
             <div class="stat-icon" aria-hidden="true">&#128221;</div>
             <div class="stat-value">{{ estadisticas.total_evaluaciones|default:0 }}</div>
-            <div class="stat-label">Evaluaciones Creadas</div>
+            <div class="stat-label">Evaluaciones creadas</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon" aria-hidden="true">&#128100;</div>
             <div class="stat-value">{{ estadisticas.total_estudiantes|default:0 }}</div>
-            <div class="stat-label">Estudiantes Evaluados</div>
+            <div class="stat-label">Estudiantes evaluados</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon" aria-hidden="true">&#128197;</div>
@@ -61,12 +61,12 @@
                 </div>
                 
                 <div class="info-item">
-                    <span class="info-label">Nombre Completo</span>
+                    <span class="info-label">Nombre completo</span>
                     <span class="info-value">{{ user.get_full_name }}</span>
                 </div>
                 
                 <div class="info-item">
-                    <span class="info-label">Estado de Cuenta</span>
+                    <span class="info-label">Estado de cuenta</span>
                     <span class="info-value">
                         {% if user.is_active %}
                             <span class="badge badge-success">Activo</span>
@@ -82,7 +82,7 @@
         <div>
             <!-- Formulario de edición -->
             <div class="card">
-                <h2>Editar Informacion de Contacto</h2>
+                <h2>Editar información de contacto</h2>
                 <form method="POST" action="{% url 'accounts:actualizar_perfil_profesor' %}">
                     {% csrf_token %}
                     <div class="form-group">
@@ -93,50 +93,50 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="telefono">Telefono</label>
+                        <label for="telefono">Teléfono</label>
                         <input type="text" id="telefono" name="telefono" 
                                value="{{ user.telefono|default:'' }}" 
                                placeholder="+56 9 1234 5678">
                     </div>
                     
                     <div class="form-group">
-                        <label for="direccion">Direccion</label>
+                        <label for="direccion">Dirección</label>
                         <input type="text" id="direccion" name="direccion" 
                                value="{{ user.direccion|default:'' }}" 
-                               placeholder="Calle, numero, comuna">
+                               placeholder="Calle, número, comuna">
                     </div>
                     
                     <button type="submit" name="actualizar_perfil" class="btn btn-primary">
-                        Guardar Cambios
+                        Guardar cambios
                     </button>
                 </form>
             </div>
 
             <!-- Formulario de cambio de contraseña -->
             <div class="card mt-5">
-                <h2>Cambiar Contrasena</h2>
+                <h2>Cambiar contraseña</h2>
                 <form method="POST" action="{% url 'accounts:cambiar_password_profesor' %}">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="password_actual">Contrasena Actual</label>
+                        <label for="password_actual">Contraseña actual</label>
                         <input type="password" id="password_actual" name="password_actual" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="password_nueva">Nueva Contrasena</label>
+                        <label for="password_nueva">Nueva contraseña</label>
                         <input type="password" id="password_nueva" name="password_nueva" 
                                minlength="6" required>
-                        <small>Minimo 6 caracteres</small>
+                        <small>Mínimo 6 caracteres</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="password_confirmar">Confirmar Nueva Contrasena</label>
+                        <label for="password_confirmar">Confirmar nueva contraseña</label>
                         <input type="password" id="password_confirmar" name="password_confirmar" 
                                minlength="6" required>
                     </div>
                     
                     <button type="submit" name="cambiar_password" class="btn btn-primary">
-                        Cambiar Contrasena
+                        Cambiar contraseña
                     </button>
                 </form>
             </div>
