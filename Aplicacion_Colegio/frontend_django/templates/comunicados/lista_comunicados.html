@@ -15,17 +15,10 @@
 
 {% elif rol == 'profesor' or rol == 'Profesor' %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados.css' %}?v=20260602-prof-lavanda">
+<link rel="stylesheet" href="{% static 'css/profesor/comunicados.css' %}?v=20260528-premium">
 
-<div class="comunicados-container content-wrapper">
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Comunicación" hero_title="Comunicados y Circulares" hero_subtitle="Información oficial, circulares y avisos del colegio" hero_aria="Comunicados" hero_show_date="0" m1_value=comunicados|length|default:0 m1_label="Comunicados" m1_mod="mensajes" m2_value="—" m2_label="Filtrar" m2_mod="neutral" m3_value="—" m3_label="Urgentes" m3_mod="riesgo" m4_value="—" m4_label="Leídos" m4_mod="asistencia" %}
-    {% if can_create_comunicado %}
-    <p class="comunicados-hero-action">
-        <a href="{% url 'comunicados:crear' %}" class="btn-crear">➕ Nuevo Comunicado</a>
-    </p>
-    {% endif %}
-
-    {% include 'comunicados/_lista_comunicados_contenido.html' %}
+<div class="content-wrapper com-prof-wrap">
+    {% include 'profesor/_comunicados_lista.html' %}
 </div>
 {% include 'profesor/_personal_wrap_end.html' %}
 

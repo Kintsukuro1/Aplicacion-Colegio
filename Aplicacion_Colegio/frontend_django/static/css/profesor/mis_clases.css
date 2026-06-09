@@ -1,12 +1,12 @@
 /* Mis Clases — portal docente premium */
 
 .mc-page {
-    --mc-accent: #8b7cc8;
-    --mc-accent-deep: #6a5ab8;
-    --mc-accent-soft: #f5f3ff;
-    --mc-border: #e9e5ff;
-    --mc-text: #312e81;
-    --mc-text-soft: #5b21b6;
+    --mc-accent: #6366f1;
+    --mc-accent-deep: #4f46e5;
+    --mc-accent-soft: #eef2ff;
+    --mc-border: #e0e7ff;
+    --mc-text: #3730a3;
+    --mc-text-soft: #4338ca;
     --mc-muted: #64748b;
     --mc-surface: #ffffff;
     --mc-page-bg: transparent;
@@ -16,8 +16,8 @@
     --mc-shadow: 0 12px 40px rgba(76, 29, 149, 0.09);
     --mc-shadow-hover: 0 20px 48px rgba(76, 29, 149, 0.14);
     width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -244,7 +244,7 @@
 /* —— Grid —— */
 .mc-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.25rem;
     align-items: stretch;
 }
@@ -266,7 +266,7 @@
 
 .mc-card__accent {
     height: 4px;
-    background: var(--mc-accent);
+    background: var(--mc-card-stripe, var(--mc-accent));
 }
 
 .mc-card:hover {
@@ -390,9 +390,9 @@
 }
 
 .mc-signal--ok {
-    background: #f0fdf4;
-    color: #166534;
-    border: 1px solid #bbf7d0;
+    background: var(--mc-accent-soft);
+    color: var(--mc-accent-deep);
+    border: 1px solid var(--mc-border);
     font-size: 0.72rem;
 }
 
@@ -409,6 +409,13 @@
     background: var(--mc-accent-soft);
 }
 
+.mc-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .mc-card__cta {
     display: flex;
     align-items: center;
@@ -420,18 +427,39 @@
     font-weight: 800;
     color: #fff;
     text-decoration: none;
-    background: var(--mc-accent-deep);
-    border: 1px solid #5b4d9e;
-    box-shadow: 0 4px 12px rgba(106, 90, 184, 0.25);
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    border: 1px solid #4338ca;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
     transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+    flex: 1 1 auto;
+    min-width: 140px;
 }
 
 .mc-card__cta:hover {
     color: #fff;
     text-decoration: none;
-    background: #5b4d9e;
+    filter: brightness(1.05);
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(106, 90, 184, 0.3);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+}
+
+.mc-card__btn-sec {
+    padding: 0.65rem 0.85rem;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--mc-accent-deep);
+    background: #fff;
+    border: 1px solid var(--mc-border);
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.mc-card__btn-sec:hover {
+    background: var(--mc-accent-soft);
+    border-color: var(--mc-accent);
+    color: var(--mc-accent-deep);
+    text-decoration: none;
 }
 
 .mc-card__cta-icon {

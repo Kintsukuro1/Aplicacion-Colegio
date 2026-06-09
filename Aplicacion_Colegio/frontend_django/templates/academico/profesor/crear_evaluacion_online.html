@@ -11,9 +11,7 @@
     </nav>
 
     {% if evaluacion_seleccionada %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Académico" hero_title="Editar evaluación online" hero_subtitle=eval_intel_resumen hero_aria="Editar evaluación" metrics_aria="Contexto del curso" m1_value=eval_total_estudiantes|default:0 m1_label="Alumnos" m1_mod="clases" m2_value=eval_evaluaciones_clase|default:0 m2_label="Evaluaciones" m2_mod="tareas" m3_value=eval_ponderacion_disponible|default:100 m3_label="% disponible" m3_mod="neutral" m4_value=eval_promedio_clase|default:"—" m4_label="Promedio curso" m4_mod="riesgo" %}
     {% else %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Académico" hero_title="Crear nueva evaluación" hero_subtitle=eval_intel_resumen hero_aria="Crear evaluación" metrics_aria="Contexto del curso" m1_value=eval_total_estudiantes|default:0 m1_label="Alumnos" m1_mod="clases" m2_value=eval_evaluaciones_clase|default:0 m2_label="Evaluaciones" m2_mod="tareas" m3_value=eval_ponderacion_disponible|default:100 m3_label="% disponible" m3_mod="neutral" m4_value=eval_promedio_clase|default:"—" m4_label="Promedio curso" m4_mod="riesgo" %}
     {% endif %}
 
     <div class="eo-hero__actions">

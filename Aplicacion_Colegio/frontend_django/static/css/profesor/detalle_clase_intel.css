@@ -1,11 +1,11 @@
-/* Detalle de clase — tema lavanda portal docente (tokens en toda la página) */
+/* Detalle de clase — tema lavanda portal docente */
 
 .dc-page {
-    --dc-accent: #6a5ab8;
-    --dc-accent-light: #8b7cc8;
-    --dc-accent-soft: #faf5ff;
-    --dc-border: #e9e5ff;
-    --dc-text: #312e81;
+    --dc-accent: #6366f1;
+    --dc-accent-light: #818cf8;
+    --dc-accent-soft: #eef2ff;
+    --dc-border: #e0e7ff;
+    --dc-text: #3730a3;
     --dc-muted: #64748b;
     --dc-surface: #ffffff;
     --dc-radius-lg: 18px;
@@ -14,6 +14,24 @@
     --dc-shadow-sm: 0 4px 16px rgba(49, 46, 129, 0.06);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--dc-text);
+}
+
+.dc-demo-banner {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: var(--dc-radius-md);
+    border: 1px dashed #c4b5fd;
+    background: linear-gradient(90deg, #faf5ff 0%, #fff 88%);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: #5b21b6;
+}
+
+.dc-demo-banner__link {
+    margin-left: 0.35rem;
+    font-weight: 700;
+    color: var(--dc-accent);
+    text-decoration: underline;
 }
 
 .dc-intel {
@@ -801,8 +819,26 @@
 }
 
 .dc-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
     margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
 }
+
+.dc-breadcrumb a {
+    color: #15803d;
+    text-decoration: none;
+}
+
+.dc-breadcrumb a:hover { text-decoration: underline; }
+
+.dc-breadcrumb__sep { color: #94a3b8; }
+
+.dc-breadcrumb__current { color: #14532d; font-weight: 700; }
 
 .dc-topbar-actions {
     display: flex;
@@ -832,8 +868,22 @@
 }
 
 .dc-topbar-btn--outline:hover {
-    border-color: #c4b5fd;
+    border-color: #86efac;
     box-shadow: var(--dc-shadow-sm);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.dc-topbar-btn--primary {
+    color: #fff;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    border-color: #4338ca;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28);
+}
+
+.dc-topbar-btn--primary:hover {
+    color: #fff;
+    filter: brightness(1.05);
     transform: translateY(-1px);
     text-decoration: none;
 }

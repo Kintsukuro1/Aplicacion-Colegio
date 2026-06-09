@@ -1,9 +1,10 @@
 {% if rol == 'profesor' or rol == 'Profesor' %}
+{% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/profesor/calendario_eventos.css' %}?v=20260528-demo-intel">
 {% endif %}
 <div class="content-wrapper ce-page">
     {% if rol == 'profesor' or rol == 'Profesor' %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Académico" hero_title="Calendario Escolar" hero_subtitle="Gestión de eventos académicos del colegio" hero_aria="Calendario escolar" hero_show_date="0" hero_hide_metrics=1 %}
     {% else %}
     <div class="page-header ce-header">
         <h1>Calendario Escolar</h1>
@@ -13,11 +14,61 @@
 
     <div id="calendar-feedback" class="alert ce-feedback" hidden></div>
 
+    {% if rol == 'profesor' or rol == 'Profesor' %}
+    <section class="ce-guide" aria-label="Guía del calendario">
+        <h3 class="ce-guide__title">Calendario oficial del colegio</h3>
+        <p class="ce-guide__text">Los eventos los publica la administración. Aquí consultas feriados, evaluaciones institucionales y reuniones. Cuando no hay eventos cargados, verás una <strong>vista de ejemplo</strong> para orientarte.</p>
+        <div class="ce-guide__grid">
+            <div class="ce-guide__item">
+                <span class="ce-guide__icon" aria-hidden="true">🏖️</span>
+                <div>
+                    <strong>Feriados y vacaciones</strong>
+                    <p>Días sin clases. Útil para planificar evaluaciones y entregas.</p>
+                </div>
+            </div>
+            <div class="ce-guide__item">
+                <span class="ce-guide__icon" aria-hidden="true">📝</span>
+                <div>
+                    <strong>Evaluaciones</strong>
+                    <p>Instancias globales (simulacros, PAES, etc.) que pueden cruzarse con tus cursos.</p>
+                </div>
+            </div>
+            <div class="ce-guide__item ce-guide__item--tip">
+                <span class="ce-guide__icon" aria-hidden="true">💡</span>
+                <div>
+                    <strong>Consejo</strong>
+                    <p>Filtra por mes o rango de fechas antes de exportar o avisar a apoderados.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ce-demo-kpis" class="ce-demo-kpis" hidden aria-label="Resumen de ejemplo del calendario">
+        <article class="ce-demo-kpi ce-demo-kpi--clases"><span class="ce-demo-kpi__val">6</span><span class="ce-demo-kpi__lbl">Eventos próximos</span><span class="ce-demo-kpi__hint">Ejemplo · 60 días</span></article>
+        <article class="ce-demo-kpi ce-demo-kpi--tareas"><span class="ce-demo-kpi__val">2</span><span class="ce-demo-kpi__lbl">Esta semana</span><span class="ce-demo-kpi__hint">Requieren atención</span></article>
+        <article class="ce-demo-kpi ce-demo-kpi--warn"><span class="ce-demo-kpi__val">1</span><span class="ce-demo-kpi__lbl">Feriado</span><span class="ce-demo-kpi__hint">Sin clases</span></article>
+        <article class="ce-demo-kpi ce-demo-kpi--neutral"><span class="ce-demo-kpi__val">3</span><span class="ce-demo-kpi__lbl">Reuniones</span><span class="ce-demo-kpi__hint">Apoderados / equipo</span></article>
+    </section>
+
+    <div id="ce-demo-banner" class="ce-demo-banner" role="status" hidden>
+        <p>
+            <strong>Vista demostración</strong> —
+            No hay eventos publicados (o no coinciden con los filtros).
+            La tabla muestra <strong>datos ficticios</strong> del calendario escolar típico.
+        </p>
+        <a class="ce-demo-banner__cta" href="{% url 'dashboard' %}?pagina=inicio">Volver al inicio →</a>
+    </div>
+
+    <div id="ce-demo-intel-wrap" hidden>
+        {% include 'profesor/_calendario_demo_intel.html' %}
+    </div>
+    {% endif %}
+
     <div class="card ce-card ce-card--filters">
         <h3 class="ce-card-title">Filtros</h3>
         <form id="calendar-filters" class="row ce-grid ce-grid--filters">
             <label>Tipo
-                <select name="tipo">
+                <select name="tipo" title="Tipo de evento">
                     <option value="">Todos</option>
                     <option value="feriado">feriado</option>
                     <option value="vacaciones">vacaciones</option>
@@ -32,7 +83,7 @@
             <label>Mes
                 <input name="mes" type="number" min="1" max="12" />
             </label>
-            <label>Anio
+            <label>Año
                 <input name="anio" type="number" min="2020" max="2100" />
             </label>
             <label>Desde
@@ -115,11 +166,11 @@
     {% endif %}
 
     <div class="card ce-card ce-card--table">
-        <h3 class="ce-card-title">Listado</h3>
+        <h3 class="ce-card-title">Listado <span id="ce-listado-demo-tag" class="ce-demo-tag" hidden>Ejemplo</span></h3>
         <table class="tabla-reporte ce-table">
             <thead>
                 <tr>
-                    <th>Titulo</th>
+                    <th>Título</th>
                     <th>Tipo</th>
                     <th>Inicio</th>
                     <th>Fin</th>
@@ -141,12 +192,79 @@
 <script>
 (function () {
     const canManageEvents = {% if rol == 'profesor' %}false{% else %}true{% endif %};
+    const isProfesorView = {% if rol == 'profesor' or rol == 'Profesor' %}true{% else %}false{% endif %};
     const filtersForm = document.getElementById('calendar-filters');
     const eventForm = document.getElementById('calendar-form');
     const rowsEl = document.getElementById('calendar-rows');
     const feedback = document.getElementById('calendar-feedback');
     const cleanButton = document.getElementById('calendar-clean');
     const cancelButton = document.getElementById('calendar-cancel');
+    const demoBanner = document.getElementById('ce-demo-banner');
+    const demoKpis = document.getElementById('ce-demo-kpis');
+    const demoIntelWrap = document.getElementById('ce-demo-intel-wrap');
+    const demoListTag = document.getElementById('ce-listado-demo-tag');
+
+    const CE_DEMO_EVENTS_FALLBACK = [
+        { titulo: 'Consejo de profesores — ciclo 2026', tipo: 'reunion', tipo_display: '🤝 Reunión', fecha_inicio: '2026-06-02', fecha_fin: '2026-06-02', visibilidad: 'profesores' },
+        { titulo: 'Reunión apoderados 1° Básico A', tipo: 'reunion', tipo_display: '🤝 Reunión', fecha_inicio: '2026-06-12', fecha_fin: '2026-06-12', visibilidad: 'todos' },
+        { titulo: 'Simulacro PAES — jornada AM', tipo: 'evaluacion', tipo_display: '📝 Evaluación', fecha_inicio: '2026-06-15', fecha_fin: '2026-06-15', visibilidad: 'todos' },
+        { titulo: 'Fiestas Patrias — feriado nacional', tipo: 'feriado', tipo_display: '🎉 Feriado', fecha_inicio: '2026-09-18', fecha_fin: '2026-09-18', visibilidad: 'todos' },
+        { titulo: 'Vacaciones de invierno', tipo: 'vacaciones', tipo_display: '🏖️ Vacaciones', fecha_inicio: '2026-07-14', fecha_fin: '2026-07-25', visibilidad: 'todos' },
+        { titulo: 'Día del profesor — actividad institucional', tipo: 'actividad', tipo_display: '🎯 Actividad', fecha_inicio: '2026-10-16', fecha_fin: '2026-10-16', visibilidad: 'profesores' },
+    ];
+
+    function getDemoEvents() {
+        const el = document.getElementById('ce-demo-events-data');
+        if (el && el.textContent) {
+            try {
+                const parsed = JSON.parse(el.textContent);
+                if (Array.isArray(parsed) && parsed.length) return parsed;
+            } catch (e) { /* usar fallback */ }
+        }
+        return CE_DEMO_EVENTS_FALLBACK;
+    }
+
+    function setProfesorDemoUi(active) {
+        if (!isProfesorView) return;
+        [demoBanner, demoKpis, demoIntelWrap, demoListTag].forEach((node) => {
+            if (node) node.hidden = !active;
+        });
+    }
+
+    function tipoBadgeClass(tipo) {
+        return `tipo-${String(tipo || '').toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+    }
+
+    function renderEventRows(results, isDemo) {
+        rowsEl.innerHTML = '';
+        results.forEach((row) => {
+            const tr = document.createElement('tr');
+            if (isDemo) tr.classList.add('ce-row--demo');
+            const accionesCell = canManageEvents
+                ? `<div class="ce-table-actions">
+                        <button type="button" class="btn btn-secondary btn-sm ce-action-btn" data-action="edit" data-id="${row.id_evento}">Editar</button>
+                        <button type="button" class="btn btn-danger btn-sm ce-action-btn" data-action="delete" data-id="${row.id_evento}">Eliminar</button>
+                   </div>`
+                : '<span class="estado-badge estado-lectura">📖 Solo lectura · ejemplo</span>';
+
+            const tipoRaw = (row.tipo || '').toLowerCase();
+            const tipoLabel = row.tipo_display || row.tipo || '';
+
+            tr.innerHTML = `
+                <td><strong>${row.titulo || ''}</strong></td>
+                <td><span class="tipo-badge ${tipoBadgeClass(tipoRaw)}">${tipoLabel}</span></td>
+                <td>${row.fecha_inicio || ''}</td>
+                <td>${row.fecha_fin || '-'}</td>
+                <td>${row.visibilidad || ''}</td>
+                <td>${accionesCell}</td>
+            `;
+            if (canManageEvents && row.id_evento) {
+                tr.querySelector('[data-action="edit"]')?.addEventListener('click', () => startEdit(row.id_evento));
+                tr.querySelector('[data-action="delete"]')?.addEventListener('click', () => removeEvent(row.id_evento, row.titulo));
+            }
+            rowsEl.appendChild(tr);
+        });
+    }
 
     function notify(message, isError) {
         feedback.hidden = false;
@@ -199,35 +317,25 @@
             const payload = await response.json();
             const results = Array.isArray(payload?.results) ? payload.results : Array.isArray(payload) ? payload : [];
             if (!results.length) {
+                if (isProfesorView) {
+                    setProfesorDemoUi(true);
+                    renderEventRows(getDemoEvents(), true);
+                    return;
+                }
+                setProfesorDemoUi(false);
                 rowsEl.innerHTML = '<tr><td colspan="6">Sin eventos para los filtros seleccionados.</td></tr>';
                 return;
             }
 
-            rowsEl.innerHTML = '';
-            results.forEach((row) => {
-                const tr = document.createElement('tr');
-                const accionesCell = canManageEvents
-                    ? `<div class="ce-table-actions">
-                            <button type="button" class="btn btn-secondary btn-sm ce-action-btn" data-action="edit" data-id="${row.id_evento}">Editar</button>
-                            <button type="button" class="btn btn-danger btn-sm ce-action-btn" data-action="delete" data-id="${row.id_evento}">Eliminar</button>
-                       </div>`
-                    : '<span class="text-muted">Solo lectura</span>';
-
-                tr.innerHTML = `
-                    <td>${row.titulo || ''}</td>
-                    <td>${row.tipo_display || row.tipo || ''}</td>
-                    <td>${row.fecha_inicio || ''}</td>
-                    <td>${row.fecha_fin || '-'}</td>
-                    <td>${row.visibilidad || ''}</td>
-                    <td>${accionesCell}</td>
-                `;
-                if (canManageEvents) {
-                    tr.querySelector('[data-action="edit"]').addEventListener('click', () => startEdit(row.id_evento));
-                    tr.querySelector('[data-action="delete"]').addEventListener('click', () => removeEvent(row.id_evento, row.titulo));
-                }
-                rowsEl.appendChild(tr);
-            });
+            setProfesorDemoUi(false);
+            renderEventRows(results, false);
         } catch (error) {
+            if (isProfesorView) {
+                setProfesorDemoUi(true);
+                renderEventRows(getDemoEvents(), true);
+                notify('No se pudo cargar el calendario. Mostrando vista de ejemplo.', true);
+                return;
+            }
             rowsEl.innerHTML = '<tr><td colspan="6">No se pudo cargar el calendario.</td></tr>';
             notify('No se pudo cargar el calendario.', true);
         }

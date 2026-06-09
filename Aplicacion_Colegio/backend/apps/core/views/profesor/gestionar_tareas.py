@@ -9,11 +9,17 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.utils import timezone
-from backend.apps.cursos.models import Clase
+from backend.apps.cursos.models import Clase, ClaseEstudiante
 from backend.apps.academico.models import EntregaTarea, Tarea
 from backend.apps.academico.services.resoluble_service import ResolubleService
 from backend.apps.core.services.dashboard_service import DashboardService
 from backend.apps.core.services.orm_access_service import ORMAccessService
+from backend.apps.core.services.demo_visual_service import (
+    build_demo_tareas_inteligencia,
+    build_demo_tareas_items,
+    is_demo_tarea_id,
+    use_demo_when_empty,
+)
 from backend.common.services.policy_service import PolicyService
 
 
@@ -85,14 +91,19 @@ def _build_preguntas_desde_request(request):
     return preguntas
 
 
-def _build_item_tarea(tarea):
+def _build_item_tarea(tarea, total_estudiantes=0):
     entregas = list(tarea.entregas.select_related('estudiante').all())
-    entregas_revisadas = sum(1 for entrega in entregas if entrega.estado == 'revisada' or entrega.calificacion is not None)
+    entregas_revisadas = sum(
+        1 for entrega in entregas if entrega.estado == 'revisada' or entrega.calificacion is not None
+    )
     entregas_pendientes = sum(1 for entrega in entregas if entrega.calificacion is None)
     actividad = tarea.actividades_resolubles.all().first()
 
     total_entregas = len(entregas)
-    porcentaje_entregas = round((total_entregas / max(total_entregas, 1)) * 100, 0) if total_entregas else 0
+    porcentaje_entrega = (
+        round((total_entregas / total_estudiantes) * 100, 0) if total_estudiantes else 0
+    )
+    alumnos_sin_entrega = max(total_estudiantes - total_entregas, 0) if total_estudiantes else 0
 
     return {
         'tarea': tarea,
@@ -100,7 +111,96 @@ def _build_item_tarea(tarea):
         'total_entregas': total_entregas,
         'entregas_revisadas': entregas_revisadas,
         'entregas_pendientes': entregas_pendientes,
-        'porcentaje_entregas': porcentaje_entregas,
+        'porcentaje_entrega': min(porcentaje_entrega, 100),
+        'alumnos_sin_entrega': alumnos_sin_entrega,
+        'requiere_atencion': entregas_pendientes > 0 or (tarea.esta_vencida() and alumnos_sin_entrega > 0),
+    }
+
+
+def _build_gestionar_tareas_inteligencia(clase, tareas_items, *, total_estudiantes, total_pendientes, total_entregas):
+    """Resumen accionable para la vista de actividades del profesor."""
+    alertas = []
+    sugerencias = []
+    asignatura = getattr(getattr(clase, 'asignatura', None), 'nombre', 'la clase')
+    curso = getattr(getattr(clase, 'curso', None), 'nombre', '')
+
+    tareas_vencidas = sum(1 for item in tareas_items if item['tarea'].esta_vencida())
+    tareas_activas = len(tareas_items) - tareas_vencidas
+
+    tasa_revision = (
+        round((sum(i['entregas_revisadas'] for i in tareas_items) / max(total_entregas, 1)) * 100)
+        if total_entregas else 0
+    )
+
+    prioritaria = None
+    if tareas_items:
+        prioritaria = max(tareas_items, key=lambda item: (item['entregas_pendientes'], item['total_entregas']))
+
+    proxima = None
+    for item in sorted(tareas_items, key=lambda x: x['tarea'].fecha_entrega):
+        if not item['tarea'].esta_vencida():
+            proxima = item
+            break
+
+    if total_pendientes:
+        alertas.append({
+            'tipo': 'warn',
+            'icono': '⏳',
+            'titulo': 'Entregas por revisar',
+            'texto': f'Tienes {total_pendientes} entrega(s) sin calificar en {asignatura}.',
+            'tarea_id': prioritaria['tarea'].id_tarea if prioritaria else None,
+        })
+
+    if tareas_vencidas:
+        sin_entrega_vencidas = sum(
+            item['alumnos_sin_entrega'] for item in tareas_items if item['tarea'].esta_vencida()
+        )
+        if sin_entrega_vencidas:
+            alertas.append({
+                'tipo': 'danger',
+                'icono': '⚠️',
+                'titulo': 'Actividades vencidas',
+                'texto': f'{sin_entrega_vencidas} alumno(s) aún no entregan en tareas vencidas.',
+            })
+
+    if proxima:
+        sugerencias.append({
+            'icono': '📅',
+            'texto': (
+                f'Próximo cierre: {proxima["tarea"].titulo} '
+                f'({proxima["tarea"].fecha_entrega.strftime("%d/%m/%Y %H:%M")}).'
+            ),
+            'tarea_id': proxima['tarea'].id_tarea,
+        })
+
+    if total_estudiantes:
+        sugerencias.append({
+            'icono': '👥',
+            'texto': f'{total_estudiantes} estudiante(s) inscritos en {curso}.',
+        })
+
+    if tasa_revision >= 80 and total_entregas:
+        sugerencias.append({
+            'icono': '✅',
+            'texto': f'Has revisado el {tasa_revision}% de las entregas recibidas.',
+        })
+
+    partes = [f'{len(tareas_items)} actividad(es) en {asignatura}.']
+    if total_pendientes:
+        partes.append(f'{total_pendientes} entrega(s) esperan tu revisión.')
+    elif total_entregas:
+        partes.append('No hay entregas pendientes de calificar.')
+    resumen = ' '.join(partes)
+
+    return {
+        'gt_intel_resumen': resumen,
+        'gt_intel_alertas': alertas,
+        'gt_intel_sugerencias': sugerencias,
+        'gt_total_estudiantes': total_estudiantes,
+        'gt_tareas_vencidas': tareas_vencidas,
+        'gt_tareas_activas': tareas_activas,
+        'gt_tasa_revision': tasa_revision,
+        'gt_tarea_prioritaria_id': prioritaria['tarea'].id_tarea if prioritaria and total_pendientes else None,
     }
 
 
@@ -178,6 +278,9 @@ def gestionar_tareas_profesor(request, clase_id):
 
         elif accion == 'eliminar_tarea':
             tarea_id = request.POST.get('tarea_id')
+            if is_demo_tarea_id(tarea_id):
+                messages.info(request, 'Datos de prueba: esta actividad de ejemplo no se puede eliminar.')
+                return redirect('gestionar_tareas_profesor', clase_id=clase.id)
             try:
                 tarea = Tarea.objects.get(id_tarea=tarea_id, clase=clase)
             except Tarea.DoesNotExist:
@@ -190,14 +293,32 @@ def gestionar_tareas_profesor(request, clase_id):
 
     tareas_queryset = (
         ORMAccessService.filter(Tarea, clase=clase, activa=True)
-        .prefetch_related('actividades_resolubles')
+        .prefetch_related('actividades_resolubles', 'entregas')
         .order_by('-fecha_publicacion')
     )
-    tareas = [_build_item_tarea(tarea) for tarea in tareas_queryset]
+    total_estudiantes = ClaseEstudiante.objects.filter(clase=clase, activo=True).count()
+    tareas = [_build_item_tarea(tarea, total_estudiantes) for tarea in tareas_queryset]
 
-    total_entregas = EntregaTarea.objects.filter(tarea__clase=clase).count()
-    total_pendientes = EntregaTarea.objects.filter(tarea__clase=clase, calificacion__isnull=True).count()
-    total_revisadas = EntregaTarea.objects.filter(tarea__clase=clase, calificacion__isnull=False).count()
+    gt_vista_previa = use_demo_when_empty(request, bool(tareas))
+    if gt_vista_previa:
+        total_estudiantes = 18
+        tareas = build_demo_tareas_items(clase, total_estudiantes)
+        demo_ctx = build_demo_tareas_inteligencia(clase, tareas)
+        total_entregas = demo_ctx.pop('demo_total_entregas')
+        total_pendientes = demo_ctx.pop('demo_total_pendientes')
+        total_revisadas = demo_ctx.pop('demo_total_revisadas')
+        gt_intel = demo_ctx
+    else:
+        total_entregas = EntregaTarea.objects.filter(tarea__clase=clase).count()
+        total_pendientes = EntregaTarea.objects.filter(tarea__clase=clase, calificacion__isnull=True).count()
+        total_revisadas = EntregaTarea.objects.filter(tarea__clase=clase, calificacion__isnull=False).count()
+        gt_intel = _build_gestionar_tareas_inteligencia(
+            clase,
+            tareas,
+            total_estudiantes=total_estudiantes,
+            total_pendientes=total_pendientes,
+            total_entregas=total_entregas,
+        )
     
     sidebar_template, rol_nombre = _resolve_sidebar_and_role(request.user)
     navigation_access = DashboardService.get_navigation_access(
@@ -206,13 +327,25 @@ def gestionar_tareas_profesor(request, clase_id):
         school_id=request.user.rbd_colegio,
     )
     
+    from backend.apps.core.services.profesor_hero_service import ProfesorHeroService
+
+    gt_ctx = {
+        'pagina_hero': 'gestionar_tareas',
+        'gt_intel_resumen': gt_intel.get('gt_intel_resumen', ''),
+        'gt_total_estudiantes': total_estudiantes,
+        'total_tareas': len(tareas),
+        'total_pendientes': total_pendientes,
+        'gt_tasa_revision': gt_intel.get('gt_tasa_revision', 0),
+    }
     context = {
+        'prof_hero': ProfesorHeroService.for_clase_page(clase, gt_ctx),
         'clase': clase,
         'tareas': tareas,
         'total_tareas': len(tareas),
         'total_entregas': total_entregas,
         'total_pendientes': total_pendientes,
         'total_revisadas': total_revisadas,
+        **gt_intel,
         'user': request.user,
         'sidebar_template': sidebar_template,
         'content_template': '',
@@ -227,6 +360,7 @@ def gestionar_tareas_profesor(request, clase_id):
         ),
         'year': datetime.now().year,
         'pagina_actual': 'mis_clases',
+        'gt_vista_previa': gt_vista_previa,
         **navigation_access,
     }
 
@@ -303,7 +437,6 @@ def ver_entregas_tarea(request, tarea_id):
             return redirect('ver_entregas_tarea', tarea_id=tarea.id_tarea)
             
     # Obtener alumnos y cruzar con entregas
-    from backend.apps.cursos.models import ClaseEstudiante
     estudiantes_clase = ClaseEstudiante.objects.filter(clase=clase, activo=True).select_related('estudiante')
     
     entregas = EntregaTarea.objects.filter(tarea=tarea)
@@ -330,7 +463,21 @@ def ver_entregas_tarea(request, tarea_id):
         school_id=request.user.rbd_colegio,
     )
     
+    from backend.apps.core.services.profesor_hero_service import ProfesorHeroService
+
+    pendientes = entregas.filter(calificacion__isnull=True).count()
+    calificadas = entregas.filter(calificacion__isnull=False).count()
+    ent_ctx = {
+        'pagina_hero': 'entregas_tarea',
+        'tarea': tarea,
+        'hero_sub_clase': f"{clase.curso.nombre} · {clase.asignatura.nombre}",
+        'total_estudiantes': len(estudiantes_list),
+        'total_entregas': total_entregas,
+        'entregas_pendientes': pendientes,
+        'entregas_calificadas': calificadas,
+    }
     context = {
+        'prof_hero': ProfesorHeroService.for_clase_page(clase, ent_ctx),
         'clase': clase,
         'tarea': tarea,
         'entregas': entregas,

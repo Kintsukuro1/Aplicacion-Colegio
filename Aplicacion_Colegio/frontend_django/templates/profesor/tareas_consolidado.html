@@ -1,64 +1,176 @@
+{% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<div class="content-wrapper">
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Académico" hero_title="Tareas Consolidadas" hero_subtitle="Visión general del estado de las tareas en tus cursos" hero_aria="Tareas consolidadas" metrics_aria="Resumen de tareas" hero_show_date="0" m1_value=tareas|length m1_label="Tareas listadas" m1_mod="tareas" m2_value="—" m2_label="En curso" m2_mod="clases" m3_value="—" m3_label="Vencidas" m3_mod="riesgo" m4_value="—" m4_label="Cursos" m4_mod="neutral" %}
+<link rel="stylesheet" href="{% static 'css/profesor/tareas.css' %}?v=20260528-premium-cards">
 
-    <!-- Lista de Tareas Consolidadas -->
-    <div class="tareas-lista d-flex flex-col gap-md">
+<div class="tc-page">
+    <section class="tc-guide" aria-label="Guía de tareas">
+        <h3 class="tc-guide__title">Seguimiento de entregas</h3>
+        <p class="tc-guide__text">
+            Revisa el avance de cada tarea en tus cursos, detecta baja participación y corrige entregas pendientes.
+            Los indicadores se actualizan al <strong>recargar la página</strong> después de registrar entregas o notas.
+        </p>
+    </section>
+
+    {% if tareas %}
+    <section class="tc-insights" aria-label="Indicadores de tareas">
+        <article class="tc-insight">
+            <span class="tc-insight__val">{{ tc_resumen.en_curso|default:0 }}</span>
+            <span class="tc-insight__lbl">En curso</span>
+            <span class="tc-insight__hint">Plazo vigente</span>
+        </article>
+        <article class="tc-insight tc-insight--muted">
+            <span class="tc-insight__val">{{ tc_resumen.vencidas|default:0 }}</span>
+            <span class="tc-insight__lbl">Finalizadas</span>
+            <span class="tc-insight__hint">Plazo vencido</span>
+        </article>
+        <article class="tc-insight{% if tc_resumen.por_corregir %} tc-insight--warn{% endif %}">
+            <span class="tc-insight__val">{{ tc_resumen.por_corregir|default:0 }}</span>
+            <span class="tc-insight__lbl">Por calificar</span>
+            <span class="tc-insight__hint">Entregas sin nota</span>
+        </article>
+        <article class="tc-insight{% if tc_resumen.baja_entrega %} tc-insight--risk{% endif %}">
+            <span class="tc-insight__val">{{ tc_resumen.baja_entrega|default:0 }}</span>
+            <span class="tc-insight__lbl">Baja entrega</span>
+            <span class="tc-insight__hint">&lt; 50% en curso</span>
+        </article>
+    </section>
+
+    {% if tc_alertas or tc_prioridad %}
+    <section class="tc-intel" aria-label="Información inteligente">
+        <h3 class="tc-intel__title">Información inteligente</h3>
+        {% if tc_alertas %}
+        <ul class="tc-intel__alertas">
+            {% for alerta in tc_alertas %}
+            <li><span aria-hidden="true">💡</span> {{ alerta }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% if tc_prioridad %}
+        <div class="tc-intel__prioridad">
+            <h4 class="tc-intel__sub">Priorizar revisión</h4>
+            <ul class="tc-intel__lista">
+                {% for t in tc_prioridad %}
+                <li>
+                    <a href="{% url 'ver_entregas_tarea' t.id %}" class="tc-intel__link">
+                        <span class="tc-intel__tarea">{{ t.titulo }}</span>
+                        <span class="tc-intel__meta">{{ t.clase }}</span>
+                    </a>
+                    <span class="tc-intel__badges">
+                        {% if t.por_corregir %}<span class="tc-intel__pill tc-intel__pill--warn">{{ t.por_corregir }} sin nota</span>{% endif %}
+                        {% if not t.vencida and t.porcentaje_entrega < 50 %}<span class="tc-intel__pill">{{ t.porcentaje_entrega }}% entregas</span>{% endif %}
+                        {% if t.vence_pronto %}<span class="tc-intel__pill tc-intel__pill--soon">Vence pronto</span>{% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <nav class="tc-filters" aria-label="Filtrar listado">
+        <button type="button" class="tc-filter tc-filter--active" data-tc-filter="todas">Todas</button>
+        <button type="button" class="tc-filter" data-tc-filter="curso">En curso</button>
+        <button type="button" class="tc-filter" data-tc-filter="vencida">Finalizadas</button>
+        <button type="button" class="tc-filter" data-tc-filter="baja">Baja entrega</button>
+        <button type="button" class="tc-filter" data-tc-filter="corregir">Por calificar</button>
+    </nav>
+    {% endif %}
+
+    <div class="tc-list" id="tcList">
         {% for tarea in tareas %}
-        <div class="tarea-card {% if tarea.vencida %}vencida{% endif %} card-accent"
-           >
-            <div class="tarea-header header-flex"
-               >
-                <div class="tarea-badge pill-gradient"
-                   >
-                    {{ tarea.clase }}
+        <article class="tc-card{% if tarea.vencida %} tc-card--vencida{% else %} tc-card--activa{% endif %}{% if not tarea.vencida and tarea.porcentaje_entrega < 50 %} tc-card--baja{% endif %}{% if tarea.por_corregir %} tc-card--corregir{% endif %}"
+            data-tc-estado="{% if tarea.vencida %}vencida{% else %}curso{% endif %}"
+            data-tc-baja="{% if not tarea.vencida and tarea.porcentaje_entrega < 50 %}1{% else %}0{% endif %}"
+            data-tc-corregir="{% if tarea.por_corregir %}1{% else %}0{% endif %}">
+            <div class="tc-card__stripe" aria-hidden="true"></div>
+            <div class="tc-card__inner">
+            <header class="tc-card__head">
+                <div class="tc-card__clase-wrap">
+                    <span class="tc-card__clase-icon" aria-hidden="true">📚</span>
+                    <span class="tc-card__clase">{{ tarea.clase }}</span>
                 </div>
                 {% if tarea.vencida %}
-                <span
-                    class="pill-danger">Finalizada</span>
+                <span class="tc-badge tc-badge--muted">Finalizada</span>
+                {% elif tarea.vence_pronto %}
+                <span class="tc-badge tc-badge--soon">Vence pronto</span>
                 {% else %}
-                <span
-                    style="padding: 0.3rem 0.7rem; background: #dcfce7; color: #16a34a; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">En
-                    Curso</span>
+                <span class="tc-badge tc-badge--ok">En curso</span>
                 {% endif %}
-            </div>
-
-            <h3 style="color: #1e3a8a; margin: 0 0 1rem 0; font-size: 1.25rem;">{{ tarea.titulo }}</h3>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-                <div class="flex-1">
-                    <div
-                        style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">
-                        <span>Entregas: {{ tarea.entregadas }} / {{ tarea.total_estudiantes }}</span>
-                        <span>{{ tarea.porcentaje_entrega }}%</span>
-                    </div>
-                    <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                        <div
-                            style="height: 100%; background: {% if tarea.porcentaje_entrega >= 80 %}#10b981{% elif tarea.porcentaje_entrega >= 50 %}#f59e0b{% else %}#ef4444{% endif %}; width: {{ tarea.porcentaje_entrega }}%;">
-                        </div>
-                    </div>
+            </header>
+            <div class="tc-card__hero-row">
+                <h3 class="tc-card__title">{{ tarea.titulo }}</h3>
+                <div class="tc-card__pct" aria-label="{{ tarea.porcentaje_entrega }} por ciento de entregas">
+                    <span class="tc-card__pct-val">{{ tarea.porcentaje_entrega }}</span>
+                    <span class="tc-card__pct-sym">%</span>
                 </div>
             </div>
-
-            <div class="tarea-meta"
-                style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.9rem; color: #64748b;">
-                <span class="d-flex align-center gap-md">
-                    <span class="icon">📅</span> Vencimiento: {{ tarea.fecha_entrega|date:"d/m/Y H:i" }}
-                </span>
-                <span class="d-flex align-center gap-md">
-                    <span
-                        style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {% if tarea.es_publica %}#10b981{% else %}#94a3b8{% endif %};"></span>
-                    {{ tarea.es_publica|yesno:"Pública,Oculta" }}
-                </span>
+            <div class="tc-card__progress">
+                <div class="tc-card__progress-meta">
+                    <span class="tc-card__entregas"><strong>{{ tarea.entregadas }}</strong> / {{ tarea.total_estudiantes }} entregas</span>
+                </div>
+                <div class="tc-card__bar" role="progressbar" aria-valuenow="{{ tarea.porcentaje_entrega }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="tc-card__bar-fill" style="width: {{ tarea.porcentaje_entrega }}%;"></div>
+                </div>
             </div>
-        </div>
+            <div class="tarea-insight">
+                {% if tarea.por_corregir %}
+                <span class="insight-chip chip-corregir">✏️ {{ tarea.por_corregir }} entrega{{ tarea.por_corregir|pluralize }} sin calificar</span>
+                {% endif %}
+                {% if tarea.pendientes_entrega and not tarea.vencida %}
+                <span class="insight-chip chip-pendiente">📋 {{ tarea.pendientes_entrega }} sin entregar aún</span>
+                {% endif %}
+                {% if tarea.porcentaje_entrega >= 90 %}
+                <span class="insight-chip chip-excelente">🏆 Excelente participación</span>
+                {% elif tarea.porcentaje_entrega >= 70 %}
+                <span class="insight-chip chip-bueno">👍 Buen nivel de entrega</span>
+                {% elif tarea.porcentaje_entrega >= 50 %}
+                <span class="insight-chip chip-alerta">⚠️ Revisa entregas pendientes</span>
+                {% else %}
+                <span class="insight-chip chip-urgente">🚨 Baja entrega — considera extender plazo</span>
+                {% endif %}
+            </div>
+            <footer class="tc-card__foot">
+                <span class="tc-card__meta"><span class="tc-card__meta-icon" aria-hidden="true">📅</span> Vence {{ tarea.fecha_entrega|date:"d/m/Y" }} · {{ tarea.fecha_entrega|date:"H:i" }}</span>
+                <a href="{% url 'ver_entregas_tarea' tarea.id %}" class="tc-btn"><span>Ver entregas</span><span class="tc-btn__arrow" aria-hidden="true">→</span></a>
+            </footer>
+            </div>
+        </article>
         {% empty %}
-        <div
-            class="empty-state">
-            <div class="icon-lg mb-3">📭</div>
-            <p class="text-lg">No tienes tareas registradas en tus cursos activos.</p>
-        </div>
+        {% include 'profesor/_tareas_consolidado_demo.html' %}
         {% endfor %}
     </div>
+
+    <p id="tcFilterEmpty" class="tc-filter-empty" hidden>No hay tareas con este filtro.</p>
 </div>
+
+<script>
+(function () {
+    var filters = document.querySelectorAll('[data-tc-filter]');
+    var cards = document.querySelectorAll('#tcList .tc-card[data-tc-estado]');
+    var emptyMsg = document.getElementById('tcFilterEmpty');
+
+    function applyFilter(key) {
+        var visible = 0;
+        cards.forEach(function (card) {
+            var show = true;
+            if (key === 'curso') show = card.getAttribute('data-tc-estado') === 'curso';
+            else if (key === 'vencida') show = card.getAttribute('data-tc-estado') === 'vencida';
+            else if (key === 'baja') show = card.getAttribute('data-tc-baja') === '1';
+            else if (key === 'corregir') show = card.getAttribute('data-tc-corregir') === '1';
+            card.hidden = !show;
+            if (show) visible++;
+        });
+        if (emptyMsg) emptyMsg.hidden = visible > 0 || !cards.length;
+    }
+
+    filters.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            filters.forEach(function (b) { b.classList.remove('tc-filter--active'); });
+            btn.classList.add('tc-filter--active');
+            applyFilter(btn.getAttribute('data-tc-filter'));
+        });
+    });
+})();
+</script>
 {% include 'profesor/_personal_wrap_end.html' %}

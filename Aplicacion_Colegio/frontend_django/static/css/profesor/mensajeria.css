@@ -1,11 +1,11 @@
 /* Mensajería profesor — lavanda (sobre mm- + mc-hero) */
 
 .mm-page--prof {
-    --mm-accent: #6a5ab8;
-    --mm-accent-deep: #5b4aa8;
-    --mm-accent-soft: #faf5ff;
-    --mm-border: #e9e5ff;
-    --mm-text: #312e81;
+    --mm-accent: #6366f1;
+    --mm-accent-deep: #4f46e5;
+    --mm-accent-soft: #eef2ff;
+    --mm-border: #e0e7ff;
+    --mm-text: #3730a3;
     --mm-muted: #64748b;
     width: 100%;
     max-width: none;
@@ -235,4 +235,191 @@ body.vista-personal .mm-prof-hero .mc-metric__val {
     body.vista-personal .pers-page-content .mm-conv-panel {
         max-height: 360px;
     }
+}
+
+/* Información inteligente */
+.mm-intel-prof {
+    margin-bottom: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--mm-border);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #faf5ff 0%, #f8fafc 100%);
+}
+
+.mm-intel-prof__title {
+    margin: 0 0 0.65rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #3730a3;
+}
+
+.mm-intel-prof__alertas {
+    margin: 0 0 0.65rem;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.mm-intel-prof__alerta {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.45;
+    padding: 0.5rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid var(--mm-border);
+    background: #fff;
+}
+
+.mm-intel-prof__alerta--alerta {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.mm-intel-prof__alerta--sugerencia {
+    background: #f5f3ff;
+    border-color: #ddd6fe;
+}
+
+.mm-intel-prof__alerta--info {
+    background: #fff;
+    border-color: #e0e7ff;
+}
+
+.mm-intel-prof__link {
+    margin-left: 0.35rem;
+    color: var(--mm-accent-deep);
+    font-weight: 800;
+}
+
+.mm-intel-prof__cta {
+    margin: 0 0 0.65rem;
+}
+
+.mm-intel-prof__sub {
+    margin: 0 0 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.mm-intel-prof__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.mm-intel-prof__lista > li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.55rem 0.65rem;
+    background: #fff;
+    border: 1px solid var(--mm-border);
+    border-radius: 10px;
+}
+
+.mm-intel-prof__contacto {
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+}
+
+.mm-intel-prof__contacto:hover .mm-intel-prof__nombre {
+    color: var(--mm-accent-deep);
+}
+
+.mm-intel-prof__nombre {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.mm-intel-prof__meta {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.mm-intel-prof__pill {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--mm-accent-soft);
+    color: var(--mm-accent-deep);
+}
+
+.mm-intel-prof__pill--warn {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Burbujas salientes lavanda */
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border-color: #4f46e5;
+    color: #fff;
+}
+
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__text,
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__time {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__file a {
+    color: #e0e7ff;
+}
+
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row:not(.mm-bubble-row--out) .mm-bubble {
+    background: #fff;
+    border: 1px solid var(--mm-border);
+}
+
+.mm-page--prof .mm-empty--chat .mm-empty__illus {
+    background: linear-gradient(160deg, #eef2ff 0%, #e0e7ff 55%, #faf5ff 100%);
+    border: 1px dashed #c7d2fe;
+}
+
+.mm-page--prof .mm-btn--outline:hover {
+    background: var(--mm-accent-soft);
+    border-color: var(--mm-accent);
+}
+
+.mm-page--prof .mm-modal__dialog {
+    border-color: var(--mm-border);
+}
+
+.mm-page--prof .mm-modal__head {
+    background: var(--mm-accent-soft);
+    border-bottom: 1px solid var(--mm-border);
+}
+
+.mm-page--prof .mm-modal__title {
+    color: #3730a3;
+}
+
+/* Burbujas salientes siempre lavanda en portal docente */
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border-color: #4f46e5;
+}
+
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__text,
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__time {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+body.vista-personal.pagina-mensajes .quick-action-fab-trigger {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
 }

@@ -50,7 +50,9 @@
                 {% if contacto.no_leidos %}
                 <span class="dc-mensajes-item__badge">{{ contacto.no_leidos }}</span>
                 {% endif %}
-                {% if contacto.conversacion_id %}
+                {% if detalle_clase_vista_previa %}
+                <span class="dc-mensajes-item__btn" style="opacity:0.55;cursor:default">Ejemplo</span>
+                {% elif contacto.conversacion_id %}
                 <a href="{% url 'mensajeria:ver_conversacion' contacto.conversacion_id %}" class="dc-mensajes-item__btn">Abrir chat</a>
                 {% else %}
                 <a href="{% url 'mensajeria:bandeja_mensajes' %}?clase_id={{ clase.id }}&amp;destinatario_id={{ contacto.estudiante.id }}"

@@ -3,7 +3,6 @@
 <link rel="stylesheet" href="{% static 'css/profesor/disponibilidad.css' %}?v=20260602-lavanda">
 
 <div class="disponibilidad-container content-wrapper">
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Configuración" hero_title="Mi Disponibilidad Horaria" hero_subtitle="Configura los bloques horarios en los que estás disponible para dictar clases" hero_aria="Disponibilidad horaria" metrics_aria="Resumen de disponibilidad" hero_show_date="0" m1_value=estadisticas.bloques_disponibles m1_label="Bloques disponibles" m1_mod="clases" m2_value=estadisticas.bloques_con_clases m2_label="Con clases" m2_mod="tareas" m3_value=estadisticas.bloques_libres m3_label="Bloques libres" m3_mod="asistencia" m4_value=estadisticas.porcentaje_disponibilidad m4_label="Disponibilidad %" m4_mod="mensajes" %}
 
     <!-- Mensajes -->
     {% if messages %}

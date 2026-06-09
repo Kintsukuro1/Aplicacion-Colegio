@@ -1,660 +1,723 @@
 {% load static %}
+
 {% load custom_filters %}
+
 {% include 'profesor/_personal_wrap_start.html' %}
 
-<link rel="stylesheet" href="{% static 'css/profesor/asistencia.css' %}?v=20260602-insights">
+
+
+<link rel="stylesheet" href="{% static 'css/profesor/asistencia.css' %}?v=20260605-layout">
+
+
 
 <div class="asistencia-container">
-    {% if stats_clase %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Académico" hero_title="Registro de Asistencia" hero_subtitle="Tendencia de la clase" hero_hint="Resumen de los últimos 30 días para la clase seleccionada. No cambia al modificar la fecha del registro diario." hero_aria="Registro de asistencia" metrics_aria="Resumen de los últimos 30 días" hero_show_date="0" m1_value=stats_clase.presentes|default:0 m1_label="Presentes (30 días)" m1_mod="asistencia" m2_value=stats_clase.ausentes|default:0 m2_label="Ausentes" m2_mod="riesgo" m3_value=stats_clase.tardanzas|default:0 m3_label="Atrasos" m3_mod="warn" m4_value=stats_clase.porcentaje_asistencia|default:0 m4_label="% Asistencia" m4_mod="clases" %}
-    {% else %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Académico" hero_title="Registro de Asistencia" hero_subtitle="Selecciona una clase para ver estadísticas y registrar asistencia" hero_aria="Registro de asistencia" hero_show_date="0" m1_value="—" m1_label="Clases" m1_mod="clases" m2_value="—" m2_label="Presentes" m2_mod="asistencia" m3_value="—" m3_label="Ausentes" m3_mod="riesgo" m4_value="—" m4_label="% Asistencia" m4_mod="neutral" %}
-    {% endif %}
 
-    {% if messages %}
-    <div class="as-flash-wrap" role="status" aria-live="polite">
-        {% for message in messages %}
-        <div class="as-flash as-flash--{{ message.tags|default:'info' }}">{{ message }}</div>
-        {% endfor %}
-    </div>
-    {% endif %}
+    <!-- 1. Selección de clase y fecha -->
 
-        {% if stats_clase %}
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <section class="as-toolbar" aria-label="Filtros de asistencia">
 
-        <section class="as-stats-section" aria-label="Distribución de asistencia últimos 30 días"
-            data-total="{{ stats_clase.total_registros|default:0 }}"
-            data-presentes="{{ stats_clase.presentes|default:0 }}"
-            data-ausentes="{{ stats_clase.ausentes|default:0 }}"
-            data-tardanzas="{{ stats_clase.tardanzas|default:0 }}"
-            data-justificadas="{{ stats_clase.justificadas|default:0 }}"
-            data-porcentaje="{{ stats_clase.porcentaje_asistencia|default:0 }}"
-            {% if clase_seleccionada %}data-clase="{{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}"{% endif %}
-            data-fecha="{{ filtro_fecha|default:'' }}">
-        <div class="as-chart-row">
-            <div class="asistencia-chart-card">
-                <div class="chart-container">
-                    <canvas id="asistenciaChart" role="img" aria-label="Gráfico de distribución de asistencia"></canvas>
-                </div>
-            </div>
-            <aside class="as-insights" id="asInsightsPanel" aria-live="polite">
-                <p class="as-insights__loading">Analizando datos…</p>
-            </aside>
-        </div>
-        </section>
-
-        <script>
-            function renderAsInsights(diaCounts) {
-                var section = document.querySelector('.as-stats-section');
-                var panel = document.getElementById('asInsightsPanel');
-                if (!section || !panel) return;
-
-                var total = parseInt(section.dataset.total, 10) || 0;
-                var presentes = parseInt(section.dataset.presentes, 10) || 0;
-                var ausentes = parseInt(section.dataset.ausentes, 10) || 0;
-                var tardanzas = parseInt(section.dataset.tardanzas, 10) || 0;
-                var justificadas = parseInt(section.dataset.justificadas, 10) || 0;
-                var pct = parseFloat(section.dataset.porcentaje) || 0;
-                var suma = presentes + ausentes + tardanzas + justificadas;
-                var base = total > 0 ? total : suma;
-
-                function pctOf(n) {
-                    return base > 0 ? Math.round((n / base) * 100) : 0;
-                }
-
-                var headline = '';
-                var tone = 'neutral';
-                if (base === 0) {
-                    headline = 'Sin registros en los últimos 30 días para esta clase.';
-                    tone = 'neutral';
-                } else if (pct >= 95) {
-                    headline = 'Muy buena asistencia: la mayoría de los registros son presentes.';
-                    tone = 'ok';
-                } else if (pct >= 85) {
-                    headline = 'Asistencia estable, con margen de mejora en ausencias o tardanzas.';
-                    tone = 'ok';
-                } else if (pct >= 70) {
-                    headline = 'Asistencia moderada: conviene revisar ausencias recurrentes.';
-                    tone = 'warn';
-                } else {
-                    headline = 'Asistencia baja en el período: prioriza seguimiento con apoderados.';
-                    tone = 'risk';
-                }
-
-                var tips = [];
-                if (base === 0) {
-                    tips.push('Usa el formulario de abajo para registrar el primer día de la clase.');
-                } else {
-                    if (ausentes >= tardanzas && ausentes > 0) {
-                        tips.push('Las ausencias (' + ausentes + ') superan o igualan las tardanzas en el período.');
-                    }
-                    if (tardanzas > ausentes && tardanzas > 0) {
-                        tips.push('Hay más tardanzas (' + tardanzas + ') que ausencias: útil para conversar puntualidad.');
-                    }
-                    if (justificadas > 0) {
-                        tips.push(justificadas + ' justificada(s) en el período: verifica respaldo en observaciones.');
-                    }
-                    if (pct < 85) {
-                        tips.push('Meta sugerida del colegio: mantener al menos 85% de presentes.');
-                    }
-                }
-
-                var diaHtml = '';
-                if (diaCounts && AS_TOTAL_ESTUDIANTES > 0) {
-                    var diaAus = diaCounts.A || 0;
-                    var diaTar = diaCounts.T || 0;
-                    var diaLine = 'Día ' + (section.dataset.fecha || '') + ': ';
-                    var parts = [];
-                    parts.push((diaCounts.P || 0) + ' presente(s)');
-                    if (diaTar) parts.push(diaTar + ' tarde(s)');
-                    if (diaAus) parts.push(diaAus + ' ausente(s)');
-                    if (diaCounts.J) parts.push(diaCounts.J + ' justificado(s)');
-                    diaLine += parts.join(', ') + ' de ' + AS_TOTAL_ESTUDIANTES + ' estudiante(s).';
-                    diaHtml = '<div class="as-insights__dia"><strong>Hoy en el listado</strong><p>' + diaLine + '</p>';
-                    if (diaAus > 0 && ausentes > 0) {
-                        diaHtml += '<p class="as-insights__dia-note">En 30 días hay ' + ausentes + ' ausencia(s) acumulada(s); hoy marcaste ' + diaAus + '.</p>';
-                    }
-                    diaHtml += '</div>';
-                }
-
-                var bars = [
-                    { label: 'Presentes', n: presentes, mod: 'p' },
-                    { label: 'Ausentes', n: ausentes, mod: 'a' },
-                    { label: 'Tardanzas', n: tardanzas, mod: 't' },
-                    { label: 'Justificadas', n: justificadas, mod: 'j' }
-                ];
-
-                var barsHtml = bars.map(function (b) {
-                    var p = pctOf(b.n);
-                    return '<div class="as-insights__bar-row">' +
-                        '<span class="as-insights__bar-label">' + b.label + '</span>' +
-                        '<div class="as-insights__bar-track"><div class="as-insights__bar-fill as-insights__bar-fill--' + b.mod + '" style="width:' + p + '%"></div></div>' +
-                        '<span class="as-insights__bar-pct">' + b.n + ' · ' + p + '%</span></div>';
-                }).join('');
-
-                var tipsHtml = tips.length
-                    ? '<ul class="as-insights__tips">' + tips.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>'
-                    : '';
-
-                var claseChip = section.dataset.clase
-                    ? '<p class="as-insights__clase"><span>Clase activa</span> ' + section.dataset.clase + '</p>'
-                    : '';
-
-                panel.innerHTML =
-                    '<div class="as-insights__card as-insights__card--' + tone + '">' +
-                    '<h3 class="as-insights__title">Lectura rápida</h3>' +
-                    claseChip +
-                    '<p class="as-insights__headline">' + headline + '</p>' +
-                    (base > 0 ? '<p class="as-insights__meta">' + base + ' registro(s) en 30 días · <strong>' + pct + '%</strong> presentes</p>' : '') +
-                    '</div>' +
-                    (base > 0 ? '<div class="as-insights__card"><h3 class="as-insights__title">Composición del período</h3><div class="as-insights__bars">' + barsHtml + '</div></div>' : '') +
-                    diaHtml +
-                    (tipsHtml ? '<div class="as-insights__card as-insights__card--tips"><h3 class="as-insights__title">Sugerencias</h3>' + tipsHtml + '</div>' : '');
-            }
-
-            document.addEventListener("DOMContentLoaded", function() {
-                const ctx = document.getElementById('asistenciaChart');
-                if (ctx) {
-                    new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Presentes', 'Ausentes', 'Tardanzas', 'Justificadas'],
-                            datasets: [{
-                                data: [
-                                    {{ stats_clase.presentes|default:0 }},
-                                    {{ stats_clase.ausentes|default:0 }},
-                                    {{ stats_clase.tardanzas|default:0 }},
-                                    {{ stats_clase.justificadas|default:0 }}
-                                ],
-                                backgroundColor: [
-                                    '#10b981', // green (presente)
-                                    '#ef4444', // red (ausente)
-                                    '#f59e0b', // orange (tardanza)
-                                    '#3b82f6'  // blue (justificada)
-                                ],
-                                borderWidth: 2,
-                                borderColor: '#ffffff',
-                                hoverOffset: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        font: {
-                                            family: "'Inter', sans-serif",
-                                            size: 11
-                                        },
-                                        color: '#475569',
-                                        boxWidth: 12
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            let label = context.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            let value = context.parsed;
-                                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            let percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                            return label + value + ' (' + percentage + '%)';
-                                        }
-                                    }
-                                }
-                            },
-                            cutout: '65%'
-                        }
-                    });
-                }
-                renderAsInsights();
-            });
-        </script>
-        {% endif %}
-
-    <!-- Filtros y Selección -->
-    <section class="filtros-section" aria-labelledby="as-filtros-heading">
-        <div class="as-workflow">
-            <div class="as-workflow__step as-workflow__step--{% if clase_seleccionada %}done{% else %}active{% endif %}">
-                <span class="as-workflow__num">1</span>
-                <span>Clase y fecha</span>
-            </div>
-            <div class="as-workflow__step as-workflow__step--{% if estudiantes_con_asistencia %}active{% else %}pending{% endif %}">
-                <span class="as-workflow__num">2</span>
-                <span>Marcar estados</span>
-            </div>
-            <div class="as-workflow__step as-workflow__step--pending">
-                <span class="as-workflow__num">3</span>
-                <span>Guardar</span>
-            </div>
-        </div>
-        <h2 id="as-filtros-heading" class="as-filtros-title">¿Qué clase y día vas a registrar?</h2>
         <form method="GET" action="{% url 'dashboard' %}" class="filtros-form" id="formFiltros">
+
             <input type="hidden" name="pagina" value="asistencia">
-            
+
+
+
             {% if rol == 'admin_escolar' %}
+
             <div class="filtro-group">
+
                 <label for="filtro_curso_nombre">
+
                     <i class="fas fa-filter"></i> Curso
+
                 </label>
+
                 <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
+
                     <option value="">-- Todos los cursos --</option>
+
                     {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+
                     {% for grupo in clases_por_curso %}
+
                         <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+
                     {% endfor %}
+
                 </select>
+
             </div>
+
             {% endif %}
-            
+
+
+
             <div class="filtro-group">
+
                 <label for="clase_id">
+
                     <i class="fas fa-chalkboard"></i> Clase
+
                 </label>
+
                 <select id="clase_id" name="clase_id" required onchange="document.getElementById('formFiltros').submit()">
                     <option value="">-- Seleccione una clase --</option>
-                    {% for clase in clases|ordenar_por_curso %}
-                    <option value="{{ clase.id }}" data-curso="{{ clase.curso.nombre }}" {% if filtro_clase_id == clase.id|stringformat:"s" %}selected{% endif %}>
-                        {{ clase.curso.nombre }} · {{ clase.asignatura.nombre }}
-                    </option>
-                    {% endfor %}
+                    {% include 'profesor/_clase_select_options.html' with filtro_clase_id=filtro_clase_id %}
                 </select>
+
             </div>
-            
-            <div class="filtro-group">
+
+
+
+            <div class="filtro-group filtro-group--fecha">
+
                 <label for="fecha">
+
                     <i class="fas fa-calendar"></i> Fecha
+
                 </label>
+
                 <input type="date" id="fecha" name="fecha" value="{{ filtro_fecha }}" max="{{ fecha_hoy }}" onchange="document.getElementById('formFiltros').submit()">
+
             </div>
-            
+
+
+
             <div class="filtro-actions">
+
                 <button type="submit" class="btn-filtrar">
+
                     <i class="fas fa-filter"></i> Cargar
+
                 </button>
+
                 <a href="{% url 'dashboard' %}?pagina=asistencia" class="btn-limpiar">
+
                     <i class="fas fa-times"></i> Limpiar
+
                 </a>
+
             </div>
+
         </form>
-        
+
+
+
         {% if clase_seleccionada %}
-        <div class="info-clase">
-            <div class="info-clase__main">
-                <span class="info-clase__chip info-clase__chip--curso">{{ clase_seleccionada.curso.nombre }}</span>
-                <span class="info-clase__chip info-clase__chip--asig">{{ clase_seleccionada.asignatura.nombre }}</span>
-                <span class="info-clase__chip info-clase__chip--fecha">{{ filtro_fecha }}</span>
-            </div>
-            <div class="info-clase__links">
-                <a href="{% url 'reporte_asistencia_clase' clase_seleccionada.id %}" class="info-clase__link">📊 Reporte mensual</a>
-                <a href="{% url 'registro_asistencia_clase' clase_seleccionada.id %}?fecha={{ filtro_fecha }}" class="info-clase__link">📋 Vista por lista</a>
-                <a href="{% url 'ver_detalle_clase' clase_seleccionada.id %}" class="info-clase__link">Ver clase</a>
-            </div>
-        </div>
+
+        <p class="as-toolbar__context">
+
+            <span class="as-toolbar__pill"><i class="fas fa-book-open" aria-hidden="true"></i> {{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</span>
+
+            <span class="as-toolbar__pill"><i class="fas fa-calendar-day" aria-hidden="true"></i> {{ filtro_fecha }}</span>
+
+            {% if estudiantes_con_asistencia %}
+
+            <span class="as-toolbar__pill as-toolbar__pill--muted">{{ estudiantes_con_asistencia|length }} estudiante{{ estudiantes_con_asistencia|length|pluralize }}</span>
+
+            {% endif %}
+
+        </p>
+
         {% endif %}
+
     </section>
 
-    <!-- Tabla de Asistencia -->
-    {% if clase_seleccionada %}
-    <div class="tabla-container">
-        {% if estudiantes_con_asistencia %}
-        <section class="as-dia-panel" id="asDiaPanel" aria-labelledby="as-dia-heading">
-            <div class="as-dia-panel__head">
-                <h3 id="as-dia-heading">Registro del día seleccionado</h3>
-                <p class="as-dia-panel__sub">Conteo en tiempo real según los estados que marques abajo (independiente del resumen de 30 días).</p>
-            </div>
-            <div class="as-dia-chips">
-                <span class="as-dia-chip as-dia-chip--p" data-dia-count="P">0 presentes</span>
-                <span class="as-dia-chip as-dia-chip--t" data-dia-count="T">0 tardanzas</span>
-                <span class="as-dia-chip as-dia-chip--a" data-dia-count="A">0 ausentes</span>
-                <span class="as-dia-chip as-dia-chip--j" data-dia-count="J">0 justificados</span>
-            </div>
-            <div class="as-dia-progress" aria-hidden="true">
-                <div class="as-dia-progress__bar" id="asDiaProgressBar" style="width: 100%"></div>
-            </div>
-            <p class="as-dia-hint" id="asDiaHint"></p>
-        </section>
 
-        <div class="as-unsaved" id="asUnsaved" hidden role="status">
-            <span>●</span> Tienes cambios sin guardar en este listado
+
+    <!-- 2. Visualización (solo datos que el hero no muestra: justificadas + gráfico) -->
+
+    {% if stats_clase and stats_clase.total_registros %}
+
+    <section class="as-insights" aria-label="Distribución de asistencia">
+
+        <div class="as-insights__chart-card">
+
+            <header class="as-insights__head">
+
+                <h2 class="as-insights__title">Distribución (30 días)</h2>
+
+                <p class="as-insights__sub">Comparativo visual; los totales están en el resumen superior.</p>
+
+            </header>
+
+            <div class="as-insights__chart-wrap">
+
+                <canvas id="asistenciaChart" aria-label="Gráfico de distribución de asistencia"></canvas>
+
+            </div>
+
         </div>
 
-        <form method="POST" action="{% url 'dashboard' %}?pagina=asistencia&amp;clase_id={{ clase_seleccionada.id }}&amp;fecha={{ filtro_fecha }}" id="formAsistencia">
-            {% csrf_token %}
-            <input type="hidden" name="accion" value="registrar_asistencia">
-            <input type="hidden" name="clase_id" value="{{ clase_seleccionada.id }}">
-            <input type="hidden" name="fecha" value="{{ filtro_fecha }}">
-            
-            <div class="acciones-rapidas acciones-rapidas--sticky">
-                <div class="acciones-rapidas__left">
-                    <label class="as-search-wrap">
-                        <span class="visually-hidden">Buscar estudiante</span>
-                        <i class="fas fa-search" aria-hidden="true"></i>
-                        <input type="search" id="asBuscarEst" placeholder="Buscar por nombre o RUT…" autocomplete="off">
-                    </label>
-                    <div class="as-quick-group" role="group" aria-label="Acciones rápidas">
-                        <button type="button" class="btn-accion-rapida btn-accion-rapida--p" onclick="marcarTodos('P')">
-                            <i class="fas fa-check-circle"></i> Todos presentes
-                        </button>
-                        <button type="button" class="btn-accion-rapida btn-accion-rapida--t" onclick="marcarTodos('T')">
-                            <i class="fas fa-clock"></i> Todos tarde
-                        </button>
-                        <button type="button" class="btn-accion-rapida btn-accion-rapida--a" onclick="marcarTodos('A')">
-                            <i class="fas fa-times-circle"></i> Todos ausentes
-                        </button>
-                    </div>
-                </div>
-                <button type="submit" class="btn-guardar-asistencia" id="btnGuardarAsistencia">
-                    <i class="fas fa-save"></i> Guardar asistencia
-                </button>
-            </div>
 
-            <p class="as-leyenda-tabla" aria-label="Leyenda de estados">
-                <span><strong>P</strong> Presente</span>
-                <span><strong>A</strong> Ausente</span>
-                <span><strong>T</strong> Tarde</span>
-                <span><strong>J</strong> Justificado</span>
-            </p>
-            
-            <table class="tabla-asistencia">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Estudiante</th>
-                        <th>RUT</th>
-                        <th>Estado</th>
-                        <th>Observaciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in estudiantes_con_asistencia %}
-                    <tr class="as-row-estado as-row-estado--{{ item.estado|default:'P' }}" data-estudiante-row data-estado="{{ item.estado|default:'P' }}">
-                        <td>{{ forloop.counter }}</td>
-                        <td>
-                            <div class="estudiante-info">
-                                <div class="avatar-small">
-                                    {{ item.estudiante.nombre.0 }}{{ item.estudiante.apellido_paterno.0 }}
-                                </div>
-                                <span>{{ item.estudiante.get_full_name }}</span>
-                            </div>
-                        </td>
-                        <td>{{ item.estudiante.rut|default:"—" }}</td>
-                        <td>
-                            <div class="estados-grupo">
-                                <label class="radio-estado estado-presente" title="Presente">
-                                    <input type="radio" name="estado_{{ item.estudiante.id }}" value="P" {% if item.estado == 'P' %}checked{% endif %} data-estado-input>
-                                    <span class="radio-custom"><span class="radio-custom__abbr">P</span><span class="radio-custom__txt">Presente</span></span>
-                                </label>
-                                <label class="radio-estado estado-ausente" title="Ausente">
-                                    <input type="radio" name="estado_{{ item.estudiante.id }}" value="A" {% if item.estado == 'A' %}checked{% endif %} data-estado-input>
-                                    <span class="radio-custom"><span class="radio-custom__abbr">A</span><span class="radio-custom__txt">Ausente</span></span>
-                                </label>
-                                <label class="radio-estado estado-tardanza" title="Tardanza">
-                                    <input type="radio" name="estado_{{ item.estudiante.id }}" value="T" {% if item.estado == 'T' %}checked{% endif %} data-estado-input>
-                                    <span class="radio-custom"><span class="radio-custom__abbr">T</span><span class="radio-custom__txt">Tarde</span></span>
-                                </label>
-                                <label class="radio-estado estado-justificada" title="Justificada">
-                                    <input type="radio" name="estado_{{ item.estudiante.id }}" value="J" {% if item.estado == 'J' %}checked{% endif %} data-estado-input>
-                                    <span class="radio-custom"><span class="radio-custom__abbr">J</span><span class="radio-custom__txt">Justificado</span></span>
-                                </label>
-                            </div>
-                        </td>
-                        <td>
-                            {% if item.asistencia %}
-                                <button type="button" class="btn-observacion" onclick="abrirModalObservacion(this)"
-                                    data-asistencia-id="{{ item.asistencia.id_asistencia }}"
-                                    data-estudiante="{{ item.estudiante.get_full_name }}"
-                                    data-observaciones="{{ item.asistencia.observaciones|default:'' }}">
-                                    <i class="fas fa-comment"></i>
-                                    {% if item.asistencia.observaciones %}
-                                        <span class="badge-obs">1</span>
-                                    {% endif %}
-                                </button>
-                            {% else %}
-                                <span class="text-muted as-obs-pending" title="Guarda la asistencia del día para poder agregar observaciones">Tras guardar</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </form>
-        {% else %}
-        <div class="empty-state">
-            <i class="fas fa-users-slash"></i>
-            <p>No hay estudiantes asignados a este curso</p>
-        </div>
-        {% endif %}
-    </div>
-    {% else %}
-    <div class="empty-state as-empty-onboarding">
-        <i class="fas fa-hand-pointer"></i>
-        <p>Selecciona una <strong>clase</strong> y una <strong>fecha</strong> arriba para ver el listado de estudiantes.</p>
-        {% if total_clases %}
-        <p class="as-empty-onboarding__meta">Tienes {{ total_clases }} clase{{ total_clases|pluralize:"s" }} disponible{{ total_clases|pluralize:"s" }} para registrar asistencia.</p>
-        {% endif %}
-    </div>
+
+        <aside class="as-insights__meta">
+
+            <h3 class="as-insights__meta-title">Detalle del período</h3>
+
+            <ul class="as-breakdown">
+
+                <li class="as-breakdown__row as-breakdown__row--j">
+
+                    <span class="as-breakdown__label">Justificadas</span>
+
+                    <span class="as-breakdown__val">{{ stats_clase.justificadas|default:0 }}</span>
+
+                </li>
+
+                <li class="as-breakdown__row as-breakdown__row--total">
+
+                    <span class="as-breakdown__label">Registros en período</span>
+
+                    <span class="as-breakdown__val">{{ stats_clase.total_registros|default:0 }}</span>
+
+                </li>
+
+            </ul>
+
+            <ul class="as-legend-mini" aria-hidden="true">
+
+                <li><span class="as-legend-mini__dot as-legend-mini__dot--p"></span> Presentes</li>
+
+                <li><span class="as-legend-mini__dot as-legend-mini__dot--a"></span> Ausentes</li>
+
+                <li><span class="as-legend-mini__dot as-legend-mini__dot--t"></span> Atrasos</li>
+
+                <li><span class="as-legend-mini__dot as-legend-mini__dot--j"></span> Justificadas</li>
+
+            </ul>
+
+        </aside>
+
+    </section>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            var ctx = document.getElementById('asistenciaChart');
+
+            if (!ctx) return;
+
+            new Chart(ctx, {
+
+                type: 'doughnut',
+
+                data: {
+
+                    labels: ['Presentes', 'Ausentes', 'Atrasos', 'Justificadas'],
+
+                    datasets: [{
+
+                        data: [
+
+                            {{ stats_clase.presentes|default:0 }},
+
+                            {{ stats_clase.ausentes|default:0 }},
+
+                            {{ stats_clase.tardanzas|default:0 }},
+
+                            {{ stats_clase.justificadas|default:0 }}
+
+                        ],
+
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'],
+
+                        borderWidth: 2,
+
+                        borderColor: '#ffffff',
+
+                        hoverOffset: 4
+
+                    }]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+
+                            position: 'bottom',
+
+                            labels: {
+
+                                font: { family: "'Inter', sans-serif", size: 11 },
+
+                                color: '#5b21b6',
+
+                                boxWidth: 10,
+
+                                padding: 12
+
+                            }
+
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label: function (context) {
+
+                                    var label = context.label || '';
+
+                                    var value = context.parsed;
+
+                                    var total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+
+                                    var pct = total > 0 ? Math.round((value / total) * 100) : 0;
+
+                                    return label + ': ' + value + ' (' + pct + '%)';
+
+                                }
+
+                            }
+
+                        }
+
+                    },
+
+                    cutout: '62%'
+
+                }
+
+            });
+
+        });
+
+    </script>
+
+    {% elif clase_seleccionada %}
+    {% if not stats_clase or not stats_clase.total_registros %}
+
+    <p class="as-empty-stats" role="status">
+
+        No hay registros de asistencia en los últimos 30 días para esta clase. Elige otra fecha o registra el día de hoy abajo.
+
+    </p>
+
     {% endif %}
+    {% endif %}
+
+    <!-- 3. Registro del día -->
+
+    {% if clase_seleccionada %}
+
+    <section class="as-registro" aria-label="Registro de asistencia del día">
+
+        <header class="as-registro__head">
+            <h2 class="as-registro__title">Asistencia del día</h2>
+            <p class="as-registro__sub">Marca el estado de cada estudiante y guarda los cambios.</p>
+        </header>
+        <div class="as-live-counter" id="asLiveCounter" aria-live="polite" hidden>
+            <span class="as-live-counter__pill as-live-counter__pill--p" id="asCountP">Presentes: 0</span>
+            <span class="as-live-counter__pill as-live-counter__pill--a" id="asCountA">Ausentes: 0</span>
+            <span class="as-live-counter__pill as-live-counter__pill--t" id="asCountT">Atrasos: 0</span>
+            <span class="as-live-counter__pill as-live-counter__pill--j" id="asCountJ">Justificadas: 0</span>
+        </div>
+
+
+
+        <div class="tabla-container">
+
+            {% if estudiantes_con_asistencia %}
+
+            <form method="POST" action="{% url 'dashboard' %}?pagina=asistencia" id="formAsistencia">
+
+                {% csrf_token %}
+
+                <input type="hidden" name="accion" value="registrar_asistencia">
+
+                <input type="hidden" name="clase_id" value="{{ clase_seleccionada.id }}">
+
+                <input type="hidden" name="fecha" value="{{ filtro_fecha }}">
+
+
+
+                <div class="acciones-rapidas">
+
+                    <button type="button" class="btn-accion-rapida" onclick="marcarTodos('P')">
+
+                        <i class="fas fa-check-circle"></i> Marcar todos presentes
+
+                    </button>
+
+                    <button type="submit" class="btn-guardar-asistencia">
+
+                        <i class="fas fa-save"></i> Guardar asistencia
+
+                    </button>
+
+                </div>
+
+
+
+                <table class="tabla-asistencia">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>#</th>
+
+                            <th>Estudiante</th>
+
+                            <th>RUT</th>
+
+                            <th>Estado</th>
+
+                            <th>Observaciones</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for item in estudiantes_con_asistencia %}
+
+                        <tr>
+
+                            <td>{{ forloop.counter }}</td>
+
+                            <td>
+
+                                <div class="estudiante-info">
+
+                                    <div class="avatar-small">
+
+                                        {{ item.estudiante.nombre.0 }}{{ item.estudiante.apellido_paterno.0 }}
+
+                                    </div>
+
+                                    <span>{{ item.estudiante.get_full_name }}</span>
+
+                                </div>
+
+                            </td>
+
+                            <td>{{ item.estudiante.rut|default:"—" }}</td>
+
+                            <td>
+
+                                <div class="estados-grupo">
+
+                                    <label class="radio-estado estado-presente" title="Presente">
+
+                                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="P" {% if item.estado == 'P' %}checked{% endif %}>
+
+                                        <span class="radio-custom">✅ P</span>
+
+                                    </label>
+
+                                    <label class="radio-estado estado-ausente" title="Ausente">
+
+                                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="A" {% if item.estado == 'A' %}checked{% endif %}>
+
+                                        <span class="radio-custom">❌ A</span>
+
+                                    </label>
+
+                                    <label class="radio-estado estado-tardanza" title="Tardanza">
+
+                                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="T" {% if item.estado == 'T' %}checked{% endif %}>
+
+                                        <span class="radio-custom">⏰ T</span>
+
+                                    </label>
+
+                                    <label class="radio-estado estado-justificada" title="Justificada">
+
+                                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="J" {% if item.estado == 'J' %}checked{% endif %}>
+
+                                        <span class="radio-custom">📝 J</span>
+
+                                    </label>
+
+                                </div>
+
+                            </td>
+
+                            <td>
+
+                                {% if item.asistencia %}
+
+                                    <button type="button" class="btn-observacion" onclick="abrirModalObservacion(this)"
+
+                                        data-asistencia-id="{{ item.asistencia.id_asistencia }}"
+
+                                        data-estudiante="{{ item.estudiante.get_full_name }}"
+
+                                        data-observaciones="{{ item.asistencia.observaciones|default:'' }}">
+
+                                        <i class="fas fa-comment"></i>
+
+                                        {% if item.asistencia.observaciones %}
+
+                                            <span class="badge-obs">1</span>
+
+                                        {% endif %}
+
+                                    </button>
+
+                                {% else %}
+
+                                    <span class="text-muted">—</span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </form>
+
+            {% else %}
+
+            <div class="empty-state">
+
+                <i class="fas fa-users-slash"></i>
+
+                <p>No hay estudiantes asignados a este curso</p>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+    {% else %}
+
+    <div class="empty-state empty-state--prompt">
+
+        <i class="fas fa-hand-pointer"></i>
+
+        <p>Selecciona una clase y una fecha para registrar asistencia</p>
+
+        <p class="empty-state__hint">El resumen de 30 días aparecerá en la parte superior al elegir una clase con historial.</p>
+
+    </div>
+
+    {% endif %}
+
 </div>
+
+
 
 <!-- Modal Observaciones -->
-{% if clase_seleccionada %}
+
 <div id="modalObservacion" class="modal-overlay d-none">
+
     <div class="modal-content">
+
         <div class="modal-header">
+
             <h3>Observaciones de Asistencia</h3>
+
             <button class="btn-close-modal" onclick="cerrarModal('modalObservacion')">
+
                 <i class="fas fa-times"></i>
+
             </button>
+
         </div>
-        
-        <form method="POST" action="{% url 'dashboard' %}?pagina=asistencia&amp;clase_id={{ clase_seleccionada.id }}&amp;fecha={{ filtro_fecha }}">
+
+
+
+        <form method="POST" action="{% url 'dashboard' %}?pagina=asistencia">
+
             {% csrf_token %}
+
             <input type="hidden" name="accion" value="actualizar_observacion">
-            <input type="hidden" name="clase_id" value="{{ clase_seleccionada.id }}">
-            <input type="hidden" name="fecha" value="{{ filtro_fecha }}">
+
             <input type="hidden" name="asistencia_id" id="observacionAsistenciaId">
-            
+
+
+
             <p class="info-estudiante">
+
                 <strong>Estudiante:</strong> <span id="observacionEstudiante"></span>
+
             </p>
-            
+
+
+
             <div class="form-group">
+
                 <label for="observaciones">Observaciones</label>
+
                 <textarea id="observaciones" name="observaciones" rows="4" placeholder="Ingrese observaciones sobre la asistencia..."></textarea>
+
             </div>
-            
+
+
+
             <div class="modal-footer">
+
                 <button type="button" class="btn-cancelar" onclick="cerrarModal('modalObservacion')">
+
                     <i class="fas fa-times"></i> Cancelar
+
                 </button>
+
                 <button type="submit" class="btn-guardar">
+
                     <i class="fas fa-save"></i> Guardar
+
                 </button>
+
             </div>
+
         </form>
+
     </div>
+
 </div>
-{% endif %}
+
+
 
 <script>
-var AS_TOTAL_ESTUDIANTES = {% if estudiantes_con_asistencia %}{{ estudiantes_con_asistencia|length }}{% else %}0{% endif %};
 
 function marcarTodos(estado) {
-    const form = document.getElementById('formAsistencia');
-    if (!form) return;
-    form.querySelectorAll('tbody tr[data-estudiante-row]:not([hidden])').forEach(function (row) {
-        var radio = row.querySelector('input[type="radio"][value="' + estado + '"]');
-        if (radio) {
-            radio.checked = true;
-            row.setAttribute('data-estado', estado);
-            row.className = 'as-row-estado as-row-estado--' + estado;
-        }
+
+    document.querySelectorAll('input[type="radio"][value="' + estado + '"]').forEach(function (radio) {
+
+        radio.checked = true;
+
     });
-    if (typeof actualizarResumenDia === 'function') actualizarResumenDia();
-    if (typeof marcarFormModificado === 'function') marcarFormModificado();
+
 }
 
-function actualizarResumenDia() {
-    var total = AS_TOTAL_ESTUDIANTES;
-    if (!total) return;
-    var counts = { P: 0, T: 0, A: 0, J: 0 };
-    document.querySelectorAll('#formAsistencia tbody tr[data-estudiante-row]:not([hidden])').forEach(function (row) {
-        var checked = row.querySelector('input[type="radio"]:checked');
-        if (checked && counts[checked.value] !== undefined) counts[checked.value]++;
-    });
-    document.querySelectorAll('[data-dia-count]').forEach(function (el) {
-        var k = el.getAttribute('data-dia-count');
-        var labels = { P: 'presentes', T: 'tardanzas', A: 'ausentes', J: 'justificados' };
-        el.textContent = counts[k] + ' ' + labels[k];
-    });
-    if (typeof renderAsInsights === 'function') renderAsInsights(counts);
-    var marcados = counts.P + counts.T + counts.A + counts.J;
-    var bar = document.getElementById('asDiaProgressBar');
-    var hint = document.getElementById('asDiaHint');
-    if (bar) bar.style.width = Math.round((marcados / total) * 100) + '%';
-    if (hint) {
-        if (marcados < total) {
-            hint.textContent = 'Faltan ' + (total - marcados) + ' estudiante(s) por revisar en la lista visible.';
-        } else if (counts.A > 0) {
-            hint.textContent = 'Hay ' + counts.A + ' ausente(s) este día. Recuerda guardar para notificar según la configuración del colegio.';
-        } else {
-            hint.textContent = 'Listo para guardar: ' + total + ' estudiante(s) con estado definido.';
-        }
-    }
-}
 
-function marcarFormModificado() {
-    formModificado = true;
-    var banner = document.getElementById('asUnsaved');
-    if (banner) banner.hidden = false;
-}
 
-// Abrir modal de observaciones
 function abrirModalObservacion(button) {
-    const data = button.dataset;
-    
+
+    var data = button.dataset;
+
     document.getElementById('observacionAsistenciaId').value = data.asistenciaId;
+
     document.getElementById('observacionEstudiante').textContent = data.estudiante;
+
     document.getElementById('observaciones').value = data.observaciones;
+
     document.getElementById('modalObservacion').style.display = 'flex';
+
 }
 
-// Cerrar modal
+
+
 function cerrarModal(modalId) {
+
     document.getElementById(modalId).style.display = 'none';
+
 }
 
-// Cerrar modal al hacer clic fuera
-document.querySelectorAll('.modal-overlay').forEach(modal => {
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-        }
+
+
+document.querySelectorAll('.modal-overlay').forEach(function (modal) {
+
+    modal.addEventListener('click', function (e) {
+
+        if (e.target === this) this.style.display = 'none';
+
     });
+
 });
 
-// Cerrar modal con tecla ESC
-document.addEventListener('keydown', function(e) {
+
+
+document.addEventListener('keydown', function (e) {
+
     if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
+
+        document.querySelectorAll('.modal-overlay').forEach(function (modal) {
+
             modal.style.display = 'none';
+
         });
+
     }
+
 });
 
-let formModificado = false;
 
-document.addEventListener('DOMContentLoaded', function () {
-    actualizarResumenDia();
-    var flash = document.querySelector('.as-flash-wrap');
-    if (flash) flash.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    var search = document.getElementById('asBuscarEst');
-    if (search) {
-        search.addEventListener('input', function () {
-            var q = search.value.trim().toLowerCase();
-            document.querySelectorAll('#formAsistencia tbody tr[data-estudiante-row]').forEach(function (row) {
-                var text = row.textContent.toLowerCase();
-                row.hidden = q.length > 0 && text.indexOf(q) === -1;
-            });
-            actualizarResumenDia();
-        });
-    }
-});
+var formModificado = false;
 
-document.querySelectorAll('#formAsistencia input[type="radio"]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
-        var row = radio.closest('tr');
-        if (row) {
-            row.setAttribute('data-estado', radio.value);
-            row.className = 'as-row-estado as-row-estado--' + radio.value;
-        }
-        marcarFormModificado();
-        actualizarResumenDia();
+function asUpdateLiveCounter() {
+    var wrap = document.getElementById('asLiveCounter');
+    if (!wrap) return;
+    var counts = { P: 0, A: 0, T: 0, J: 0 };
+    document.querySelectorAll('#formAsistencia input[type="radio"]:checked').forEach(function (r) {
+        if (counts[r.value] !== undefined) counts[r.value]++;
     });
-});
-
-const formAsistencia = document.getElementById('formAsistencia');
-if (formAsistencia) {
-    formAsistencia.addEventListener('submit', function () {
-        formModificado = false;
-        var banner = document.getElementById('asUnsaved');
-        if (banner) banner.hidden = true;
-        var btn = document.getElementById('btnGuardarAsistencia');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando…';
-        }
-    });
+    var elP = document.getElementById('asCountP');
+    var elA = document.getElementById('asCountA');
+    var elT = document.getElementById('asCountT');
+    var elJ = document.getElementById('asCountJ');
+    if (elP) elP.textContent = 'Presentes: ' + counts.P;
+    if (elA) elA.textContent = 'Ausentes: ' + counts.A;
+    if (elT) elT.textContent = 'Atrasos: ' + counts.T;
+    if (elJ) elJ.textContent = 'Justificadas: ' + counts.J;
+    wrap.hidden = false;
 }
 
-window.addEventListener('beforeunload', (e) => {
-    if (formModificado) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
+document.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+        formModificado = true;
+        asUpdateLiveCounter();
+    });
 });
+
+if (document.getElementById('formAsistencia')) asUpdateLiveCounter();
+
+var formAsistencia = document.getElementById('formAsistencia');
+
+if (formAsistencia) {
+
+    formAsistencia.addEventListener('submit', function () { formModificado = false; });
+
+}
+
+
+
+window.addEventListener('beforeunload', function (e) {
+
+    if (formModificado) {
+
+        e.preventDefault();
+
+        e.returnValue = '';
+
+    }
+
+});
+
 </script>
+
+
 
 {% if rol == 'admin_escolar' %}
-<script>
-function filtrarClasesPorCurso(cursoNombre) {
-    var claseSelect = document.getElementById('clase_id');
-    if (!claseSelect) return;
-
-    var primeraVisible = null;
-    Array.from(claseSelect.options).forEach(function (opt) {
-        if (!opt.value) {
-            opt.hidden = false;
-            return;
-        }
-        var visible = !cursoNombre || opt.dataset.curso === cursoNombre;
-        opt.hidden = !visible;
-        if (visible && !primeraVisible) primeraVisible = opt;
-    });
-
-    var actual = claseSelect.options[claseSelect.selectedIndex];
-    if (actual && actual.value && actual.hidden && primeraVisible) {
-        claseSelect.value = primeraVisible.value;
-        claseSelect.dispatchEvent(new Event('change'));
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    var cursoFiltro = document.getElementById('filtro_curso_nombre');
-    var claseSelect = document.getElementById('clase_id');
-    if (!cursoFiltro || !claseSelect) return;
-    var selectedOption = claseSelect.options[claseSelect.selectedIndex];
-    if (selectedOption && selectedOption.value && selectedOption.dataset.curso) {
-        cursoFiltro.value = selectedOption.dataset.curso;
-        filtrarClasesPorCurso(selectedOption.dataset.curso);
-    }
-});
-</script>
+{% include 'profesor/_filtrar_clases_por_curso_script.html' %}
 {% endif %}
+
 {% include 'profesor/_personal_wrap_end.html' %}
+

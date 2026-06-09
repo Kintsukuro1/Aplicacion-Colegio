@@ -1,6 +1,8 @@
 /* Gestionar actividades — portal docente premium (lavanda plano, sin degradados) */
 
-.gt-page {
+/* Variables en página Y modal (el modal está fuera de .gt-page en el HTML) */
+.gt-page,
+#modalCrearTarea {
     --gt-accent: #8b7cc8;
     --gt-accent-deep: #6a5ab8;
     --gt-accent-soft: #faf5ff;
@@ -15,13 +17,78 @@
     --gt-shadow-hover: 0 22px 50px rgba(76, 29, 149, 0.14);
     --gt-radius-lg: 22px;
     --gt-radius-md: 14px;
-    max-width: 1180px;
-    margin: 0 auto;
+}
+
+.gt-page {
+    width: 100%;
+    max-width: none;
+    margin: 0;
     display: flex;
     flex-direction: column;
     gap: 1.35rem;
     font-family: 'Inter', system-ui, sans-serif;
     color: var(--gt-text);
+}
+
+.gt-page .prof-hero {
+    margin-bottom: 0;
+}
+
+.gt-demo-banner {
+    padding: 0.85rem 1.1rem;
+    border-radius: 14px;
+    border: 1px dashed #c4b5fd;
+    background: linear-gradient(90deg, #faf5ff 0%, #fff 85%);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: #5b21b6;
+}
+
+.gt-demo-banner__link {
+    margin-left: 0.35rem;
+    font-weight: 700;
+    color: #6a5ab8;
+    text-decoration: underline;
+}
+
+.gt-btn--disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.gt-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+/* —— Layout principal + sidebar —— */
+.gt-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) min(320px, 100%);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 1080px) {
+    .gt-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .gt-aside {
+        order: -1;
+    }
+}
+
+.gt-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 /* —— Breadcrumb —— */
@@ -224,7 +291,216 @@
     color: #991b1b;
 }
 
-/* —— Métricas —— */
+/* —— Sidebar inteligente —— */
+.gt-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    position: sticky;
+    top: 1rem;
+}
+
+@media (max-width: 1080px) {
+    .gt-aside {
+        position: static;
+    }
+}
+
+.gt-aside-card {
+    background: var(--gt-surface);
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius-md);
+    padding: 1rem 1.05rem;
+    box-shadow: var(--gt-shadow-sm);
+}
+
+.gt-aside-card--summary {
+    background: var(--gt-accent-soft);
+    border-color: #ddd6fe;
+}
+
+.gt-aside-card--tips {
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.gt-aside-card__title {
+    margin: 0 0 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gt-accent-deep);
+}
+
+.gt-aside-card__text {
+    margin: 0 0 0.85rem;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: var(--gt-muted);
+    font-weight: 500;
+}
+
+.gt-aside-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.55rem;
+    margin: 0;
+}
+
+.gt-aside-kpi {
+    padding: 0.55rem 0.65rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid var(--gt-border);
+}
+
+.gt-aside-kpi dt {
+    margin: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gt-muted);
+}
+
+.gt-aside-kpi dd {
+    margin: 0.15rem 0 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--gt-accent-deep);
+    letter-spacing: -0.02em;
+}
+
+.gt-aside-kpi__warn {
+    color: #d97706 !important;
+}
+
+.gt-aside-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.gt-aside-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.65rem 0.5rem;
+    border-radius: 10px;
+    background: var(--gt-accent-soft);
+    border: 1px solid var(--gt-border);
+}
+
+.gt-aside-stat__value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--gt-accent-deep);
+    line-height: 1;
+}
+
+.gt-aside-stat__label {
+    margin-top: 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gt-muted);
+}
+
+.gt-aside-stat--warn .gt-aside-stat__value { color: #d97706; }
+.gt-aside-stat--ok .gt-aside-stat__value { color: #16a34a; }
+
+.gt-intel-alertas {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.gt-intel-card {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    padding: 0.7rem 0.75rem;
+    border-radius: 12px;
+    border: 1px solid var(--gt-border);
+    background: #fff;
+}
+
+.gt-intel-card--warn {
+    border-color: #fed7aa;
+    background: linear-gradient(90deg, #fffaf5 0%, #fff 70%);
+}
+
+.gt-intel-card--danger {
+    border-color: #fecaca;
+    background: linear-gradient(90deg, #fef2f2 0%, #fff 70%);
+}
+
+.gt-intel-card__icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.gt-intel-card__title {
+    margin: 0;
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: var(--gt-text);
+}
+
+.gt-intel-card__text {
+    margin: 0.15rem 0 0;
+    font-size: 0.8rem;
+    color: var(--gt-muted);
+    line-height: 1.4;
+}
+
+.gt-intel-link {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gt-accent-deep);
+    text-decoration: none;
+}
+
+.gt-intel-link:hover {
+    text-decoration: underline;
+}
+
+.gt-intel-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.4rem;
+}
+
+.gt-intel-list__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--gt-border);
+    font-size: 0.82rem;
+    color: var(--gt-text);
+    line-height: 1.4;
+}
+
+.gt-intel-list__item a {
+    color: var(--gt-accent-deep);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.gt-intel-list__item a:hover {
+    text-decoration: underline;
+}
+
+/* —— Métricas (legacy, ya no en main) —— */
 .gt-stat-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -285,7 +561,13 @@
 .gt-stat-card--warn .gt-stat-value { color: #d97706; }
 .gt-stat-card--ok .gt-stat-value { color: #16a34a; }
 
-/* —— Tarjetas de tarea —— */
+/* —— Lista de tareas (ancho completo) —— */
+.gt-tarea-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
 .gt-tarea-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -294,6 +576,10 @@
 
 .gt-tarea-card {
     position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: stretch;
     background: var(--gt-surface);
     border: 1px solid var(--gt-border);
     border-radius: var(--gt-radius-lg);
@@ -301,6 +587,37 @@
     box-shadow: var(--gt-shadow-sm);
     overflow: hidden;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.gt-tarea-card--attention {
+    border-color: #fcd34d;
+    box-shadow: 0 8px 28px rgba(217, 119, 6, 0.08);
+}
+
+.gt-tarea-card--expired .gt-tarea-card__accent {
+    background: #d97706;
+}
+
+.gt-tarea-card__body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+@media (max-width: 720px) {
+    .gt-tarea-card {
+        grid-template-columns: 1fr;
+    }
+
+    .gt-tarea-actions {
+        flex-direction: row;
+        border-left: none !important;
+        border-top: 1px solid var(--gt-border);
+        padding-left: 0 !important;
+        padding-top: 0.85rem !important;
+        margin-top: 0 !important;
+    }
 }
 
 .gt-tarea-card:hover {
@@ -322,8 +639,114 @@
 .gt-tarea-card__head {
     display: flex;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 1rem;
     align-items: flex-start;
+}
+
+.gt-tarea-card__info {
+    min-width: 0;
+    flex: 1;
+}
+
+.gt-tarea-card__desc {
+    margin: 0.55rem 0 0;
+    font-size: 0.86rem;
+    color: var(--gt-muted);
+    line-height: 1.45;
+    font-weight: 500;
+}
+
+.gt-tarea-card__metrics {
+    display: flex;
+    gap: 0.65rem;
+    flex-shrink: 0;
+}
+
+.gt-tarea-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 4.5rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 12px;
+    background: var(--gt-accent-soft);
+    border: 1px solid var(--gt-border);
+}
+
+.gt-tarea-metric__value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--gt-accent-deep);
+    line-height: 1;
+}
+
+.gt-tarea-metric__label {
+    margin-top: 0.2rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gt-muted);
+}
+
+.gt-progress-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.gt-progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gt-progress-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--gt-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.gt-progress-value {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--gt-accent-deep);
+}
+
+.gt-progress-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: #ede9fe;
+    overflow: hidden;
+}
+
+.gt-progress-bar__fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.35s ease;
+}
+
+.gt-progress-bar__fill--entrega {
+    background: linear-gradient(90deg, #8b7cc8, #6a5ab8);
+}
+
+.gt-progress-bar__fill--revision {
+    background: linear-gradient(90deg, #34d399, #16a34a);
+}
+
+.gt-progress-hint {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #b45309;
+    font-weight: 600;
+}
+
+.gt-tarea-card__tags {
+    margin-top: 0.15rem;
 }
 
 .gt-tarea-card__title {
@@ -378,13 +801,32 @@
     color: #475569;
 }
 
+.gt-badge--warn-soft {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.gt-badge--link {
+    background: #ede9fe;
+    color: var(--gt-accent-deep);
+    text-decoration: none;
+}
+
+.gt-badge--link:hover {
+    background: #ddd6fe;
+    text-decoration: none;
+}
+
 .gt-tarea-actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: center;
     gap: 0.5rem;
-    margin-top: 1.05rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--gt-border);
+    padding-left: 1rem;
+    border-left: 1px solid var(--gt-border);
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 /* —— Empty —— */
@@ -538,6 +980,12 @@
 }
 
 /* —— Modal —— */
+#modalCrearTarea {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--gt-text);
+    -webkit-font-smoothing: antialiased;
+}
+
 #modalCrearTarea.gt-modal-root {
     display: none;
     position: fixed;
@@ -743,6 +1191,145 @@ body.gt-modal-open {
     flex-wrap: wrap;
     gap: 0.55rem;
     justify-content: flex-end;
+}
+
+/* Bootstrap del dashboard pisa botones del modal: forzar tema lavanda */
+#modalCrearTarea .gt-modal-footer__actions .gt-btn,
+#modalCrearTarea .gt-modal-footer__actions button {
+    font-family: inherit;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+#modalCrearTarea .gt-btn--outline {
+    background: #ffffff !important;
+    color: #6a5ab8 !important;
+    border: 1px solid #e9e5ff !important;
+    box-shadow: 0 2px 10px rgba(49, 46, 129, 0.05);
+}
+
+#modalCrearTarea .gt-btn--outline:hover {
+    background: #faf5ff !important;
+    border-color: #d4c9ff !important;
+    color: #5b4aa8 !important;
+}
+
+#modalCrearTarea .gt-btn--primary,
+#modalCrearTarea .gt-btn--primary:hover,
+#modalCrearTarea button.gt-btn--primary {
+    background: #6a5ab8 !important;
+    background-color: #6a5ab8 !important;
+    border: 1px solid #6a5ab8 !important;
+    border-color: #6a5ab8 !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(106, 90, 184, 0.35);
+}
+
+#modalCrearTarea .gt-btn--primary:hover,
+#modalCrearTarea button.gt-btn--primary:hover {
+    background: #5b4aa8 !important;
+    background-color: #5b4aa8 !important;
+    border-color: #5b4aa8 !important;
+}
+
+#modalCrearTarea .gt-btn--lg {
+    padding: 0.72rem 1.35rem;
+    font-size: 0.92rem;
+    min-width: 10.5rem;
+}
+
+/* Campos del formulario dentro del modal (visibles sin depender solo de .gt-page) */
+#modalCrearTarea .gt-form-field label {
+    font-weight: 700;
+    color: #312e81;
+    font-size: 0.82rem;
+}
+
+#modalCrearTarea .gt-form-field input:not([type="checkbox"]):not([type="file"]),
+#modalCrearTarea .gt-form-field textarea,
+#modalCrearTarea .gt-form-field select {
+    border: 1px solid #e9e5ff;
+    border-radius: 12px;
+    padding: 0.72rem 0.92rem;
+    width: 100%;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: #ffffff;
+    color: #312e81;
+    box-sizing: border-box;
+}
+
+#modalCrearTarea .gt-form-field input:not([type="checkbox"]):not([type="file"]):focus,
+#modalCrearTarea .gt-form-field textarea:focus,
+#modalCrearTarea .gt-form-field select:focus {
+    outline: none;
+    border-color: #8b7cc8;
+    box-shadow: 0 0 0 3px rgba(139, 124, 200, 0.22);
+}
+
+#modalCrearTarea .gt-form-field select {
+    padding-right: 2.2rem;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236a5ab8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    appearance: none;
+    cursor: pointer;
+}
+
+#modalCrearTarea .gt-form-field input[type="file"] {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.82rem;
+    background: #faf5ff;
+    border: 1px dashed #d4c9ff;
+}
+
+#modalCrearTarea .gt-form-field input[type="file"]::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid #e9e5ff;
+    border-radius: 9px;
+    background: #fff;
+    color: #6a5ab8;
+    font-weight: 700;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+#modalCrearTarea .gt-check-pill {
+    border: 1px solid #e9e5ff;
+    border-radius: 12px;
+    background: #faf5ff;
+    color: #312e81;
+}
+
+#modalCrearTarea .gt-check-pill:has(input:checked) {
+    background: #fff;
+    border-color: #8b7cc8;
+    box-shadow: 0 0 0 2px rgba(139, 124, 200, 0.15);
+}
+
+#modalCrearTarea .gt-check-pill input[type="checkbox"] {
+    accent-color: #6a5ab8;
+    width: 1rem;
+    height: 1rem;
+}
+
+#modalCrearTarea .gt-form-block__title,
+#modalCrearTarea .gt-modal-header__eyebrow {
+    color: #6a5ab8;
+}
+
+#modalCrearTarea .gt-modal-header h2,
+#modalCrearTarea .gt-question-card__title {
+    color: #312e81;
+}
+
+#modalCrearTarea .gt-modal-header__hint,
+#modalCrearTarea .gt-modal-section__hint,
+#modalCrearTarea .gt-form-help,
+#modalCrearTarea .gt-modal-footer__hint {
+    color: #64748b;
 }
 
 #modalCrearTarea .gt-question-card {

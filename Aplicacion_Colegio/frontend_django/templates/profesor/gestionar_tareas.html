@@ -1,6 +1,6 @@
 {% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/profesor/gestionar_tareas.css' %}?v=20260529-premium">
+<link rel="stylesheet" href="{% static 'css/profesor/gestionar_tareas.css' %}?v=20260604-demo">
 
 <div class="gt-page">
     <nav class="gt-breadcrumb" aria-label="Ruta de navegación">
@@ -12,16 +12,25 @@
     </nav>
 
     {% with hero_sub_clase=clase.curso.nombre|add:" · "|add:clase.asignatura.nombre %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Portal docente · Actividades" hero_title="Gestionar actividades" hero_subtitle=hero_sub_clase hero_aria="Gestionar actividades" hero_show_date="0" hero_hide_metrics=1 %}
     {% endwith %}
-    <div class="gt-hero__actions">
+
+    <div class="gt-toolbar">
+        <div class="gt-hero__actions">
             <a href="{% url 'dashboard' %}?pagina=mis_clases" class="gt-back-mis-clases" title="Volver al listado de clases">
                 <span class="gt-back-mis-clases__icon" aria-hidden="true">←</span>
                 <span>Mis Clases</span>
             </a>
             <a href="{% url 'ver_detalle_clase' clase.id %}" class="gt-btn gt-btn--outline">Ver esta clase</a>
             <button type="button" onclick="mostrarModalCrear()" class="gt-btn gt-btn--primary">➕ Crear actividad híbrida</button>
+        </div>
     </div>
+
+    {% if gt_vista_previa %}
+    <div class="gt-demo-banner" role="status">
+        <strong>Datos de prueba</strong> — actividades de ejemplo para revisar el diseño. Crear o eliminar reales sigue disponible; las de ejemplo no se guardan.
+        <a href="{% url 'gestionar_tareas_profesor' clase.id %}?datos_reales=1" class="gt-demo-banner__link">Ver sin datos de prueba</a>
+    </div>
+    {% endif %}
 
     {% if messages %}
     <div class="gt-flash-wrap" role="status">
@@ -31,98 +40,115 @@
     </div>
     {% endif %}
 
-    <section class="gt-stat-grid" aria-label="Resumen de actividades">
-        <article class="gt-stat-card gt-stat-card--primary">
-            <span class="gt-stat-card__icon" aria-hidden="true">📋</span>
-            <div>
-                <div class="gt-stat-label">Tareas activas</div>
-                <div class="gt-stat-value">{{ total_tareas|default:0 }}</div>
-            </div>
-        </article>
-        <article class="gt-stat-card">
-            <span class="gt-stat-card__icon" aria-hidden="true">📥</span>
-            <div>
-                <div class="gt-stat-label">Entregas</div>
-                <div class="gt-stat-value">{{ total_entregas|default:0 }}</div>
-            </div>
-        </article>
-        <article class="gt-stat-card gt-stat-card--warn">
-            <span class="gt-stat-card__icon" aria-hidden="true">⏳</span>
-            <div>
-                <div class="gt-stat-label">Pendientes</div>
-                <div class="gt-stat-value">{{ total_pendientes|default:0 }}</div>
-            </div>
-        </article>
-        <article class="gt-stat-card gt-stat-card--ok">
-            <span class="gt-stat-card__icon" aria-hidden="true">✓</span>
-            <div>
-                <div class="gt-stat-label">Revisadas</div>
-                <div class="gt-stat-value">{{ total_revisadas|default:0 }}</div>
-            </div>
-        </article>
-    </section>
+    <div class="gt-layout">
+        <div class="gt-main">
+            {% if tareas %}
+            <div class="gt-tarea-list">
+                {% for item in tareas %}
+                <article class="gt-tarea-card{% if item.requiere_atencion %} gt-tarea-card--attention{% endif %}{% if item.tarea.esta_vencida %} gt-tarea-card--expired{% endif %}" id="tarea-{{ item.tarea.id_tarea }}">
+                    <div class="gt-tarea-card__accent" aria-hidden="true"></div>
+                    <div class="gt-tarea-card__body">
+                        <div class="gt-tarea-card__head">
+                            <div class="gt-tarea-card__info">
+                                <h3 class="gt-tarea-card__title">{{ item.tarea.titulo }}</h3>
+                                <div class="gt-tarea-meta">
+                                    <span>📅 {{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}</span>
+                                    {% if item.tarea.esta_vencida %}
+                                    <span class="gt-badge gt-badge--warning">Vencida</span>
+                                    {% else %}
+                                    <span class="gt-badge gt-badge--success">Activa</span>
+                                    {% endif %}
+                                    {% if item.actividad_resoluble %}
+                                    <span class="gt-badge gt-badge--info">{{ item.actividad_resoluble.get_modalidad_display }}</span>
+                                    {% else %}
+                                    <span class="gt-badge gt-badge--neutral">Solo legacy</span>
+                                    {% endif %}
+                                    {% if item.entregas_pendientes %}
+                                    <span class="gt-badge gt-badge--warn-soft">{{ item.entregas_pendientes }} por revisar</span>
+                                    {% endif %}
+                                </div>
+                                <p class="gt-tarea-card__desc">{{ item.tarea.instrucciones|truncatewords:28 }}</p>
+                            </div>
+                            <div class="gt-tarea-card__metrics">
+                                <div class="gt-tarea-metric">
+                                    <span class="gt-tarea-metric__value">{{ item.total_entregas }}/{{ gt_total_estudiantes|default:0 }}</span>
+                                    <span class="gt-tarea-metric__label">Entregas</span>
+                                </div>
+                                <div class="gt-tarea-metric">
+                                    <span class="gt-tarea-metric__value">{{ item.porcentaje_entrega|default:0 }}%</span>
+                                    <span class="gt-tarea-metric__label">Cobertura</span>
+                                </div>
+                            </div>
+                        </div>
 
-    {% if tareas %}
-    <div class="gt-tarea-grid">
-        {% for item in tareas %}
-        <article class="gt-tarea-card">
-            <div class="gt-tarea-card__accent" aria-hidden="true"></div>
-            <div class="gt-tarea-card__head">
-                <div>
-                    <h3 class="gt-tarea-card__title">{{ item.tarea.titulo }}</h3>
-                    <div class="gt-tarea-meta">
-                        <span>📅 {{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}</span>
-                        {% if item.tarea.esta_vencida %}
-                        <span class="gt-badge gt-badge--warning">Vencida</span>
-                        {% else %}
-                        <span class="gt-badge gt-badge--success">Activa</span>
+                        {% if gt_total_estudiantes %}
+                        <div class="gt-progress-block">
+                            <div class="gt-progress-row">
+                                <span class="gt-progress-label">Entregas recibidas</span>
+                                <span class="gt-progress-value">{{ item.porcentaje_entrega|default:0 }}%</span>
+                            </div>
+                            <div class="gt-progress-bar" role="progressbar" aria-valuenow="{{ item.porcentaje_entrega|default:0 }}" aria-valuemin="0" aria-valuemax="100">
+                                <span class="gt-progress-bar__fill gt-progress-bar__fill--entrega" style="width: {{ item.porcentaje_entrega|default:0 }}%"></span>
+                            </div>
+                            {% if item.alumnos_sin_entrega %}
+                            <p class="gt-progress-hint">{{ item.alumnos_sin_entrega }} alumno(s) aún no entregan.</p>
+                            {% endif %}
+                        </div>
                         {% endif %}
-                        {% if item.actividad_resoluble %}
-                        <span class="gt-badge gt-badge--info">{{ item.actividad_resoluble.get_modalidad_display }}</span>
+
+                        {% if item.total_entregas %}
+                        <div class="gt-progress-block">
+                            <div class="gt-progress-row">
+                                <span class="gt-progress-label">Revisión docente</span>
+                                <span class="gt-progress-value">{{ item.entregas_revisadas }}/{{ item.total_entregas }}</span>
+                            </div>
+                            <div class="gt-progress-bar" role="progressbar" aria-valuenow="{{ item.entregas_revisadas }}" aria-valuemin="0" aria-valuemax="{{ item.total_entregas }}">
+                                <span class="gt-progress-bar__fill gt-progress-bar__fill--revision" style="width: {% widthratio item.entregas_revisadas item.total_entregas 100 %}%"></span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="gt-check-row gt-tarea-card__tags">
+                            <span class="gt-badge gt-badge--neutral">Revisadas: {{ item.entregas_revisadas }}</span>
+                            <span class="gt-badge gt-badge--neutral">Pendientes: {{ item.entregas_pendientes }}</span>
+                            {% if item.actividad_resoluble %}
+                            <span class="gt-badge gt-badge--info">Preguntas: {{ item.actividad_resoluble.preguntas.count }}</span>
+                            {% endif %}
+                            {% if item.tarea.archivo_instrucciones %}
+                            <a href="{{ item.tarea.archivo_instrucciones.url }}" class="gt-badge gt-badge--link" download>📎 Adjunto</a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="gt-tarea-actions">
+                        {% if gt_vista_previa %}
+                        <span class="gt-btn gt-btn--primary gt-btn--sm gt-btn--disabled" title="Solo ejemplo">Ver entregas</span>
+                        <span class="gt-btn gt-btn--danger gt-btn--sm gt-btn--disabled" title="Solo ejemplo">Eliminar</span>
                         {% else %}
-                        <span class="gt-badge gt-badge--neutral">Solo legacy</span>
+                        <a href="{% url 'ver_entregas_tarea' item.tarea.id_tarea %}" class="gt-btn gt-btn--primary gt-btn--sm">Ver entregas</a>
+                        <form method="post" style="margin:0" onsubmit="return confirm('¿Eliminar esta tarea? Se eliminarán sus entregas y actividad híbrida asociada.');">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="eliminar_tarea">
+                            <input type="hidden" name="tarea_id" value="{{ item.tarea.id_tarea }}">
+                            <button type="submit" class="gt-btn gt-btn--danger gt-btn--sm">Eliminar</button>
+                        </form>
                         {% endif %}
                     </div>
-                </div>
-                <span class="gt-badge gt-badge--neutral">{{ item.total_entregas }} entregas</span>
+                </article>
+                {% endfor %}
             </div>
-
-            <p class="gt-mt-3 gt-muted">{{ item.tarea.instrucciones|truncatewords:32 }}</p>
-
-            {% if item.tarea.archivo_instrucciones %}
-            <div class="gt-mt-3">
-                <a href="{{ item.tarea.archivo_instrucciones.url }}" class="gt-btn gt-btn--outline gt-btn--sm" download>📎 Descargar adjunto</a>
-            </div>
+            {% else %}
+            <section class="gt-empty">
+                <div class="gt-empty__icon" aria-hidden="true">📝</div>
+                <h3>Sin actividades reales en esta clase</h3>
+                <p>En desarrollo verás datos de prueba al recargar, o crea la primera actividad híbrida.</p>
+                <button type="button" class="gt-btn gt-btn--primary gt-btn--lg" onclick="mostrarModalCrear()">➕ Crear actividad híbrida</button>
+            </section>
             {% endif %}
+        </div>
 
-            <div class="gt-check-row gt-mt-3">
-                <span class="gt-badge gt-badge--neutral">Revisadas: {{ item.entregas_revisadas }}</span>
-                <span class="gt-badge gt-badge--neutral">Pendientes: {{ item.entregas_pendientes }}</span>
-                {% if item.actividad_resoluble %}
-                <span class="gt-badge gt-badge--info">Preguntas: {{ item.actividad_resoluble.preguntas.count }}</span>
-                {% endif %}
-            </div>
-
-            <div class="gt-tarea-actions">
-                <a href="{% url 'ver_entregas_tarea' item.tarea.id_tarea %}" class="gt-btn gt-btn--primary gt-btn--sm">Ver entregas</a>
-                <form method="post" style="margin:0" onsubmit="return confirm('¿Eliminar esta tarea? Se eliminarán sus entregas y actividad híbrida asociada.');">
-                    {% csrf_token %}
-                    <input type="hidden" name="accion" value="eliminar_tarea">
-                    <input type="hidden" name="tarea_id" value="{{ item.tarea.id_tarea }}">
-                    <button type="submit" class="gt-btn gt-btn--danger gt-btn--sm">Eliminar</button>
-                </form>
-            </div>
-        </article>
-        {% endfor %}
+        {% include 'profesor/_gt_intel_panel.html' %}
     </div>
-    {% else %}
-    <section class="gt-empty">
-        <div class="gt-empty__icon" aria-hidden="true">📝</div>
-        <h3>No hay actividades creadas</h3>
-        <p>Crea la primera actividad híbrida para esta clase.</p>
-        <button type="button" class="gt-btn gt-btn--primary gt-btn--lg" onclick="mostrarModalCrear()">➕ Crear actividad híbrida</button>
-    </section>
-    {% endif %}
 </div>
 
 {% include 'profesor/_personal_wrap_end.html' %}

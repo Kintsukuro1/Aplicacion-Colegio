@@ -136,6 +136,13 @@ class DashboardOrchestratorService:
 
             context.update(role_context)
 
+            if not context.get('prof_hero_manual'):
+                from backend.apps.core.services.profesor_hero_service import ProfesorHeroService
+                colegio_obj = SchoolQueryService.get_required_by_rbd(escuela_rbd)
+                context['prof_hero'] = ProfesorHeroService.build(
+                    pagina_solicitada, request.user, colegio_obj, context
+                )
+
         elif rol == 'apoderado':
             role_context = DashboardService.get_apoderado_context(
                 request.user, pagina_solicitada, request.GET.get('estudiante_id')

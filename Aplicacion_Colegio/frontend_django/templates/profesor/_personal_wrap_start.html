@@ -1,8 +1,8 @@
 {% load static %}
 {# layout docente: sidebar + paleta lavanda (vista-personal) #}
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
-<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260606">
-<link rel="stylesheet" href="{% static 'css/profesor/profesor_hero.css' %}?v=20260606-hint">
+<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260605-fullwidth">
+<link rel="stylesheet" href="{% static 'css/profesor/profesor_hero.css' %}?v=20260528-lavanda">
 <link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260604-prof-notif">
 <script>document.body.classList.add('vista-personal');</script>
 <script>
@@ -17,3 +17,6 @@
 {% include 'profesor/_sidebar.html' %}
 <div class="pers-main">
 <div class="pers-main__body pers-page-content">
+{% if prof_hero and not prof_hero_manual %}
+{% include 'profesor/_profesor_hero_from_ctx.html' %}
+{% endif %}

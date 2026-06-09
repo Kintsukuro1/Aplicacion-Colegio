@@ -1,7 +1,9 @@
 .perfil-container {
     padding: 30px;
-    max-width: 1400px;
-    margin: 0 auto;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 .page-header {
@@ -119,18 +121,18 @@
 }
 
 .avatar {
-    width: 120px;
-    height: 120px;
+    width: 132px;
+    height: 132px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #166534 0%, #15803d 100%);
     color: white;
-    font-size: 48px;
-    font-weight: bold;
+    font-size: 52px;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 20px;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 20px rgba(21, 128, 61, 0.35);
 }
 
 .avatar-name {

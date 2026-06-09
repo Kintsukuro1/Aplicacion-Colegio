@@ -1,21 +1,11 @@
 {% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260629">
 
 <style>
-    /* Inicio docente — paleta lavanda (dashboard_personal.css) */
+    /* Premium Teacher Dashboard Styles */
     .prof-dashboard {
-        --prof-accent: #8b7cc8;
-        --prof-accent-deep: #6a5ab8;
-        --prof-accent-light: #ddd6fe;
-        --prof-accent-soft: #ede9fe;
-        --prof-text: #4c1d95;
-        --prof-text-soft: #6d28d9;
-        --prof-border: #ddd6fe;
-        --prof-surface: #ffffff;
-        --prof-shadow: 0 8px 28px rgba(76, 29, 149, 0.07);
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        color: var(--prof-text);
+        color: #1e293b;
         animation: fadeIn 0.4s ease-out;
         display: flex;
         flex-direction: column;
@@ -29,8 +19,8 @@
 
     /* Welcome Header */
     .prof-welcome-bar {
-        background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 55%, #ddd6fe 100%);
-        border: 1px solid var(--prof-border);
+        background: linear-gradient(135deg, #eef2ff 0%, #ede9fe 100%);
+        border: 1px solid #e0e7ff;
         border-radius: 20px;
         padding: 24px 30px;
         display: flex;
@@ -38,40 +28,33 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 16px;
-        box-shadow: var(--prof-shadow);
-        position: relative;
-        z-index: 1;
-    }
-
-    .prof-welcome-bar .portal-welcome-actions {
-        position: relative;
-        z-index: 2;
+        box-shadow: 0 8px 30px rgba(99, 102, 241, 0.08);
     }
 
     .prof-welcome-text h1 {
         margin: 0;
         font-size: 1.8rem;
         font-weight: 800;
-        color: var(--prof-text);
+        color: #3730a3;
         letter-spacing: -0.03em;
     }
 
     .prof-welcome-text p {
         margin: 4px 0 0;
         font-size: 0.95rem;
-        color: var(--prof-text-soft);
+        color: #4338ca;
         font-weight: 600;
     }
 
     .prof-date-badge {
-        background: rgba(255, 255, 255, 0.75);
+        background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(8px);
         padding: 8px 16px;
         border-radius: 12px;
-        border: 1px solid var(--prof-border);
+        border: 1px solid rgba(255, 255, 255, 0.8);
         font-size: 0.9rem;
         font-weight: 700;
-        color: var(--prof-accent-deep);
+        color: #4f46e5;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
     }
 
@@ -90,11 +73,11 @@
 
     /* Cards Base */
     .prof-card {
-        background: var(--prof-surface);
-        border: 1px solid var(--prof-border);
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 20px;
         padding: 24px;
-        box-shadow: var(--prof-shadow);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -106,7 +89,7 @@
     .prof-card-title {
         font-size: 1.2rem;
         font-weight: 800;
-        color: var(--prof-text);
+        color: #0f172a;
         margin-top: 0;
         margin-bottom: 20px;
         display: flex;
@@ -128,14 +111,14 @@
     }
 
     .prof-kpi-card {
-        background: var(--prof-surface);
-        border: 1px solid var(--prof-border);
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 16px;
         padding: 20px;
         display: flex;
         align-items: center;
         gap: 14px;
-        box-shadow: 0 4px 16px rgba(76, 29, 149, 0.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
         border-top-width: 4px;
         border-top-style: solid;
         transition: transform 0.2s ease;
@@ -193,25 +176,23 @@
     }
 
     .alert-item-card {
-        background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
-        border: 1px solid var(--prof-border);
-        border-left: 4px solid #c084fc;
+        background: #fff8f8;
+        border: 1px solid #fee2e2;
         border-radius: 16px;
         padding: 16px 20px;
         display: flex;
         gap: 16px;
         align-items: flex-start;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        transition: border-color 0.2s;
     }
 
     .alert-item-card:hover {
-        border-color: var(--prof-accent);
-        box-shadow: 0 6px 18px rgba(106, 90, 184, 0.1);
+        border-color: #fca5a5;
     }
 
     .alert-avatar {
         font-size: 1.5rem;
-        background: var(--prof-accent-soft);
+        background: #fef2f2;
         width: 44px;
         height: 44px;
         border-radius: 12px;
@@ -219,7 +200,7 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        border: 1px solid var(--prof-border);
+        border: 1px solid #fee2e2;
     }
 
     .alert-body {
@@ -246,8 +227,8 @@
         font-weight: 700;
         padding: 3px 8px;
         border-radius: 6px;
-        background: var(--prof-accent-soft);
-        color: var(--prof-accent-deep);
+        background: #fee2e2;
+        color: #b91c1c;
     }
 
     .alert-details-grid {
@@ -271,12 +252,12 @@
     .val-warning { color: #d97706; }
 
     .alert-advice {
-        background: var(--prof-surface);
-        border: 1px solid var(--prof-border);
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
         border-radius: 10px;
         padding: 8px 12px;
         font-size: 0.82rem;
-        color: var(--prof-text-soft);
+        color: #475569;
         font-weight: 600;
         display: flex;
         align-items: center;
@@ -351,14 +332,10 @@
     /* Heatmap Grid */
     .heatmap-header-meta {
         font-size: 0.8rem;
-        color: var(--prof-text-soft);
+        color: #64748b;
         font-weight: 600;
         margin-top: -14px;
         margin-bottom: 18px;
-    }
-
-    .heatmap-header-meta strong {
-        color: var(--prof-text);
     }
 
     .heatmap-table th.day-header {
@@ -373,7 +350,7 @@
     }
 
     .cell-present {
-        color: #10b981;
+        color: #6366f1;
     }
 
     .cell-absent {
@@ -384,177 +361,158 @@
         color: #94a3b8;
     }
 
-    /* Centro de Pendientes Premium Glassmorphism */
-    .pending-center-section {
-        background: rgba(255, 255, 255, 0.45);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        border-radius: 24px;
-        padding: 24px;
-        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.04);
-        margin-bottom: 8px;
+    .prof-section-hint {
+        margin: -12px 0 16px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        line-height: 1.45;
     }
-    
-    .pending-center-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 20px;
-        margin-top: 16px;
+
+    .prof-pendientes-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
-    
-    .pending-card {
+
+    .prof-pendiente-link {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 20px 24px;
-        border-radius: 20px;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
         text-decoration: none;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        position: relative;
-        overflow: hidden;
+        color: #1e293b;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: border-color 0.2s, background 0.2s;
     }
 
-    .pending-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
-        z-index: 1;
-        transition: opacity 0.3s ease;
+    .prof-pendiente-link:hover {
+        border-color: #a5b4fc;
+        background: #eef2ff;
+        color: #4338ca;
     }
-    
-    .pending-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+
+    .prof-pendiente-link__badge {
+        font-size: 0.78rem;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #6366f1;
+        color: #fff;
+        flex-shrink: 0;
     }
-    
-    .pending-card-icon {
-        font-size: 2rem;
-        background: #ffffff;
-        width: 56px;
-        height: 56px;
-        border-radius: 16px;
-        display: flex;
+
+    .prof-empty-ok {
+        margin: 0;
+        padding: 16px 18px;
+        border-radius: 14px;
+        background: #eef2ff;
+        border: 1px solid #e0e7ff;
+        color: #4338ca;
+        font-weight: 700;
+        font-size: 0.92rem;
+    }
+
+    .prof-empty-muted {
+        margin: 0;
+        padding: 20px;
+        text-align: center;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border: 1px dashed #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+    }
+
+    .prof-btn-link {
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
-        z-index: 2;
-        transition: transform 0.3s ease;
+        gap: 6px;
+        margin-top: 12px;
+        padding: 10px 16px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4f46e5, #6366f1);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-decoration: none;
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.28);
     }
 
-    .pending-card:hover .pending-card-icon {
-        transform: scale(1.1) rotate(5deg);
+    .prof-btn-link:hover {
+        filter: brightness(1.05);
+        color: #fff;
     }
-    
-    .pending-card-info {
-        flex: 1;
-        margin-left: 16px;
-        display: flex;
-        flex-direction: column;
-        z-index: 2;
-    }
-    
-    .pending-card-count {
-        font-size: 1.8rem;
-        font-weight: 900;
-        line-height: 1.1;
-    }
-    
-    .pending-card-label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        margin-top: 4px;
-        opacity: 0.8;
-    }
-    
-    .pending-card-arrow {
-        font-size: 1.2rem;
-        font-weight: 700;
-        opacity: 0.5;
-        transition: transform 0.3s ease, opacity 0.3s ease;
-        z-index: 2;
-    }
-    
-    .pending-card:hover .pending-card-arrow {
-        transform: translateX(4px);
-        opacity: 1;
-    }
-    
-    /* Specific Colors */
-    .card-tasks {
-        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-        border-color: #fed7aa;
-    }
-    .card-tasks .pending-card-count, .card-tasks .pending-card-label, .card-tasks .pending-card-arrow {
-        color: #c2410c;
-    }
-    
-    .card-attendance {
-        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-        border-color: #ddd6fe;
-    }
-    .card-attendance .pending-card-count, .card-attendance .pending-card-label, .card-attendance .pending-card-arrow {
-        color: #6d28d9;
-    }
-    
-    .card-messages {
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border-color: #bfdbfe;
-    }
-    .card-messages .pending-card-count, .card-messages .pending-card-label, .card-messages .pending-card-arrow {
-        color: #1e40af;
+
+    .prof-clases-hoy-num {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #4f46e5;
+        line-height: 1;
+        margin: 8px 0;
     }
 </style>
 
 <div class="prof-dashboard">
-
-    {% include 'profesor/_profesor_hero.html' with hero_greeting=1 hero_subtitle="Portal Académico Escolar · Resumen del Día" hero_aria="Bienvenida docente" metrics_aria="Resumen de operaciones" m1_value=clases_hoy m1_label="Clases hoy" m1_mod="clases" m2_value=tareas_por_corregir m2_label="Por corregir" m2_mod="tareas" m3_value=estudiantes_riesgo m3_label="En riesgo" m3_mod="riesgo" m4_value=asistencias_pendientes m4_label="Sin pasar lista" m4_mod="asistencia" %}
-
-    <section class="pending-center-section" aria-label="Centro de Pendientes">
-        <h2 class="prof-card-title" style="margin-bottom: 0;">Centro de pendientes</h2>
-        <div class="pending-center-grid">
-            <a href="?pagina=tareas_consolidado" class="pending-card card-tasks">
-                <div class="pending-card-icon">📝</div>
-                <div class="pending-card-info">
-                    <span class="pending-card-count">{{ tareas_por_corregir }}</span>
-                    <span class="pending-card-label">Tareas por corregir</span>
-                </div>
-                <div class="pending-card-arrow">→</div>
-            </a>
-            <a href="?pagina=libro_clases" class="pending-card card-attendance">
-                <div class="pending-card-icon">📋</div>
-                <div class="pending-card-info">
-                    <span class="pending-card-count">{{ asistencias_pendientes }}</span>
-                    <span class="pending-card-label">Asistencias sin registrar</span>
-                </div>
-                <div class="pending-card-arrow">→</div>
-            </a>
-            <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="pending-card card-messages">
-                <div class="pending-card-icon">💬</div>
-                <div class="pending-card-info">
-                    <span class="pending-card-count">{{ mensajes_sin_responder }}</span>
-                    <span class="pending-card-label">Mensajes sin responder</span>
-                </div>
-                <div class="pending-card-arrow">→</div>
-            </a>
-        </div>
-    </section>
 
     <!-- Main Dashboard Grid Layout -->
     <div class="prof-grid">
         
         <!-- Left Column: Attendance Heatmap & Academic Alerts -->
         <div class="prof-left-column">
+
+            <section class="prof-card" aria-label="Centro de pendientes de hoy">
+                <h2 class="prof-card-title">📋 Centro de pendientes (hoy)</h2>
+                <p class="prof-section-hint">Acciones urgentes para hoy. El resumen superior muestra totales acumulados de tus cursos.</p>
+                {% if asistencias_pendientes or tareas_por_corregir or mensajes_sin_responder %}
+                <ul class="prof-pendientes-list">
+                    {% if asistencias_pendientes %}
+                    <li>
+                        <a href="{% url 'dashboard' %}?pagina=asistencia" class="prof-pendiente-link">
+                            <span>Registrar asistencia pendiente</span>
+                            <span class="prof-pendiente-link__badge">{{ asistencias_pendientes }}</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if tareas_por_corregir %}
+                    <li>
+                        <a href="{% url 'dashboard' %}?pagina=tareas_consolidado" class="prof-pendiente-link">
+                            <span>Entregas por corregir</span>
+                            <span class="prof-pendiente-link__badge">{{ tareas_por_corregir }}</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if mensajes_sin_responder %}
+                    <li>
+                        <a href="{% url 'dashboard' %}?pagina=mensajes" class="prof-pendiente-link">
+                            <span>Mensajes sin leer</span>
+                            <span class="prof-pendiente-link__badge">{{ mensajes_sin_responder }}</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                {% else %}
+                <p class="prof-empty-ok">✅ Sin pendientes urgentes para hoy</p>
+                {% endif %}
+            </section>
             
             <!-- Student Attendance Heatmap -->
-            <section class="prof-card" aria-label="Heatmap de Asistencia">
+            <section class="prof-card" style="margin-top: 24px;" aria-label="Heatmap de Asistencia">
                 <h2 class="prof-card-title">🗓️ Heatmap de Asistencia</h2>
                 <div class="heatmap-header-meta">
                     Curso activo: <strong>{{ heatmap_curso_nombre }}</strong> (Asignatura: {{ heatmap_clase_nombre }})
                 </div>
 
+                {% if heatmap_data %}
                 <div class="prof-table-wrapper">
                     <table class="prof-table heatmap-table">
                         <thead>
@@ -587,6 +545,9 @@
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <p class="prof-empty-muted">Aún no hay registros de asistencia para mostrar en el heatmap.</p>
+                {% endif %}
             </section>
 
             <!-- Academic Alerts Cards -->
@@ -594,6 +555,7 @@
                 <h2 class="prof-card-title">⚠️ Alertas Académicas</h2>
                 
                 <div class="alerts-list">
+                    {% if estudiantes_riesgo %}
                     {% for alerta in alertas_academicas %}
                         <article class="alert-item-card">
                             <div class="alert-avatar" aria-hidden="true">👤</div>
@@ -623,6 +585,9 @@
                             </div>
                         </article>
                     {% endfor %}
+                    {% else %}
+                    <p class="prof-empty-ok">✅ Sin alertas académicas hoy</p>
+                    {% endif %}
                 </div>
             </section>
 
@@ -658,7 +623,7 @@
                                     <td>
                                         <div class="progress-bar-container">
                                             <div class="progress-bg" aria-hidden="true">
-                                                <div class="progress-fill" style="width: {{ curso.asistencia }}%; background-color: {% if curso.asistencia >= 90 %}#10b981{% elif curso.asistencia >= 75 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                                                <div class="progress-fill" style="width: {{ curso.asistencia }}%; background-color: {% if curso.asistencia >= 90 %}#6366f1{% elif curso.asistencia >= 75 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
                                             </div>
                                             <span class="progress-val-text">{{ curso.asistencia|floatformat:0 }}%</span>
                                         </div>
@@ -668,6 +633,19 @@
                         </tbody>
                     </table>
                 </div>
+            </section>
+
+            <section class="prof-card" style="margin-top: 24px;" aria-label="Clases de hoy">
+                <h2 class="prof-card-title">🕐 Clases de hoy</h2>
+                {% if clases_hoy %}
+                <p class="prof-section-hint">Según tu horario semanal activo.</p>
+                <p class="prof-clases-hoy-num">{{ clases_hoy }}</p>
+                <p style="margin: 0; font-weight: 600; color: #475569;">clase{{ clases_hoy|pluralize }} programada{{ clases_hoy|pluralize }} hoy</p>
+                <a href="{% url 'dashboard' %}?pagina=asistencia" class="prof-btn-link">Ir a registro de asistencia →</a>
+                {% else %}
+                <p class="prof-empty-muted">No tienes clases programadas hoy en tu horario.</p>
+                <a href="{% url 'dashboard' %}?pagina=mis_clases" class="prof-btn-link">Ver mis clases →</a>
+                {% endif %}
             </section>
 
         </div>

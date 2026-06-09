@@ -45,6 +45,10 @@ from backend.apps.core.views.admin_escolar.gestionar_evaluaciones_calificaciones
     gestionar_evaluaciones_calificaciones,
 )
 from backend.apps.academico.views.academic_management_views import crear_evaluacion_online_profesor
+from backend.apps.academico.views.academic_report_views import (
+    exportar_reporte_pdf,
+    exportar_reporte_excel,
+)
 from backend.apps.core.views.admin_escolar.importar_datos_acciones import (
     editar_apoderado,
     editar_estudiante,
@@ -250,6 +254,10 @@ urlpatterns = [
     # Profesor - Asistencia
     path('profesor/clase/<int:clase_id>/asistencia/', registro_asistencia_clase, name='registro_asistencia_clase'),
     path('profesor/clase/<int:clase_id>/asistencia/reporte/', reporte_asistencia_clase, name='reporte_asistencia_clase'),
+
+    # Profesor - Reportes (exportación desde dashboard ?pagina=reportes)
+    path('reportes/exportar-pdf/', exportar_reporte_pdf, name='exportar_reporte_pdf'),
+    path('reportes/exportar-excel/', exportar_reporte_excel, name='exportar_reporte_excel'),
 
     # Profesor - Libro de Clases Digital
     path('api/profesor/libro-clases/', listar_registros_profesor, name='api_profesor_listar_registros_libro_clases'),

@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from backend.apps.mensajeria.services import MensajeriaService
 from backend.apps.mensajeria.views.bandeja import (
     _apply_mensajeria_shell,
+    _finalize_profesor_mensajeria_context,
     _get_clases_for_user,
     _mensajeria_content_template,
     enrich_apoderado_mensajeria_context,
@@ -78,6 +79,7 @@ def ver_conversacion(request, id_conversacion: int):
                 notificaciones_count=context.get('notificaciones_count'),
             ),
         )
+        _finalize_profesor_mensajeria_context(context, request.user)
     elif uses_mm_bandeja:
         context.update(
             MensajeriaService.get_alumno_bandeja_context(

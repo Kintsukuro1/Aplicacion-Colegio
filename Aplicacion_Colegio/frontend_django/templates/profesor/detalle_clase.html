@@ -3,7 +3,7 @@
 {% include 'profesor/_personal_wrap_start.html' %}
 {% endif %}
 <link rel="stylesheet" href="{% static 'css/profesor/detalle_clase.css' %}?v=20260608-portal">
-<link rel="stylesheet" href="{% static 'css/profesor/detalle_clase_intel.css' %}?v=20260608-portal">
+<link rel="stylesheet" href="{% static 'css/profesor/detalle_clase_intel.css' %}?v=20260604-demo">
 {% csrf_token %}
 
 <style>
@@ -30,26 +30,29 @@
 <div class="content-wrapper dc-page">
     {% if es_profesor and not ver_como_alumno %}
     <nav class="dc-breadcrumb" aria-label="Ruta de navegación">
-        <a href="{% url 'dashboard' %}?pagina=mis_clases" class="prof-back-mis-clases" title="Volver al listado de clases">
-            <span class="prof-back-mis-clases__icon" aria-hidden="true">←</span>
-            <span class="prof-back-mis-clases__text">Mis Clases</span>
-        </a>
+        <a href="{% url 'dashboard' %}?pagina=inicio">Inicio</a>
+        <span class="dc-breadcrumb__sep">/</span>
+        <a href="{% url 'dashboard' %}?pagina=mis_clases">Mis Clases</a>
+        <span class="dc-breadcrumb__sep">/</span>
+        <span class="dc-breadcrumb__current">{{ clase.curso.nombre }} · {{ clase.asignatura.nombre }}</span>
     </nav>
 
-    {% if prof_intel and prof_metricas %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow=curso.nombre hero_title=asignatura.nombre hero_subtitle=prof_intel.estado_hint hero_aria=asignatura.nombre metrics_aria="Resumen de la clase" hero_show_date="0" hero_hide_metrics=0 m1_value=prof_metricas.estudiantes m1_label="Estudiantes" m1_mod="clases" m2_value=prof_metricas.entregas_pendientes m2_label="Por corregir" m2_mod="tareas" m2_alert=prof_intel.entregas_urgente m3_value=prof_metricas.alumnos_riesgo m3_label="En seguimiento" m3_mod="riesgo" m4_value=prof_intel.asistencia_curso_pct|default:"—" m4_label="Asistencia %" m4_mod="asistencia" %}
-    {% else %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow=curso.nombre hero_title=asignatura.nombre hero_subtitle="Gestiona materiales, tareas, asistencia y mensajes del curso." hero_aria=asignatura.nombre hero_hide_metrics=1 hero_show_date="0" %}
-    {% endif %}
-
     <div class="dc-topbar-actions">
-        <a href="{% url 'gestionar_tareas_profesor' clase.id %}" class="dc-topbar-btn dc-topbar-btn--outline">Actividades</a>
-        <a href="{% url 'registro_asistencia_clase' clase.id %}" class="dc-topbar-btn dc-topbar-btn--outline">Asistencia</a>
+        <a href="{% url 'registro_asistencia_clase' clase.id %}" class="dc-topbar-btn dc-topbar-btn--primary">Registrar asistencia</a>
+        <a href="{% url 'gestionar_tareas_profesor' clase.id %}" class="dc-topbar-btn dc-topbar-btn--outline">Agregar tarea</a>
+        <a href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase.id }}" class="dc-topbar-btn dc-topbar-btn--outline">Ver notas</a>
         {% if mensajes_bandeja_url %}
         <a href="{{ mensajes_bandeja_url }}" class="dc-topbar-btn dc-topbar-btn--outline">Mensajes{% if mensajes_clase_no_leidos %} ({{ mensajes_clase_no_leidos }}){% endif %}</a>
         {% endif %}
         <a href="{% url 'ver_detalle_clase' clase.id %}?ver_como_alumno=1" class="dc-topbar-btn dc-topbar-btn--ghost">Vista alumno</a>
     </div>
+
+    {% if detalle_clase_vista_previa %}
+    <div class="dc-demo-banner" role="status">
+        <strong>Datos de prueba</strong> — las pestañas muestran ejemplos para ver el diseño. No se guardan en la base de datos.
+        <a href="{{ detalle_clase_salir_demo_url }}" class="dc-demo-banner__link">Ver datos reales (vacío)</a>
+    </div>
+    {% endif %}
 
     {% include 'profesor/_detalle_clase_intel.html' %}
     {% else %}
@@ -183,7 +186,7 @@
                             </div>
                         </div>
                         <div class="material-acciones">
-                            {% if es_profesor and not ver_como_alumno %}
+                            {% if es_profesor and not ver_como_alumno and not detalle_clase_vista_previa %}
                             <div class="dropdown-menu-container">
                                 <button class="btn-icon dropdown-toggle" onclick="toggleDropdown(this)" title="Opciones">
                                     ⚙️
@@ -210,10 +213,12 @@
                                     </form>
                                 </div>
                             </div>
-                            {% else %}
+                            {% elif not detalle_clase_vista_previa %}
                             <a href="{{ material.archivo.url }}" class="btn-icon" download title="Descargar">
                                 ⬇️
                             </a>
+                            {% else %}
+                            <span class="btn-icon" title="Ejemplo" style="opacity:0.5">📄</span>
                             {% endif %}
                         </div>
                     </div>
@@ -294,9 +299,13 @@
                         </div>
                         <div class="tarea-acciones">
                             {% if es_profesor and not ver_como_alumno %}
+                            {% if detalle_clase_vista_previa %}
+                            <span class="btn-secondary-small" style="opacity:0.55;cursor:default">Ver entregas</span>
+                            {% else %}
                             <a href="{% url 'ver_entregas_tarea' item.tarea.id_tarea %}" class="btn-secondary-small">
                                 Ver entregas
                             </a>
+                            {% endif %}
                             {% else %}
                             <a href="{% url 'ver_tareas_estudiante' %}" class="btn-secondary-small">
                                 Ver detalle
@@ -345,9 +354,13 @@
                                 ⬇️ Descargar
                             </a>
                             {% endif %}
+                            {% if detalle_clase_vista_previa %}
+                            <span class="btn-primary-small" style="opacity:0.55;cursor:default">Calificar</span>
+                            {% else %}
                             <a href="{% url 'ver_entregas_tarea' entrega.tarea.id_tarea %}" class="btn-primary-small">
                                 Calificar
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -477,7 +490,7 @@
                                 </a>
                             </div>
                             {% endif %}
-                            {% if es_profesor and not ver_como_alumno %}
+                            {% if es_profesor and not ver_como_alumno and not detalle_clase_vista_previa %}
                             <div class="anuncio-actions">
                                 <button onclick="editarAnuncio({{ anuncio.id_anuncio }})" class="anuncio-btn anuncio-btn-edit">✏️ Editar</button>
                                 {# Fix: POST a ver_detalle_clase; no existía la URL eliminar_anuncio #}

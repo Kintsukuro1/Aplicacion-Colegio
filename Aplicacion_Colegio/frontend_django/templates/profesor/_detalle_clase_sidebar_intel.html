@@ -9,7 +9,11 @@
         </div>
     </div>
     {% if prof_intel.accion_sugerida.tab == 'entregas' and entregas_pendientes %}
+    {% if detalle_clase_vista_previa %}
+    <button type="button" class="dc-action-suggest__btn" data-goto-tab="entregas">Ir a calificar</button>
+    {% else %}
     <a href="{% url 'ver_entregas_tarea' entregas_pendientes.0.tarea.id_tarea %}" class="dc-action-suggest__btn">Ir a calificar</a>
+    {% endif %}
     {% else %}
     <button type="button" class="dc-action-suggest__btn" data-goto-tab="{{ prof_intel.accion_sugerida.tab }}">Ver en la clase</button>
     {% endif %}

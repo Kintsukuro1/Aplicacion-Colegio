@@ -1,0 +1,109 @@
+{# Vista demostración — solo plantilla, sin BD #}
+<div class="rep-demo-live" data-rep-demo="1" aria-label="Reporte de demostración">
+
+    <div class="rep-demo-banner" role="status">
+        <p>
+            <strong>Vista demostración</strong> —
+            {% if tipo_reporte == 'academico' %}
+            Esta clase no tiene evaluaciones con notas para el reporte académico.
+            {% else %}
+            No hay registros de asistencia en el período seleccionado.
+            {% endif %}
+            Los datos siguientes son <strong>ejemplos ficticios</strong>.
+        </p>
+        {% if tipo_reporte == 'asistencia' %}
+        <a class="rep-demo-banner__cta" href="{% url 'dashboard' %}?pagina=asistencia&amp;clase_id={{ clase_seleccionada.id }}">Registrar asistencia →</a>
+        {% else %}
+        <a class="rep-demo-banner__cta" href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase_seleccionada.id }}">Ir a evaluaciones →</a>
+        {% endif %}
+    </div>
+
+    <div class="rep-insights" aria-label="Indicadores de ejemplo">
+        {% if tipo_reporte == 'asistencia' %}
+        <article class="rep-insight"><span class="rep-insight__val">128</span><span class="rep-insight__lbl">Registros</span><span class="rep-insight__hint">Ejemplo · 4 semanas</span></article>
+        <article class="rep-insight rep-insight--ok"><span class="rep-insight__val">91%</span><span class="rep-insight__lbl">Asistencia</span><span class="rep-insight__hint">Curso saludable</span></article>
+        <article class="rep-insight rep-insight--warn"><span class="rep-insight__val">6%</span><span class="rep-insight__lbl">Ausencias</span><span class="rep-insight__hint">Bajo control</span></article>
+        <article class="rep-insight"><span class="rep-insight__val">2</span><span class="rep-insight__lbl">En riesgo</span><span class="rep-insight__hint">&lt; 70% asistencia</span></article>
+        {% else %}
+        <article class="rep-insight"><span class="rep-insight__val">28</span><span class="rep-insight__lbl">Estudiantes</span><span class="rep-insight__hint">Matrícula ejemplo</span></article>
+        <article class="rep-insight"><span class="rep-insight__val">4</span><span class="rep-insight__lbl">Evaluaciones</span><span class="rep-insight__hint">Con notas</span></article>
+        <article class="rep-insight rep-insight--ok"><span class="rep-insight__val">5.4</span><span class="rep-insight__lbl">Promedio</span><span class="rep-insight__hint">Zona aprobada</span></article>
+        <article class="rep-insight rep-insight--ok"><span class="rep-insight__val">82%</span><span class="rep-insight__lbl">Aprobación</span><span class="rep-insight__hint">23 de 28</span></article>
+        {% endif %}
+    </div>
+
+    <section class="rep-intel-demo" aria-label="Sugerencias de ejemplo">
+        <h3 class="rep-intel-demo__title">Información inteligente (ejemplo)</h3>
+        <ul class="rep-intel-demo__list">
+            {% if tipo_reporte == 'asistencia' %}
+            <li><span aria-hidden="true">⚠️</span> 2 estudiantes bajo 70% de asistencia — conviene contacto con apoderado.</li>
+            <li><span aria-hidden="true">📅</span> El miércoles concentró el 40% de las ausencias del mes.</li>
+            <li><span aria-hidden="true">💡</span> Exporta el PDF semanal y compáralo con el mes anterior.</li>
+            {% else %}
+            <li><span aria-hidden="true">📉</span> 5 estudiantes en seguimiento (&lt; 4.0) — priorizar refuerzo en Tarea 1.</li>
+            <li><span aria-hidden="true">🏆</span> El 18% del curso está en nivel Excelente (≥ 6.0).</li>
+            <li><span aria-hidden="true">📝</span> La evaluación con menor promedio fue Prueba 2 (4.9).</li>
+            {% endif %}
+        </ul>
+    </section>
+
+    {% if tipo_reporte == 'asistencia' %}
+    <div class="stats-grid">
+        <div class="stat-card stat-total"><div class="stat-icon">📋</div><div class="stat-content"><div class="stat-value">128</div><div class="stat-label">Total registros</div></div></div>
+        <div class="stat-card stat-presente"><div class="stat-icon">✅</div><div class="stat-content"><div class="stat-value">116</div><div class="stat-label">Presentes (90.6%)</div></div></div>
+        <div class="stat-card stat-ausente"><div class="stat-icon">❌</div><div class="stat-content"><div class="stat-value">8</div><div class="stat-label">Ausentes (6.3%)</div></div></div>
+        <div class="stat-card stat-tardanza"><div class="stat-icon">⏰</div><div class="stat-content"><div class="stat-value">4</div><div class="stat-label">Tardanzas (3.1%)</div></div></div>
+    </div>
+    <div class="chart-section">
+        <h2>📊 Distribución de asistencia <span class="rep-demo-tag">Ejemplo</span></h2>
+        <div class="chart-container">
+            <div class="bar-chart">
+                <div class="bar-item" style="--porcentaje: 90.6%;"><div class="bar-fill bar-presente"></div><div class="bar-label">Presente<br>90.6%</div></div>
+                <div class="bar-item" style="--porcentaje: 6.3%;"><div class="bar-fill bar-ausente"></div><div class="bar-label">Ausente<br>6.3%</div></div>
+                <div class="bar-item" style="--porcentaje: 3.1%;"><div class="bar-fill bar-tardanza"></div><div class="bar-label">Tardanza<br>3.1%</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="tabla-section">
+        <h2>👨‍🎓 Asistencia por estudiante <span class="rep-demo-tag">Ejemplo</span></h2>
+        <div class="tabla-scroll">
+            <table class="tabla-reporte">
+                <thead>
+                    <tr><th>Estudiante</th><th>Total</th><th>Presentes</th><th>Ausentes</th><th>Tardanzas</th><th>% Asistencia</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="col-estudiante">Amanda Silva G.</td><td>16</td><td class="col-presente">15</td><td class="col-ausente">1</td><td class="col-tardanza">0</td><td><span class="badge-porcentaje normal">93.8%</span></td><td><span class="badge badge-normal">Normal</span></td></tr>
+                    <tr><td class="col-estudiante">Benjamín Sepúlveda R.</td><td>16</td><td class="col-presente">10</td><td class="col-ausente">5</td><td class="col-tardanza">1</td><td><span class="badge-porcentaje critico">62.5%</span></td><td><span class="badge badge-critico">Crítico</span></td></tr>
+                    <tr><td class="col-estudiante">Catalina Muñoz T.</td><td>16</td><td class="col-presente">16</td><td class="col-ausente">0</td><td class="col-tardanza">0</td><td><span class="badge-porcentaje normal">100%</span></td><td><span class="badge badge-normal">Normal</span></td></tr>
+                    <tr><td class="col-estudiante">Diego Morales P.</td><td>16</td><td class="col-presente">14</td><td class="col-ausente">1</td><td class="col-tardanza">1</td><td><span class="badge-porcentaje advertencia">87.5%</span></td><td><span class="badge badge-advertencia">Advertencia</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="stats-grid">
+        <div class="stat-card stat-estudiantes"><div class="stat-icon">👨‍🎓</div><div class="stat-content"><div class="stat-value">28</div><div class="stat-label">Estudiantes</div></div></div>
+        <div class="stat-card stat-evaluaciones"><div class="stat-icon">📝</div><div class="stat-content"><div class="stat-value">4</div><div class="stat-label">Evaluaciones</div></div></div>
+        <div class="stat-card stat-promedio"><div class="stat-icon">📊</div><div class="stat-content"><div class="stat-value aprobado">5.4</div><div class="stat-label">Promedio curso</div></div></div>
+        <div class="stat-card stat-aprobacion"><div class="stat-icon">✅</div><div class="stat-content"><div class="stat-value">82%</div><div class="stat-label">Aprobación (23/28)</div></div></div>
+    </div>
+    <div class="tabla-section">
+        <h2>🏆 Ranking de estudiantes <span class="rep-demo-tag">Ejemplo</span></h2>
+        <div class="tabla-scroll">
+            <table class="tabla-reporte">
+                <thead>
+                    <tr><th>Pos.</th><th>Estudiante</th><th>Eval.</th><th>Promedio</th><th>Nivel</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="col-posicion">🥇</td><td class="col-estudiante">Catalina Muñoz T.</td><td>4</td><td><span class="nota aprobado">6.8</span></td><td><span class="badge badge-nivel-excelente">Excelente</span></td><td><span class="badge badge-aprobado">Aprobado</span></td></tr>
+                    <tr><td class="col-posicion">🥈</td><td class="col-estudiante">Amanda Silva G.</td><td>4</td><td><span class="nota aprobado">6.1</span></td><td><span class="badge badge-nivel-excelente">Excelente</span></td><td><span class="badge badge-aprobado">Aprobado</span></td></tr>
+                    <tr><td class="col-posicion">🥉</td><td class="col-estudiante">Diego Morales P.</td><td>3</td><td><span class="nota aprobado">5.0</span></td><td><span class="badge badge-nivel-bueno">Bueno</span></td><td><span class="badge badge-aprobado">Aprobado</span></td></tr>
+                    <tr><td class="col-posicion">4</td><td class="col-estudiante">Benjamín Sepúlveda R.</td><td>4</td><td><span class="nota reprobado">3.9</span></td><td><span class="badge badge-nivel-insuficiente">Insuficiente</span></td><td><span class="badge badge-reprobado">Seguimiento</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <p class="rep-demo-export-hint">Imprimir y exportar PDF/Excel estarán disponibles cuando el reporte tenga datos reales.</p>
+</div>

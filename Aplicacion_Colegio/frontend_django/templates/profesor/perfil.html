@@ -3,7 +3,6 @@
 <link rel="stylesheet" href="{% static 'css/profesor/perfil.css' %}">
 
 <div class="perfil-container">
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Configuración" hero_title="Mi Perfil" hero_subtitle="Administra tu información personal y configuración de cuenta" hero_aria="Mi perfil" hero_hide_metrics=1 hero_show_date="0" %}
 
     <!-- Mensajes -->
     {% if messages %}
@@ -15,8 +14,8 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Estadisticas -->
-    <div class="stats-grid">
+    <!-- Estadísticas del año -->
+    <div class="stats-grid" aria-label="Mis estadísticas del año">
         <div class="stat-card">
             <div class="stat-icon" aria-hidden="true">&#128218;</div>
             <div class="stat-value">{{ estadisticas.total_asignaturas|default:0 }}</div>
@@ -53,7 +52,7 @@
 
             <!-- Informacion no editable -->
             <div class="card">
-                <h2>Informacion Personal</h2>
+                <h2>Información personal</h2>
                 
                 <div class="info-item">
                     <span class="info-label">RUT</span>

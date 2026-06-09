@@ -2416,7 +2416,9 @@ class DashboardContextService:
     @staticmethod
     def _get_profesor_reportes_context(request_get_params, user, colegio):
         """Contexto de reportes académicos para el dashboard Django del profesor."""
+        from backend.apps.academico.models import Asistencia, Evaluacion
         from backend.apps.academico.services.academic_reports_service import AcademicReportsService
+        from backend.apps.accounts.models import User
 
         clases = AcademicReportsService.get_classes_for_reports(user, colegio)
         tipo_reporte = request_get_params.get('tipo', 'asistencia')
@@ -2447,6 +2449,27 @@ class DashboardContextService:
             except (ValueError, TypeError):
                 pass
 
+        hoy = date.today()
+        inicio_30 = hoy - timedelta(days=30)
+        asist_qs = Asistencia.objects.filter(
+            clase__in=clases,
+            fecha__gte=inicio_30,
+            fecha__lte=hoy,
+        )
+        total_asist = asist_qs.count()
+        presentes_asist = asist_qs.filter(estado='P').count()
+        pct_asist_30 = (
+            f"{round(presentes_asist / total_asist * 100, 1)}%"
+            if total_asist
+            else '—'
+        )
+        hero_evaluaciones = Evaluacion.objects.filter(clase__in=clases, activa=True).count()
+        hero_estudiantes = User.objects.filter(
+            clases_matriculadas__clase__in=clases,
+            clases_matriculadas__activo=True,
+            is_active=True,
+        ).distinct().count()
+
         return {
             'clases': clases,
             'tipo_reporte': tipo_reporte,
@@ -2455,6 +2478,12 @@ class DashboardContextService:
             'fecha_fin': fecha_fin,
             'reporte_data': reporte_data,
             'clase_seleccionada': clase_seleccionada,
+            'reportes_hero_m2': pct_asist_30,
+            'reportes_hero_m2_label': '% Asistencia (30 días)',
+            'reportes_hero_m3': hero_evaluaciones,
+            'reportes_hero_m3_label': 'Evaluaciones activas',
+            'reportes_hero_m4': hero_estudiantes,
+            'reportes_hero_m4_label': 'Estudiantes',
             'can_export_superintendencia': PolicyService.has_capability(
                 user,
                 'REPORT_EXPORT_SUPERINTENDENCIA',
@@ -2591,12 +2620,26 @@ class DashboardContextService:
             activa=True
         ).select_related('clase__asignatura', 'clase__curso')
 
+        ahora = timezone.now()
+        limite_pronto = ahora + timedelta(days=7)
+
         tareas_data = []
         for t in tareas:
             # EntregaTarea no tiene colegio_id; usar _base_manager evita filtro tenant invalido en related manager.
             entregadas = EntregaTarea._base_manager.filter(tarea=t).exclude(estado='pendiente').count()
             total_estudiantes = ClaseEstudiante._base_manager.filter(clase=t.clase, activo=True).count()
             porcentaje = int((entregadas / total_estudiantes * 100) if total_estudiantes > 0 else 0)
+            vencida = t.esta_vencida()
+            por_corregir = EntregaTarea._base_manager.filter(
+                tarea=t,
+                calificacion__isnull=True,
+            ).exclude(estado='pendiente').count()
+            pendientes_entrega = max(0, total_estudiantes - entregadas)
+            vence_pronto = (
+                not vencida
+                and t.fecha_entrega is not None
+                and t.fecha_entrega <= limite_pronto
+            )
 
             tareas_data.append({
                 'id': t.id_tarea,
@@ -2607,11 +2650,72 @@ class DashboardContextService:
                 'entregadas': entregadas,
                 'total_estudiantes': total_estudiantes,
                 'porcentaje_entrega': porcentaje,
-                'vencida': t.esta_vencida()
+                'pendientes_entrega': pendientes_entrega,
+                'por_corregir': por_corregir,
+                'vencida': vencida,
+                'vence_pronto': vence_pronto,
             })
 
+        tareas_ordenadas = sorted(
+            tareas_data,
+            key=lambda x: x['fecha_entrega'] or ahora,
+            reverse=True,
+        )
+
+        def _prioridad(tarea):
+            score = 0
+            if tarea['por_corregir']:
+                score += tarea['por_corregir'] * 2
+            if not tarea['vencida'] and tarea['porcentaje_entrega'] < 50:
+                score += 15
+            if tarea.get('vence_pronto'):
+                score += 8
+            if tarea['pendientes_entrega'] and not tarea['vencida']:
+                score += min(tarea['pendientes_entrega'], 10)
+            return score
+
+        tc_resumen = {
+            'total': len(tareas_ordenadas),
+            'en_curso': sum(1 for x in tareas_ordenadas if not x['vencida']),
+            'vencidas': sum(1 for x in tareas_ordenadas if x['vencida']),
+            'baja_entrega': sum(
+                1 for x in tareas_ordenadas
+                if not x['vencida'] and (x['porcentaje_entrega'] or 0) < 50
+            ),
+            'por_corregir': sum(x['por_corregir'] for x in tareas_ordenadas),
+            'vence_pronto': sum(1 for x in tareas_ordenadas if x.get('vence_pronto')),
+        }
+
+        tc_alertas = []
+        if tc_resumen['por_corregir']:
+            tc_alertas.append(
+                f"Tienes {tc_resumen['por_corregir']} entrega"
+                f"{'s' if tc_resumen['por_corregir'] != 1 else ''} sin calificar — prioriza «Ver entregas»."
+            )
+        if tc_resumen['baja_entrega']:
+            tc_alertas.append(
+                f"{tc_resumen['baja_entrega']} tarea"
+                f"{'s' if tc_resumen['baja_entrega'] != 1 else ''} en curso con menos del 50% de entregas."
+            )
+        if tc_resumen['vence_pronto']:
+            tc_alertas.append(
+                f"{tc_resumen['vence_pronto']} tarea"
+                f"{'s' if tc_resumen['vence_pronto'] != 1 else ''} vence en los próximos 7 días."
+            )
+        if not tc_alertas and tareas_ordenadas:
+            tc_alertas.append('Buen ritmo general: revisa las entregas pendientes de nota cuando puedas.')
+
+        tc_prioridad = sorted(
+            [t for t in tareas_ordenadas if _prioridad(t) > 0],
+            key=_prioridad,
+            reverse=True,
+        )[:4]
+
         return {
-            'tareas': sorted(tareas_data, key=lambda x: x['fecha_entrega'] or timezone.now(), reverse=True),
+            'tareas': tareas_ordenadas,
+            'tc_resumen': tc_resumen,
+            'tc_alertas': tc_alertas,
+            'tc_prioridad': tc_prioridad,
         }
 
     @staticmethod

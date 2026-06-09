@@ -38,25 +38,40 @@
     gap: 0.75rem;
 }
 
-/* --- Mensajería Layout: 2 Columnas --- */
+/* ═══ MENSAJERÍA PROFESOR — LAVANDA PREMIUM ═══ */
+:root {
+    --lav-700: #4f46e5;
+    --lav-600: #6366f1;
+    --lav-500: #818cf8;
+    --lav-200: #c7d2fe;
+    --lav-100: #e0e7ff;
+    --lav-50: #eef2ff;
+    --lav-bg: #f5f3ff;
+}
+
+.mensajeria-container {
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Layout: sidebar + chat + contactos */
 .mensajeria-layout {
     display: grid;
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: 320px 1fr 260px;
     gap: 0;
     height: calc(100vh - 250px);
     min-height: 600px;
     background: #ffffff;
-    border-radius: 12px;
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+    border: 1px solid var(--lav-200);
 }
 
-/* --- Sidebar: Conversaciones --- */
 .conversaciones-sidebar {
-    border-right: 1px solid #e5e7eb;
+    border-right: 1px solid var(--lav-100);
     display: flex;
     flex-direction: column;
-    background: #f9fafb;
+    background: var(--lav-bg);
 }
 
 .sidebar-header {
@@ -680,11 +695,123 @@
     border-top: 1px solid #e5e7eb;
 }
 
+/* Panel contactos */
+.contactar-panel {
+    border-left: 1px solid var(--lav-100);
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.contactar-panel-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--lav-100);
+    background: var(--lav-50);
+}
+
+.contactar-panel-header h4 {
+    margin: 0 0 4px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #3730a3;
+}
+
+.contactar-panel-header p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #9ca3af;
+}
+
+.contacto-item--link {
+    display: block;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--lav-50);
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s;
+}
+
+.contacto-item--link:hover {
+    background: var(--lav-50);
+    text-decoration: none;
+}
+
+.contacto-asignatura {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--lav-700);
+    background: var(--lav-100);
+    padding: 2px 8px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.contacto-nombre { font-size: 0.88rem; font-weight: 700; color: #1f2937; }
+.contacto-curso { font-size: 0.78rem; color: #9ca3af; }
+.contacto-sin-msg { font-size: 0.75rem; color: #9ca3af; margin-top: 2px; }
+
+.badge-nuevo {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    float: right;
+}
+
+.btn-ir-clases {
+    background: var(--lav-600);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.btn-ir-clases:hover { background: var(--lav-700); color: #fff; }
+
+.modal-title { color: #3730a3; font-weight: 800; }
+
+.tab-button.active {
+    color: var(--lav-700);
+    border-bottom-color: var(--lav-600);
+}
+
+.conversacion-item.active {
+    background: var(--lav-100);
+    border-left: 3px solid var(--lav-600);
+}
+
+.conversacion-badge {
+    background: var(--lav-600);
+}
+
+.mensaje-propio .mensaje-bubble {
+    background: var(--lav-600);
+}
+
+.btn-primary {
+    background: var(--lav-600) !important;
+    border: none !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+}
+
+.btn-primary:hover { background: var(--lav-700) !important; }
+
 /* --- Responsive --- */
 @media (max-width: 1024px) {
     .mensajeria-layout {
         grid-template-columns: 300px 1fr;
     }
+    .contactar-panel { display: none; }
 }
 
 @media (max-width: 768px) {

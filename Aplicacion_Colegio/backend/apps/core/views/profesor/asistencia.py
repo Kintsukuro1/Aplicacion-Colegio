@@ -9,12 +9,22 @@ from backend.apps.core.services.orm_access_service import ORMAccessService
 from backend.apps.core.services.dashboard_service import DashboardService
 from backend.common.services.policy_service import PolicyService
 from backend.common.exceptions import PrerequisiteException
+from backend.apps.core.services.demo_visual_service import (
+    build_demo_asistencia_estudiantes,
+    demo_visual_enabled,
+    use_demo_when_empty,
+)
 
 
-def _redirect_registro_asistencia(clase_id, fecha=None):
+def _redirect_registro_asistencia(clase_id, fecha=None, vista_previa=False):
     url = reverse('registro_asistencia_clase', kwargs={'clase_id': clase_id})
+    params = []
     if fecha:
-        url = f'{url}?fecha={fecha.strftime("%Y-%m-%d")}'
+        params.append(f'fecha={fecha.strftime("%Y-%m-%d")}')
+    if vista_previa:
+        params.append('vista_previa=1')
+    if params:
+        url = f'{url}?{"&".join(params)}'
     return redirect(url)
 
 
@@ -179,13 +189,24 @@ def registro_asistencia_clase(request, clase_id):
 
     colegio = request.user.colegio
 
+    vista_previa = demo_visual_enabled(request)
+
     if request.method == 'POST':
         fecha_str = request.POST.get('fecha')
+        vista_previa = vista_previa or request.POST.get('vista_previa') == '1'
         try:
             fecha = AttendanceService.parse_date_from_string(fecha_str)
         except ValueError:
             messages.error(request, 'Formato de fecha inválido.')
-            return _redirect_registro_asistencia(clase.id)
+            return _redirect_registro_asistencia(clase.id, vista_previa=vista_previa)
+
+        if vista_previa:
+            messages.info(
+                request,
+                'Vista previa: los cambios no se guardan en la base de datos. '
+                'Inscribe alumnos en la clase para registrar asistencia real.',
+            )
+            return _redirect_registro_asistencia(clase.id, fecha, vista_previa=True)
 
         estados = {}
         for key in request.POST:
@@ -232,6 +253,9 @@ def registro_asistencia_clase(request, clase_id):
     estudiantes_data = AttendanceService.get_students_with_attendance(
         request.user, colegio, clase, fecha
     )
+    vista_previa = use_demo_when_empty(request, bool(estudiantes_data))
+    if vista_previa:
+        estudiantes_data = build_demo_asistencia_estudiantes(clase)
     resumen_presentes, resumen_ausentes = _asistencia_resumen_dia(estudiantes_data)
 
     _, rol_nombre = _resolve_sidebar_and_role(request.user)
@@ -241,10 +265,22 @@ def registro_asistencia_clase(request, clase_id):
         school_id=request.user.rbd_colegio,
     )
 
+    from backend.apps.core.services.profesor_hero_service import ProfesorHeroService
+
+    ra_ctx = {
+        'clase': clase,
+        'pagina_hero': 'registro_asistencia',
+        'hero_sub_clase': f"{clase.curso.nombre} · {clase.asignatura.nombre}",
+        'total_estudiantes': len(estudiantes_data),
+        'resumen_presentes': resumen_presentes,
+        'resumen_ausentes': resumen_ausentes,
+        'resumen_fecha': fecha.strftime('%d/%m/%Y'),
+    }
     return render(
         request,
         'profesor/registro_asistencia.html',
         {
+            'prof_hero': ProfesorHeroService.for_clase_page(clase, ra_ctx),
             'clase': clase,
             'fecha': fecha,
             'fecha_str': fecha_param,
@@ -254,6 +290,12 @@ def registro_asistencia_clase(request, clase_id):
             'resumen_presentes': resumen_presentes,
             'resumen_ausentes': resumen_ausentes,
             'resumen_fecha': fecha.strftime('%d/%m/%Y'),
+            'asistencia_vista_previa': vista_previa and bool(estudiantes_data),
+            'asistencia_sin_alumnos': not estudiantes_data and not vista_previa,
+            'asistencia_datos_reales_url': (
+                f"{reverse('registro_asistencia_clase', kwargs={'clase_id': clase.id})}"
+                f"?fecha={fecha_param}&datos_reales=1"
+            ),
             'pagina_actual': 'mis_clases',
             'user': request.user,
             'nombre_usuario': request.user.get_full_name(),
@@ -299,10 +341,20 @@ def reporte_asistencia_clase(request, clase_id):
         school_id=request.user.rbd_colegio,
     )
 
+    from backend.apps.core.services.profesor_hero_service import ProfesorHeroService
+
+    hero_sub_clase = f"{clase.curso.nombre} · {clase.asignatura.nombre}"
+    rep_ctx = {
+        'pagina_hero': 'reporte_asistencia',
+        'hero_sub_clase': hero_sub_clase,
+        'stats_generales': reporte['stats_generales'],
+    }
     return render(
         request,
         'profesor/reporte_asistencia.html',
         {
+            'prof_hero': ProfesorHeroService.for_clase_page(clase, rep_ctx),
+            'hero_sub_clase': hero_sub_clase,
             'clase': clase,
             'estudiantes_stats': reporte['estudiantes_stats'],
             'stats_generales': reporte['stats_generales'],

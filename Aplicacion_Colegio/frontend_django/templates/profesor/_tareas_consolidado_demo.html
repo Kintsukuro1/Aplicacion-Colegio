@@ -1,0 +1,102 @@
+{# Vista demostración — solo plantilla, sin BD #}
+<div class="tc-demo-banner" role="status">
+    <p>
+        <strong>Vista demostración</strong> —
+        No tienes tareas activas en el sistema. Los ejemplos muestran cómo se verá el seguimiento con datos reales.
+    </p>
+    <a class="tc-demo-banner__cta" href="{% url 'dashboard' %}?pagina=mis_clases">Ir a mis clases →</a>
+</div>
+
+<section class="tc-insights" aria-label="Indicadores de ejemplo">
+    <article class="tc-insight">
+        <span class="tc-insight__val">2</span>
+        <span class="tc-insight__lbl">En curso</span>
+        <span class="tc-insight__hint">Ejemplo</span>
+    </article>
+    <article class="tc-insight tc-insight--muted">
+        <span class="tc-insight__val">1</span>
+        <span class="tc-insight__lbl">Finalizadas</span>
+        <span class="tc-insight__hint">Ejemplo</span>
+    </article>
+    <article class="tc-insight tc-insight--warn">
+        <span class="tc-insight__val">5</span>
+        <span class="tc-insight__lbl">Por calificar</span>
+        <span class="tc-insight__hint">Ejemplo</span>
+    </article>
+    <article class="tc-insight tc-insight--risk">
+        <span class="tc-insight__val">1</span>
+        <span class="tc-insight__lbl">Baja entrega</span>
+        <span class="tc-insight__hint">Ejemplo</span>
+    </article>
+</section>
+
+<section class="tc-intel tc-intel--demo" aria-label="Información inteligente de ejemplo">
+    <h3 class="tc-intel__title">Información inteligente <span class="tc-demo-tag">Ejemplo</span></h3>
+    <ul class="tc-intel__alertas">
+        <li><span aria-hidden="true">✏️</span> 5 entregas sin calificar en <strong>Tarea 2 - Inglés</strong> — conviene revisar antes del fin de semana.</li>
+        <li><span aria-hidden="true">📋</span> <strong>Guía Unidad 3</strong> tiene 12 alumnos sin entregar (40% del curso).</li>
+        <li><span aria-hidden="true">📅</span> 1 tarea vence en los próximos 7 días.</li>
+    </ul>
+</section>
+
+<article class="tc-card tc-card--activa tc-card--baja tc-card--corregir tc-card--demo" data-lc-demo="1">
+    <div class="tc-card__stripe" aria-hidden="true"></div>
+    <div class="tc-card__inner">
+    <header class="tc-card__head">
+        <div class="tc-card__clase-wrap">
+            <span class="tc-card__clase-icon" aria-hidden="true">📚</span>
+            <span class="tc-card__clase">5°A · Matemáticas</span>
+        </div>
+        <span class="tc-badge tc-badge--soon">Vence pronto</span>
+    </header>
+    <div class="tc-card__hero-row">
+        <h3 class="tc-card__title">Guía de ejercicios — Unidad 3 <span class="tc-demo-tag">Ejemplo</span></h3>
+        <div class="tc-card__pct"><span class="tc-card__pct-val">60</span><span class="tc-card__pct-sym">%</span></div>
+    </div>
+    <div class="tc-card__progress">
+        <div class="tc-card__progress-meta">
+            <span class="tc-card__entregas"><strong>18</strong> / 30 entregas</span>
+        </div>
+        <div class="tc-card__bar"><div class="tc-card__bar-fill" style="width: 60%;"></div></div>
+    </div>
+    <div class="tarea-insight">
+        <span class="insight-chip chip-corregir">✏️ 4 entregas sin calificar</span>
+        <span class="insight-chip chip-pendiente">📋 12 sin entregar aún</span>
+        <span class="insight-chip chip-alerta">⚠️ Revisa entregas pendientes</span>
+    </div>
+    <footer class="tc-card__foot">
+        <span class="tc-card__meta"><span class="tc-card__meta-icon" aria-hidden="true">📅</span> Vence 15/06/2026 · 23:59</span>
+        <span class="tc-btn tc-btn--disabled"><span>Ver entregas</span><span class="tc-btn__arrow">→</span></span>
+    </footer>
+    </div>
+</article>
+
+<article class="tc-card tc-card--activa tc-card--corregir tc-card--demo" data-lc-demo="1">
+    <div class="tc-card__stripe" aria-hidden="true"></div>
+    <div class="tc-card__inner">
+    <header class="tc-card__head">
+        <div class="tc-card__clase-wrap">
+            <span class="tc-card__clase-icon" aria-hidden="true">📚</span>
+            <span class="tc-card__clase">1° Medio A · Inglés</span>
+        </div>
+        <span class="tc-badge tc-badge--ok">En curso</span>
+    </header>
+    <div class="tc-card__hero-row">
+        <h3 class="tc-card__title">Tarea 2 - Inglés <span class="tc-demo-tag">Ejemplo</span></h3>
+        <div class="tc-card__pct"><span class="tc-card__pct-val">76</span><span class="tc-card__pct-sym">%</span></div>
+    </div>
+    <div class="tc-card__progress">
+        <div class="tc-card__progress-meta">
+            <span class="tc-card__entregas"><strong>23</strong> / 30 entregas</span>
+        </div>
+        <div class="tc-card__bar"><div class="tc-card__bar-fill" style="width: 76%;"></div></div>
+    </div>
+    <div class="tarea-insight">
+        <span class="insight-chip chip-bueno">👍 Buen nivel de entrega</span>
+    </div>
+    <footer class="tc-card__foot">
+        <span class="tc-card__meta"><span class="tc-card__meta-icon" aria-hidden="true">📅</span> Vence 20/06/2026 · 20:00</span>
+        <span class="tc-btn tc-btn--disabled"><span>Ver entregas</span><span class="tc-btn__arrow">→</span></span>
+    </footer>
+    </div>
+</article>

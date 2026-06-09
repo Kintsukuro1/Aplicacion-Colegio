@@ -1,11 +1,9 @@
 {% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/profesor/mis_clases.css' %}?v=20260604-mm-hero-notif">
-<link rel="stylesheet" href="{% static 'css/estudiante/mensajeria.css' %}?v=20260603-mm">
-<link rel="stylesheet" href="{% static 'css/profesor/mensajeria.css' %}?v=20260604-mm-lavanda">
+{# Estilos mm- cargados en dashboard.html (head) para evitar flash azul alumno #}
+{% include 'profesor/_mensajeria_hero.html' %}
 
 <div class="mm-page mm-page--prof" id="mmPage">
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Comunicación con familias" hero_title="Mensajes" hero_subtitle=hero_subtitle_mensajes hero_aria="Mensajes profesor" metrics_aria="Resumen de mensajería" hero_show_date="0" m1_value=no_leidos_count|default:"0" m1_label="No leídos" m1_mod="mensajes" m1_alert=no_leidos_count m2_value=conversaciones_count|default:"0" m2_label="Conversaciones" m2_mod="clases" m3_value=estudiantes_sin_chat|default:"0" m3_label="Sin chat" m3_mod="warn" m4_value=total_mensajes_count|default:"0" m4_label="Mensajes" m4_mod="neutral" %}
 
     <nav class="mm-chips" aria-label="Filtros de conversaciones">
         <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="mm-chips__chip{% if not estado_filtro %} mm-chips__chip--active{% endif %}">Todas ({{ conversaciones_count|default:"0" }})</a>
@@ -16,21 +14,52 @@
         {% endif %}
     </nav>
 
-    {% if mensajes_insights %}
-    <div class="mm-insights" role="list" aria-label="Sugerencias de mensajería">
-        {% for insight in mensajes_insights %}
-        <div class="mm-insights__item mm-insights__item--{{ insight.tipo }}" role="listitem">
-            <span class="mm-insights__icon" aria-hidden="true">{{ insight.icono }}</span>
-            <div class="mm-insights__body">
-                <p class="mm-insights__title">{{ insight.titulo }}</p>
-                <p class="mm-insights__text">{{ insight.texto }}</p>
-            </div>
-            {% if insight.url_name %}
-            <a href="{% if insight.url_query %}{% url insight.url_name %}?{{ insight.url_query }}{% else %}{% url insight.url_name %}{% endif %}" class="mm-insights__action">Ver</a>
-            {% endif %}
+    {% if mensajes_insights or mm_contactos_prioridad or conversacion_sugerida %}
+    <section class="mm-intel-prof" aria-label="Información inteligente">
+        <h3 class="mm-intel-prof__title">Información inteligente</h3>
+        {% if mensajes_insights %}
+        <ul class="mm-intel-prof__alertas">
+            {% for insight in mensajes_insights %}
+            <li class="mm-intel-prof__alerta mm-intel-prof__alerta--{{ insight.tipo }}">
+                <span aria-hidden="true">{{ insight.icono }}</span>
+                <span>
+                    <strong>{{ insight.titulo }}</strong> — {{ insight.texto }}
+                    {% if insight.url_name %}
+                    <a href="{% if insight.url_query %}{% url insight.url_name %}?{{ insight.url_query }}{% else %}{% url insight.url_name %}{% endif %}" class="mm-intel-prof__link">Ver</a>
+                    {% endif %}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% if conversacion_sugerida and conversacion_sugerida.no_leidos %}
+        <p class="mm-intel-prof__cta">
+            <a href="{% url 'mensajeria:ver_conversacion' conversacion_sugerida.conversacion.id_conversacion %}" class="mm-btn mm-btn--primary mm-btn--sm">
+                Responder a {{ conversacion_sugerida.destinatario.get_full_name }} ({{ conversacion_sugerida.no_leidos }} sin leer)
+            </a>
+        </p>
+        {% endif %}
+        {% if mm_contactos_prioridad %}
+        <div class="mm-intel-prof__prioridad">
+            <h4 class="mm-intel-prof__sub">Contactar primero</h4>
+            <ul class="mm-intel-prof__lista">
+                {% for c in mm_contactos_prioridad %}
+                <li>
+                    <a href="{% if c.conversacion_id %}{% url 'mensajeria:ver_conversacion' c.conversacion_id %}{% else %}{% url 'mensajeria:bandeja_mensajes' %}?clase_id={{ c.clase.id }}&amp;destinatario_id={{ c.estudiante.id }}{% endif %}" class="mm-intel-prof__contacto">
+                        <span class="mm-intel-prof__nombre">{{ c.estudiante.get_full_name }}</span>
+                        <span class="mm-intel-prof__meta">{{ c.asignatura }} · {{ c.curso }}</span>
+                    </a>
+                    {% if c.motivo == 'no_leidos' %}
+                    <span class="mm-intel-prof__pill mm-intel-prof__pill--warn">{{ c.no_leidos }} sin leer</span>
+                    {% else %}
+                    <span class="mm-intel-prof__pill">Sin chat</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
         </div>
-        {% endfor %}
-    </div>
+        {% endif %}
+    </section>
     {% endif %}
 
     <details class="mm-refine" aria-label="Filtrar conversaciones"{% if filtros_activos or busqueda %} open{% endif %}>
@@ -173,9 +202,9 @@
 
             {% if conversacion_actual %}
             <footer class="mm-chat-compose">
-                <form method="post" action="{% url 'mensajeria:ver_conversacion' conversacion_actual.id %}" enctype="multipart/form-data" class="mm-chat-compose__form">
+                <form method="post" action="{% url 'mensajeria:ver_conversacion' conversacion_actual.id %}" enctype="multipart/form-data" class="mm-chat-compose__form" id="mmComposeForm">
                     {% csrf_token %}
-                    <textarea name="contenido" class="mm-chat-compose__input" placeholder="Escribe tu mensaje..." rows="2" required></textarea>
+                    <textarea name="contenido" class="mm-chat-compose__input" id="mmComposeInput" placeholder="Escribe tu mensaje…" rows="2" required></textarea>
                     <label class="mm-chat-compose__file">
                         <span class="mm-btn mm-btn--outline mm-btn--sm">Adjuntar</span>
                         <input type="file" name="archivo" hidden>
@@ -301,8 +330,8 @@
 
     function resolveAccent(name, modelColor) {
         var s = (name || '').toLowerCase();
-        var accent = '#94A3B8';
-        var text = '#334155';
+        var accent = '#6366f1';
+        var text = '#4338ca';
         if (s.indexOf('matem') !== -1) { accent = '#3B82F6'; text = '#1E3A8A'; }
         else if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1 || s.indexOf('castellano') !== -1) { accent = '#EF4444'; text = '#991B1B'; }
         else if (s.indexOf('cienc') !== -1 || s.indexOf('naturales') !== -1 || s.indexOf('biolog') !== -1) { accent = '#10B981'; text = '#065F46'; }
@@ -413,6 +442,7 @@
             alert('Completa clase, estudiante y mensaje');
             return;
         }
+        var convUrlTpl = '{% url "mensajeria:ver_conversacion" 999999 %}'.replace('999999', '__ID__');
         fetch('{% url "mensajeria:crear_nueva_conversacion" %}', {
             method: 'POST',
             headers: { 'X-CSRFToken': fd.get('csrfmiddlewaretoken') },
@@ -420,8 +450,8 @@
         })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-            if (data.success) {
-                window.location.href = '/mensajeria/conversacion/' + data.conversacion_id + '/';
+            if (data.success && data.conversacion_id) {
+                window.location.href = convUrlTpl.replace('__ID__', String(data.conversacion_id));
             } else {
                 alert(data.message || 'No se pudo enviar');
             }
@@ -443,6 +473,17 @@
     }
     if (thread) thread.scrollTop = thread.scrollHeight;
     if (chatPanel) applyTheme(chatPanel);
+
+    var composeForm = document.getElementById('mmComposeForm');
+    var composeInput = document.getElementById('mmComposeInput');
+    if (composeForm && composeInput) {
+        composeInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if ((composeInput.value || '').trim()) composeForm.submit();
+            }
+        });
+    }
 })();
 </script>
 {% include 'profesor/_personal_wrap_end.html' %}

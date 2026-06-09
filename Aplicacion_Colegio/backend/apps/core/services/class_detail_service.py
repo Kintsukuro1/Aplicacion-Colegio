@@ -12,6 +12,7 @@ from django.utils import timezone
 from backend.apps.accounts.models import User, PerfilEstudiante
 from backend.apps.academico.services.material_clase_service import MaterialClaseService
 from backend.apps.cursos.models import Clase, BloqueHorario
+from backend.apps.core.services.demo_visual_service import apply_demo_detalle_clase_context, is_demo_pk
 from backend.common.services.policy_service import PolicyService
 
 
@@ -68,8 +69,11 @@ class ClassDetailService:
                     messages.error(request, f'Error al subir material: {str(e)}')
 
             elif accion == 'eliminar_material':
+                material_id = request.POST.get('material_id')
+                if is_demo_pk(material_id):
+                    messages.info(request, 'Datos de prueba: este material es solo de ejemplo.')
+                    return redirect(f'/estudiante/clase/{clase_id}/')
                 try:
-                    material_id = request.POST.get('material_id')
                     MaterialClaseService.deactivate(
                         user=user,
                         clase_id=clase_id,
@@ -81,9 +85,12 @@ class ClassDetailService:
                     messages.error(request, f'Error al eliminar material: {str(e)}')
 
             elif accion == 'eliminar_anuncio':
+                anuncio_id = request.POST.get('anuncio_id')
+                if is_demo_pk(anuncio_id):
+                    messages.info(request, 'Datos de prueba: este anuncio es solo de ejemplo.')
+                    return redirect(f'/estudiante/clase/{clase_id}/?tab=anuncios')
                 # Fix: el template ya no usa la URL inexistente 'eliminar_anuncio'; POST aquí mismo.
                 try:
-                    anuncio_id = request.POST.get('anuncio_id')
                     anuncio = Anuncio.objects.get(
                         id_anuncio=anuncio_id,
                         clase_id=clase_id,
@@ -100,8 +107,11 @@ class ClassDetailService:
                     return redirect(f'/estudiante/clase/{clase_id}/')
 
             elif accion == 'cambiar_visibilidad':
+                material_id = request.POST.get('material_id')
+                if is_demo_pk(material_id):
+                    messages.info(request, 'Datos de prueba: no se cambia visibilidad en ejemplos.')
+                    return redirect(f'/estudiante/clase/{clase_id}/')
                 try:
-                    material_id = request.POST.get('material_id')
                     material = MaterialClaseService.toggle_visibility(
                         user=user,
                         clase_id=clase_id,
@@ -379,6 +389,9 @@ class ClassDetailService:
             context.update(
                 MensajeriaService.get_clase_mensajes_panel_context(user, clase)
             )
+            context = apply_demo_detalle_clase_context(request, context, clase)
+            from backend.apps.core.services.profesor_hero_service import ProfesorHeroService
+            context['prof_hero'] = ProfesorHeroService.for_clase_page(clase, context)
 
         if ver_como_alumno:
             return render(request, 'estudiante/detalle_clase.html', context)

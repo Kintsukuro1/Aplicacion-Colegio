@@ -90,7 +90,15 @@ class MensajeriaService:
                 estudiante__apoderados__user=user,
             ).exists()
 
-        # Si es estudiante activo del curso
+        from backend.apps.cursos.models import ClaseEstudiante
+
+        if ClaseEstudiante.objects.filter(
+            clase=clase,
+            estudiante=user,
+            activo=True,
+        ).exists():
+            return True
+
         perfil = PerfilEstudiante.objects.filter(user=user).first()
         if not perfil:
             return False
@@ -654,6 +662,28 @@ class MensajeriaService:
                 'url_query': '',
             })
 
+        contactos_prioridad: List[Dict[str, Any]] = []
+        vistos = set()
+        for row in estudiantes_contacto:
+            if row['no_leidos'] and row.get('conversacion_id'):
+                key = ('c', row['conversacion_id'])
+                if key not in vistos:
+                    contactos_prioridad.append({**row, 'motivo': 'no_leidos'})
+                    vistos.add(key)
+            if len(contactos_prioridad) >= 4:
+                break
+        if len(contactos_prioridad) < 4:
+            for row in estudiantes_contacto:
+                if row['tiene_conversacion']:
+                    continue
+                key = ('s', row['estudiante'].id, row['clase'].id)
+                if key in vistos:
+                    continue
+                contactos_prioridad.append({**row, 'motivo': 'sin_chat'})
+                vistos.add(key)
+                if len(contactos_prioridad) >= 4:
+                    break
+
         return {
             'estudiantes_contacto': estudiantes_contacto,
             'profesores_contacto': [],
@@ -661,6 +691,7 @@ class MensajeriaService:
             'clases_sin_conversar': clases_sin_conversar,
             'conversacion_sugerida': conversacion_sugerida,
             'mensajes_insights': insights,
+            'mm_contactos_prioridad': contactos_prioridad,
             'total_estudiantes_contactables': len(estudiantes_contacto),
             'mis_clases_count': len(clases or []),
         }
@@ -950,12 +981,28 @@ class MensajeriaService:
         if destinatario.id == clase.profesor_id:
             return True, ''
 
-        # Si es estudiante del mismo curso
-        perfil_dest = PerfilEstudiante.objects.filter(user=destinatario).first()
-        if not perfil_dest or perfil_dest.ciclo_actual != clase.curso.ciclo_academico:
-            return False, 'Destinatario inválido para esta clase'
+        from backend.apps.cursos.models import ClaseEstudiante
 
-        return True, ''
+        if ClaseEstudiante.objects.filter(
+            clase=clase,
+            estudiante=destinatario,
+            activo=True,
+        ).exists():
+            return True, ''
+
+        if hasattr(destinatario, 'perfil_apoderado'):
+            if ClaseEstudiante.objects.filter(
+                clase=clase,
+                activo=True,
+                estudiante__apoderados__user=destinatario,
+            ).exists():
+                return True, ''
+
+        perfil_dest = PerfilEstudiante.objects.filter(user=destinatario).first()
+        if perfil_dest and perfil_dest.ciclo_actual == clase.curso.ciclo_academico:
+            return True, ''
+
+        return False, 'El destinatario no pertenece a esta clase'
 
     @staticmethod
     def get_conversation_messages(conversacion) -> List[Any]:

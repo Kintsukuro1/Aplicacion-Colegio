@@ -13,7 +13,6 @@
     </nav>
 
     {% with hero_sub_clase=clase.curso.nombre|add:" · "|add:clase.asignatura.nombre %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Académico" hero_title="Reporte de asistencia" hero_subtitle=hero_sub_clase hero_aria="Reporte de asistencia" metrics_aria="Resumen del período" hero_show_date="0" m1_value=stats_generales.total_estudiantes|default:0 m1_label="Estudiantes" m1_mod="clases" m2_value=stats_generales.promedio_asistencia|default:0 m2_label="% Asistencia" m2_mod="asistencia" m3_value=stats_generales.total_ausencias|default:0 m3_label="Ausencias" m3_mod="riesgo" m4_value=stats_generales.total_tardanzas|default:0 m4_label="Atrasos" m4_mod="warn" %}
     {% endwith %}
     <div class="ra-hero__actions">
         <a href="{% url 'ver_detalle_clase' clase.id %}" class="ra-btn ra-btn--outline">← Volver a la clase</a>

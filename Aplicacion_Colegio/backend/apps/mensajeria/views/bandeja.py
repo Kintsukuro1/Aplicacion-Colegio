@@ -43,6 +43,11 @@ def _apply_mensajeria_shell(context: dict, user) -> None:
     context['sidebar_template'] = DashboardAuthService.get_sidebar_template(mensajeria_rol)
 
 
+def _finalize_profesor_mensajeria_context(context: dict, user) -> None:
+    """Usa hero lavanda propio de mensajería (_mensajeria_hero), no el genérico del wrap."""
+    context['prof_hero_manual'] = True
+
+
 def _pupilo_nombre_por_clase(user, clase_id) -> str:
     ce = (
         ClaseEstudiante.objects.filter(
@@ -195,6 +200,7 @@ def bandeja_mensajes(request):
                 notificaciones_count=context.get('notificaciones_count'),
             ),
         )
+        _finalize_profesor_mensajeria_context(context, request.user)
     elif uses_mm_bandeja:
         context.update(
             MensajeriaService.get_alumno_bandeja_context(

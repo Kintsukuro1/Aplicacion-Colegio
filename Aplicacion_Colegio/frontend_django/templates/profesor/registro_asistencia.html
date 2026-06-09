@@ -1,6 +1,6 @@
 {% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/profesor/registro_asistencia.css' %}?v=20260602-feedback">
+<link rel="stylesheet" href="{% static 'css/profesor/registro_asistencia.css' %}?v=20260604-demo">
 
 <div class="ra-page">
     <nav class="ra-breadcrumb" aria-label="Ruta de navegación">
@@ -12,7 +12,6 @@
     </nav>
 
     {% with hero_sub_clase=clase.curso.nombre|add:" · "|add:clase.asignatura.nombre %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Académico" hero_title="Registro de asistencia" hero_subtitle=hero_sub_clase hero_aria="Registro de asistencia" metrics_aria="Resumen del día" hero_show_date="0" m1_value=total_estudiantes m1_label="Estudiantes" m1_mod="clases" m2_value=resumen_presentes m2_label="Presentes" m2_mod="asistencia" m3_value=resumen_ausentes m3_label="Ausentes" m3_mod="riesgo" m4_value=resumen_fecha m4_label="Fecha" m4_mod="neutral" %}
     {% endwith %}
     <div class="ra-hero__actions">
         <a href="{% url 'dashboard' %}?pagina=mis_clases" class="ra-btn ra-btn--outline">← Mis Clases</a>
@@ -28,6 +27,13 @@
     </div>
     {% endif %}
 
+    {% if asistencia_vista_previa %}
+    <div class="ra-demo-banner" role="status">
+        <strong>Datos de prueba</strong> — solo para ver cómo se ve la pantalla. No se guardan en la base de datos.
+        <a href="{{ asistencia_datos_reales_url }}" class="ra-demo-banner__link">Ver sin datos de prueba</a>
+    </div>
+    {% endif %}
+
     <section class="ra-date-card">
         <form method="get" class="ra-date-form">
             <label for="fecha" class="ra-date-form__label">📅 Fecha de registro</label>
@@ -36,9 +42,12 @@
         </form>
     </section>
 
-    <form method="post" class="ra-form">
+    <form method="post" class="ra-form{% if asistencia_vista_previa %} ra-form--demo{% endif %}">
         {% csrf_token %}
         <input type="hidden" name="fecha" value="{{ fecha_str }}">
+        {% if asistencia_vista_previa %}
+        <input type="hidden" name="vista_previa" value="1">
+        {% endif %}
 
         <div class="ra-form__head">
             <h2>Estudiantes <span class="ra-count">({{ total_estudiantes }})</span></h2>
@@ -87,11 +96,14 @@
         </div>
 
         <div class="ra-form__footer">
-            <button type="submit" class="ra-btn ra-btn--save" id="ra-save-btn">Guardar asistencia</button>
+            <button type="submit" class="ra-btn ra-btn--save" id="ra-save-btn">
+                {% if asistencia_vista_previa %}Probar guardado (vista previa){% else %}Guardar asistencia{% endif %}
+            </button>
         </div>
         {% else %}
         <div class="ra-empty">
-            <p>No hay estudiantes inscritos en esta clase.</p>
+            <p>No hay estudiantes inscritos en esta clase (datos reales).</p>
+            <p class="ra-empty__hint">En desarrollo, recarga la página para ver alumnos de prueba automáticamente, o vuelve al listado.</p>
             <a href="{% url 'dashboard' %}?pagina=mis_clases" class="ra-btn ra-btn--outline">Volver a Mis Clases</a>
         </div>
         {% endif %}

@@ -1,0 +1,41 @@
+<article
+  class="com-prof-item com-prof-item--{{ comunicado.tipo }}{% if comunicado.es_prioritario %} com-prof-item--prioritario{% endif %}"
+  data-com-tipo="{{ comunicado.tipo }}"
+  data-com-prioritario="{% if comunicado.es_prioritario %}1{% else %}0{% endif %}"
+  data-com-search="{{ comunicado.titulo|lower }} {{ comunicado.contenido|lower }}"
+>
+  <span class="com-prof-item__stripe" aria-hidden="true"></span>
+  <div class="com-prof-item__body">
+    <div class="com-prof-item__top">
+      <span class="com-prof-badge com-prof-badge--{{ comunicado.tipo }}">{{ comunicado.get_tipo_display }}</span>
+      {% if comunicado.es_prioritario %}
+      <span class="com-prof-badge com-prof-badge--prioritario">Prioritario</span>
+      {% endif %}
+      {% if comunicado.es_destacado %}
+      <span class="com-prof-badge com-prof-badge--destacado">Destacado</span>
+      {% endif %}
+      {% if comunicado.requiere_confirmacion %}
+      <span class="com-prof-badge com-prof-badge--confirm">Confirmación</span>
+      {% endif %}
+    </div>
+    <h3 class="com-prof-item__title">
+      <a href="{% url 'comunicados:detalle' comunicado.id_comunicado %}">{{ comunicado.titulo }}</a>
+    </h3>
+    <p class="com-prof-item__excerpt">{{ comunicado.contenido|truncatewords:28 }}</p>
+    <div class="com-prof-item__meta">
+      <span>{{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}</span>
+      {% if comunicado.fecha_evento %}
+      <span>Evento: {{ comunicado.fecha_evento|date:"d/m/Y H:i" }}</span>
+      {% endif %}
+      {% if comunicado.publicado_por %}
+      <span>{{ comunicado.publicado_por.get_full_name }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="com-prof-item__actions">
+    <a href="{% url 'comunicados:detalle' comunicado.id_comunicado %}" class="com-prof-item__cta">Ver detalle</a>
+    {% if can_view_stats and comunicado.requiere_confirmacion %}
+    <a href="{% url 'comunicados:estadisticas' comunicado.id_comunicado %}" class="com-prof-item__stats">Estadísticas</a>
+    {% endif %}
+  </div>
+</article>

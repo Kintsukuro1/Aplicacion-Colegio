@@ -207,6 +207,81 @@ class ComunicadosService:
         return comunicado.tipo == 'urgente' or comunicado.es_prioritario
 
     @staticmethod
+    def get_profesor_comunicados_list_context(comunicados) -> Dict[str, Any]:
+        """
+        Métricas, alertas y prioridades para la lista premium del profesor.
+        Usa la bandeja completa (sin filtro de tipo) para contadores e inteligencia.
+        """
+        from django.utils import timezone
+
+        items = list(comunicados)
+        total = len(items)
+        urgentes = sum(1 for c in items if ComunicadosService._comunicado_es_urgente(c))
+        citaciones = sum(1 for c in items if c.tipo == 'citacion')
+        eventos = sum(1 for c in items if c.tipo == 'evento')
+        prioritarios = sum(1 for c in items if c.es_prioritario)
+        confirmacion = sum(1 for c in items if c.requiere_confirmacion)
+        destacados = sum(1 for c in items if c.es_destacado)
+
+        now = timezone.now()
+        proximos = sorted(
+            [c for c in items if getattr(c, 'fecha_evento', None) and c.fecha_evento >= now],
+            key=lambda c: c.fecha_evento,
+        )[:3]
+
+        alertas = []
+        if urgentes:
+            alertas.append(
+                f'Tienes {urgentes} comunicado{"s" if urgentes != 1 else ""} '
+                f'urgente{"s" if urgentes != 1 else ""} o prioritario{"s" if urgentes != 1 else ""}: '
+                'revísalos antes del resto.'
+            )
+        if citaciones:
+            alertas.append(
+                f'{citaciones} citación{"es" if citaciones != 1 else ""} '
+                f'con fecha de reunión o entrevista.'
+            )
+        if confirmacion:
+            alertas.append(
+                f'{confirmacion} comunicado{"s" if confirmacion != 1 else ""} '
+                'piden confirmación de lectura al abrir el detalle.'
+            )
+
+        prioridad = sorted(
+            [
+                c for c in items
+                if ComunicadosService._comunicado_es_urgente(c)
+                or c.tipo in ('citacion', 'urgente')
+                or c.es_prioritario
+            ],
+            key=lambda c: (
+                0 if c.tipo == 'urgente' else 1,
+                0 if c.es_prioritario else 1,
+                -(c.fecha_publicacion.timestamp() if c.fecha_publicacion else 0),
+            ),
+        )[:4]
+
+        counts_by_tipo: Dict[str, int] = {}
+        for c in items:
+            counts_by_tipo[c.tipo] = counts_by_tipo.get(c.tipo, 0) + 1
+
+        return {
+            'com_stats': {
+                'total': total,
+                'urgentes': urgentes,
+                'citaciones': citaciones,
+                'eventos': eventos,
+                'prioritarios': prioritarios,
+                'confirmacion': confirmacion,
+                'destacados': destacados,
+            },
+            'com_alertas': alertas,
+            'com_prioridad': prioridad,
+            'com_proximos_eventos': proximos,
+            'com_counts_tipo': counts_by_tipo,
+        }
+
+    @staticmethod
     def _get_leidos_ids_for_user(user, comunicado_ids) -> set:
         from ..models import ConfirmacionLectura
 

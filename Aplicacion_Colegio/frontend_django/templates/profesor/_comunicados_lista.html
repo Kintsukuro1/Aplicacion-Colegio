@@ -1,0 +1,289 @@
+{% load static %}
+
+<section class="com-prof-page" aria-label="Comunicados oficiales">
+
+  <div class="com-prof-guide" aria-label="Guía">
+    <h3 class="com-prof-guide__title">Bandeja institucional</h3>
+    <p class="com-prof-guide__text">
+      Circulares, citaciones y avisos de dirección o coordinación. Los contadores reflejan tu bandeja completa;
+      el listado respeta el filtro de tipo que elijas.
+    </p>
+  </div>
+
+  {% if com_stats.total %}
+  <section class="com-prof-insights" aria-label="Indicadores">
+    <article class="com-prof-insight">
+      <span class="com-prof-insight__val" id="comProfKpiTotal">{{ com_stats.total }}</span>
+      <span class="com-prof-insight__lbl">En bandeja</span>
+      <span class="com-prof-insight__hint">Visibles para ti</span>
+    </article>
+    <article class="com-prof-insight{% if com_stats.urgentes %} com-prof-insight--warn{% endif %}">
+      <span class="com-prof-insight__val" id="comProfKpiUrgent">{{ com_stats.urgentes }}</span>
+      <span class="com-prof-insight__lbl">Urgentes</span>
+      <span class="com-prof-insight__hint">Tipo urgente o prioritario</span>
+    </article>
+    <article class="com-prof-insight">
+      <span class="com-prof-insight__val" id="comProfKpiCitacion">{{ com_stats.citaciones }}</span>
+      <span class="com-prof-insight__lbl">Citaciones</span>
+      <span class="com-prof-insight__hint">Reuniones y citas</span>
+    </article>
+    <article class="com-prof-insight">
+      <span class="com-prof-insight__val" id="comProfKpiEvento">{{ com_stats.eventos }}</span>
+      <span class="com-prof-insight__lbl">Eventos</span>
+      <span class="com-prof-insight__hint">Con fecha programada</span>
+    </article>
+  </section>
+
+  {% if com_alertas or com_prioridad or com_proximos_eventos %}
+  <section class="com-prof-intel" aria-label="Información inteligente">
+    <h3 class="com-prof-intel__title">Información inteligente</h3>
+    {% if com_alertas %}
+    <ul class="com-prof-intel__alertas">
+      {% for alerta in com_alertas %}
+      <li><span aria-hidden="true">💡</span> {{ alerta }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if com_prioridad %}
+    <div class="com-prof-intel__prioridad">
+      <h4 class="com-prof-intel__sub">Revisar primero</h4>
+      <ul class="com-prof-intel__lista">
+        {% for c in com_prioridad %}
+        <li>
+          <a href="{% url 'comunicados:detalle' c.id_comunicado %}" class="com-prof-intel__link">
+            <span class="com-prof-intel__tarea">{{ c.titulo|truncatechars:52 }}</span>
+            <span class="com-prof-intel__meta">{{ c.get_tipo_display }}</span>
+          </a>
+          {% if c.fecha_evento %}
+          <span class="com-prof-intel__pill com-prof-intel__pill--soon">Evento {{ c.fecha_evento|date:"d/m" }}</span>
+          {% elif c.es_prioritario %}
+          <span class="com-prof-intel__pill com-prof-intel__pill--warn">Prioritario</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if com_proximos_eventos %}
+    <div class="com-prof-intel__agenda">
+      <h4 class="com-prof-intel__sub">Próximos eventos</h4>
+      <ul class="com-prof-intel__agenda-list">
+        {% for c in com_proximos_eventos %}
+        <li>
+          <span class="com-prof-intel__fecha">{{ c.fecha_evento|date:"d/m/Y H:i" }}</span>
+          <a href="{% url 'comunicados:detalle' c.id_comunicado %}">{{ c.titulo|truncatechars:40 }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+  {% endif %}
+
+  <div class="com-prof-panel">
+    <div class="com-prof-panel__head">
+      <nav class="com-prof-chips" aria-label="Filtrar por tipo">
+        <a href="{% url 'comunicados:lista' %}" class="com-prof-chips__chip{% if not tipo_filtro %} com-prof-chips__chip--active{% endif %}">
+          Todos{% if com_stats.total %} <span class="com-prof-chips__n">{{ com_stats.total }}</span>{% endif %}
+        </a>
+        {% for value, label in tipos %}
+        <a href="{% url 'comunicados:lista' %}?tipo={{ value }}" class="com-prof-chips__chip{% if tipo_filtro == value %} com-prof-chips__chip--active{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </nav>
+      {% if can_create_comunicado %}
+      <a href="{% url 'comunicados:crear' %}" class="com-prof-btn com-prof-btn--primary">Nuevo comunicado</a>
+      {% endif %}
+    </div>
+
+    <section class="com-prof-refine" aria-label="Refinar vista">
+      <form method="get" class="com-prof-refine__grid" id="comProfFilterForm">
+        <div class="com-prof-refine__field">
+          <label class="com-prof-refine__label" for="comProfTipo">Tipo</label>
+          <select class="com-prof-refine__control" id="comProfTipo" name="tipo">
+            <option value="">Todos los tipos</option>
+            {% for value, label in tipos %}
+            <option value="{{ value }}" {% if tipo_filtro == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="com-prof-refine__field com-prof-refine__field--grow">
+          <label class="com-prof-refine__label" for="comProfSearch">Buscar</label>
+          <input type="search" class="com-prof-refine__control" id="comProfSearch" placeholder="Título o contenido…" autocomplete="off">
+        </div>
+        <div class="com-prof-refine__field com-prof-refine__actions">
+          <button type="submit" class="com-prof-btn com-prof-btn--primary">Aplicar tipo</button>
+          {% if tipo_filtro %}
+          <a href="{% url 'comunicados:lista' %}" class="com-prof-btn com-prof-btn--ghost">Limpiar</a>
+          {% endif %}
+          <button type="button" class="com-prof-btn com-prof-btn--ghost com-prof-hidden" id="comProfClearSearch">Limpiar búsqueda</button>
+        </div>
+      </form>
+      {% if tipo_filtro %}
+      <p class="com-prof-refine__note" role="status">
+        {% if comunicados %}
+        Mostrando <strong>{{ comunicados|length }}</strong> de {{ com_stats.total }} con filtro activo.
+        {% elif com_stats.total %}
+        Sin coincidencias para este tipo ({{ com_stats.total }} en bandeja sin filtrar).
+        {% else %}
+        Filtro activo; cuando existan comunicados en tu bandeja, se listarán aquí.
+        {% endif %}
+      </p>
+      {% endif %}
+    </section>
+
+    <div id="comProfDemoNotice" class="com-prof-notice com-prof-notice--demo{% if comunicados or tipo_filtro %} com-prof-hidden{% endif %}" role="status">
+      <span><strong>Vista de ejemplo:</strong> tarjetas ilustrativas para revisar el diseño. No son comunicados reales.</span>
+      <button type="button" class="com-prof-notice__dismiss" id="comProfHideDemo">Ocultar ejemplo</button>
+    </div>
+
+    {% if comunicados %}
+    <div class="com-prof-list-head">
+      <h2 class="com-prof-list-head__title">Comunicados recientes</h2>
+      <span class="com-prof-list-head__count" id="comProfListMeta">{{ comunicados|length }}</span>
+    </div>
+    <div class="com-prof-list" id="comProfList" role="list">
+      {% for comunicado in comunicados %}
+      {% include 'profesor/_comunicado_item.html' %}
+      {% endfor %}
+    </div>
+    <p class="com-prof-no-results com-prof-hidden" id="comProfNoResults" role="status">Ningún comunicado coincide con la búsqueda.</p>
+
+    {% else %}
+    {% if tipo_filtro or com_stats.total %}
+    <div class="com-prof-filter-empty" role="status">
+      <span class="com-prof-filter-empty__icon" aria-hidden="true">🔍</span>
+      <h2 class="com-prof-filter-empty__title">Sin resultados con este filtro</h2>
+      <p class="com-prof-filter-empty__text">
+        {% if com_stats.total %}
+        Prueba otro tipo o <a href="{% url 'comunicados:lista' %}">ver todos los comunicados</a>.
+        {% else %}
+        Aún no hay comunicados en tu bandeja; el filtro por tipo funcionará cuando la dirección publique avisos.
+        <a href="{% url 'comunicados:lista' %}">Quitar filtro</a>
+        {% endif %}
+      </p>
+    </div>
+    {% else %}
+    <div class="com-prof-list-head com-prof-hidden" id="comProfDemoHead">
+      <h2 class="com-prof-list-head__title">Vista previa del diseño</h2>
+      <span class="com-prof-list-head__count" id="comProfListMeta">4 ejemplos</span>
+    </div>
+
+    <div class="com-prof-empty" id="comProfEmptyReal" aria-label="Sin comunicados">
+      <span class="com-prof-empty__icon" aria-hidden="true">📭</span>
+      <h2 class="com-prof-empty__title">Sin comunicados en este momento</h2>
+      <p class="com-prof-empty__text">
+        Cuando dirección o coordinación publiquen circulares para docentes, aparecerán aquí. Puedes filtrar por tipo o buscar por palabra clave.
+      </p>
+      <button type="button" class="com-prof-btn com-prof-btn--primary" id="comProfShowDemo">Ver ejemplo de diseño</button>
+    </div>
+
+    <div class="com-prof-list com-prof-hidden" id="comProfDemoList" role="list" aria-label="Ejemplo de comunicados">
+      {% include 'profesor/_comunicados_demo.html' %}
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+<script>
+(function () {
+  function debounce(fn, wait) {
+    var timer;
+    return function () {
+      var ctx = this;
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait);
+    };
+  }
+
+  function comProfActiveList() {
+    var real = document.getElementById('comProfList');
+    if (real && !real.closest('.com-prof-hidden') && real.children.length) return real;
+    var demo = document.getElementById('comProfDemoList');
+    if (demo && !demo.classList.contains('com-prof-hidden')) return demo;
+    return real || demo;
+  }
+
+  function comProfFilterList(listEl, query) {
+    if (!listEl) return 0;
+    var q = (query || '').toLowerCase().trim();
+    var visible = 0;
+    listEl.querySelectorAll('.com-prof-item').forEach(function (el) {
+      var hay = el.getAttribute('data-com-search') || '';
+      var show = !q || hay.indexOf(q) !== -1;
+      el.classList.toggle('com-prof-hidden', !show);
+      if (show) visible++;
+    });
+    return visible;
+  }
+
+  function comProfOnSearch() {
+    var input = document.getElementById('comProfSearch');
+    var clearBtn = document.getElementById('comProfClearSearch');
+    var noResults = document.getElementById('comProfNoResults');
+    var meta = document.getElementById('comProfListMeta');
+    if (!input) return;
+    var q = input.value;
+    var list = comProfActiveList();
+    var n = comProfFilterList(list, q);
+    if (clearBtn) clearBtn.classList.toggle('com-prof-hidden', !q);
+    if (noResults) noResults.classList.toggle('com-prof-hidden', !q || n > 0);
+    if (meta && list && list.id === 'comProfList') meta.textContent = String(n);
+  }
+
+  var tipoSelect = document.getElementById('comProfTipo');
+  var filterForm = document.getElementById('comProfFilterForm');
+  if (tipoSelect && filterForm) {
+    tipoSelect.addEventListener('change', function () {
+      filterForm.submit();
+    });
+  }
+
+  var searchInput = document.getElementById('comProfSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', debounce(comProfOnSearch, 200));
+  }
+  var clearSearch = document.getElementById('comProfClearSearch');
+  if (clearSearch) {
+    clearSearch.addEventListener('click', function () {
+      var input = document.getElementById('comProfSearch');
+      if (input) input.value = '';
+      comProfOnSearch();
+    });
+  }
+
+  var hideDemo = document.getElementById('comProfHideDemo');
+  var showDemo = document.getElementById('comProfShowDemo');
+  var demoList = document.getElementById('comProfDemoList');
+  var demoNotice = document.getElementById('comProfDemoNotice');
+  var emptyReal = document.getElementById('comProfEmptyReal');
+
+  function comProfSetDemoVisible(show) {
+    if (demoList) demoList.classList.toggle('com-prof-hidden', !show);
+    if (demoNotice) demoNotice.classList.toggle('com-prof-hidden', !show);
+    if (emptyReal) emptyReal.classList.toggle('com-prof-hidden', show);
+    var head = document.getElementById('comProfDemoHead');
+    if (head) head.classList.toggle('com-prof-hidden', !show);
+  }
+
+  if (hideDemo) {
+    hideDemo.addEventListener('click', function () {
+      comProfSetDemoVisible(false);
+      if (demoNotice) demoNotice.classList.add('com-prof-hidden');
+    });
+  }
+  if (showDemo) {
+    showDemo.addEventListener('click', function () {
+      comProfSetDemoVisible(true);
+    });
+  }
+  var hasTipoInUrl = /[?&]tipo=/.test(window.location.search);
+  if (demoList && !document.getElementById('comProfList') && !hasTipoInUrl) {
+    comProfSetDemoVisible(true);
+  } else if (demoList && emptyReal && !emptyReal.classList.contains('com-prof-hidden')) {
+    comProfSetDemoVisible(false);
+  }
+})();
+</script>

@@ -9,7 +9,8 @@
     --ra-text-soft: #6d28d9;
     --ra-surface: #ffffff;
     --ra-shadow: 0 10px 32px rgba(76, 29, 149, 0.08);
-    max-width: 1100px;
+    max-width: none;
+    width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -351,6 +352,28 @@
     justify-content: flex-end;
 }
 
+.ra-demo-banner {
+    padding: 0.85rem 1.1rem;
+    border-radius: 14px;
+    border: 1px dashed #c4b5fd;
+    background: linear-gradient(90deg, #faf5ff 0%, #fff 85%);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: #5b21b6;
+}
+
+.ra-demo-banner__link {
+    margin-left: 0.35rem;
+    font-weight: 700;
+    color: #6a5ab8;
+    text-decoration: underline;
+}
+
+.ra-form--demo .ra-student {
+    border-style: dashed;
+    border-color: #ddd6fe;
+}
+
 .ra-empty {
     padding: 2.5rem 1.5rem;
     text-align: center;
@@ -358,6 +381,14 @@
     flex-direction: column;
     gap: 0.75rem;
     align-items: center;
+}
+
+.ra-empty__hint {
+    margin: 0;
+    max-width: 28rem;
+    font-size: 0.88rem;
+    color: #64748b;
+    line-height: 1.45;
 }
 
 @media (max-width: 900px) {

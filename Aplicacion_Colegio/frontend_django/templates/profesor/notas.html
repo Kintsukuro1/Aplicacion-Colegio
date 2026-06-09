@@ -2,19 +2,89 @@
 {% load custom_filters %}
 {% include 'profesor/_personal_wrap_start.html' %}
 
-<link rel="stylesheet" href="{% static 'css/profesor/notas.css' %}?v=20260603-close">
+<link rel="stylesheet" href="{% static 'css/profesor/notas.css' %}?v=20260528-premium-demo">
 
-<div class="notas-container notas-page">
-    {% if modo == 'calificar' %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Portal docente" hero_title="Ingresar calificaciones" hero_subtitle=notas_intel_resumen hero_aria="Calificaciones" metrics_aria="Resumen de la evaluación" m1_value=notas_hero_evaluaciones|default:0 m1_label="Evaluaciones" m1_mod="clases" m2_value=notas_hero_calificaciones|default:0 m2_label="Notas registradas" m2_mod="tareas" m3_value=notas_hero_promedio|default:0 m3_label="Promedio" m3_mod="neutral" m4_value=notas_hero_pendientes|default:0 m4_label="Por completar" m4_mod="riesgo" m4_alert=notas_hero_pendientes %}
-    {% else %}
-    {% include 'profesor/_profesor_hero.html' with hero_eyebrow="Portal docente" hero_title="Evaluaciones y notas" hero_subtitle=notas_intel_resumen hero_aria="Gestión de evaluaciones" metrics_aria="Resumen académico" m1_value=notas_hero_evaluaciones|default:0 m1_label="Evaluaciones activas" m1_mod="clases" m2_value=notas_hero_calificaciones|default:0 m2_label="Calificaciones" m2_mod="tareas" m3_value=notas_hero_promedio|default:0 m3_label="Promedio" m3_mod="neutral" m4_value=notas_hero_pendientes|default:0 m4_label="Incompletas" m4_mod="riesgo" m4_alert=notas_hero_pendientes %}
-    {% endif %}
-
+<div class="notas-container notas-page{% if modo == 'calificar' %} notas-page--calificar{% endif %}">
     {% include 'profesor/_notas_intel_panel.html' %}
 
+    {% if not clase_seleccionada %}
+    <section class="nt-guide" aria-label="Guía de evaluaciones">
+        <h3>Gestiona evaluaciones y calificaciones</h3>
+        <p>Selecciona una clase para crear evaluaciones, registrar notas y ver el avance de calificaciones. Si aún no hay datos, verás una vista de ejemplo del diseño final.</p>
+    </section>
+    {% if clases %}
+    <section class="nt-quickpick" aria-label="Acceso rápido">
+        <p class="nt-quickpick__label">Acceso rápido · {{ clases|length }} clase{{ clases|length|pluralize }}</p>
+        {% for clase in clases|slice:":8" %}
+        <a class="nt-quickpick__chip" href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase.id }}">{{ clase.curso.nombre }} · {{ clase.asignatura.nombre|truncatechars:18 }}</a>
+        {% endfor %}
+    </section>
+    {% endif %}
+    {% endif %}
+
+    {% if clase_seleccionada %}
+    <nav class="notas-breadcrumb" aria-label="Ruta">
+        <a href="{% url 'dashboard' %}?pagina=inicio">Inicio</a>
+        <span>/</span>
+        <a href="{% url 'dashboard' %}?pagina=notas">Evaluaciones y notas</a>
+        <span>/</span>
+        <span>{{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</span>
+    </nav>
+
+    <header class="nt-class-bar" aria-label="Clase activa">
+        <div>
+            <h2 class="nt-class-bar__title">{{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</h2>
+            <p class="nt-class-bar__meta">
+                {% if evaluaciones %}
+                {{ evaluaciones|length }} evaluación{{ evaluaciones|length|pluralize:"es" }} activa{{ evaluaciones|length|pluralize:"s" }} en esta clase
+                {% else %}
+                Sin evaluaciones registradas aún — puedes crear la primera o revisar la vista de ejemplo abajo
+                {% endif %}
+            </p>
+        </div>
+        <button type="button" class="nt-class-bar__cta" onclick="abrirModalCrearEvaluacion()">+ Nueva evaluación</button>
+    </header>
+
+    {% if not evaluaciones and modo != 'calificar' %}
+    <div class="nt-demo-banner" role="status">
+        <p><strong>Vista demostración</strong> — Los listados siguientes son ficticios para mostrar cómo se verá el módulo con datos reales. Al crear evaluaciones, se reemplazan automáticamente.</p>
+        <button type="button" class="btn-nueva-evaluacion" onclick="abrirModalCrearEvaluacion()"><i class="fas fa-plus"></i> Crear evaluación real</button>
+    </div>
+    <div class="nt-insights" aria-label="Indicadores de ejemplo">
+        <article class="nt-insight">
+            <span class="nt-insight__val">3</span>
+            <span class="nt-insight__lbl">Evaluaciones</span>
+            <span class="nt-insight__hint">Ejemplo ficticio</span>
+        </article>
+        <article class="nt-insight nt-insight--ok">
+            <span class="nt-insight__val">42</span>
+            <span class="nt-insight__lbl">Calificaciones</span>
+            <span class="nt-insight__hint">De 84 posibles</span>
+        </article>
+        <article class="nt-insight">
+            <span class="nt-insight__val">5.4</span>
+            <span class="nt-insight__lbl">Promedio</span>
+            <span class="nt-insight__hint">Curso en zona aprobada</span>
+        </article>
+        <article class="nt-insight nt-insight--warn">
+            <span class="nt-insight__val">1</span>
+            <span class="nt-insight__lbl">Por completar</span>
+            <span class="nt-insight__hint">Examen oral sin notas</span>
+        </article>
+    </div>
+    <section class="notas-intel notas-intel--demo" aria-label="Sugerencias de ejemplo">
+        <h3 class="notas-intel__heading">Próximas y seguimiento (ejemplo)</h3>
+        <ul class="notas-intel-list">
+            <li class="notas-intel-list__item"><span aria-hidden="true">📝</span><span>Completar calificaciones de <strong>Tarea Comprensión lectora</strong> (10 alumnos pendientes)</span></li>
+            <li class="notas-intel-list__item"><span aria-hidden="true">📅</span><span><strong>Examen oral</strong> programado para el 10/04 — aún sin notas</span></li>
+            <li class="notas-intel-list__item"><span aria-hidden="true">✅</span><span><strong>Prueba Unidad 1</strong> al 86% — promedio 5.8</span></li>
+        </ul>
+    </section>
+    {% endif %}
+    {% endif %}
+
     <!-- Filtros y Selección -->
-    <div class="filtros-section">
+    <div class="filtros-section filtros-section--prominent">
         <form method="GET" action="{% url 'dashboard' %}" class="filtros-form" id="formFiltros">
             <input type="hidden" name="pagina" value="notas">
             <input type="hidden" name="modo" value="{{ modo }}">
@@ -40,16 +110,7 @@
                 </label>
                 <select id="clase_id" name="clase_id" required onchange="document.getElementById('formFiltros').submit()">
                     <option value="">-- Seleccione una clase --</option>
-                    {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
-                    {% for grupo in clases_por_curso %}
-                        <optgroup label="{{ grupo.grouper }}">
-                            {% for clase in grupo.list %}
-                                <option value="{{ clase.id }}" {% if filtro_clase_id == clase.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ clase.asignatura.nombre }}
-                                </option>
-                            {% endfor %}
-                        </optgroup>
-                    {% endfor %}
+                    {% include 'profesor/_clase_select_options.html' with filtro_clase_id=filtro_clase_id %}
                 </select>
             </div>
             
@@ -65,9 +126,9 @@
 
         {% if clase_seleccionada and evaluaciones %}
         <div class="filtro-group filtro-evaluacion">
-            <label>
-                <i class="fas fa-list-check"></i> EvaluaciÃ³n
-            </label>
+                <label>
+                <i class="fas fa-list-check"></i> Evaluación
+                </label>
             <div class="evaluation-filter-buttons">
                 <a
                     href="{% url 'dashboard' %}?pagina=notas&clase_id={{ clase_seleccionada.id }}&evaluacion_id=all"
@@ -213,11 +274,131 @@
                 </tbody>
             </table>
             {% else %}
-            <div class="empty-state">
-                <i class="fas fa-file-alt"></i>
-                <p>No hay evaluaciones registradas</p>
-                <button onclick="abrirModalCrearEvaluacion()" class="btn-nueva-evaluacion">
-                    <i class="fas fa-plus"></i> Crear Primera Evaluación
+            <div class="nt-demo-live" data-nt-demo="1" aria-label="Evaluaciones — vista demostración">
+                <table class="tabla-evaluaciones">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Fecha</th>
+                            <th>Ponderación</th>
+                            <th>Calificaciones</th>
+                            <th>Promedio</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="evaluacion-nombre">
+                                    <div class="evaluacion-icon">📄</div>
+                                    <div>
+                                        <div><strong>Prueba Unidad 1</strong> <span class="nt-demo-badge">Ejemplo</span></div>
+                                        <div class="mt-1 d-flex flex-wrap gap-1">
+                                            <span class="badge bg-secondary">Sumativa</span>
+                                            <span class="badge bg-success text-white">Publicada</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>12/03</td>
+                            <td><span class="badge-ponderacion">25%</span></td>
+                            <td><span class="badge-count">24 notas</span></td>
+                            <td><span class="badge-nota nota-aprobado">5.8</span></td>
+                            <td><div class="acciones-grupo"><button class="btn-icono btn-calificar" title="Ejemplo">📝</button><button class="btn-icono btn-editar" title="Ejemplo">✏️</button></div></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="evaluacion-nombre">
+                                    <div class="evaluacion-icon">📋</div>
+                                    <div>
+                                        <div><strong>Tarea Comprensión lectora</strong> <span class="nt-demo-badge">Ejemplo</span></div>
+                                        <div class="mt-1"><span class="badge bg-warning text-dark">Pendiente de revisión</span></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>26/03</td>
+                            <td><span class="badge-ponderacion">20%</span></td>
+                            <td><span class="badge-count">18 notas</span></td>
+                            <td><span class="badge-nota nota-aprobado">5.2</span></td>
+                            <td><div class="acciones-grupo"><button class="btn-icono btn-calificar" title="Ejemplo">📝</button></div></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="evaluacion-nombre">
+                                    <div class="evaluacion-icon">🎤</div>
+                                    <div>
+                                        <div><strong>Examen oral</strong> <span class="nt-demo-badge">Ejemplo</span></div>
+                                        <div class="mt-1"><span class="badge bg-info text-dark">Formulario</span></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>10/04</td>
+                            <td><span class="badge-ponderacion">30%</span></td>
+                            <td><span class="badge-count">0 notas</span></td>
+                            <td><span class="text-muted">-</span></td>
+                            <td><div class="acciones-grupo"><button class="btn-icono btn-calificar" title="Ejemplo">📝</button></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="nt-demo-actions-hint">Las acciones de la tabla son solo referencia visual. Usa «Nueva Evaluación» para datos reales.</p>
+            </div>
+
+            <div class="tabla-container tabla-calificaciones-resumen nt-demo-live" data-nt-demo="1">
+                <div class="section-card-head">
+                    <div>
+                        <h3>Listado de Calificaciones</h3>
+                        <p>Vista agrupada por estudiante — matriz de ejemplo</p>
+                    </div>
+                </div>
+                <div class="tabla-scroll">
+                    <table class="tabla-calificaciones tabla-calificaciones-matriz">
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Prueba 1</th>
+                                <th>Tarea 1</th>
+                                <th>Examen</th>
+                                <th>Promedio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Amanda Silva G.</td>
+                                <td><span class="nota-valor">6.2</span></td>
+                                <td><span class="nota-valor">6.0</span></td>
+                                <td><span class="nota-vacia">-</span></td>
+                                <td><span class="nota-valor">6.1</span></td>
+                            </tr>
+                            <tr>
+                                <td>Benjamín Sepúlveda R.</td>
+                                <td><span class="nota-valor">4.5</span></td>
+                                <td><span class="nota-valor nota-baja">3.8</span></td>
+                                <td><span class="nota-vacia">-</span></td>
+                                <td><span class="nota-valor nota-baja">4.2</span></td>
+                            </tr>
+                            <tr>
+                                <td>Catalina Muñoz T.</td>
+                                <td><span class="nota-valor">6.8</span></td>
+                                <td><span class="nota-valor">6.5</span></td>
+                                <td><span class="nota-vacia">-</span></td>
+                                <td><span class="nota-valor">6.7</span></td>
+                            </tr>
+                            <tr>
+                                <td>Diego Morales P.</td>
+                                <td><span class="nota-valor">5.1</span></td>
+                                <td><span class="nota-vacia">-</span></td>
+                                <td><span class="nota-vacia">-</span></td>
+                                <td><span class="nota-vacia">-</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="empty-state empty-state--lavanda" style="margin-top:1rem;border:none;background:transparent;">
+                <p style="margin-bottom:0.75rem;">¿Listo para trabajar con datos reales?</p>
+                <button type="button" onclick="abrirModalCrearEvaluacion()" class="btn-nueva-evaluacion">
+                    <i class="fas fa-plus"></i> Crear primera evaluación
                 </button>
             </div>
             {% endif %}
@@ -353,6 +534,11 @@
                 {% csrf_token %}
                 <input type="hidden" name="accion" value="registrar_calificaciones">
                 <input type="hidden" name="evaluacion_id" value="{{ evaluacion_seleccionada.id_evaluacion }}">
+                <div class="acciones-calificar acciones-calificar--top">
+                    <button type="submit" class="btn-guardar-calificaciones">
+                        💾 Guardar calificaciones
+                    </button>
+                </div>
                 
                 <div class="acciones-calificar">
                     <button type="submit" class="btn-guardar-calificaciones">
@@ -423,11 +609,6 @@
         
         {% endif %}
         
-    {% else %}
-    <div class="empty-state">
-        <i class="fas fa-hand-pointer"></i>
-        <p>Seleccione una clase para gestionar evaluaciones y calificaciones</p>
-    </div>
     {% endif %}
 </div>
 
@@ -689,62 +870,6 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 {% if rol == 'admin_escolar' %}
-<script>
-function filtrarClasesPorCurso(cursoNombre) {
-    const claseSelect = document.getElementById('clase_id');
-    if (!claseSelect) return;
-    
-    const optgroups = claseSelect.querySelectorAll('optgroup');
-    
-    // Si cursoNombre es vacío, mostramos todos los optgroups
-    if (!cursoNombre) {
-        optgroups.forEach(group => group.style.display = '');
-        return;
-    }
-    
-    // Ocultar todos los optgroups excepto el seleccionado
-    optgroups.forEach(group => {
-        if (group.getAttribute('label') === cursoNombre) {
-            group.style.display = '';
-        } else {
-            group.style.display = 'none';
-        }
-    });
-    
-    // Auto-seleccionar la primera opción visible si la opción seleccionada actualmente está oculta
-    const currentSelected = claseSelect.options[claseSelect.selectedIndex];
-    if (currentSelected && currentSelected.value !== "") {
-        const parentGroup = currentSelected.parentNode;
-        if (parentGroup && parentGroup.tagName === 'OPTGROUP' && parentGroup.style.display === 'none') {
-            const targetGroup = Array.from(optgroups).find(g => g.getAttribute('label') === cursoNombre);
-            if (targetGroup) {
-                const firstOption = targetGroup.querySelector('option');
-                if (firstOption) {
-                    claseSelect.value = firstOption.value;
-                    claseSelect.dispatchEvent(new Event('change'));
-                }
-            }
-        }
-    }
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    const cursoFiltro = document.getElementById('filtro_curso_nombre');
-    if (cursoFiltro) {
-        const claseSelect = document.getElementById('clase_id');
-        if (claseSelect) {
-            const selectedOption = claseSelect.options[claseSelect.selectedIndex];
-            if (selectedOption && selectedOption.value !== "") {
-                const parentGroup = selectedOption.parentNode;
-                if (parentGroup && parentGroup.tagName === 'OPTGROUP') {
-                    const cursoNombre = parentGroup.getAttribute('label');
-                    cursoFiltro.value = cursoNombre;
-                    filtrarClasesPorCurso(cursoNombre);
-                }
-            }
-        }
-    }
-});
-</script>
+{% include 'profesor/_filtrar_clases_por_curso_script.html' %}
 {% endif %}
 {% include 'profesor/_personal_wrap_end.html' %}

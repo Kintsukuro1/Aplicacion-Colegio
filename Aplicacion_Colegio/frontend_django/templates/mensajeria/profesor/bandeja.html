@@ -195,6 +195,31 @@
             </div>
             {% endif %}
         </main>
+
+        <aside class="contactar-panel" aria-label="Contactar estudiantes">
+            <div class="contactar-panel-header">
+                <h4>Contactar estudiante</h4>
+                <p>{{ total_estudiantes_contactables|default:0 }} contacto(s) en tus clases</p>
+            </div>
+            <div class="contactar-lista">
+                {% for contacto in estudiantes_contacto %}
+                <a href="{% if contacto.conversacion_id %}{% url 'mensajeria:ver_conversacion' contacto.conversacion_id %}{% else %}{% url 'mensajeria:bandeja_mensajes' %}?clase_id={{ contacto.clase.id }}&amp;destinatario_id={{ contacto.estudiante.id }}{% endif %}"
+                   class="contacto-item contacto-item--link">
+                    <span class="contacto-asignatura">{{ contacto.asignatura }}</span>
+                    {% if not contacto.tiene_conversacion %}<span class="badge-nuevo">NUEVO</span>{% endif %}
+                    <div class="contacto-nombre">{{ contacto.estudiante.get_full_name }}</div>
+                    <div class="contacto-curso">{{ contacto.curso }}</div>
+                    {% if not contacto.ultimo_preview %}<div class="contacto-sin-msg">Sin mensajes</div>{% endif %}
+                </a>
+                {% empty %}
+                <div class="empty-state-sidebar">
+                    <i class="fas fa-users"></i>
+                    <p>No tienes contactos disponibles</p>
+                    <a href="{% url 'dashboard' %}?pagina=mis_clases" class="btn-ir-clases">Ir a mis clases</a>
+                </div>
+                {% endfor %}
+            </div>
+        </aside>
         
     </div>
     
