@@ -596,11 +596,11 @@ class StudentService:
                 colegio__rbd=escuela_rbd
             )
             
-            # Actualizar perfil con ciclo actual
+            # Actualizar perfil con ciclo y curso actual
             perfil, created = PerfilEstudiante.objects.get_or_create(user=estudiante)
-            if not perfil.ciclo_actual:
-                perfil.ciclo_actual = curso.ciclo_academico
-                perfil.save()
+            perfil.ciclo_actual = curso.ciclo_academico
+            perfil.curso_actual_id = curso
+            perfil.save(update_fields=['ciclo_actual', 'curso_actual_id', 'fecha_actualizacion'])
             
             logger.info(
                 f"Estudiante asignado a curso - Estudiante ID: {estudiante.id}, Curso: {curso.nombre}"

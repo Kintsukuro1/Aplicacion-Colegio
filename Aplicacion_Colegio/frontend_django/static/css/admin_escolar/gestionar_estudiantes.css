@@ -3,9 +3,10 @@
    ==================================== */
 
 .estudiantes-container {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    padding: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
 }
 
 /* ===== HEADER Y TÍTULO ===== */
@@ -236,6 +237,72 @@
     display: flex;
     gap: 0.75rem;
     align-items: flex-end;
+}
+
+.filtros-resultado {
+    flex: 1 1 100%;
+    margin: 0.75rem 0 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.filtros-resultado strong {
+    color: #6d28d9;
+}
+
+.estudiantes-colegio-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.875rem;
+    border: 1px solid #e9d5ff;
+    background: linear-gradient(135deg, #faf5ff 0%, #f8fafc 100%);
+}
+
+.estudiantes-colegio-bar__eyebrow {
+    display: block;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.estudiantes-colegio-bar__name {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 1rem;
+    color: #581c87;
+}
+
+.estudiantes-colegio-bar__rbd {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #6d28d9;
+    background: #f3e8ff;
+    border: 1px solid #ddd6fe;
+}
+
+.estudiantes-colegio-bar__hint {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.estudiantes-colegio-bar__select {
+    min-width: 220px;
+    margin: 0;
 }
 
 .btn-filtrar,
@@ -557,12 +624,16 @@
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 1060;
     padding: 1rem;
     overflow-y: auto;
+}
+
+.modal-overlay.active {
+    display: flex;
 }
 
 .modal-content {
@@ -793,27 +864,49 @@
 /* ===== ESTILOS PARA ESTUDIANTES CON NEE ===== */
 .fila-nee {
     position: relative;
+    background: linear-gradient(to right, #faf5ff 0%, #ffffff 100%);
 }
 
 .fila-nee:hover {
-    background: linear-gradient(to right, #fde68a 0%, #f9fafb 100%) !important;
+    background: linear-gradient(to right, #f3e8ff 0%, #f9fafb 100%) !important;
 }
 
 .badge-nee {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    background: var(--color-primary);
-    color: #78350f;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(251, 191, 36, 0.2);
-    border: 1px solid #fcd34d;
+    gap: 0.35rem;
+    padding: 0.25rem 0.625rem;
+    background: #f3e8ff;
+    color: #6d28d9;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    border: 1px solid #ddd6fe;
+    white-space: nowrap;
+    max-width: 11rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .badge-nee i {
-    font-size: 0.7rem;
-    color: #92400e;
+    font-size: 0.65rem;
+    color: #7c3aed;
+}
+
+.badge-nee--empty {
+    color: #94a3b8;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    font-weight: 600;
+}
+
+.col-acceso {
+    font-size: 0.8125rem;
+    color: #475569;
+    white-space: nowrap;
+}
+
+.col-acceso--muted {
+    color: #94a3b8;
+    font-style: italic;
 }

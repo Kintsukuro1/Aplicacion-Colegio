@@ -72,6 +72,8 @@ body.vista-staff .staff-page-body {
 body.vista-staff .staff-page-body .page-header,
 body.vista-staff .staff-page-body .welcome-banner,
 body.vista-staff .staff-page-body .titulo-modulo,
+body.vista-staff .staff-page-body .estadisticas-grid,
+body.vista-staff .staff-page-body .header-section .estadisticas-grid,
 body.vista-staff .staff-page-body .seguridad-header,
 body.vista-staff .staff-page-body .ce-header,
 body.vista-staff .staff-page-body > .adm-portal > .prof-hero,
@@ -79,8 +81,15 @@ body.vista-staff .staff-page-body .adm-portal > .prof-hero:first-child {
     display: none !important;
 }
 
-body.vista-staff .staff-page-body .data-management-container .page-header {
-    display: none !important;
+body.vista-staff .staff-page-body .estudiantes-container,
+body.vista-staff .staff-page-body .filtros-section,
+body.vista-staff .staff-page-body .tabla-container {
+    width: 100%;
+    max-width: none;
+}
+
+body.vista-staff .staff-page-body .tabla-estudiantes {
+    width: 100%;
 }
 
 /* Paleta unificada — botones y acciones */

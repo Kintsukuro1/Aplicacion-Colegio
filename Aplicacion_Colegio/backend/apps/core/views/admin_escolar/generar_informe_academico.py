@@ -20,6 +20,7 @@ from backend.apps.core.services.academic_report_query_service import AcademicRep
 from backend.apps.core.services.dashboard_service import DashboardService
 from backend.apps.core.views.admin_escolar._access import can_manage_school_data
 from backend.common.services.policy_service import PolicyService
+from backend.common.utils.dashboard_helpers import build_dashboard_context
 from backend.common.utils.report_exporters import ExcelReportExporter, PDFReportExporter
 
 logger = logging.getLogger(__name__)
@@ -162,5 +163,11 @@ def generar_informe_academico(request, estudiante_id: int):
         'periodos': periodos,
         'anios': anios,
     }
+
+    shell, redirect_response = build_dashboard_context(request, 'generar_informe', None)
+    if redirect_response:
+        return redirect_response
+    if shell:
+        context.update(shell)
 
     return render(request, 'admin_escolar/generar_informe.html', context)

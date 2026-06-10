@@ -12,16 +12,17 @@
     --fin-glass-border: hsla(0, 0%, 100%, 0.40);
     --fin-text:      hsl(220, 25%, 14%);
     --fin-text-secondary: hsl(220, 12%, 48%);
-    --fin-emerald:   hsl(160, 68%, 42%);
-    --fin-emerald-light: hsl(160, 68%, 95%);
-    --fin-blue:      hsl(215, 78%, 52%);
-    --fin-blue-light: hsl(215, 78%, 95%);
-    --fin-amber:     hsl(38, 92%, 50%);
-    --fin-amber-light: hsl(38, 92%, 95%);
-    --fin-rose:      hsl(350, 72%, 54%);
-    --fin-rose-light: hsl(350, 72%, 95%);
-    --fin-purple:    hsl(270, 62%, 55%);
-    --fin-purple-light: hsl(270, 62%, 95%);
+    --fin-emerald:   hsl(152, 55%, 42%);
+    --fin-emerald-light: hsl(152, 55%, 95%);
+    --fin-blue:      hsl(258, 58%, 58%);
+    --fin-blue-light: hsl(258, 58%, 95%);
+    --fin-amber:     hsl(38, 80%, 50%);
+    --fin-amber-light: hsl(38, 80%, 95%);
+    --fin-rose:      hsl(350, 55%, 52%);
+    --fin-rose-light: hsl(350, 55%, 95%);
+    --fin-purple:    hsl(270, 55%, 52%);
+    --fin-purple-light: hsl(270, 55%, 95%);
+    --fin-lavender:  hsl(258, 45%, 96%);
     --fin-radius:    16px;
     --fin-radius-sm: 10px;
     --fin-shadow:    0 2px 12px hsla(220, 40%, 10%, 0.06);
@@ -104,7 +105,7 @@
 }
 .fin-tab:hover { color: var(--fin-text); background: hsla(0,0%,100%,0.5); }
 .fin-tab.active {
-    color: var(--fin-emerald); background: var(--fin-surface);
+    color: var(--fin-purple); background: var(--fin-surface);
     box-shadow: 0 2px 8px hsla(0,0%,0%,0.06);
 }
 .fin-tab-content {
@@ -151,10 +152,10 @@
     font-family: 'Inter', sans-serif; transition: all var(--fin-transition);
 }
 .fin-btn-primary {
-    background: linear-gradient(135deg, var(--fin-emerald), hsl(170, 60%, 38%));
-    color: #fff; box-shadow: 0 3px 12px hsla(160, 68%, 42%, 0.25);
+    background: linear-gradient(135deg, var(--fin-purple), hsl(258, 50%, 45%));
+    color: #fff; box-shadow: 0 3px 12px hsla(270, 55%, 52%, 0.22);
 }
-.fin-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 18px hsla(160, 68%, 42%, 0.35); }
+.fin-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 18px hsla(270, 55%, 52%, 0.32); }
 .fin-btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
 .fin-btn-outline {
     background: transparent; border: 1.5px solid hsl(220, 16%, 85%);
@@ -178,7 +179,7 @@
     transition: border-color var(--fin-transition);
     outline: none;
 }
-.fin-input:focus, .fin-select:focus { border-color: var(--fin-emerald); }
+.fin-input:focus, .fin-select:focus { border-color: var(--fin-purple); }
 .fin-input { min-width: 220px; }
 
 /* ─── Modal ───────────────────────────────────────────── */
@@ -207,7 +208,7 @@
     transition: border-color var(--fin-transition); outline: none; box-sizing: border-box;
 }
 .fin-form-group input:focus, .fin-form-group select:focus, .fin-form-group textarea:focus {
-    border-color: var(--fin-emerald);
+    border-color: var(--fin-purple);
 }
 .fin-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
@@ -244,9 +245,21 @@
 .fin-spinner {
     display: inline-block; width: 20px; height: 20px;
     border: 2.5px solid hsl(220, 16%, 88%);
-    border-top-color: var(--fin-emerald);
+    border-top-color: var(--fin-purple);
     border-radius: 50%; animation: finSpin 0.7s linear infinite;
 }
+
+/* Insights */
+.fin-insights { display: flex; flex-direction: column; gap: 0.625rem; margin-bottom: 1.25rem; }
+.fin-insight {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.625rem 0.875rem;
+    padding: 0.75rem 1rem; border-radius: 0.875rem;
+    border: 1px solid #e9d5ff; background: linear-gradient(135deg, #faf5ff 0%, #fff 100%);
+}
+.fin-insight p { margin: 0; flex: 1; min-width: 200px; font-size: 0.8125rem; font-weight: 600; color: #475569; line-height: 1.45; }
+.fin-insight--warn { border-color: #ddd6fe; background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%); }
+.fin-insight--info { border-color: #c4b5fd; }
+.fin-insight--neutral { border-color: #e9d5ff; }
 @keyframes finSpin { to { transform: rotate(360deg); } }
 
 /* ─── Summary Layout & Charts ─────────────────────────── */
@@ -298,38 +311,16 @@
 </style>
 
 <div class="fin-container">
-    <!-- Header -->
-    <div class="fin-header">
-        <div class="fin-header-icon">💰</div>
-        <div>
-            <h1>Finanzas y Pagos</h1>
-            <p>Control de cuotas, pagos, becas y morosidad {% if ciclo_activo %}— {{ ciclo_activo.nombre }}{% endif %}</p>
+    {% if insights_finanzas %}
+    <section class="fin-insights" aria-label="Información útil">
+        {% for insight in insights_finanzas %}
+        <div class="fin-insight fin-insight--{{ insight.tipo }}">
+            <span aria-hidden="true">{% if insight.tipo == 'warn' %}⚠️{% elif insight.tipo == 'info' %}💡{% else %}📋{% endif %}</span>
+            <p>{{ insight.texto }}</p>
         </div>
-    </div>
-
-    <!-- KPI Cards -->
-    <div class="fin-kpi-grid">
-        <div class="fin-kpi-card kpi-facturado">
-            <div class="fin-kpi-label">Total Facturado</div>
-            <div class="fin-kpi-value">${{ total_facturado|default:"0" | floatformat:0 }}</div>
-            <div class="fin-kpi-detail">Cuotas emitidas del ciclo activo</div>
-        </div>
-        <div class="fin-kpi-card kpi-recaudado">
-            <div class="fin-kpi-label">Total Recaudado</div>
-            <div class="fin-kpi-value">${{ total_recaudado|default:"0" | floatformat:0 }}</div>
-            <div class="fin-kpi-detail">Pagos recibidos acumulados</div>
-        </div>
-        <div class="fin-kpi-card kpi-deuda">
-            <div class="fin-kpi-label">Deuda Vencida</div>
-            <div class="fin-kpi-value">${{ deuda_vencida|default:"0" | floatformat:0 }}</div>
-            <div class="fin-kpi-detail">{{ cuotas_vencidas_count|default:"0" }} cuota{{ cuotas_vencidas_count|pluralize:"s" }} vencida{{ cuotas_vencidas_count|pluralize:"s" }}</div>
-        </div>
-        <div class="fin-kpi-card kpi-tasa">
-            <div class="fin-kpi-label">Tasa de Cobro</div>
-            <div class="fin-kpi-value">{{ tasa_cobro|default:"0" }}%</div>
-            <div class="fin-kpi-detail">Becas activas: {{ becas_activas|default:"0" }} · Pendientes: {{ becas_pendientes|default:"0" }}</div>
-        </div>
-    </div>
+        {% endfor %}
+    </section>
+    {% endif %}
 
     <!-- Summary Layout (Charts + Top Debtors) -->
     <div class="fin-summary-layout">
@@ -633,19 +624,36 @@ function finBadgeEstado(estado) {
 
 /* ── Cuotas: Load ────────────────────────────────────── */
 let _cuotasData = [];
+function finCuotaEstudiante(c) {
+    if (c.estudiante_nombre) return c.estudiante_nombre;
+    if (c.estudiante && typeof c.estudiante === 'object') return c.estudiante.nombre || 'N/A';
+    return c.estudiante || 'N/A';
+}
+function finGetFilteredCuotas() {
+    const q = (document.getElementById('finBusquedaCuotas').value || '').toLowerCase();
+    const estado = document.getElementById('finFiltroCuotas').value;
+    return _cuotasData.filter(c => {
+        const name = finCuotaEstudiante(c).toLowerCase();
+        const rut = (c.estudiante_rut || '').toLowerCase();
+        const matchQ = !q || name.includes(q) || rut.includes(q);
+        const matchE = !estado || c.estado_code === estado;
+        return matchQ && matchE;
+    });
+}
 function finCargarCuotas() {
     const body = document.getElementById('finCuotasBody');
     body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;"><div class="fin-spinner"></div></td></tr>';
 
-    fetch('/api/asesor-financiero/cuotas/proximas/')
+    fetch('/api/admin-escolar/finanzas/cuotas-ciclo/')
         .then(r => r.json())
         .then(data => {
-            if (!data.cuotas || !data.cuotas.length) {
+            if (!data.success || !data.cuotas || !data.cuotas.length) {
                 body.innerHTML = '<tr><td colspan="8" class="fin-empty"><div class="fin-empty-icon">📋</div><div class="fin-empty-text">No hay cuotas registradas</div></td></tr>';
+                _cuotasData = [];
                 return;
             }
             _cuotasData = data.cuotas;
-            finRenderCuotas(_cuotasData);
+            finRenderCuotas(finGetFilteredCuotas());
         })
         .catch(() => {
             body.innerHTML = '<tr><td colspan="8" class="fin-empty"><div class="fin-empty-text">Error al cargar cuotas</div></td></tr>';
@@ -659,14 +667,16 @@ function finRenderCuotas(cuotas) {
         return;
     }
     body.innerHTML = cuotas.map(c => {
-        const saldo = (c.monto_final || 0) - (c.monto_pagado || 0);
+        const saldo = (c.saldo_pendiente != null) ? c.saldo_pendiente : ((c.monto_final || 0) - (c.monto_pagado || 0));
+        const estudiante = finCuotaEstudiante(c).replace(/'/g, "\\'");
+        const mesLabel = [c.mes, c.anio].filter(Boolean).join(' ');
         const acciones = (c.estado_code !== 'PAGADA' && c.estado_code !== 'CONDONADA')
-            ? `<button class="fin-btn fin-btn-sm fin-btn-primary" onclick="finAbrirModalPago(${c.id}, '${(c.estudiante || '')}', '${c.mes || ''}', ${c.monto_final || 0}, ${c.monto_pagado || 0})">💳 Pagar</button>
-               <button class="fin-btn fin-btn-sm fin-btn-outline" onclick="finAbrirModalCondonar(${c.id}, '${(c.estudiante || '')}', '${c.mes || ''}')">📝</button>`
+            ? `<button class="fin-btn fin-btn-sm fin-btn-primary" onclick="finAbrirModalPago(${c.id}, '${estudiante}', '${mesLabel}', ${c.monto_final || 0}, ${c.monto_pagado || 0})">Pagar</button>
+               <button class="fin-btn fin-btn-sm fin-btn-outline" onclick="finAbrirModalCondonar(${c.id}, '${estudiante}', '${mesLabel}')" title="Condonar">Condonar</button>`
             : '<span style="color:var(--fin-text-secondary);font-size:12px;">—</span>';
         return `<tr>
-            <td style="font-weight:500;">${c.estudiante || 'N/A'}</td>
-            <td>${c.mes || ''} ${c.anio || ''}</td>
+            <td style="font-weight:500;">${finCuotaEstudiante(c)}<br><span style="font-size:11px;color:var(--fin-text-secondary);">${c.curso_nombre || ''}</span></td>
+            <td>${mesLabel}</td>
             <td>${finFormatCurrency(c.monto_final)}</td>
             <td>${finFormatCurrency(c.monto_pagado)}</td>
             <td style="font-weight:600;color:${saldo > 0 ? 'var(--fin-rose)' : 'var(--fin-emerald)'};">${finFormatCurrency(saldo)}</td>
@@ -678,14 +688,10 @@ function finRenderCuotas(cuotas) {
 }
 
 function finBuscarCuotas() {
-    const q = document.getElementById('finBusquedaCuotas').value.toLowerCase();
-    const filtered = _cuotasData.filter(c => (c.estudiante || '').toLowerCase().includes(q));
-    finRenderCuotas(filtered);
+    finRenderCuotas(finGetFilteredCuotas());
 }
 function finFiltrarCuotas() {
-    const estado = document.getElementById('finFiltroCuotas').value;
-    const filtered = estado ? _cuotasData.filter(c => c.estado_code === estado) : _cuotasData;
-    finRenderCuotas(filtered);
+    finRenderCuotas(finGetFilteredCuotas());
 }
 
 /* ── Pago Modal ──────────────────────────────────────── */
@@ -872,9 +878,9 @@ function finInitCobrosChart() {
             datasets: [{
                 data: [totalRecaudado, deudaVencida, porCobrar],
                 backgroundColor: [
-                    '#10b981', // Emerald for collected
-                    '#f43f5e', // Rose for overdue debt
-                    '#3b82f6'  // Blue for future/pending
+                    '#10b981',  /* Recaudado — verde (cobrado) */
+                    '#ef4444',  /* Deuda vencida — rojo */
+                    '#3b82f6'   /* Por cobrar — azul (pendiente) */
                 ],
                 borderWidth: 2,
                 borderColor: '#ffffff',

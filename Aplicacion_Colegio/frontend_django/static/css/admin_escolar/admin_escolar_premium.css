@@ -1325,6 +1325,195 @@
 .ae-school-snap--ok .ae-school-snap__icon { background: #ede9fe; }
 .ae-school-snap--warn .ae-school-snap__icon { background: #faf5ff; }
 
+.ae-school-inst-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid #ddd6fe;
+    background: linear-gradient(135deg, #faf5ff 0%, #fff 55%, #f8fafc 100%);
+    box-shadow: 0 1px 3px rgba(88, 28, 135, 0.05);
+}
+
+.ae-school-inst-header__name {
+    margin: 0.25rem 0 0;
+    font-size: clamp(1.25rem, 2vw, 1.625rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--ae-purple-950);
+    line-height: 1.2;
+}
+
+.ae-school-inst-header__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.ae-id-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: #6d28d9;
+    background: #f3e8ff;
+    border: 1px solid #e9d5ff;
+}
+
+.ae-id-chip--muted {
+    color: #64748b;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.ae-school-inst-header__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    min-width: min(100%, 220px);
+}
+
+.ae-school-inst-header__health {
+    padding: 0.75rem 0.875rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid var(--ae-border-soft);
+}
+
+.ae-school-inst-header__health-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
+.ae-school-inst-header__health-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ae-text-soft);
+}
+
+.ae-school-inst-header__health-pct {
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--ae-purple-950);
+}
+
+.ae-btn-secondary--compact {
+    justify-content: center;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    text-align: center;
+    text-decoration: none;
+}
+
+.ae-school-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .ae-school-workspace { grid-template-columns: 1fr; }
+}
+
+.ae-school-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ae-school-form-panel__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--ae-border-soft);
+}
+
+.ae-school-form-panel__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #6d28d9;
+    background: #faf5ff;
+    border: 1px solid #e9d5ff;
+    white-space: nowrap;
+}
+
+.ae-school-spec {
+    margin: 0.75rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.ae-school-spec__row {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    align-items: start;
+}
+
+.ae-school-spec__row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.ae-school-spec__row dt {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.ae-school-spec__row dd {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ae-text);
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.ae-school-spec__empty {
+    color: #94a3b8;
+    font-weight: 600;
+    font-style: normal;
+}
+
+.ae-school-spec-panel .ae-panel__subtitle {
+    margin-bottom: 0;
+}
+
+.ae-school-infra-list {
+    margin-top: 0.75rem;
+}
+
 .ae-school-grid-v2 {
     display: grid;
     grid-template-columns: minmax(300px, 360px) 1fr;
@@ -1493,6 +1682,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    margin-top: 0.75rem;
 }
 
 .ae-school-contact-link {
