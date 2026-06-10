@@ -1,147 +1,127 @@
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Asistencia - Portal Académico</title>
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-    <link rel="stylesheet" href="{% static 'css/profesor/registro_asistencia.css' %}">
-    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
-</head>
-<body>
-    <div class="dashboard-container">
-        {% include 'sidebars/sidebar_profesor.html' %}
-        
-        <main class="main-content">
-            <div class="content-area">
-                {# Breadcrumb #}
-                <div class="breadcrumb mb-4">
-                    <a href="{% url 'dashboard' %}?pagina=mis_clases">← Mis Clases</a>
-                    <span>/</span>
-                    <a href="{% url 'ver_detalle_clase' clase.id %}">{{ clase.asignatura.nombre }}</a>
-                    <span>/</span>
-                    <span>Registro de Asistencia</span>
-                </div>
+{% include 'profesor/_personal_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/profesor/registro_asistencia.css' %}?v=20260604-demo">
 
-                {# Header #}
-                <div class="page-header header-bar-lg">
-                    <div>
-                        <h1 class="kpi-value">📋 Registro de Asistencia</h1>
-                        <p class="text-muted m-0">{{ clase.asignatura.nombre }} - {{ clase.curso.nombre }}</p>
-                    </div>
-                    <a href="{% url 'reporte_asistencia_clase' clase.id %}" class="btn-primary no-decoration">
-                        📊 Ver Reportes
-        </a>
+<div class="ra-page">
+    <nav class="ra-breadcrumb" aria-label="Ruta de navegación">
+        <a href="{% url 'dashboard' %}?pagina=mis_clases">← Mis Clases</a>
+        <span aria-hidden="true">/</span>
+        <a href="{% url 'ver_detalle_clase' clase.id %}">{{ clase.asignatura.nombre }}</a>
+        <span aria-hidden="true">/</span>
+        <span>Asistencia</span>
+    </nav>
+
+    {% with hero_sub_clase=clase.curso.nombre|add:" · "|add:clase.asignatura.nombre %}
+    {% endwith %}
+    <div class="ra-hero__actions">
+        <a href="{% url 'dashboard' %}?pagina=mis_clases" class="ra-btn ra-btn--outline">← Mis Clases</a>
+        <a href="{% url 'ver_detalle_clase' clase.id %}" class="ra-btn ra-btn--outline">Ver clase</a>
+        <a href="{% url 'reporte_asistencia_clase' clase.id %}" class="ra-btn ra-btn--primary">📊 Reportes</a>
     </div>
 
-    {# Selector de Fecha #}
-    <div class="section-card">
-        <form method="get" class="actions-bar">
-            <div class="d-flex align-center gap-sm">
-                <span class="icon-sm">📅</span>
-                <label for="fecha" class="font-semibold m-0">Seleccionar fecha:</label>
-            </div>
-            <input type="date" name="fecha" id="fecha" value="{{ fecha_str }}" 
-                   max="{{ fecha_hoy }}" 
-                   style="padding: 10px 15px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; color: #1e293b; transition: all 0.2s; cursor: pointer;"
-                   onchange="this.form.submit()"
-                   onfocus="this.style.borderColor='#6366f1'; this.style.outline='none';"
-                   onblur="this.style.borderColor='#e2e8f0';">
-            <div style="padding: 8px 16px; background: #f1f5f9; border-radius: 8px; color: #64748b; font-size: 0.9rem;">
-                {{ fecha|date:"l, d \d\e F \d\e Y" }}
-            </div>
+    {% if messages %}
+    <div class="ra-flash-wrap" role="status" aria-live="polite">
+        {% for message in messages %}
+        <div class="ra-flash ra-flash--{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if asistencia_vista_previa %}
+    <div class="ra-demo-banner" role="status">
+        <strong>Datos de prueba</strong> — solo para ver cómo se ve la pantalla. No se guardan en la base de datos.
+        <a href="{{ asistencia_datos_reales_url }}" class="ra-demo-banner__link">Ver sin datos de prueba</a>
+    </div>
+    {% endif %}
+
+    <section class="ra-date-card">
+        <form method="get" class="ra-date-form">
+            <label for="fecha" class="ra-date-form__label">📅 Fecha de registro</label>
+            <input type="date" name="fecha" id="fecha" class="ra-date-input" value="{{ fecha_str }}" max="{{ fecha_hoy }}" onchange="this.form.submit()">
+            <p class="ra-date-form__hint">{{ fecha|date:"l, d \d\e F \d\e Y" }}</p>
         </form>
-    </div>
+    </section>
 
-    {# Formulario de Asistencia #}
-    <form method="post" class="form-asistencia">
+    <form method="post" class="ra-form{% if asistencia_vista_previa %} ra-form--demo{% endif %}">
         {% csrf_token %}
         <input type="hidden" name="fecha" value="{{ fecha_str }}">
-        
-        <div class="asistencia-header">
-            <h2>Estudiantes ({{ total_estudiantes }})</h2>
-            <div class="leyenda">
-                <span class="leyenda-item presente">🟢 Presente</span>
-                <span class="leyenda-item tarde">🟡 Tarde</span>
-                <span class="leyenda-item ausente">🔴 Ausente</span>
-                <span class="leyenda-item justificado">🔵 Justificado</span>
+        {% if asistencia_vista_previa %}
+        <input type="hidden" name="vista_previa" value="1">
+        {% endif %}
+
+        <div class="ra-form__head">
+            <h2>Estudiantes <span class="ra-count">({{ total_estudiantes }})</span></h2>
+            <div class="ra-legend" aria-label="Leyenda de estados">
+                <span class="ra-legend__item ra-legend__item--p">Presente</span>
+                <span class="ra-legend__item ra-legend__item--t">Tarde</span>
+                <span class="ra-legend__item ra-legend__item--a">Ausente</span>
+                <span class="ra-legend__item ra-legend__item--j">Justificado</span>
             </div>
         </div>
 
-        <div class="estudiantes-lista">
+        {% if estudiantes %}
+        <div class="ra-list">
             {% for item in estudiantes %}
-            <div class="estudiante-row">
-                <div class="estudiante-info">
-                    <div class="estudiante-avatar">👤</div>
-                    <div class="estudiante-datos">
-                        <div class="estudiante-nombre">
-                            {{ item.estudiante.get_full_name }}
-                        </div>
-                        <div class="estudiante-email">
-                            {{ item.estudiante.email }}
-                        </div>
+            <article class="ra-student">
+                <div class="ra-student__info">
+                    <div class="ra-student__avatar" aria-hidden="true">{{ item.estudiante.nombre|first|upper }}{{ item.estudiante.apellido_paterno|first|upper }}</div>
+                    <div>
+                        <p class="ra-student__name">{{ item.estudiante.get_full_name }}</p>
+                        <p class="ra-student__email">{{ item.estudiante.email }}</p>
                     </div>
                 </div>
 
-                <div class="estados-selector">
-                    <label class="estado-option presente">
-                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="P" 
-                               {% if item.estado == 'P' %}checked{% endif %}>
-                        <span class="estado-label">
-                            <span class="icon">🟢</span>
-                            Presente
-                        </span>
+                <div class="ra-student__states" role="group" aria-label="Estado de asistencia">
+                    <label class="ra-state ra-state--p">
+                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="P" {% if item.estado == 'P' %}checked{% endif %}>
+                        <span>Presente</span>
                     </label>
-                    
-                    <label class="estado-option tarde">
-                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="T" 
-                               {% if item.estado == 'T' %}checked{% endif %}>
-                        <span class="estado-label">
-                            <span class="icon">🟡</span>
-                            Tarde
-                        </span>
+                    <label class="ra-state ra-state--t">
+                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="T" {% if item.estado == 'T' %}checked{% endif %}>
+                        <span>Tarde</span>
                     </label>
-                    
-                    <label class="estado-option ausente">
-                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="A" 
-                               {% if item.estado == 'A' %}checked{% endif %}>
-                        <span class="estado-label">
-                            <span class="icon">🔴</span>
-                            Ausente
-                        </span>
+                    <label class="ra-state ra-state--a">
+                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="A" {% if item.estado == 'A' %}checked{% endif %}>
+                        <span>Ausente</span>
                     </label>
-                    
-                    <label class="estado-option justificado">
-                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="J" 
-                               {% if item.estado == 'J' %}checked{% endif %}>
-                        <span class="estado-label">
-                            <span class="icon">🔵</span>
-                            Justificado
-                        </span>
+                    <label class="ra-state ra-state--j">
+                        <input type="radio" name="estado_{{ item.estudiante.id }}" value="J" {% if item.estado == 'J' %}checked{% endif %}>
+                        <span>Justificado</span>
                     </label>
                 </div>
 
-                <div class="observaciones-container">
-                    <input type="text" 
-                           name="obs_{{ item.estudiante.id }}" 
-                           placeholder="Observaciones (opcional)"
-                           value="{{ item.observaciones }}"
-                           class="input-observaciones">
-                </div>
-            </div>
+                <input type="text" name="obs_{{ item.estudiante.id }}" class="ra-student__obs" placeholder="Observaciones (opcional)" value="{{ item.observaciones }}">
+            </article>
             {% endfor %}
         </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn-submit">
-                💾 Guardar Asistencia
+        <div class="ra-form__footer">
+            <button type="submit" class="ra-btn ra-btn--save" id="ra-save-btn">
+                {% if asistencia_vista_previa %}Probar guardado (vista previa){% else %}Guardar asistencia{% endif %}
             </button>
         </div>
+        {% else %}
+        <div class="ra-empty">
+            <p>No hay estudiantes inscritos en esta clase (datos reales).</p>
+            <p class="ra-empty__hint">En desarrollo, recarga la página para ver alumnos de prueba automáticamente, o vuelve al listado.</p>
+            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="ra-btn ra-btn--outline">Volver a Mis Clases</a>
+        </div>
+        {% endif %}
     </form>
-            </div>
-        </main>
-    </div>
-    <script src="{% static 'js/dashboard.js' %}"></script>
-</body>
-</html>
+</div>
+
+<script>
+(function () {
+    var form = document.querySelector('.ra-form');
+    var btn = document.getElementById('ra-save-btn');
+    if (!form || !btn) return;
+    form.addEventListener('submit', function () {
+        btn.disabled = true;
+        btn.textContent = 'Guardando…';
+    });
+    var flash = document.querySelector('.ra-flash-wrap');
+    if (flash) flash.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+})();
+</script>
+
+{% include 'profesor/_personal_wrap_end.html' %}

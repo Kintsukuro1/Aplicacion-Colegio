@@ -1,0 +1,380 @@
+.detalle-container {
+    padding: 2rem;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    text-decoration: none;
+}
+
+.comunicado-detail {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #3b82f6;
+}
+
+.comunicado-detail.urgente {
+    border-left-color: #ef4444;
+}
+
+.detail-header {
+    margin-bottom: 1rem;
+}
+
+.tipo-badge {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #f3f4f6;
+    color: #374151;
+    margin-right: 0.35rem;
+    margin-bottom: 0.35rem;
+}
+
+.tipo-urgente {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.tipo-prioritario {
+    background: #fecaca;
+    color: #991b1b;
+}
+
+.tipo-destacado {
+    background: #fde68a;
+    color: #78350f;
+}
+
+.tipo-comunicado {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.tipo-noticia {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tipo-citacion {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.detail-titulo {
+    margin: 0.75rem 0;
+}
+
+.detail-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.5rem 1rem;
+    color: #6b7280;
+}
+
+.meta-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.detail-content {
+    margin-top: 1rem;
+    color: #111827;
+    line-height: 1.6;
+}
+
+.info-box {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+.adjuntos-section {
+    margin-top: 1.25rem;
+}
+
+.adjunto-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-top: 0.75rem;
+    background: white;
+}
+
+.adjunto-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-descargar {
+    text-decoration: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    font-weight: 600;
+}
+
+.btn-descargar:hover {
+    filter: brightness(0.95);
+}
+
+.confirmacion-box {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.confirmacion-box.confirmado {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.btn-confirmar {
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: 10px;
+    background: #16a34a;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-confirmar:hover {
+    filter: brightness(0.95);
+}
+
+.confirmacion-texto {
+    margin-bottom: 1.5rem;
+    color: #374151;
+}
+
+@media (max-width: 768px) {
+    .detalle-container {
+        padding: 1rem;
+    }
+}
+.detalle-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    color: #4f46e5;
+    transform: translateX(-4px);
+}
+
+.comunicado-detail {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.comunicado-detail.urgente {
+    border: 3px solid #ef4444;
+}
+
+.detail-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.tipo-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.tipo-comunicado {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.tipo-evento {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tipo-citacion {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.tipo-noticia {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.tipo-urgente {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.detail-titulo {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.detail-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-content {
+    margin: 2rem 0;
+    line-height: 1.8;
+    color: #374151;
+    font-size: 1.05rem;
+}
+
+.info-box {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin: 2rem 0;
+}
+
+.info-box h3 {
+    color: #1f2937;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.info-box p {
+    color: #4b5563;
+    margin: 0.5rem 0;
+}
+
+.adjuntos-section {
+    margin: 2rem 0;
+}
+
+.adjuntos-section h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.adjunto-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s;
+}
+
+.adjunto-item:hover {
+    background: #f3f4f6;
+    transform: translateX(4px);
+}
+
+.adjunto-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.adjunto-icono {
+    font-size: 2rem;
+}
+
+.btn-descargar {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-descargar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+}
+
+.confirmacion-box {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    padding: 2rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.confirmacion-box.confirmado {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.confirmacion-box h3 {
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.btn-confirmar {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-confirmar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+}
+
+.estado-confirmado {
+    color: #065f46;
+    font-weight: 600;
+    font-size: 1.1rem;
+}

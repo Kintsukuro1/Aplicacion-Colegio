@@ -1,0 +1,270 @@
+{% load static %}
+{% url 'mensajeria:bandeja_mensajes' as mensajes_url %}
+
+<!-- CATHERINE: Layout dashboard alumno (sidebar + área principal) -->
+<div class="dashboard-alumno-layout">
+    <!-- CATHERINE: Sidebar único de navegación -->
+    <aside class="alumno-sidebar" aria-label="Navegación del portal estudiante">
+        <!-- CATHERINE: Logo + avatar debajo -->
+        <div class="alumno-sidebar__top">
+        <div class="alumno-sidebar__brand">
+            <svg class="alumno-sidebar__logo" width="36" height="36" viewBox="0 0 40 40" aria-hidden="true">
+                <circle cx="20" cy="20" r="18" fill="currentColor"/>
+                <path d="M20 10 L20 23 M13 16 L20 23 L27 16" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="13" y="25" width="14" height="6" rx="1" fill="#fff"/>
+            </svg>
+            <span class="alumno-sidebar__brand-text">EduHub</span>
+        </div>
+
+        <div class="alumno-sidebar__profile">
+            <div class="alumno-sidebar__avatar" aria-hidden="true">{{ nombre_usuario|first|upper }}</div>
+            <p class="alumno-sidebar__name">{{ nombre_usuario }}</p>
+            <p class="alumno-sidebar__course">
+                {% if user.perfil_estudiante.curso_actual %}
+                    {{ user.perfil_estudiante.curso_actual.nombre }}
+                {% else %}
+                    Estudiante
+                {% endif %}
+            </p>
+        </div>
+        </div>
+
+        <nav class="alumno-sidebar__nav">
+            <p class="alumno-sidebar__section-label">Principal</p>
+            <ul class="alumno-sidebar__list">
+                <li class="alumno-sidebar__item{% if pagina_actual == 'inicio' %} alumno-sidebar__item--active{% endif %}">
+                    <a href="{% url 'dashboard' %}?pagina=inicio">
+                        <i class="bi bi-house-door" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">🏠</span>
+                        <span>Inicio</span>
+                    </a>
+                </li>
+                {% if 'mis_clases' in paginas_habilitadas %}
+                <li class="alumno-sidebar__item{% if pagina_actual == 'mis_clases' %} alumno-sidebar__item--active{% endif %}">
+                    <a href="{% url 'dashboard' %}?pagina=mis_clases">
+                        <i class="bi bi-journal-bookmark" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">📚</span>
+                        <span>Mis Clases</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if menu_access.tareas %}
+                <li class="alumno-sidebar__item">
+                    <a href="{% url 'ver_tareas_estudiante' %}">
+                        <i class="bi bi-list-check" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">📝</span>
+                        <span>Tareas</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if menu_access.calendario %}
+                <li class="alumno-sidebar__item">
+                    <a href="{% url 'calendario_tareas_estudiante' %}">
+                        <i class="bi bi-calendar3" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">📅</span>
+                        <span>Calendario</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <p class="alumno-sidebar__section-label">Rendimiento</p>
+            <ul class="alumno-sidebar__list">
+                {% if 'mis_notas' in paginas_habilitadas %}
+                <li class="alumno-sidebar__item{% if pagina_actual == 'mis_notas' %} alumno-sidebar__item--active{% endif %}">
+                    <a href="{% url 'dashboard' %}?pagina=mis_notas">
+                        <i class="bi bi-star" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">🏆</span>
+                        <span>Calificaciones</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if 'mis_evaluaciones' in paginas_habilitadas %}
+                <li class="alumno-sidebar__item{% if pagina_actual == 'mis_evaluaciones' %} alumno-sidebar__item--active{% endif %}">
+                    <a href="{% url 'dashboard' %}?pagina=mis_evaluaciones">
+                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">📊</span>
+                        <span>Evaluaciones</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if 'asistencia' in paginas_habilitadas %}
+                <li class="alumno-sidebar__item">
+                    <a href="{% url 'mi_asistencia_estudiante' %}">
+                        <i class="bi bi-calendar-check" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">✅</span>
+                        <span>Asistencia</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <p class="alumno-sidebar__section-label">Comunicación</p>
+            <ul class="alumno-sidebar__list">
+                {% if menu_access.comunicados %}
+                <li class="alumno-sidebar__item">
+                    <a href="{% url 'comunicados:lista' %}">
+                        <i class="bi bi-megaphone" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">📣</span>
+                        <span>Comunicados</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if menu_access.mensajes %}
+                <li class="alumno-sidebar__item">
+                    <a href="{% if mensajes_url %}{{ mensajes_url }}{% else %}{% url 'dashboard' %}?pagina=inicio{% endif %}">
+                        <i class="bi bi-chat-dots" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">💬</span>
+                        <span>Mensajes</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if 'mis_certificados' in paginas_habilitadas %}
+                <li class="alumno-sidebar__item{% if pagina_actual == 'mis_certificados' %} alumno-sidebar__item--active{% endif %}">
+                    <a href="{% url 'dashboard' %}?pagina=mis_certificados">
+                        <i class="bi bi-award" aria-hidden="true"></i>
+                        <span class="alumno-sidebar__emoji" aria-hidden="true">📄</span>
+                        <span>Certificados</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <div class="alumno-sidebar__footer">
+            {% if 'perfil' in paginas_habilitadas %}
+            <a href="{% url 'dashboard' %}?pagina=perfil" class="alumno-sidebar__footer-link">
+                <i class="bi bi-person" aria-hidden="true"></i>
+                <span class="alumno-sidebar__emoji" aria-hidden="true">👤</span>
+                <span>Mi Perfil</span>
+            </a>
+            {% endif %}
+            <form method="POST" action="{% url 'accounts:logout' %}" class="alumno-sidebar__logout-form">
+                {% csrf_token %}
+                <button type="submit" class="alumno-sidebar__footer-link alumno-sidebar__footer-link--logout">
+                    <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                    <span class="alumno-sidebar__emoji" aria-hidden="true">🚪</span>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- CATHERINE: Área principal -->
+    <div class="alumno-main">
+        <header class="alumno-main-header">
+            <div class="alumno-main-header__titles">
+                <h1 class="alumno-main-header__title">Inicio</h1>
+                <p class="alumno-main-header__subtitle">{% now "d/m/Y" %} · Portal {{ year }}</p>
+            </div>
+            <div class="alumno-main-header__actions">
+                <a href="{% url 'dashboard' %}?pagina=notificaciones" class="alumno-main-header__notif" aria-label="Notificaciones">
+                    <i class="bi bi-bell" aria-hidden="true"></i>
+                    {% if tareas_pendientes > 0 %}
+                    <span class="alumno-main-header__badge" aria-hidden="true"></span>
+                    {% endif %}
+                </a>
+                <div class="alumno-main-header__avatar" title="{{ nombre_usuario }}">{{ nombre_usuario|first|upper }}</div>
+            </div>
+        </header>
+
+        <div class="alumno-main__body">
+            <!-- CATHERINE: Métricas rápidas (mantiene clases stat-* del backend) -->
+            <section class="alumno-metrics quick-stats" aria-label="Resumen del día">
+                <article class="alumno-metric stat-card stat-primary">
+                    <div class="alumno-metric__icon" aria-hidden="true"><i class="bi bi-book"></i></div>
+                    <div class="alumno-metric__content stat-info">
+                        <p class="alumno-metric__value stat-number">{{ clases_hoy|default:"0" }}</p>
+                        <h3 class="alumno-metric__label">Clases Hoy</h3>
+                    </div>
+                </article>
+                <article class="alumno-metric stat-card stat-warning">
+                    <div class="alumno-metric__icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></div>
+                    <div class="alumno-metric__content stat-info">
+                        <p class="alumno-metric__value stat-number">{{ tareas_pendientes|default:"0" }}</p>
+                        <h3 class="alumno-metric__label">Tareas Pendientes</h3>
+                    </div>
+                </article>
+                <article class="alumno-metric stat-card stat-success">
+                    <div class="alumno-metric__icon" aria-hidden="true"><i class="bi bi-graph-up"></i></div>
+                    <div class="alumno-metric__content stat-info">
+                        <p class="alumno-metric__value stat-number">{{ promedio_general|default:"0.0"|floatformat:1 }}</p>
+                        <h3 class="alumno-metric__label">Promedio</h3>
+                    </div>
+                </article>
+                <article class="alumno-metric stat-card stat-info stat-asistencia">
+                    <div class="alumno-metric__icon" aria-hidden="true"><i class="bi bi-person-check"></i></div>
+                    <div class="alumno-metric__content stat-info">
+                        <p class="alumno-metric__value stat-number">{{ porcentaje_asistencia|default:"100"|floatformat:0 }}%</p>
+                        <h3 class="alumno-metric__label">Asistencia</h3>
+                    </div>
+                </article>
+            </section>
+
+            <!-- CATHERINE: Feed — actividad + clases de hoy -->
+            <section class="alumno-feed" aria-label="Actividad y clases">
+                <div class="alumno-feed__grid">
+                    <article class="alumno-panel alumno-panel--timeline">
+                        <h2 class="alumno-panel__title">Actividad Reciente</h2>
+                        <ul class="alumno-timeline">
+                            {% if clases_activas %}
+                                {% for clase in clases_activas|slice:":5" %}
+                                <li class="alumno-timeline__item">
+                                    <div class="alumno-timeline__marker">
+                                        <span class="alumno-timeline__type alumno-timeline__type--{% cycle 'pdf' 'new' 'rar' 'pdf' 'new' %}">
+                                            {% cycle 'PDF' 'NEW' 'RAR' 'PDF' 'NEW' %}
+                                        </span>
+                                    </div>
+                                    <div class="alumno-timeline__content">
+                                        <time class="alumno-timeline__date">{% now "d/m/Y" %}</time>
+                                        <h3 class="alumno-timeline__title">Actualización en {{ clase.asignatura }}</h3>
+                                        <p class="alumno-timeline__desc">Nuevo material o evaluación disponible en tu curso.</p>
+                                        <p class="alumno-timeline__teacher">{{ clase.profesor }}</p>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            {% else %}
+                                <li class="alumno-timeline__empty">
+                                    <p>No hay actividad reciente para mostrar.</p>
+                                    {% if sin_datos %}
+                                    <p class="alumno-timeline__hint">Completa tu matrícula para ver novedades de tus clases.</p>
+                                    {% endif %}
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </article>
+
+                    <article class="alumno-panel alumno-panel--classes">
+                        <h2 class="alumno-panel__title">Mis Clases de Hoy</h2>
+                        <ul class="alumno-classes-list">
+                            {% if clases_activas and clases_hoy > 0 %}
+                                {% for clase in clases_activas|slice:":4" %}
+                                <li class="alumno-class-item">
+                                    <span class="alumno-class-item__time">
+                                        {% cycle '08:30' '10:00' '11:45' '13:30' %}
+                                    </span>
+                                    <div class="alumno-class-item__body">
+                                        <h3 class="alumno-class-item__subject">{{ clase.asignatura }}</h3>
+                                        <p class="alumno-class-item__teacher">{{ clase.profesor }}</p>
+                                    </div>
+                                    <span class="alumno-class-item__badge alumno-class-item__badge--{% cycle 'presente' 'pendiente' 'presente' 'ausente' %}">
+                                        {% cycle 'Presente' 'Por confirmar' 'Presente' 'Ausente' %}
+                                    </span>
+                                </li>
+                                {% endfor %}
+                            {% elif clases_hoy == 0 %}
+                                <li class="alumno-classes-list__empty">
+                                    <p>No tienes clases programadas para hoy.</p>
+                                </li>
+                            {% else %}
+                                <li class="alumno-classes-list__empty">
+                                    <p>Consulta tu horario en <a href="{% url 'dashboard' %}?pagina=mi_horario">Mi Horario</a>.</p>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </article>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

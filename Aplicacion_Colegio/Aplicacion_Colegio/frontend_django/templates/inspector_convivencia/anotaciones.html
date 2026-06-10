@@ -1,0 +1,197 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/inspector_convivencia/anotaciones.css' %}">
+
+<!-- ANOTACIONES - INSPECTOR CONVIVENCIA -->
+
+<div class="inspector-dashboard">
+    <div class="section-header d-flex justify-between align-center">
+        <h2><span class="section-icon">📝</span> Anotaciones de Convivencia</h2>
+        <button class="btn btn-primary" id="btn-nueva-anotacion" onclick="abrirModalAnotacion()">
+            + Nueva Anotación
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table" id="tabla-anotaciones">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Estudiante</th>
+                    <th>Tipo</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Registrado por</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for anot in anotaciones %}
+                <tr>
+                    <td>{{ anot.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>{{ anot.estudiante.get_full_name }}</td>
+                    <td><span class="badge badge-{{ anot.tipo|lower }}">{{ anot.get_tipo_display }}</span></td>
+                    <td>{{ anot.get_categoria_display }}</td>
+                    <td>{{ anot.descripcion|truncatewords:15 }}</td>
+                    <td>{{ anot.registrado_por.get_full_name }}</td>
+                </tr>
+                {% empty %}
+                <tr id="fila-vacia-anotaciones">
+                    <td colspan="6">No hay anotaciones registradas</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Nueva Anotación -->
+<div id="modal-anotacion" class="modal-overlay">
+    <div class="modal-content">
+        <h3 class="mb-4">📝 Nueva Anotación de Convivencia</h3>
+        <div id="msg-anotacion" class="feedback-box"></div>
+        <form id="form-anotacion" onsubmit="enviarAnotacion(event)">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="label-block">Estudiante *</label>
+                <select id="anot-estudiante" name="estudiante_id" required class="form-input">
+                    <option value="">Cargando...</option>
+                </select>
+            </div>
+            <div class="grid-2col">
+                <div>
+                    <label class="label-block">Tipo *</label>
+                    <select id="anot-tipo" name="tipo" required class="form-input">
+                        <option value="POSITIVA">Positiva</option>
+                        <option value="NEGATIVA">Negativa</option>
+                        <option value="NEUTRA" selected>Neutra</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label-block">Categoría *</label>
+                    <select id="anot-categoria" name="categoria" class="form-input">
+                        <option value="COMPORTAMIENTO">Comportamiento</option>
+                        <option value="PUNTUALIDAD">Puntualidad</option>
+                        <option value="UNIFORME">Uniforme</option>
+                        <option value="CONVIVENCIA">Convivencia</option>
+                        <option value="OTRO" selected>Otro</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="label-block">Gravedad</label>
+                <select id="anot-gravedad" name="gravedad" class="form-input">
+                    <option value="1" selected>Leve</option>
+                    <option value="2">Moderada</option>
+                    <option value="3">Grave</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="label-block">Descripción *</label>
+                <textarea id="anot-descripcion" name="descripcion" required rows="4"
+                    class="form-textarea"
+                    placeholder="Descripción detallada de la anotación..."></textarea>
+            </div>
+            <div class="d-flex gap-sm">
+                <button type="button" onclick="cerrarModalAnotacion()" class="btn-outline">Cancelar</button>
+                <button type="submit" id="btn-submit-anotacion" class="btn-red-solid">Registrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    function getCsrf() {
+        const el = document.querySelector('[name=csrfmiddlewaretoken]');
+        return el ? el.value : '';
+    }
+
+    window.abrirModalAnotacion = function() {
+        const modal = document.getElementById('modal-anotacion');
+        modal.style.display = 'flex';
+        document.getElementById('msg-anotacion').style.display = 'none';
+        document.getElementById('form-anotacion').reset();
+        // Cargar estudiantes
+        fetch('/api/inspector/estudiantes/', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .then(r => r.json())
+            .then(data => {
+                const sel = document.getElementById('anot-estudiante');
+                sel.innerHTML = '<option value="">-- Seleccionar estudiante --</option>';
+                if (data.success) {
+                    data.estudiantes.forEach(e => {
+                        const opt = document.createElement('option');
+                        opt.value = e.id;
+                        opt.textContent = e.nombre + (e.rut ? ' (' + e.rut + ')' : '');
+                        sel.appendChild(opt);
+                    });
+                } else {
+                    sel.innerHTML = '<option value="">Error al cargar</option>';
+                }
+            })
+            .catch(() => {
+                document.getElementById('anot-estudiante').innerHTML = '<option value="">Error al cargar</option>';
+            });
+    };
+
+    window.cerrarModalAnotacion = function() {
+        document.getElementById('modal-anotacion').style.display = 'none';
+    };
+
+    window.enviarAnotacion = function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-anotacion');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        const payload = {
+            estudiante_id: document.getElementById('anot-estudiante').value,
+            tipo: document.getElementById('anot-tipo').value,
+            categoria: document.getElementById('anot-categoria').value,
+            gravedad: document.getElementById('anot-gravedad').value,
+            descripcion: document.getElementById('anot-descripcion').value,
+        };
+
+        fetch('/api/inspector/anotaciones/crear/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(payload),
+        })
+        .then(r => r.json())
+        .then(data => {
+            const msgEl = document.getElementById('msg-anotacion');
+            msgEl.style.display = 'block';
+            if (data.success) {
+                msgEl.style.background = '#d4edda';
+                msgEl.style.color = '#155724';
+                msgEl.textContent = data.message || 'Anotación registrada correctamente';
+                // Quitar fila vacía si existe
+                const filaVacia = document.getElementById('fila-vacia-anotaciones');
+                if (filaVacia) filaVacia.remove();
+                setTimeout(() => { cerrarModalAnotacion(); location.reload(); }, 1200);
+            } else {
+                msgEl.style.background = '#f8d7da';
+                msgEl.style.color = '#721c24';
+                msgEl.textContent = data.error || 'Error al registrar';
+                btn.disabled = false;
+                btn.textContent = 'Registrar';
+            }
+        })
+        .catch(() => {
+            const msgEl = document.getElementById('msg-anotacion');
+            msgEl.style.display = 'block';
+            msgEl.style.background = '#f8d7da';
+            msgEl.style.color = '#721c24';
+            msgEl.textContent = 'Error de conexión';
+            btn.disabled = false;
+            btn.textContent = 'Registrar';
+        });
+    };
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modal-anotacion').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalAnotacion();
+    });
+})();
+</script>

@@ -458,6 +458,7 @@ def poblar_ciclos_academicos():
     try:
         colegio1 = Colegio.objects.get(rbd=10001)
         colegio2 = Colegio.objects.get(rbd=10002)
+        colegio3 = Colegio.objects.get(rbd=10003)
     except Colegio.DoesNotExist:
         print("  ❌ No se encontraron los colegios. Asegúrate de que autopoblar.py se ejecutó completamente primero.")
         return
@@ -496,6 +497,37 @@ def poblar_ciclos_academicos():
         },
         {
             'colegio': colegio2,
+            'nombre': '2025-2026',
+            'fecha_inicio': date(2025, 3, 1),
+            'fecha_fin': date(2026, 12, 31),
+            'estado': 'ACTIVO',
+            'periodos_config': {
+                "periodos": [
+                    {
+                        "nombre": "Primer Semestre 2025",
+                        "inicio": "2025-03-01",
+                        "fin": "2025-07-31"
+                    },
+                    {
+                        "nombre": "Segundo Semestre 2025",
+                        "inicio": "2025-08-01",
+                        "fin": "2025-12-20"
+                    },
+                    {
+                        "nombre": "Primer Semestre 2026",
+                        "inicio": "2026-03-01",
+                        "fin": "2026-07-31"
+                    },
+                    {
+                        "nombre": "Segundo Semestre 2026",
+                        "inicio": "2026-08-01",
+                        "fin": "2026-12-20"
+                    }
+                ]
+            }
+        },
+        {
+            'colegio': colegio3,
             'nombre': '2025-2026',
             'fecha_inicio': date(2025, 3, 1),
             'fecha_fin': date(2026, 12, 31),
@@ -681,7 +713,7 @@ def poblar_colegios():
         {
             'rbd': 10001,
             'rut_establecimiento': '76.123.456-7',
-            'nombre': 'Colegio Santa María',
+            'nombre': 'Raccademy',
             'direccion': 'Av. Libertador Bernardo O\'Higgins 1234',
             'telefono': '+56 2 2234 5678',
             'correo': 'contacto@santamaria.cl',
@@ -705,6 +737,20 @@ def poblar_colegios():
             'comuna': vina,
             'tipo_establecimiento': presencial,
             'dependencia': municipal
+        },
+        {
+            'rbd': 10003,
+            'rut_establecimiento': '76.345.678-9',
+            'nombre': 'Colegio Nuevo',
+            'direccion': 'Calle Nueva 123',
+            'telefono': '+56 9 8765 4321',
+            'correo': 'contacto@colegionuevo.cl',
+            'web': 'www.colegionuevo.cl',
+            'capacidad_maxima': 600,
+            'fecha_fundacion': datetime(2020, 3, 1).date(),
+            'comuna': santiago,
+            'tipo_establecimiento': presencial,
+            'dependencia': particular_sub
         }
     ]
     
@@ -776,8 +822,55 @@ def poblar_usuarios():
     # Obtener colegios
     colegio1 = Colegio.objects.get(rbd=10001)
     colegio2 = Colegio.objects.get(rbd=10002)
+    colegio3 = Colegio.objects.get(rbd=10003)
     
     usuarios_data = [
+        # Usuarios para Colegio Nuevo (RBD 10003)
+        {
+            'email': 'admin.nuevo@colegio.cl',
+            'rut': '26.111.111-1',
+            'nombre': 'Admin',
+            'apellido_paterno': 'Nuevo',
+            'apellido_materno': 'Escuela',
+            'password': make_password('Escolar@2025#!'),
+            'role': rol_admin_escolar,
+            'rbd_colegio': colegio3.rbd,
+            'is_staff': True,
+            'is_active': True
+        },
+        {
+            'email': 'profesor.nuevo@colegio.cl',
+            'rut': '26.222.222-2',
+            'nombre': 'Profesor',
+            'apellido_paterno': 'Nuevo',
+            'apellido_materno': 'Docente',
+            'password': make_password('Prof*2025&Seg!'),
+            'role': rol_profesor,
+            'rbd_colegio': colegio3.rbd,
+            'is_active': True
+        },
+        {
+            'email': 'apoderado.nuevo@gmail.com',
+            'rut': '26.333.333-3',
+            'nombre': 'Apoderado',
+            'apellido_paterno': 'Nuevo',
+            'apellido_materno': 'Familia',
+            'password': make_password('Apod#2025!Seg*'),
+            'role': rol_apoderado,
+            'rbd_colegio': colegio3.rbd,
+            'is_active': True
+        },
+        {
+            'email': 'alumno.nuevo@colegio.cl',
+            'rut': '26.444.444-4',
+            'nombre': 'Alumno',
+            'apellido_paterno': 'Nuevo',
+            'apellido_materno': 'Estudiante',
+            'password': make_password('Estud#2025*99!'),
+            'role': rol_alumno,
+            'rbd_colegio': colegio3.rbd,
+            'is_active': True
+        },
         # Administrador General
         {
             'email': 'carlos.perez@colegio.cl',
@@ -1114,6 +1207,36 @@ def poblar_clases():
                 print(f"  ✓ {clase.curso.nombre} - {clase.asignatura.nombre} ({clase.profesor.get_full_name()})")
             else:
                 print(f"  ⏭️  {clase.curso.nombre} - {clase.asignatura.nombre} ya existe")
+
+    # Crear clases para Colegio Nuevo (RBD 10003)
+    try:
+        colegio3 = Colegio.objects.get(rbd=10003)
+        ciclo3 = CicloAcademico.objects.get(colegio=colegio3, nombre='2025-2026')
+        curso3 = Curso.objects.get(colegio=colegio3, nombre='1° Medio A', ciclo_academico=ciclo3)
+        profesor_nuevo = User.objects.get(email='profesor.nuevo@colegio.cl')
+        
+        # Crear asignatura en Colegio Nuevo si no existe
+        asignatura3, _ = Asignatura.objects.get_or_create(
+            colegio=colegio3,
+            nombre='Lenguaje y Comunicación',
+            defaults={
+                'codigo': 'LEN',
+                'horas_semanales': 6,
+                'activa': True
+            }
+        )
+        
+        clase3, created3 = Clase.objects.get_or_create(
+            colegio=colegio3,
+            curso=curso3,
+            asignatura=asignatura3,
+            profesor=profesor_nuevo,
+            defaults={'activo': True}
+        )
+        if created3:
+            print(f"  ✓ Clase creada: {asignatura3.nombre} en {curso3.nombre} con {profesor_nuevo.get_full_name()} ({colegio3.nombre})")
+    except Exception as e:
+        print(f"  ❌ Error creando clases para Colegio Nuevo: {e}")
     
     print("✅ Clases creadas\n")
 
@@ -1244,6 +1367,38 @@ def poblar_matriculas():
 
     print(f"✅ {matriculas_creadas} matrículas creadas para {len(alumnos)} alumnos\n")
 
+    # Matricular Alumno Nuevo en Colegio Nuevo (RBD 10003)
+    try:
+        colegio3 = Colegio.objects.get(rbd=10003)
+        ciclo3 = CicloAcademico.objects.get(colegio=colegio3, nombre='2025-2026')
+        nivel_media = NivelEducativo.objects.get(nombre='Educación Media')
+        curso3, _ = Curso.objects.get_or_create(
+            colegio=colegio3,
+            nombre='1° Medio A',
+            nivel=nivel_media,
+            ciclo_academico=ciclo3,
+            defaults={'activo': True}
+        )
+        
+        alumno_nuevo = User.objects.get(email='alumno.nuevo@colegio.cl')
+        
+        Matricula.objects.filter(estudiante=alumno_nuevo, colegio=colegio3, ciclo_academico=ciclo3).delete()
+        
+        Matricula.objects.create(
+            estudiante=alumno_nuevo,
+            colegio=colegio3,
+            ciclo_academico=ciclo3,
+            curso=curso3,
+            estado='ACTIVA',
+            fecha_matricula=timezone.now().date(),
+            fecha_inicio=ciclo3.fecha_inicio,
+            valor_matricula=100000,
+            observaciones="Matrícula Colegio Nuevo"
+        )
+        print(f"  ✓ {alumno_nuevo.get_full_name()} matriculado en {curso3.nombre} ({colegio3.nombre})")
+    except Exception as e:
+        print(f"  ❌ Error matriculando alumno en Colegio Nuevo: {e}")
+
 def poblar_matriculas_clases():
     """
     Matricular estudiantes en clases específicas (relación ClaseEstudiante).
@@ -1292,6 +1447,32 @@ def poblar_matriculas_clases():
         print(f"  ✓ {matricula.estudiante.get_full_name()} → {clases_del_curso.count()} clases de {matricula.curso.nombre}")
     
     print(f"✅ {relaciones_creadas} relaciones ClaseEstudiante creadas\n")
+
+    # Relaciones ClaseEstudiante para Colegio Nuevo (RBD 10003)
+    try:
+        colegio3 = Colegio.objects.get(rbd=10003)
+        ciclo3 = CicloAcademico.objects.get(colegio=colegio3, nombre='2025-2026')
+        
+        ClaseEstudiante.objects.filter(
+            clase__colegio=colegio3
+        ).delete()
+        
+        matriculas3 = Matricula.objects.filter(
+            colegio=colegio3,
+            ciclo_academico=ciclo3,
+            estado='ACTIVA'
+        )
+        for m in matriculas3:
+            clases = Clase.objects.filter(curso=m.curso, colegio=colegio3, activo=True)
+            for c in clases:
+                ClaseEstudiante.objects.create(
+                    clase=c,
+                    estudiante=m.estudiante,
+                    activo=True
+                )
+                print(f"  ✓ {m.estudiante.get_full_name()} → clase {c.asignatura.nombre} ({colegio3.nombre})")
+    except Exception as e:
+        print(f"  ❌ Error creando ClaseEstudiante para Colegio Nuevo: {e}")
 
 def poblar_perfiles_profesores():
     """Crear perfiles de profesores con sus especialidades"""
@@ -1397,6 +1578,33 @@ def poblar_perfiles_estudiantes():
         nee_str = f' [NEE: {nee_info["tipo"]}]' if tiene_nee else ''
         print(f'  ✓ {alumno.get_full_name()} → 1° Medio A{nee_str}')
     
+    # Crear perfil para Alumno Nuevo de Colegio Nuevo (10003)
+    try:
+        colegio3 = Colegio.objects.get(rbd=10003)
+        alumno_user = User.objects.get(email='alumno.nuevo@colegio.cl')
+        ciclo3 = CicloAcademico.objects.get(colegio=colegio3, nombre='2025-2026')
+        PerfilEstudiante.objects.get_or_create(
+            user=alumno_user,
+            defaults={
+                'fecha_nacimiento': date(2010, 5, 10),
+                'direccion': 'Calle Nueva 123, Valparaíso',
+                'telefono': '+56 9 1111 2222',
+                'grupo_sanguineo': 'O+',
+                'alergias': 'Ninguna',
+                'tiene_nee': False,
+                'fecha_ingreso': date(2025, 3, 1),
+                'estado_academico': 'Activo',
+                'ciclo_actual': ciclo3,
+                'apoderado_nombre': 'Apoderado Nuevo',
+                'apoderado_rut': '26.333.333-3',
+                'apoderado_email': 'apoderado.nuevo@gmail.com',
+                'apoderado_telefono': '+56 9 3333 4444'
+            }
+        )
+        print("  ✓ PerfilEstudiante creado para Alumno Nuevo (Colegio Nuevo)")
+    except Exception as e:
+        print(f"  ❌ Error creando PerfilEstudiante para Alumno Nuevo: {e}")
+        
     print(f'✅ Perfiles creados (6 estudiantes con NEE)\n')
 
 def poblar_disponibilidades_profesores():
@@ -1594,8 +1802,8 @@ def poblar_asistencia():
     
     # Crear asistencia para los últimos 90 días hábiles (cubre el semestre visible)
     dias_atras = 90
-    registros_creados = 0
     dias_procesados = 0
+    asistencias_a_crear = []
     
     for dias in range(dias_atras, 0, -1):
         fecha = timezone.now().date() - timedelta(days=dias)
@@ -1638,18 +1846,19 @@ def poblar_asistencia():
                         estado = 'J'
                         observaciones = 'Terapia PIE' if not observaciones else observaciones
                 
-                _, created = Asistencia.objects.update_or_create(
+                asistencias_a_crear.append(Asistencia(
                     clase=clase,
                     estudiante=estudiante,
                     fecha=fecha,
-                    defaults={
-                        'colegio': colegio,
-                        'estado': estado,
-                        'observaciones': observaciones,
-                    },
-                )
-                if created:
-                    registros_creados += 1
+                    colegio=colegio,
+                    estado=estado,
+                    observaciones=observaciones
+                ))
+                
+    registros_creados = len(asistencias_a_crear)
+    if asistencias_a_crear:
+        # Usar bulk_create en lotes de 5000 para optimizar velocidad en SQLite
+        Asistencia.objects.bulk_create(asistencias_a_crear, batch_size=5000)
     
     print(f"  ✓ {registros_creados} registros de asistencia creados")
     print(f"  ✓ {dias_procesados} días hábiles procesados")
@@ -2441,6 +2650,36 @@ def poblar_apoderados():
             
             print(f"  ✓ {apoderado.user.get_full_name()} ({parentesco}) → {estudiante.get_full_name()}")
     
+    # Crear perfil de apoderado y relación para Colegio Nuevo (10003)
+    try:
+        colegio3 = Colegio.objects.get(rbd=10003)
+        apoderado_user = User.objects.get(email='apoderado.nuevo@gmail.com')
+        alumno_user = User.objects.get(email='alumno.nuevo@colegio.cl')
+        
+        apoderado_profile, _ = Apoderado.objects.get_or_create(
+            user=apoderado_user,
+            defaults={
+                'telefono_movil': '+56 9 3333 4444',
+                'direccion': 'Calle Nueva 123, Valparaíso',
+                'ocupacion': 'Profesional',
+                'lugar_trabajo': 'Oficina Central',
+                'puede_firmar_citaciones': True,
+                'puede_autorizar_salidas': True
+            }
+        )
+        
+        RelacionApoderadoEstudiante.objects.get_or_create(
+            apoderado=apoderado_profile,
+            estudiante=alumno_user,
+            defaults={
+                'parentesco': 'padre',
+                'tipo_apoderado': 'principal'
+            }
+        )
+        print("  ✓ Perfil de Apoderado y Relación creados para Colegio Nuevo")
+    except Exception as e:
+        print(f"  ❌ Error creando Apoderado y relación para Colegio Nuevo: {e}")
+
     print(f"✅ {apoderados_creados} apoderados y {relaciones_creadas} relaciones creadas\n")
 
 def poblar_firmas_digitales():
@@ -2826,6 +3065,31 @@ def poblar_suscripciones():
         subscription2.status = Subscription.STATUS_ACTIVE
         subscription2.save()
         print(f"  ✓ {colegio2.nombre} → Plan STANDARD actualizado")
+        
+    # Asignar plan STANDARD al colegio 3 (Colegio Nuevo)
+    colegio3 = Colegio.objects.get(rbd=10003)
+    subscription3, created3 = Subscription.objects.get_or_create(
+        colegio=colegio3,
+        defaults={
+            'plan': plan_standard,
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'proximo_pago': fecha_fin,
+            'status': Subscription.STATUS_ACTIVE,
+            'auto_renovar': True,
+            'notas': 'Plan STANDARD de prueba para Colegio Nuevo'
+        }
+    )
+    
+    if created3:
+        print(f"  ✓ {colegio3.nombre} → Plan STANDARD")
+    else:
+        subscription3.plan = plan_standard
+        subscription3.fecha_fin = fecha_fin
+        subscription3.proximo_pago = fecha_fin
+        subscription3.status = Subscription.STATUS_ACTIVE
+        subscription3.save()
+        print(f"  ✓ {colegio3.nombre} → Plan STANDARD actualizado")
     
     # Actualizar contadores de uso para ambos colegios
     from backend.apps.subscriptions.utils import update_all_usage_counts
@@ -2836,13 +3100,16 @@ def poblar_suscripciones():
     usage2 = update_all_usage_counts(subscription2)
     print(f"    → Uso actualizado: {usage2.student_count} estudiantes, {usage2.teacher_count} profesores")
     
+    usage3 = update_all_usage_counts(subscription3)
+    print(f"    → Uso actualizado: {usage3.student_count} estudiantes, {usage3.teacher_count} profesores")
+    
     print("✅ Suscripciones asignadas\n")
 
 def poblar_datos_financieros():
     """Crear datos financieros de prueba: Cuotas, Pagos, Estados de Cuenta y Becas"""
     print("💰 Creando Datos Financieros de Prueba...")
     
-    # Obtener colegio Santa María
+    # Obtener colegio Raccademy
     colegio = Colegio.objects.get(rbd=10001)
     
     # Obtener matriculas (ya existentes de poblar_matriculas)
@@ -3500,10 +3767,10 @@ def main():
         print("✅ 28 matrículas ACTIVAS + 1 SUSPENDIDA + 1 RETIRADA (ejemplos)")
         print()
         print("Suscripciones:")
-        print("  Colegio Santa María (RBD 10001): Plan TESTER (Ilimitado)")
+        print("  Raccademy (RBD 10001): Plan TESTER (Ilimitado)")
         print("  Liceo Técnico Industrial (RBD 10002): Plan STANDARD (30 días)")
         print()
-        print("Datos Financieros (Colegio Santa María):")
+        print("Datos Financieros (Raccademy):")
         print("  ✓ 300 cuotas mensuales (10 meses × 30 estudiantes)")
         print("  ✓ Pagos con múltiples métodos (Efectivo, Transferencia, Webpay, etc.)")
         print("  ✓ Estados de cuenta generados (Enero-Agosto 2026)")

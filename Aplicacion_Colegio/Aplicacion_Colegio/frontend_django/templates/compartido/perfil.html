@@ -1,0 +1,93 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'css/apoderado/perfil.css' %}">
+{% if rol == 'estudiante' or rol == 'Estudiante' %}
+<link rel="stylesheet" href="{% static 'css/dashboard_alumno.css' %}?v=20260523">
+{% endif %}
+
+<div class="content-wrapper">
+  {% if rol == 'estudiante' or rol == 'Estudiante' %}
+  {% include 'estudiante/_alumno_hero.html' with hero_title="Mi Perfil" hero_subtitle="Administra tu información personal y preferencias de cuenta" hero_aria="Mi Perfil" metrics_aria="Resumen del estudiante" m1_value="6.0" m1_label="Promedio general" m1_mod="promedio" m1_progress="86" m2_value="90%" m2_label="Asistencia" m2_mod="asistencia" m2_progress="90" m3_value="24" m3_label="Calificaciones" m3_mod="clases" m4_value="8" m4_label="Asignaturas" m4_mod="tareas" %}
+  {% endif %}
+  <div class="profile-container">
+    <div class="profile-card">
+      <h2>👤 Mi Perfil</h2>
+
+      <div class="profile-grid">
+        <div class="profile-field">
+          <label>Nombre</label>
+          <p>{{ nombre_usuario|default:"-" }}</p>
+        </div>
+
+        <div class="profile-field">
+          <label>Email</label>
+          <p>{{ request.user.email|default:"-" }}</p>
+        </div>
+
+        <div class="profile-field">
+          <label>Rol</label>
+          <p>{{ rol|default:"-"|capfirst }}</p>
+        </div>
+
+        <div class="profile-field">
+          <label>Escuela</label>
+          <p>{{ escuela_nombre|default:"-" }}</p>
+        </div>
+      </div>
+    </div>
+
+    {% if estadisticas %}
+      <div class="profile-card">
+        <h2>📊 Resumen</h2>
+
+        <div class="profile-grid">
+          {% if estadisticas.total_calificaciones is not None %}
+            <div class="profile-field">
+              <label>Total calificaciones</label>
+              <p>{{ estadisticas.total_calificaciones }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.promedio_general is not None %}
+            <div class="profile-field">
+              <label>Promedio general</label>
+              <p>{{ estadisticas.promedio_general }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.total_asignaturas is not None %}
+            <div class="profile-field">
+              <label>Total asignaturas</label>
+              <p>{{ estadisticas.total_asignaturas }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.total_evaluaciones is not None %}
+            <div class="profile-field">
+              <label>Total evaluaciones</label>
+              <p>{{ estadisticas.total_evaluaciones }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.total_estudiantes is not None %}
+            <div class="profile-field">
+              <label>Total estudiantes</label>
+              <p>{{ estadisticas.total_estudiantes }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.total_planificaciones is not None %}
+            <div class="profile-field">
+              <label>Total planificaciones</label>
+              <p>{{ estadisticas.total_planificaciones }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div>
+      <a class="btn btn-outline-primary" href="{% url 'dashboard' %}?pagina=inicio">Volver al inicio</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,226 @@
+{% extends 'frontend/templates/common/base_app.html' %}
+{% load static %}
+
+{% block page_title %}Tareas de mi Hijo - Portal Apoderados{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'academico/css/apoderado/tareas_hijo.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+{% include 'frontend/templates/common/components/breadcrumb_nav.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header-content">
+    <div class="page-title-group">
+        <h1 class="page-title">📋 Tareas y Trabajos</h1>
+        <p class="page-subtitle">Seguimiento de tareas de sus hijos</p>
+    </div>
+    
+    {% if estudiantes and estudiantes|length > 1 %}
+    <div class="hijo-selector-container">
+        <label for="hijoSelect" class="hijo-selector-label">
+            <i class="fas fa-user-graduate"></i>
+            Seleccionar hijo:
+        </label>
+        <select id="hijoSelect" class="hijo-selector" onchange="cambiarHijo(this.value)">
+            {% for est in estudiantes %}
+            <option value="{{ est.id }}" {% if estudiante_seleccionado and est.id == estudiante_seleccionado.id %}selected{% endif %}>
+                {{ est.get_full_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="tareas-container">
+    {% if estudiante_seleccionado %}
+    
+    <!-- Tarjeta de Información del Estudiante -->
+    <div class="estudiante-info-card card">
+        <div class="estudiante-avatar-large">
+            {{ estudiante_seleccionado.nombre.0 }}{{ estudiante_seleccionado.apellido_paterno.0 }}
+        </div>
+        <div class="estudiante-datos">
+            <h2 class="estudiante-nombre">{{ estudiante_seleccionado.get_full_name }}</h2>
+            <p class="estudiante-curso">
+                <i class="fas fa-graduation-cap"></i>
+                {{ estudiante_seleccionado.perfil_estudiante.curso_actual.nombre|default:"Sin curso asignado" }}
+            </p>
+        </div>
+    </div>
+    
+    <!-- Tarjetas de Estadísticas -->
+    <div class="stats-grid">
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-tasks' label='Total Tareas' value=total_tareas|default:'0' color='primary' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-clock' label='Pendientes' value=tareas_pendientes|default:'0' color='warning' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-check-double' label='Entregadas' value=tareas_entregadas|default:'0' color='success' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-star' label='Calificadas' value=tareas_calificadas|default:'0' color='info' %}
+    </div>
+    
+    <!-- Filtros -->
+    <div class="filtros-card card">
+        <form method="get" class="filtros-form">
+            <div class="filtro-group">
+                <label>
+                    <i class="fas fa-filter"></i>
+                    Estado
+                </label>
+                <select name="estado" class="form-control" onchange="this.form.submit()">
+                    <option value="">Todos los estados</option>
+                    <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="entregada" {% if estado_filtro == 'entregada' %}selected{% endif %}>Entregada</option>
+                    <option value="corregida" {% if estado_filtro == 'corregida' %}selected{% endif %}>Corregida</option>
+                    <option value="atrasada" {% if estado_filtro == 'atrasada' %}selected{% endif %}>Atrasada</option>
+                </select>
+            </div>
+            
+            <div class="filtro-group">
+                <label>
+                    <i class="fas fa-book"></i>
+                    Asignatura
+                </label>
+                <select name="asignatura" class="form-control" onchange="this.form.submit()">
+                    <option value="">Todas las asignaturas</option>
+                    {% for asignatura in asignaturas %}
+                    <option value="{{ asignatura.id }}" {% if asignatura_filtro == asignatura.id|stringformat:'s' %}selected{% endif %}>
+                        {{ asignatura.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+    
+    {% if tareas %}
+    <!-- Lista de Tareas -->
+    <div class="tareas-grid">
+        {% for item in tareas %}
+        <div class="tarea-card card {% if item.estado_tiempo == 'urgente' %}urgente{% elif item.estado_tiempo == 'vencida' %}vencida{% endif %}">
+            <div class="tarea-status-indicator estado-{{ item.estado_tiempo }}"></div>
+            
+            <div class="tarea-header">
+                <div class="tarea-info-group">
+                    <h3 class="tarea-titulo">{{ item.tarea.titulo }}</h3>
+                    <div class="tarea-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-book"></i>
+                            {{ item.tarea.clase.asignatura.nombre }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            {{ item.tarea.fecha_entrega|date:"d/m/Y" }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            {{ item.tarea.fecha_entrega|time:"H:i" }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="tarea-estado-badge">
+                    {% if item.estado == 'corregida' %}
+                    <span class="badge badge-calificada">
+                        <i class="fas fa-star"></i>
+                        Calificada
+                    </span>
+                    {% elif item.estado == 'entregada' %}
+                    <span class="badge badge-entregada">
+                        <i class="fas fa-check"></i>
+                        Entregada
+                    </span>
+                    {% elif item.estado == 'atrasada' %}
+                    <span class="badge badge-atrasada">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Atrasada
+                    </span>
+                    {% else %}
+                    <span class="badge badge-pendiente">
+                        <i class="fas fa-clock"></i>
+                        Pendiente
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="tarea-descripcion">
+                {{ item.tarea.instrucciones|truncatewords:30 }}
+            </div>
+            
+            {% if item.tarea.archivo_instrucciones %}
+            <div class="tarea-archivo-adjunto">
+                <i class="fas fa-paperclip"></i>
+                <a href="{{ item.tarea.archivo_instrucciones.url }}" target="_blank" class="archivo-link">
+                    Ver archivo de instrucciones
+                </a>
+            </div>
+            {% endif %}
+            
+            <div class="tarea-footer">
+                <div class="tiempo-restante">
+                    {% if item.estado_tiempo == 'vencida' %}
+                    <i class="fas fa-times-circle text-danger"></i>
+                    <span class="text-danger">Fecha vencida</span>
+                    {% elif item.estado_tiempo == 'urgente' %}
+                    <i class="fas fa-exclamation-circle text-warning"></i>
+                    <span class="text-warning">{{ item.dias_restantes }} día{{ item.dias_restantes|pluralize }} restante{{ item.dias_restantes|pluralize }}</span>
+                    {% else %}
+                    <i class="fas fa-hourglass-half text-info"></i>
+                    <span class="text-info">{{ item.dias_restantes }} día{{ item.dias_restantes|pluralize }} restante{{ item.dias_restantes|pluralize }}</span>
+                    {% endif %}
+                </div>
+                
+                <button class="btn-detalle" onclick="verDetalleTarea({{ item.tarea.id }})">
+                    Ver detalle <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            
+            {% if item.entrega %}
+            <div class="entrega-info">
+                <div class="entrega-header">
+                    <i class="fas fa-check-circle text-success"></i>
+                    <span class="entrega-titulo">Entregado el {{ item.entrega.fecha_entrega|date:"d/m/Y H:i" }}</span>
+                </div>
+                
+                {% if item.entrega.calificacion %}
+                <div class="entrega-calificacion">
+                    <span class="calificacion-label">Calificación:</span>
+                    <span class="calificacion-valor nota-{{ item.entrega.calificacion|floatformat:0 }}">
+                        {{ item.entrega.calificacion|floatformat:1 }}
+                    </span>
+                </div>
+                {% endif %}
+                
+                {% if item.entrega.retroalimentacion %}
+                <div class="entrega-retroalimentacion">
+                    <strong>
+                        <i class="fas fa-comment"></i>
+                        Retroalimentación:
+                    </strong>
+                    <p>{{ item.entrega.retroalimentacion }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Estado Vacío: Sin Tareas -->
+    {% include 'frontend/templates/common/components/empty_state.html' with icon='fas fa-clipboard-list' title='No hay tareas asignadas' message='No se encontraron tareas para el estudiante en el período seleccionado.' %}
+    {% endif %}
+    
+    {% else %}
+    <!-- Estado Vacío: Sin Estudiante Seleccionado -->
+    {% include 'frontend/templates/common/components/empty_state.html' with icon='fas fa-user-graduate' title='Selecciona un hijo' message='Selecciona un estudiante del menú superior para visualizar sus tareas.' %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'academico/js/apoderado/tareas_hijo.js' %}"></script>
+{% endblock %}

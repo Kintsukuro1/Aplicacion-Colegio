@@ -1,0 +1,301 @@
+{% load static %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/estudiante/mis_evaluaciones.css' %}?v=20260608">
+
+<div class="me-page">
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Mis Evaluaciones" hero_subtitle="Próximas fechas, pendientes de nota y tu historial de resultados" hero_aria="Mis Evaluaciones" metrics_aria="Resumen de evaluaciones" m1_value=total_eval_pendientes|default:"0" m1_label="Sin nota" m1_mod="tareas" m2_value=total_eval_completadas|default:"0" m2_label="Con nota" m2_mod="clases" m3_value=total_eval_proximas|default:"0" m3_label="Esta semana" m3_mod="promedio" m4_value=total_evaluaciones|default:"0" m4_label="Total" m4_mod="asistencia" %}
+
+    <section class="me-refine" aria-label="Refinar evaluaciones">
+        <div class="me-refine__head">
+            <h2 class="me-refine__title">Refinar listado</h2>
+            <button type="button" class="me-refine__clear" id="meClearFilters" hidden>Limpiar</button>
+        </div>
+        <div class="me-refine__grid">
+            <div class="me-refine__field">
+                <label class="me-refine__label" for="meSubjectFilter">Asignatura</label>
+                <select class="me-refine__control" id="meSubjectFilter">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div class="me-refine__field">
+                <label class="me-refine__label" for="meBucketFilter">Mostrar</label>
+                <select class="me-refine__control" id="meBucketFilter">
+                    <option value="">Todas las secciones</option>
+                    <option value="proximas">Solo próximas (7 días)</option>
+                    <option value="pendientes">Sin nota</option>
+                    <option value="completadas">Con nota</option>
+                </select>
+            </div>
+            <div class="me-refine__field me-refine__field--grow">
+                <label class="me-refine__label" for="meSearch">Buscar</label>
+                <input type="search" class="me-refine__control" id="meSearch" placeholder="Nombre de evaluación..." autocomplete="off">
+            </div>
+        </div>
+        <p class="me-refine__hint" id="meFilterHint" hidden></p>
+    </section>
+
+    <div class="me-layout">
+        <div class="me-main">
+            {% if evaluaciones_proximas_lista %}
+            <section class="alumno-section-card me-section" id="meSectionProximas" data-me-section="proximas">
+                <div class="me-section__head">
+                    <h2 class="alumno-section-title">
+                        <span class="alumno-section-title__icon" aria-hidden="true">📅</span>
+                        Próximas (7 días)
+                    </h2>
+                    <span class="me-count-badge">{{ evaluaciones_proximas_lista|length }}</span>
+                </div>
+                <div class="me-proximas-scroll">
+                    {% for ev in evaluaciones_proximas_lista %}
+                    <article class="me-card me-card--proxima"
+                        data-me-subject="{{ ev.asignatura_key }}"
+                        data-me-bucket="proximas"
+                        data-me-title="{{ ev.nombre|lower }}">
+                        <div class="me-card__accent" data-subject="{{ ev.asignatura_key }}"></div>
+                        <div class="me-card__body">
+                            <div class="me-card__top">
+                                <span class="me-card__subj" data-subject="{{ ev.asignatura_key }}">{{ ev.asignatura }}</span>
+                                {% if ev.es_hoy %}
+                                <span class="me-urgency me-urgency--hoy">Hoy</span>
+                                {% elif ev.es_manana %}
+                                <span class="me-urgency me-urgency--manana">Mañana</span>
+                                {% elif ev.dias_restantes is not None %}
+                                <span class="me-urgency">En {{ ev.dias_restantes }} día{{ ev.dias_restantes|pluralize }}</span>
+                                {% endif %}
+                            </div>
+                            <h3 class="me-card__title">{{ ev.nombre }}</h3>
+                            <ul class="me-card__meta">
+                                <li>{{ ev.fecha|date:"d \d\e F, Y" }}</li>
+                                <li>{{ ev.tipo }}</li>
+                                {% if ev.ponderacion %}<li>Ponderación {{ ev.ponderacion }}%</li>{% endif %}
+                            </ul>
+                            <a href="{% url 'ver_detalle_clase' ev.clase_id %}" class="me-btn me-btn--primary">Ver en mi clase</a>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <section class="alumno-section-card me-section" id="meSectionPendientes" data-me-section="pendientes">
+                <div class="me-section__head">
+                    <h2 class="alumno-section-title">
+                        <span class="alumno-section-title__icon" aria-hidden="true">⏳</span>
+                        Sin nota publicada
+                    </h2>
+                    <span class="me-count-badge" id="meCountPendientes">{{ evaluaciones_pendientes|length }}</span>
+                </div>
+                {% if evaluaciones_pendientes %}
+                <div class="me-grid" id="meGridPendientes">
+                    {% for ev in evaluaciones_pendientes %}
+                    <article class="me-card me-card--pendiente"
+                        data-me-subject="{{ ev.asignatura_key }}"
+                        data-me-bucket="pendientes{% if ev.es_proxima %} proximas{% endif %}"
+                        data-me-title="{{ ev.nombre|lower }}">
+                        <div class="me-card__accent" data-subject="{{ ev.asignatura_key }}"></div>
+                        <div class="me-card__body">
+                            <div class="me-card__top">
+                                <span class="me-card__subj" data-subject="{{ ev.asignatura_key }}">{{ ev.asignatura }}</span>
+                                {% if ev.dias_restantes is not None and ev.dias_restantes < 0 %}
+                                <span class="me-badge me-badge--overdue">Fecha pasada</span>
+                                {% else %}
+                                <span class="me-badge me-badge--pending">Sin nota</span>
+                                {% endif %}
+                            </div>
+                            <h3 class="me-card__title">{{ ev.nombre }}</h3>
+                            <ul class="me-card__meta">
+                                <li><strong>Fecha:</strong> {{ ev.fecha|date:"d/m/Y" }}</li>
+                                <li><strong>Tipo:</strong> {{ ev.tipo }}</li>
+                                {% if ev.ponderacion %}<li><strong>Peso:</strong> {{ ev.ponderacion }}%</li>{% endif %}
+                            </ul>
+                            {% if ev.dias_restantes is not None %}
+                            <p class="me-card__countdown">
+                                {% if ev.dias_restantes < 0 %}
+                                Fecha de evaluación pasada — espera que publiquen tu nota
+                                {% elif ev.es_hoy %}
+                                Es hoy — ¡mucho éxito!
+                                {% else %}
+                                Faltan {{ ev.dias_restantes }} día{{ ev.dias_restantes|pluralize }} para la fecha
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                            <a href="{% url 'ver_detalle_clase' ev.clase_id %}" class="me-btn me-btn--outline">Ir a la clase</a>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="me-empty">No tienes evaluaciones pendientes de nota.</p>
+                {% endif %}
+            </section>
+
+            <section class="alumno-section-card me-section" id="meSectionCompletadas" data-me-section="completadas">
+                <div class="me-section__head">
+                    <h2 class="alumno-section-title">
+                        <span class="alumno-section-title__icon" aria-hidden="true">✅</span>
+                        Con nota
+                    </h2>
+                    <span class="me-count-badge" id="meCountCompletadas">{{ evaluaciones_completadas|length }}</span>
+                </div>
+                {% if evaluaciones_completadas %}
+                <div class="me-done-list" id="meListCompletadas">
+                    {% for ev in evaluaciones_completadas %}
+                    <article class="me-done-row"
+                        data-me-subject="{{ ev.asignatura_key }}"
+                        data-me-bucket="completadas"
+                        data-me-title="{{ ev.nombre|lower }}">
+                        <div class="me-done-row__accent" data-subject="{{ ev.asignatura_key }}"></div>
+                        <div class="me-done-row__main">
+                            <span class="me-card__subj" data-subject="{{ ev.asignatura_key }}">{{ ev.asignatura }}</span>
+                            <h3 class="me-done-row__title">{{ ev.nombre }}</h3>
+                            <p class="me-done-row__meta">
+                                {{ ev.fecha|date:"d/m/Y" }} · {{ ev.tipo }}
+                                {% if ev.fecha_nota %} · Nota registrada {{ ev.fecha_nota|date:"d/m/Y" }}{% endif %}
+                            </p>
+                        </div>
+                        <div class="me-done-row__grade {% if ev.nota >= 4.0 %}me-done-row__grade--ok{% else %}me-done-row__grade--low{% endif %}">
+                            <span class="me-done-row__grade-val">{{ ev.nota }}</span>
+                            <span class="me-done-row__grade-lbl">Nota</span>
+                        </div>
+                        <a href="{% url 'dashboard' %}?pagina=mis_notas" class="me-btn me-btn--ghost me-btn--sm">Ver en notas</a>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="me-empty">Aún no tienes evaluaciones calificadas.</p>
+                {% endif %}
+            </section>
+        </div>
+
+        <aside class="me-aside" aria-label="Panel de apoyo">
+            {% if eval_proxima_destacada %}
+            <section class="alumno-section-card me-aside-card me-aside-card--highlight">
+                <h3 class="me-aside-card__title">Tu próxima evaluación</h3>
+                <div class="me-highlight" data-subject="{{ eval_proxima_destacada.asignatura_key }}">
+                    <p class="me-highlight__subj">{{ eval_proxima_destacada.asignatura }}</p>
+                    <p class="me-highlight__name">{{ eval_proxima_destacada.nombre }}</p>
+                    <p class="me-highlight__date">{{ eval_proxima_destacada.fecha|date:"l d \d\e F"|capfirst }}</p>
+                    {% if eval_proxima_destacada.dias_restantes is not None %}
+                    <p class="me-highlight__days">
+                        {% if eval_proxima_destacada.es_hoy %}¡Es hoy!{% elif eval_proxima_destacada.es_manana %}Mañana{% else %}En {{ eval_proxima_destacada.dias_restantes }} días{% endif %}
+                    </p>
+                    {% endif %}
+                    <a href="{% url 'ver_detalle_clase' eval_proxima_destacada.clase_id %}" class="me-btn me-btn--primary me-btn--block">Ver clase</a>
+                </div>
+            </section>
+            {% endif %}
+
+            <section class="alumno-section-card me-aside-card">
+                <h3 class="me-aside-card__title">Resumen rápido</h3>
+                <ul class="me-stats-list">
+                    <li><span>Sin nota</span><strong>{{ total_eval_pendientes|default:"0" }}</strong></li>
+                    <li><span>Con nota</span><strong>{{ total_eval_completadas|default:"0" }}</strong></li>
+                    <li><span>Esta semana</span><strong>{{ total_eval_proximas|default:"0" }}</strong></li>
+                    {% if promedio_ultimas_eval %}
+                    <li><span>Promedio últimas 5</span><strong>{{ promedio_ultimas_eval }}</strong></li>
+                    {% endif %}
+                </ul>
+            </section>
+
+            <section class="alumno-section-card me-aside-card">
+                <h3 class="me-aside-card__title">Enlaces útiles</h3>
+                <nav class="me-quick-links">
+                    <a href="{% url 'dashboard' %}?pagina=mis_notas" class="me-quick-link">Ver todas mis notas</a>
+                    <a href="{% url 'dashboard' %}?pagina=mis_clases" class="me-quick-link">Mis clases</a>
+                    <a href="{% url 'calendario_tareas_estudiante' %}" class="me-quick-link">Calendario de tareas</a>
+                </nav>
+            </section>
+        </aside>
+    </div>
+</div>
+
+<script>
+(function () {
+    var SUBJECT_COLORS = {
+        matem: '#3B82F6', lengua: '#EF4444', comunic: '#EF4444', castellano: '#EF4444',
+        cienc: '#10B981', natur: '#10B981', histor: '#8B5CF6', geograf: '#8B5CF6',
+        ingl: '#F59E0B', educ: '#06B6D4', física: '#06B6D4', edfis: '#06B6D4',
+        arte: '#EC4899', visual: '#EC4899', músic: '#F97316', music: '#F97316',
+        tecno: '#6B7280', comput: '#6B7280'
+    };
+
+    function resolveAccent(key) {
+        var s = (key || '').toLowerCase();
+        var k;
+        for (k in SUBJECT_COLORS) {
+            if (s.indexOf(k) !== -1) return SUBJECT_COLORS[k];
+        }
+        return '#94A3B8';
+    }
+
+    function applySubjectColors() {
+        document.querySelectorAll('[data-subject]').forEach(function (el) {
+            var accent = resolveAccent(el.getAttribute('data-subject'));
+            el.style.setProperty('--me-accent', accent);
+        });
+    }
+
+    function buildSubjectFilter() {
+        var select = document.getElementById('meSubjectFilter');
+        var seen = {};
+        document.querySelectorAll('.me-card__subj[data-subject]').forEach(function (el) {
+            var key = el.getAttribute('data-subject');
+            if (!key || seen[key]) return;
+            seen[key] = true;
+            var opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = el.textContent.trim() || key;
+            select.appendChild(opt);
+        });
+    }
+
+    function applyFilters() {
+        var subject = document.getElementById('meSubjectFilter').value;
+        var bucket = document.getElementById('meBucketFilter').value;
+        var q = (document.getElementById('meSearch').value || '').trim().toLowerCase();
+        var visible = 0;
+        var cards = document.querySelectorAll('[data-me-bucket]');
+
+        cards.forEach(function (card) {
+            var buckets = (card.getAttribute('data-me-bucket') || '').split(/\s+/);
+            var matchSubject = !subject || card.getAttribute('data-me-subject') === subject;
+            var matchBucket = !bucket || buckets.indexOf(bucket) !== -1;
+            var matchSearch = !q || (card.getAttribute('data-me-title') || '').indexOf(q) !== -1;
+            var show = matchSubject && matchBucket && matchSearch;
+            card.hidden = !show;
+            if (show) visible++;
+        });
+
+        ['proximas', 'pendientes', 'completadas'].forEach(function (sec) {
+            var section = document.querySelector('[data-me-section="' + sec + '"]');
+            if (!section) return;
+            var any = section.querySelector('[data-me-bucket]:not([hidden])');
+            section.hidden = !any && (bucket === sec || (!bucket && !subject && !q));
+        });
+
+        document.getElementById('meClearFilters').hidden = !(subject || bucket || q);
+        var hint = document.getElementById('meFilterHint');
+        if (subject || bucket || q) {
+            hint.hidden = false;
+            hint.textContent = visible ? visible + ' evaluación(es) coinciden con el filtro.' : 'Ninguna evaluación coincide. Prueba otro filtro.';
+        } else {
+            hint.hidden = true;
+        }
+    }
+
+    document.getElementById('meSubjectFilter').addEventListener('change', applyFilters);
+    document.getElementById('meBucketFilter').addEventListener('change', applyFilters);
+    document.getElementById('meSearch').addEventListener('input', applyFilters);
+    document.getElementById('meClearFilters').addEventListener('click', function () {
+        document.getElementById('meSubjectFilter').value = '';
+        document.getElementById('meBucketFilter').value = '';
+        document.getElementById('meSearch').value = '';
+        applyFilters();
+    });
+
+    applySubjectColors();
+    buildSubjectFilter();
+})();
+</script>
+
+{% include 'estudiante/_alumno_wrap_end.html' %}

@@ -1,0 +1,41 @@
+<script>
+function filtrarClasesPorCurso(cursoNombre) {
+    var claseSelect = document.getElementById('clase_id');
+    if (!claseSelect) return;
+
+    var primeraVisible = null;
+    Array.from(claseSelect.options).forEach(function (opt) {
+        if (!opt.value) {
+            opt.hidden = false;
+            return;
+        }
+        var visible = !cursoNombre || opt.dataset.curso === cursoNombre;
+        opt.hidden = !visible;
+        if (visible && !primeraVisible) primeraVisible = opt;
+    });
+
+    Array.from(claseSelect.querySelectorAll('optgroup')).forEach(function (group) {
+        var anyVisible = Array.from(group.querySelectorAll('option')).some(function (o) {
+            return o.value && !o.hidden;
+        });
+        group.hidden = !anyVisible;
+    });
+
+    var actual = claseSelect.options[claseSelect.selectedIndex];
+    if (actual && actual.value && actual.hidden && primeraVisible) {
+        claseSelect.value = primeraVisible.value;
+        claseSelect.dispatchEvent(new Event('change'));
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var cursoFiltro = document.getElementById('filtro_curso_nombre');
+    var claseSelect = document.getElementById('clase_id');
+    if (!cursoFiltro || !claseSelect) return;
+    var selectedOption = claseSelect.options[claseSelect.selectedIndex];
+    if (selectedOption && selectedOption.value && selectedOption.dataset.curso) {
+        cursoFiltro.value = selectedOption.dataset.curso;
+        filtrarClasesPorCurso(selectedOption.dataset.curso);
+    }
+});
+</script>

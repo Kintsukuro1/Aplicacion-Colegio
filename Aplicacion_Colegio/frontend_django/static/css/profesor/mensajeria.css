@@ -1,0 +1,425 @@
+/* Mensajería profesor — lavanda (sobre mm- + mc-hero) */
+
+.mm-page--prof {
+    --mm-accent: #6366f1;
+    --mm-accent-deep: #4f46e5;
+    --mm-accent-soft: #eef2ff;
+    --mm-border: #e0e7ff;
+    --mm-text: #3730a3;
+    --mm-muted: #64748b;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--mm-text);
+}
+
+.mm-prof-hero {
+    margin-bottom: 1rem;
+}
+
+.mm-prof-hero .mc-hero__head {
+    margin-bottom: 0.35rem;
+}
+
+.mm-prof-hero .mc-hero__actions {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+@media (max-width: 640px) {
+    .mm-prof-hero .mc-hero__head {
+        flex-wrap: wrap;
+    }
+
+    .mm-prof-hero .mc-hero__actions {
+        margin-left: auto;
+        width: auto;
+    }
+}
+
+.mm-prof-hero .mc-metric--alert .mc-metric__val {
+    color: #dc2626;
+}
+
+.mm-prof-hero .mc-metric--alert .mc-metric__val {
+    color: #dc2626;
+}
+
+.mm-prof-hero .mc-metric--warn .mc-metric__val {
+    color: #d97706;
+}
+
+.mm-page--prof .mm-chips__chip--active,
+.mm-page--prof .mm-chips__chip:hover {
+    background: var(--mm-accent);
+    border-color: var(--mm-accent);
+    color: #fff;
+}
+
+.mm-page--prof .mm-chips__chip {
+    border-color: var(--mm-border);
+    background: #fff;
+    color: var(--mm-muted);
+}
+
+.mm-page--prof .mm-chips__chip--alert {
+    background: #faf5ff;
+    border-color: #c4b5fd;
+    color: var(--mm-accent-deep);
+}
+
+.mm-page--prof .mm-insights__item--alerta {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.mm-page--prof .mm-insights__item--sugerencia {
+    background: var(--mm-accent-soft);
+    border-color: var(--mm-border);
+}
+
+.mm-page--prof .mm-insights__item--info {
+    background: #fff;
+    border-color: var(--mm-border);
+}
+
+.mm-page--prof .mm-insights__action {
+    color: var(--mm-accent);
+    border-color: var(--mm-border);
+    background: #fff;
+}
+
+.mm-page--prof .mm-insights__action:hover {
+    background: var(--mm-accent);
+    color: #fff;
+}
+
+.mm-page--prof .mm-btn--primary {
+    background: var(--mm-accent);
+    border-color: var(--mm-accent);
+}
+
+.mm-page--prof .mm-btn--primary:hover {
+    background: var(--mm-accent-deep);
+}
+
+.mm-page--prof .mm-btn--outline {
+    border-color: var(--mm-border);
+    color: var(--mm-accent);
+}
+
+.mm-page--prof .mm-conv-panel,
+.mm-page--prof .mm-chat-panel,
+.mm-page--prof .mm-aside-card {
+    border-color: var(--mm-border);
+    box-shadow: 0 8px 24px rgba(106, 90, 184, 0.06);
+}
+
+.mm-page--prof .mm-conv-item--unread {
+    border-color: #c4b5fd;
+    background: var(--mm-accent-soft);
+}
+
+.mm-page--prof .mm-conv-item__badge {
+    background: var(--mm-accent);
+}
+
+.mm-page--prof .mm-class-quick__link {
+    border-color: var(--mm-border);
+    background: #fff;
+}
+
+.mm-page--prof .mm-class-quick__link:hover {
+    background: var(--mm-accent-soft);
+}
+
+.mm-page--prof .mm-class-quick__tag {
+    background: var(--mm-accent-soft);
+    color: var(--mm-accent-deep);
+    border: 1px solid var(--mm-border);
+}
+
+.mm-page--prof .mm-class-quick__badge {
+    background: var(--mm-accent);
+}
+
+.mm-page--prof .prof-section-card {
+    background: #fff;
+    border: 1px solid var(--mm-border);
+    border-radius: 16px;
+    padding: 1rem;
+    box-shadow: 0 4px 16px rgba(49, 46, 129, 0.05);
+}
+
+.mm-page--prof .prof-section-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--mm-text);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.mm-page--prof .mm-refine {
+    border-color: var(--mm-border);
+    background: var(--mm-accent-soft);
+}
+
+.mm-page--prof .mm-refine__control:focus {
+    border-color: var(--mm-accent);
+}
+
+/* Ancho completo dentro del portal docente (pers-main) */
+body.vista-personal .pers-page-content .mm-page--prof {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+body.vista-personal .pers-page-content .mm-layout,
+body.vista-personal .pers-page-content .mm-layout--with-aside {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+body.vista-personal .pers-page-content .mm-conv-panel,
+body.vista-personal .pers-page-content .mm-chat-panel,
+body.vista-personal .pers-page-content .mm-aside-card {
+    min-width: 0;
+}
+
+body.vista-personal .mm-prof-hero.mc-hero {
+    background: #faf5ff;
+    border-color: #e9e5ff;
+    box-shadow: 0 8px 28px rgba(76, 29, 149, 0.07);
+}
+
+body.vista-personal .mm-prof-hero .mc-hero__title {
+    color: #4c1d95;
+}
+
+body.vista-personal .mm-prof-hero .mc-hero__sub,
+body.vista-personal .mm-prof-hero .mc-metric__lbl {
+    color: #6d28d9;
+}
+
+body.vista-personal .mm-prof-hero .mc-metric__val {
+    color: #4c1d95;
+}
+
+@media (max-width: 1100px) {
+    body.vista-personal .pers-page-content .mm-layout--with-aside {
+        grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    }
+
+    body.vista-personal .pers-page-content .mm-aside {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 900px) {
+    .mm-prof-hero .mc-hero__metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body.vista-personal .pers-page-content .mm-layout,
+    body.vista-personal .pers-page-content .mm-layout--with-aside {
+        grid-template-columns: 1fr;
+        min-height: 0;
+    }
+
+    body.vista-personal .pers-page-content .mm-conv-panel {
+        max-height: 360px;
+    }
+}
+
+/* Información inteligente */
+.mm-intel-prof {
+    margin-bottom: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--mm-border);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #faf5ff 0%, #f8fafc 100%);
+}
+
+.mm-intel-prof__title {
+    margin: 0 0 0.65rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #3730a3;
+}
+
+.mm-intel-prof__alertas {
+    margin: 0 0 0.65rem;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.mm-intel-prof__alerta {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.45;
+    padding: 0.5rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid var(--mm-border);
+    background: #fff;
+}
+
+.mm-intel-prof__alerta--alerta {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.mm-intel-prof__alerta--sugerencia {
+    background: #f5f3ff;
+    border-color: #ddd6fe;
+}
+
+.mm-intel-prof__alerta--info {
+    background: #fff;
+    border-color: #e0e7ff;
+}
+
+.mm-intel-prof__link {
+    margin-left: 0.35rem;
+    color: var(--mm-accent-deep);
+    font-weight: 800;
+}
+
+.mm-intel-prof__cta {
+    margin: 0 0 0.65rem;
+}
+
+.mm-intel-prof__sub {
+    margin: 0 0 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.mm-intel-prof__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.mm-intel-prof__lista > li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.55rem 0.65rem;
+    background: #fff;
+    border: 1px solid var(--mm-border);
+    border-radius: 10px;
+}
+
+.mm-intel-prof__contacto {
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+}
+
+.mm-intel-prof__contacto:hover .mm-intel-prof__nombre {
+    color: var(--mm-accent-deep);
+}
+
+.mm-intel-prof__nombre {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.mm-intel-prof__meta {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.mm-intel-prof__pill {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--mm-accent-soft);
+    color: var(--mm-accent-deep);
+}
+
+.mm-intel-prof__pill--warn {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Burbujas salientes lavanda */
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border-color: #4f46e5;
+    color: #fff;
+}
+
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__text,
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__time {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__file a {
+    color: #e0e7ff;
+}
+
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row:not(.mm-bubble-row--out) .mm-bubble {
+    background: #fff;
+    border: 1px solid var(--mm-border);
+}
+
+.mm-page--prof .mm-empty--chat .mm-empty__illus {
+    background: linear-gradient(160deg, #eef2ff 0%, #e0e7ff 55%, #faf5ff 100%);
+    border: 1px dashed #c7d2fe;
+}
+
+.mm-page--prof .mm-btn--outline:hover {
+    background: var(--mm-accent-soft);
+    border-color: var(--mm-accent);
+}
+
+.mm-page--prof .mm-modal__dialog {
+    border-color: var(--mm-border);
+}
+
+.mm-page--prof .mm-modal__head {
+    background: var(--mm-accent-soft);
+    border-bottom: 1px solid var(--mm-border);
+}
+
+.mm-page--prof .mm-modal__title {
+    color: #3730a3;
+}
+
+/* Burbujas salientes siempre lavanda en portal docente */
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border-color: #4f46e5;
+}
+
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__text,
+.mm-page--prof .mm-chat-panel.mm-themed .mm-bubble-row--out .mm-bubble__time {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+body.vista-personal.pagina-mensajes .quick-action-fab-trigger {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+}

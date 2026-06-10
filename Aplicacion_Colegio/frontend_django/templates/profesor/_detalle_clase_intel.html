@@ -1,0 +1,44 @@
+{% load static %}
+{# Panel de inteligencia docente — requiere prof_intel y prof_metricas en contexto #}
+{% if prof_intel and prof_metricas %}
+<section class="dc-intel" aria-label="Estado de la clase">
+    <div class="dc-intel__status dc-intel__status--{{ prof_intel.estado }}">
+        <div class="dc-intel__status-icon" aria-hidden="true">
+            {% if prof_intel.estado == 'urgente' %}⚠{% elif prof_intel.estado == 'atencion' %}◉{% else %}✓{% endif %}
+        </div>
+        <div>
+            <p class="dc-intel__status-eyebrow">Estado de la clase</p>
+            <h2 class="dc-intel__status-title">{{ prof_intel.estado_label }}</h2>
+            <p class="dc-intel__status-hint">{{ prof_intel.estado_hint }}</p>
+        </div>
+    </div>
+
+    <div class="dc-intel__grid">
+        <div class="dc-intel-card">
+            <h3 class="dc-intel-card__title">Alertas</h3>
+            <ul class="dc-intel-alerts">
+                {% for alerta in prof_intel.alertas %}
+                <li>{{ alerta }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {% if prof_intel.proximas_fechas %}
+        <div class="dc-intel-card">
+            <h3 class="dc-intel-card__title">Próximos 21 días</h3>
+            <ul class="dc-intel-timeline">
+                {% for item in prof_intel.proximas_fechas|slice:":5" %}
+                <li class="dc-intel-timeline__item dc-intel-timeline__item--{{ item.tipo }}">
+                    <span class="dc-intel-timeline__date">{{ item.fecha|date:"d/m" }}</span>
+                    <div>
+                        <strong>{{ item.titulo }}</strong>
+                        <span class="dc-intel-timeline__sub">{{ item.subtipo }}</span>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}

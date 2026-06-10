@@ -1,0 +1,162 @@
+{% load static %}
+{% url 'comunicados:lista' as comunicados_url %}
+{% url 'mensajeria:bandeja_mensajes' as mensajes_url %}
+<aside class="pers-sidebar" aria-label="Navegación del portal docente">
+    <div class="pers-sidebar__top">
+        <div class="pers-sidebar__brand">
+            {% include 'includes/_portal_brand_logo.html' with logo_alt=escuela_nombre|default:"Portal Académico" extra_class='portal-brand-logo--sidebar' %}
+            <span class="pers-sidebar__brand-text">{{ escuela_nombre|default:"Portal Académico" }}</span>
+        </div>
+
+        <div class="pers-sidebar__profile">
+            {% if foto_perfil_url %}
+            <img src="{{ foto_perfil_url }}" alt="" class="pers-sidebar__avatar pers-sidebar__avatar--photo">
+            {% else %}
+            <div class="pers-sidebar__avatar" aria-hidden="true">{% if iniciales %}{{ iniciales }}{% else %}{{ user.nombre|first|upper }}{{ user.apellido_paterno|first|upper }}{% endif %}</div>
+            {% endif %}
+            <p class="pers-sidebar__name">{{ nombre_usuario|default:user.get_full_name }}</p>
+            <p class="pers-sidebar__course">Profesor(a)</p>
+        </div>
+    </div>
+
+    <nav class="pers-sidebar__nav">
+        {% if 'inicio' in paginas_habilitadas %}
+        <p class="pers-sidebar__section-label">Principal</p>
+        <ul class="pers-sidebar__list">
+            <li class="pers-sidebar__item{% if pagina_actual == 'inicio' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🏠</span>
+                    <span>Inicio</span>
+                </a>
+            </li>
+        </ul>
+        <div class="pers-sidebar__divider" aria-hidden="true"></div>
+        {% endif %}
+
+        <p class="pers-sidebar__section-label">Académico</p>
+        <ul class="pers-sidebar__list">
+            {% if 'mis_clases' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'mis_clases' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=mis_clases">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📚</span>
+                    <span>Mis Clases</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'asistencia' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'asistencia' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=asistencia">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📅</span>
+                    <span>Registro Asistencia</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'notas' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'notas' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=notas">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📝</span>
+                    <span>Evaluaciones y Notas</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'libro_clases' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'libro_clases' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=libro_clases">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📖</span>
+                    <span>Libro de Clases</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'reportes' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'reportes' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=reportes">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📊</span>
+                    <span>Reportes</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'calendario_eventos' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'calendario_eventos' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=calendario_eventos">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🗓️</span>
+                    <span>Calendario Escolar</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'solicitud_reuniones' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'solicitud_reuniones' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=solicitud_reuniones">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🤝</span>
+                    <span>Solicitud Reuniones</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'tareas_consolidado' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'tareas_consolidado' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=tareas_consolidado">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📋</span>
+                    <span>Tareas</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'mis_planificaciones' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'mis_planificaciones' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=mis_planificaciones">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📑</span>
+                    <span>Planificaciones</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="pers-sidebar__divider" aria-hidden="true"></div>
+
+        <p class="pers-sidebar__section-label">Comunicación</p>
+        <ul class="pers-sidebar__list">
+            {% if menu_access and menu_access.comunicados %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'comunicados' or '/comunicados/' in request.path %} pers-sidebar__item--active{% endif %}">
+                <a href="{% if comunicados_url %}{{ comunicados_url }}{% else %}{% url 'dashboard' %}?pagina=inicio{% endif %}">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📢</span>
+                    <span>Comunicados</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if menu_access and menu_access.mensajes %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'mensajes' or '/mensajeria/' in request.path %} pers-sidebar__item--active{% endif %}">
+                <a href="{% if mensajes_url %}{{ mensajes_url }}{% else %}{% url 'dashboard' %}?pagina=inicio{% endif %}">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">✉️</span>
+                    <span>Mensajes</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="pers-sidebar__divider" aria-hidden="true"></div>
+
+        {% if 'disponibilidad' in paginas_habilitadas %}
+        <p class="pers-sidebar__section-label">Configuración</p>
+        <ul class="pers-sidebar__list">
+            <li class="pers-sidebar__item{% if pagina_actual == 'disponibilidad' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=disponibilidad">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🕐</span>
+                    <span>Mi Disponibilidad</span>
+                </a>
+            </li>
+        </ul>
+        {% endif %}
+    </nav>
+
+    <div class="pers-sidebar__footer">
+        {% if 'perfil' in paginas_habilitadas %}
+        <a href="{% url 'dashboard' %}?pagina=perfil" class="pers-sidebar__footer-link">
+            <span class="pers-sidebar__emoji" aria-hidden="true">👤</span>
+            <span>Mi Perfil</span>
+        </a>
+        {% endif %}
+        <form method="POST" action="{% url 'accounts:logout' %}" class="pers-sidebar__logout-form">
+            {% csrf_token %}
+            <button type="submit" class="pers-sidebar__footer-link pers-sidebar__footer-link--logout">
+                <span class="pers-sidebar__emoji" aria-hidden="true">🚪</span>
+                <span>Cerrar Sesión</span>
+            </button>
+        </form>
+    </div>
+</aside>

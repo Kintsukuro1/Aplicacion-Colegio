@@ -1,0 +1,53 @@
+{# Componente: Fila de Calificación #}
+{# Uso: {% include 'common/components/grade_row.html' with subject='Matemáticas' grade=6.5 max_grade=7.0 average=5.8 %} #}
+
+<div class="grade-row" style="display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-md); border-bottom: 1px solid var(--border-color); transition: background-color 0.2s;">
+    <div style="flex: 1; min-width: 0;">
+        <div class="font-semibold">{{ subject }}</div>
+        {% if date %}
+        <div class="text-xs text-secondary">{{ date|date:"d/m/Y" }}</div>
+        {% endif %}
+    </div>
+    
+    <div class="text-center-min">
+        <div class="text-2xl font-bold" style="color: {% if grade >= 4.0 %}var(--color-success){% else %}var(--color-error){% endif %};">
+            {{ grade|floatformat:1 }}
+        </div>
+        {% if max_grade %}
+        <div class="text-xs text-secondary">de {{ max_grade|floatformat:1 }}</div>
+        {% endif %}
+    </div>
+    
+    {% if average %}
+    <div class="text-center-min">
+        <div class="text-sm text-secondary">Promedio</div>
+        <div class="text-lg font-semibold">{{ average|floatformat:1 }}</div>
+    </div>
+    {% endif %}
+    
+    {% if trend %}
+    <div style="min-width: 60px; text-align: center;">
+        <span class="badge badge-{% if trend > 0 %}success{% elif trend < 0 %}error{% else %}secondary{% endif %}">
+            {% if trend > 0 %}
+                <i class="fas fa-arrow-up"></i> +{{ trend|floatformat:1 }}
+            {% elif trend < 0 %}
+                <i class="fas fa-arrow-down"></i> {{ trend|floatformat:1 }}
+            {% else %}
+                <i class="fas fa-minus"></i> 0.0
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+    
+    {% if details_url %}
+    <a href="{{ details_url }}" class="btn btn-sm btn-ghost">
+        <i class="fas fa-eye"></i>
+    </a>
+    {% endif %}
+</div>
+
+<style>
+.grade-row:hover {
+    background-color: var(--color-surface-secondary);
+}
+</style>

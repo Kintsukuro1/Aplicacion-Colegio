@@ -14,6 +14,10 @@
     flex-wrap: wrap;
 }
 
+.tareas-header__actions {
+    justify-content: flex-end;
+}
+
 .tareas-subtitle {
     margin-top: .35rem;
     color: #64748b;
@@ -232,8 +236,9 @@
         <h1 class="text-4xl font-bold mb-sm">📋 Gestionar actividades</h1>
         <p class="tareas-subtitle">{{ clase.curso.nombre }} · {{ clase.asignatura.nombre }} · {{ clase.profesor.get_full_name }}</p>
     </div>
-    <div class="flex gap-sm flex-wrap">
-        <a href="{% url 'ver_detalle_clase' clase.id %}" class="btn btn-outline">← Volver a la clase</a>
+    <div class="flex gap-sm flex-wrap tareas-header__actions">
+        <a href="{% url 'dashboard' %}?pagina=mis_clases" class="btn btn-outline">← Mis Clases</a>
+        <a href="{% url 'ver_detalle_clase' clase.id %}" class="btn btn-outline">Ver esta clase</a>
         <button type="button" onclick="mostrarModalCrear()" class="btn btn-primary">➕ Crear actividad híbrida</button>
     </div>
 </div>

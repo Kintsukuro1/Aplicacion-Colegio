@@ -1,0 +1,32 @@
+{% load static %}
+<link rel="icon" href="{% static 'favicon.ico' %}" sizes="32x32" type="image/x-icon">
+<link rel="icon" href="{% static 'favicon.ico' %}" sizes="48x48" type="image/x-icon">
+<link rel="shortcut icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+<link rel="apple-touch-icon" href="{% static 'favicon.ico' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+{% include 'apoderado/_apoderado_portal_styles.html' %}
+<script>
+(function () {
+    var current = (document.title || '').trim();
+    if (current.indexOf('Portal Académico') !== -1) return;
+    var r = '{{ rol|default:"apoderado"|lower }}';
+    var titles = {
+        estudiante: 'Portal Académico - Estudiante',
+        alumno: 'Portal Académico - Estudiante',
+        apoderado: 'Portal Académico - Apoderado',
+        profesor: 'Portal Académico - Profesor',
+        admin_escolar: 'Portal Académico - Administrador',
+        admin: 'Portal Académico - Administrador',
+        admin_general: 'Portal Académico - Administrador'
+    };
+    document.title = titles[r] || 'Portal Académico - Apoderado';
+})();
+</script>
+<div class="apoderado-dashboard perfil-apoderado vista-apoderado">
+<div class="dashboard-apoderado-layout">
+{% include 'apoderado/_sidebar.html' %}
+<div class="apod-main">
+<div class="apod-main__body apod-page-content">

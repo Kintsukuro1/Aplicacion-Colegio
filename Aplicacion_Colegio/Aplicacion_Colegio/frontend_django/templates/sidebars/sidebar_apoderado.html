@@ -1,0 +1,8 @@
+{% if pagina_actual == 'inicio' or pagina_actual == 'mis_pupilos' or pagina_actual == 'notas' or pagina_actual == 'asistencia' or pagina_actual == 'mis_certificados' or pagina_actual == 'justificativos' or pagina_actual == 'firmas_pendientes' or pagina_actual == 'admision_matricula' or pagina_actual == 'calendario_pupilo' or pagina_actual == 'perfil' or pagina_actual == 'mensajes' or pagina_actual == 'mi_estado_cuenta' or pagina_actual == 'mis_pagos' or '/mensajeria/' in request.path %}
+{# Estas páginas ya usan el layout apoderado nuevo y renderizan su propio sidebar #}
+{% else %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/dashboard_apoderado.css' %}?v=20260518">
+<script>document.body.classList.add('vista-apoderado');</script>
+{% include 'apoderado/_sidebar.html' %}
+{% endif %}

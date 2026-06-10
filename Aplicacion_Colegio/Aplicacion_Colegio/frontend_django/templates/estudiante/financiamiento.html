@@ -1,0 +1,313 @@
+<link rel="stylesheet" href="{% static 'estudiante/css/financiamiento.css' %}">
+
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1>💳 Financiamiento</h1>
+        <p class="subtitle">Estado de pagos y cuotas</p>
+    </div>
+
+    <div class="financiamiento-container">
+        
+        {# Resumen de Cuenta #}
+        <div class="resumen-cuenta">
+            <div class="cuenta-card">
+                <h2>📊 Resumen de Cuenta</h2>
+                <div class="cuenta-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Anual</span>
+                        <span class="stat-value">$1.200.000</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Pagado</span>
+                        <span class="stat-value pagado">$900.000</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Pendiente</span>
+                        <span class="stat-value pendiente">$300.000</span>
+                    </div>
+                </div>
+                <div class="progreso-pago">
+                    <div class="progreso-bar">
+                        <div class="progreso-fill" style="width: 75%"></div>
+                    </div>
+                    <span class="progreso-texto">75% pagado</span>
+                </div>
+            </div>
+        </div>
+
+        {# Cuotas Mensuales #}
+        <div class="cuotas-section">
+            <h2>📅 Cuotas Mensuales</h2>
+            
+            <div class="cuotas-grid">
+                
+                {# Cuota Pagada #}
+                <div class="cuota-card pagada">
+                    <div class="cuota-header">
+                        <span class="cuota-mes">Marzo 2025</span>
+                        <span class="badge-estado pagada">✅ Pagada</span>
+                    </div>
+                    <div class="cuota-info">
+                        <div class="cuota-monto">$100.000</div>
+                        <div class="cuota-detalles">
+                            <p><strong>Fecha de pago:</strong> 05/03/2025</p>
+                            <p><strong>Método:</strong> Transferencia</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cuota-card pagada">
+                    <div class="cuota-header">
+                        <span class="cuota-mes">Abril 2025</span>
+                        <span class="badge-estado pagada">✅ Pagada</span>
+                    </div>
+                    <div class="cuota-info">
+                        <div class="cuota-monto">$100.000</div>
+                        <div class="cuota-detalles">
+                            <p><strong>Fecha de pago:</strong> 08/04/2025</p>
+                            <p><strong>Método:</strong> Transferencia</p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Cuota Pendiente #}
+                <div class="cuota-card pendiente">
+                    <div class="cuota-header">
+                        <span class="cuota-mes">Diciembre 2025</span>
+                        <span class="badge-estado pendiente">⏳ Pendiente</span>
+                    </div>
+                    <div class="cuota-info">
+                        <div class="cuota-monto">$100.000</div>
+                        <div class="cuota-detalles">
+                            <p><strong>Vencimiento:</strong> 10/12/2025</p>
+                            <p><strong>Días restantes:</strong> 6 días</p>
+                        </div>
+                    </div>
+                    <a href="#" class="btn-pagar">Pagar Ahora</a>
+                </div>
+
+                {# Cuota Vencida #}
+                <div class="cuota-card vencida">
+                    <div class="cuota-header">
+                        <span class="cuota-mes">Noviembre 2025</span>
+                        <span class="badge-estado vencida">❌ Vencida</span>
+                    </div>
+                    <div class="cuota-info">
+                        <div class="cuota-monto">$100.000</div>
+                        <div class="cuota-detalles">
+                            <p><strong>Vencimiento:</strong> 10/11/2025</p>
+                            <p><strong>Mora:</strong> $5.000</p>
+                        </div>
+                    </div>
+                    <a href="javascript:void(0)" onclick="abrirWebpayModal('Cuota Noviembre - Vencida', 105000)" class="btn-pagar urgente">Pagar Urgente</a>
+                </div>
+
+            </div>
+        </div>
+
+        {# Métodos de Pago #}
+        <div class="metodos-pago-section">
+            <h2>💳 Métodos de Pago</h2>
+            
+            <div class="metodos-grid">
+                <div class="metodo-card">
+                    <span class="metodo-icon">🏦</span>
+                    <h3>Transferencia Bancaria</h3>
+                    <p>Banco Estado</p>
+                    <p><strong>Cuenta Corriente:</strong> 123-456-789</p>
+                    <p><strong>RUT:</strong> 76.123.456-7</p>
+                </div>
+
+                <div class="metodo-card">
+                    <span class="metodo-icon">💳</span>
+                    <h3>Pago en Línea</h3>
+                    <p>Webpay, Tarjetas de Crédito/Débito</p>
+                    <a href="javascript:void(0)" onclick="abrirWebpayModal('Deuda Pendiente Total', 300000)" class="btn-metodo">Pagar Online</a>
+                </div>
+
+                <div class="metodo-card">
+                    <span class="metodo-icon">🏫</span>
+                    <h3>Pago Presencial</h3>
+                    <p>Secretaría del Colegio</p>
+                    <p>Lunes a Viernes: 8:00 - 16:00</p>
+                </div>
+            </div>
+        </div>
+
+        {# Historial de Pagos #}
+        <div class="historial-section">
+            <h2>📋 Historial de Pagos</h2>
+            
+            <table class="tabla-historial">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Monto</th>
+                        <th>Método</th>
+                        <th>Comprobante</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>08/04/2025</td>
+                        <td>Cuota Abril</td>
+                        <td>$100.000</td>
+                        <td>Transferencia</td>
+                        <td><a href="#" class="btn-descargar">📄 Ver</a></td>
+                    </tr>
+                    <tr>
+                        <td>05/03/2025</td>
+                        <td>Cuota Marzo</td>
+                        <td>$100.000</td>
+                        <td>Transferencia</td>
+                        <td><a href="#" class="btn-descargar">📄 Ver</a></td>
+                    </tr>
+                    <tr>
+                        <td>01/03/2025</td>
+                        <td>Matrícula 2025</td>
+                        <td>$200.000</td>
+                        <td>Efectivo</td>
+                        <td><a href="#" class="btn-descargar">📄 Ver</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal Pasarela de Pago Webpay (Transbank) Simulador -->
+<div id="modal-webpay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); z-index: 10000; align-items: center; justify-content: center; font-family: 'Segoe UI', Roboto, sans-serif;">
+    <div style="background: #ffffff; width: 100%; max-width: 460px; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); border: 1px solid #e2e8f0; animation: scaleUp 0.3s forwards;">
+        <!-- Header Pasarela -->
+        <div style="background: #f43f5e; padding: 20px 24px; color: white; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.5rem;">💳</span>
+                <span style="font-weight: 700; font-size: 1.1rem; letter-spacing: 0.05em;">webpay<span style="font-weight: 300;">plus</span></span>
+            </div>
+            <button onclick="cerrarWebpayModal()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        
+        <!-- Detalles de Compra -->
+        <div style="background: #f8fafc; padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: 600; display: block; text-transform: uppercase;">Establecimiento</span>
+                <strong style="color: #334155; font-size: 0.9rem;">Colegio Kintsukuroi</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: 600; display: block; text-transform: uppercase;">Monto de Pago</span>
+                <strong id="webpay-monto-text" style="color: #f43f5e; font-size: 1.25rem; font-weight: 700;">$0</strong>
+            </div>
+        </div>
+
+        <!-- Formulario Tarjeta -->
+        <div id="webpay-form-container" style="padding: 24px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <p id="webpay-concepto-text" style="margin: 0; font-size: 0.95rem; color: #475569; font-weight: 600;"></p>
+                <p style="margin: 4px 0 0; font-size: 0.8rem; color: #94a3b8;">Transacción 100% encriptada y segura</p>
+            </div>
+
+            <form id="form-webpay-tarjeta" onsubmit="procesarPagoWebpay(event)">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 6px; text-transform: uppercase;">Número de Tarjeta</label>
+                    <input type="text" required placeholder="XXXX XXXX XXXX XXXX" maxlength="19" oninput="formatCardNumber(this)" style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; letter-spacing: 0.1em; transition: border-color 0.2s;" />
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 6px; text-transform: uppercase;">Vencimiento</label>
+                        <input type="text" required placeholder="MM/AA" maxlength="5" oninput="formatExpiry(this)" style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; text-align: center;" />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 6px; text-transform: uppercase;">CVV (Cód. Seguridad)</label>
+                        <input type="password" required placeholder="123" maxlength="3" style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; text-align: center; letter-spacing: 0.2em;" />
+                    </div>
+                </div>
+
+                <button type="submit" style="width: 100%; background: #f43f5e; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 14px rgba(244, 63, 94, 0.3);">Pagar con Webpay</button>
+            </form>
+        </div>
+
+        <!-- Loader Procesando Pago -->
+        <div id="webpay-loading-container" style="display: none; padding: 60px 24px; text-align: center;">
+            <div style="width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #f43f5e; border-radius: 50%; display: inline-block; animation: spin 1s infinite linear; margin-bottom: 20px;"></div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 600;">Procesando su pago...</h4>
+            <p style="margin: 8px 0 0; font-size: 0.85rem; color: #64748b;">Por favor, no cierre esta ventana.</p>
+        </div>
+
+        <!-- Confirmación de Éxito -->
+        <div id="webpay-success-container" style="display: none; padding: 40px 24px; text-align: center;">
+            <span style="font-size: 4rem; color: #10b981; display: block; margin-bottom: 16px;">✓</span>
+            <h4 style="margin: 0; font-size: 1.25rem; color: #10b981; font-weight: 700;">¡Pago Autorizado Exitosamente!</h4>
+            <p style="margin: 12px 0 24px; font-size: 0.9rem; color: #475569; line-height: 1.5;">El comprobante de su transacción ha sido emitido y su saldo financiero se actualizará de inmediato.</p>
+            <button onclick="cerrarWebpaySuccess()" style="background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">Volver al Estado de Cuenta</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    function abrirWebpayModal(concepto, monto) {
+        document.getElementById('webpay-monto-text').textContent = '$' + monto.toLocaleString('es-CL');
+        document.getElementById('webpay-concepto-text').textContent = 'Concepto: ' + concepto;
+        document.getElementById('modal-webpay').style.display = 'flex';
+    }
+
+    function cerrarWebpayModal() {
+        document.getElementById('modal-webpay').style.display = 'none';
+        document.getElementById('form-webpay-tarjeta').reset();
+        resetWebpayContainers();
+    }
+
+    function resetWebpayContainers() {
+        document.getElementById('webpay-form-container').style.display = 'block';
+        document.getElementById('webpay-loading-container').style.display = 'none';
+        document.getElementById('webpay-success-container').style.display = 'none';
+    }
+
+    function formatCardNumber(input) {
+        let val = input.value.replace(/\D/g, '');
+        let formatted = '';
+        for(let i=0; i<val.length; i++) {
+            if(i > 0 && i % 4 === 0) formatted += ' ';
+            formatted += val[i];
+        }
+        input.value = formatted;
+    }
+
+    function formatExpiry(input) {
+        let val = input.value.replace(/\D/g, '');
+        if(val.length >= 2) {
+            input.value = val.substring(0, 2) + '/' + val.substring(2, 4);
+        } else {
+            input.value = val;
+        }
+    }
+
+    function procesarPagoWebpay(e) {
+        e.preventDefault();
+        
+        // Esconder formulario y mostrar loader
+        document.getElementById('webpay-form-container').style.display = 'none';
+        document.getElementById('webpay-loading-container').style.display = 'block';
+
+        // Simular retardo de red de Transbank (2 segundos)
+        setTimeout(() => {
+            document.getElementById('webpay-loading-container').style.display = 'none';
+            document.getElementById('webpay-success-container').style.display = 'block';
+        }, 2500);
+    }
+
+    function cerrarWebpaySuccess() {
+        cerrarWebpayModal();
+        // Recargar página para reflejar el estado actual (en un caso real actualizaría BD)
+        location.reload();
+    }
+</script>
+

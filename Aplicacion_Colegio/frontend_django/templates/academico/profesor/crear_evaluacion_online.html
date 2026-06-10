@@ -1,44 +1,25 @@
-{% extends 'base_app.html' %}
 {% load static %}
+{% load custom_filters %}
+{% include 'profesor/_personal_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'academico/css/profesor/crear_evaluacion_online.css' %}?v=20260603-intel">
 
-{% block page_title %}{% if evaluacion_seleccionada %}Editar evaluación online{% else %}Crear evaluación online{% endif %}{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'academico/css/profesor/crear_evaluacion_online.css' %}">
-{% endblock %}
-
-{% block breadcrumbs %}
-<div class="container-xl mt-md">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}?pagina=notas{% if clase_seleccionada %}&clase_id={{ clase_seleccionada.id }}{% endif %}">Notas</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{% if evaluacion_seleccionada %}Editar evaluación online{% else %}Crear evaluación online{% endif %}</li>
-        </ol>
+<div class="eo-page">
+    <nav class="eo-breadcrumb" aria-label="Ruta de navegación">
+        <a href="{% url 'dashboard' %}?pagina=notas{% if clase_seleccionada %}&clase_id={{ clase_seleccionada.id }}{% endif %}">Evaluaciones y Notas</a>
+        <span aria-hidden="true">/</span>
+        <span>{% if evaluacion_seleccionada %}Editar evaluación{% else %}Nueva evaluación online{% endif %}</span>
     </nav>
-</div>
-{% endblock %}
 
-{% block page_header %}
-<div class="eo-hero-panel card mb-xl">
-    <div class="eo-hero-copy">
-        <h1 class="eo-hero-title">{% if evaluacion_seleccionada %}Editar evaluación{% else %}Crear Nueva Evaluación{% endif %}</h1>
-        <p class="eo-hero-description">Configura los parámetros y preguntas para tus estudiantes.</p>
-    </div>
-    <div class="eo-page-actions flex flex-wrap items-center gap-sm">
-        <a href="{% url 'dashboard' %}?pagina=notas{% if clase_seleccionada %}&clase_id={{ clase_seleccionada.id }}{% endif %}" class="btn eo-btn-outline">
-            Guardar Borrador
-        </a>
-        <button type="submit" form="form-evaluacion-online" class="btn eo-btn-primary">
-            Vista Previa
+    {% if evaluacion_seleccionada %}
+    {% else %}
+    {% endif %}
+
+    <div class="eo-hero__actions">
+        <a href="{% url 'dashboard' %}?pagina=notas{% if clase_seleccionada %}&clase_id={{ clase_seleccionada.id }}{% endif %}" class="eo-btn eo-btn-outline">← Volver a notas</a>
+        <button type="submit" form="form-evaluacion-online" class="eo-btn eo-btn-primary">
+            {% if evaluacion_seleccionada %}Guardar cambios{% else %}Publicar evaluación{% endif %}
         </button>
     </div>
-</div>
-{% endblock %}
-
-{% block content %}
-<div class="eo-page">
 {% if evaluacion_seleccionada %}
 <div class="card mb-xl" style="border-left: 4px solid var(--color-primary);">
     <div class="card-body flex flex-col md:flex-row md:items-center md:justify-between gap-md">
@@ -63,7 +44,9 @@
 </div>
 {% endif %}
 
-<form id="form-evaluacion-online" method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}">
+<form id="form-evaluacion-online" method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}"
+      data-ponderacion-usada="{{ eval_ponderacion_usada|default:0 }}"
+      data-ponderacion-disponible="{{ eval_ponderacion_disponible|default:100 }}">
     {% csrf_token %}
     <input type="hidden" name="accion" value="{% if evaluacion_seleccionada %}editar_evaluacion{% else %}crear_evaluacion{% endif %}">
     <input type="hidden" name="formato_evaluacion" value="form">
@@ -130,6 +113,9 @@
                     <div class="form-group">
                         <label class="form-label form-label-required" for="ponderacion">Ponderación (%)</label>
                         <input type="number" id="ponderacion" name="ponderacion" class="form-control" required min="1" max="100" value="{% if evaluacion_seleccionada %}{{ evaluacion_seleccionada.ponderacion }}{% else %}20{% endif %}">
+                        <p class="eo-field-hint" id="eo-ponderacion-hint" aria-live="polite">
+                            Ponderación usada en el curso: {{ eval_ponderacion_usada|default:0 }}% · Disponible: {{ eval_ponderacion_disponible|default:100 }}%
+                        </p>
                     </div>
 
                     <div class="form-group">
@@ -266,9 +252,38 @@
                         <span>Duración Estimada</span>
                         <strong id="eo-duracion-estimada">60 min</strong>
                     </div>
+                    <div class="eo-metric-row">
+                        <span>Alcance estimado</span>
+                        <strong>{{ eval_total_estudiantes|default:0 }} alumno{{ eval_total_estudiantes|pluralize }}</strong>
+                    </div>
                 </div>
             </div>
         </div>
+
+        {% if eval_intel_alertas or eval_intel_sugerencias %}
+        <div class="card eo-intel-card">
+            <div class="card-body">
+                <h3 class="card-title">Contexto del curso</h3>
+                {% if eval_intel_alertas %}
+                <div class="eo-intel-alertas">
+                    {% for alerta in eval_intel_alertas %}
+                    <article class="eo-intel-alert eo-intel-alert--{{ alerta.tipo|default:'info' }}">
+                        <strong>{{ alerta.titulo }}</strong>
+                        <p>{{ alerta.texto }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if eval_intel_sugerencias %}
+                <ul class="eo-intel-list">
+                    {% for item in eval_intel_sugerencias %}
+                    <li><span aria-hidden="true">{{ item.icono }}</span> {{ item.texto }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
         <div class="card eo-primary-action-card">
             <div class="card-body space-y-md">
@@ -285,17 +300,15 @@
 
         <div class="card eo-mentor-card">
             <div class="card-body">
-                <div class="eo-mentor-icon"><i class="fas fa-lightbulb"></i></div>
-                <h4>Consejo del Mentor</h4>
-                <p>Alternar entre preguntas de opción múltiple y respuesta corta ayuda a evaluar tanto reconocimiento como síntesis del conocimiento.</p>
+                <div class="eo-mentor-icon" aria-hidden="true">💡</div>
+                <h4>Consejo al publicar</h4>
+                <p id="eo-mentor-tip">Usa entre 5 y 8 minutos por pregunta de opción múltiple. Si la ponderación supera lo disponible, ajusta el % antes de publicar.</p>
             </div>
         </div>
     </aside>
 </form>
 </div>
-{% endblock %}
 
-{% block page_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const checklistLinks = Array.from(document.querySelectorAll('.eo-check-item'));
@@ -348,10 +361,19 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleQuestionSections(select.dataset.questionType, select.value);
     });
 
-    document.querySelectorAll('input[name$="_puntaje"], textarea[id$="_enunciado"], #nombre, #fecha, #tipo_evaluacion, #periodo, #clase_id').forEach(function (el) {
+    document.querySelectorAll('input[name$="_puntaje"], textarea[id$="_enunciado"], #nombre, #fecha, #tipo_evaluacion, #periodo, #clase_id, #ponderacion').forEach(function (el) {
         el.addEventListener('input', recalculateSidebar);
         el.addEventListener('change', recalculateSidebar);
     });
+
+    const claseSelect = document.getElementById('clase_id');
+    if (claseSelect) {
+        claseSelect.addEventListener('change', function () {
+            const params = new URLSearchParams(window.location.search);
+            params.set('clase_id', this.value || '');
+            window.location.search = params.toString();
+        });
+    }
 
     recalculateSidebar();
 });
@@ -429,6 +451,26 @@ function recalculateSidebar() {
         const minutos = Math.max(20, Math.round(document.querySelectorAll('[data-question-card]').length * 8));
         duracion.textContent = minutos + ' min';
     }
+
+    const form = document.getElementById('form-evaluacion-online');
+    const ponderacionInput = document.getElementById('ponderacion');
+    const ponderacionHint = document.getElementById('eo-ponderacion-hint');
+    const mentorTip = document.getElementById('eo-mentor-tip');
+    if (form && ponderacionInput && ponderacionHint) {
+        const usadaBase = parseFloat(form.dataset.ponderacionUsada || '0') || 0;
+        const disponibleBase = parseFloat(form.dataset.ponderacionDisponible || '100') || 100;
+        const nueva = parseFloat(ponderacionInput.value || '0') || 0;
+        const restante = Math.round((disponibleBase - nueva) * 10) / 10;
+        ponderacionHint.textContent = 'Ponderación usada (otras evaluaciones): ' + usadaBase + '% · Tras publicar quedarían ' + Math.max(restante, 0) + '% libres.';
+        ponderacionHint.classList.toggle('eo-field-hint--warn', nueva > disponibleBase);
+        ponderacionHint.classList.toggle('eo-field-hint--danger', nueva > disponibleBase + 0.01);
+        if (mentorTip && nueva > disponibleBase) {
+            mentorTip.textContent = 'La ponderación ingresada supera el ' + disponibleBase + '% disponible. Reduce el % o edita otra evaluación del mismo curso.';
+        } else if (mentorTip) {
+            mentorTip.textContent = 'Alterna opción múltiple y respuesta corta para medir reconocimiento y síntesis. Revisa el contexto del curso en el panel lateral.';
+        }
+    }
 }
 </script>
-{% endblock %}
+
+{% include 'profesor/_personal_wrap_end.html' %}

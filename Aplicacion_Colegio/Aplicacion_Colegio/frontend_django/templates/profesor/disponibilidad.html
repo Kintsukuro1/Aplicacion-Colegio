@@ -1,0 +1,154 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Disponibilidad Horaria</title>
+    <link rel="stylesheet" href="{% static 'css/profesor/disponibilidad.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
+</head>
+
+<div class="disponibilidad-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>🕐 Mi Disponibilidad Horaria</h1>
+        <p>Configura los bloques horarios en los que estás disponible para dictar clases</p>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mensaje-box {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% endif %}">
+                <span class="icon-md">{% if message.tags == 'success' %}✔{% else %}✖{% endif %}</span>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Estadísticas -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value">{{ estadisticas.bloques_disponibles }}/{{ estadisticas.total_bloques }}</div>
+            <div class="stat-label">Bloques Disponibles</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value">{{ estadisticas.bloques_con_clases }}</div>
+            <div class="stat-label">Bloques con Clases</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value">{{ estadisticas.bloques_libres }}</div>
+            <div class="stat-label">Bloques Libres</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value">{{ estadisticas.porcentaje_disponibilidad }}%</div>
+            <div class="stat-label">Disponibilidad</div>
+        </div>
+    </div>
+
+    <!-- Instrucciones -->
+    <div class="instrucciones-card">
+        <h3>📋 Instrucciones</h3>
+        <ul>
+            <li>✓ Marca los bloques en los que <strong>SÍ estás disponible</strong> para dictar clases</li>
+            <li>✓ Desmarca los bloques en los que <strong>NO estás disponible</strong></li>
+            <li>✓ Los bloques marcados en <span class="status-color status-available">verde</span> indican disponibilidad</li>
+            <li>✓ Los bloques marcados en <span class="status-color status-unavailable">rojo</span> indican no disponibilidad</li>
+            <li>✓ Los bloques con clases asignadas aparecen con <span class="status-color status-assigned">borde azul</span></li>
+            <li>⚠️ Si desmarcas un bloque con clases asignadas, se te notificará para reasignar esa clase</li>
+        </ul>
+    </div>
+
+    <!-- Formulario de Disponibilidad -->
+    <form method="POST" class="disponibilidad-form">
+        {% csrf_token %}
+        
+        <div class="horario-grid-container">
+            <div class="tabla-horario">
+                <table class="horario-table">
+                    <thead>
+                        <tr>
+                            <th class="col-hora">Día / Bloque</th>
+                            {% for bloque in bloques_horarios %}
+                                <th>
+                                    Bloque {{ bloque.numero }}<br>
+                                    <small>{{ bloque.nombre }}</small>
+                                </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in matriz_disponibilidad %}
+                            <tr>
+                                <td class="col-hora">
+                                    <strong>{{ fila.dia }}</strong>
+                                </td>
+                                {% for bloque_data in fila.bloques %}
+                                    <td>
+                                        <div class="bloque-celda">
+                                            <label class="bloque-checkbox">
+                                                <input 
+                                                    type="checkbox" 
+                                                    name="disponible_{{ fila.dia_numero }}_{{ bloque_data.numero }}"
+                                                    {% if bloque_data.disponible %}checked{% endif %}
+                                                >
+                                                <span class="checkmark"></span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Guardar Disponibilidad</button>
+            <button type="button" class="btn btn-secondary" onclick="marcarTodos()">✓ Marcar Todos</button>
+            <button type="button" class="btn btn-secondary" onclick="desmarcarTodos()">✗ Desmarcar Todos</button>
+        </div>
+    </form>
+
+    <!-- Clases Asignadas -->
+    {% if clases_asignadas %}
+        <div class="clases-asignadas-section">
+            <h3>📚 Clases Asignadas Actualmente</h3>
+            <div class="clases-grid">
+                {% for clase in clases_asignadas %}
+                    <div class="clase-card">
+                        <div class="clase-header">
+                            <span class="clase-curso">{{ clase.curso.nombre }}</span>
+                        </div>
+                        <div class="clase-body">
+                            <p class="clase-asignatura">{{ clase.asignatura.nombre }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function marcarTodos() {
+    document.querySelectorAll('.bloque-checkbox input[type="checkbox"]').forEach(function(checkbox) {
+        checkbox.checked = true;
+    });
+}
+
+function desmarcarTodos() {
+    if (confirm('¿Estás seguro de desmarcar todos los bloques? Esto podría afectar tus clases asignadas.')) {
+        document.querySelectorAll('.bloque-checkbox input[type="checkbox"]').forEach(function(checkbox) {
+            checkbox.checked = false;
+        });
+    }
+}
+</script>
+
+</html>

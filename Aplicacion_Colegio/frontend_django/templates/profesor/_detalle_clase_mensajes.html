@@ -1,0 +1,73 @@
+{% if es_profesor and not ver_como_alumno %}
+<div class="dc-mensajes">
+    <div class="dc-mensajes__head">
+        <div>
+            <p class="dc-mensajes__eyebrow">Mensajería del curso</p>
+            <p class="dc-mensajes__summary">
+                {% if mensajes_clase_no_leidos %}
+                Tienes <strong>{{ mensajes_clase_no_leidos }}</strong> mensaje(s) sin leer en {{ asignatura.nombre }}.
+                {% elif mensajes_clase_sin_conversar %}
+                <strong>{{ mensajes_clase_sin_conversar }}</strong> estudiante(s) sin conversación iniciada — puedes escribirles desde aquí.
+                {% else %}
+                Conversaciones activas con estudiantes de {{ asignatura.nombre }}.
+                {% endif %}
+            </p>
+        </div>
+        <a href="{{ mensajes_bandeja_url }}" class="dc-mensajes__bandeja">Abrir bandeja completa</a>
+    </div>
+
+    <div class="dc-mensajes__stats" aria-label="Resumen de mensajes">
+        <div class="dc-mensajes__stat">
+            <span class="dc-mensajes__stat-val">{{ mensajes_clase_contactos|length }}</span>
+            <span class="dc-mensajes__stat-lbl">Estudiantes</span>
+        </div>
+        <div class="dc-mensajes__stat">
+            <span class="dc-mensajes__stat-val">{{ mensajes_clase_no_leidos|default:0 }}</span>
+            <span class="dc-mensajes__stat-lbl">No leídos</span>
+        </div>
+        <div class="dc-mensajes__stat">
+            <span class="dc-mensajes__stat-val">{{ mensajes_clase_sin_conversar|default:0 }}</span>
+            <span class="dc-mensajes__stat-lbl">Sin chat</span>
+        </div>
+    </div>
+
+    {% if mensajes_clase_contactos %}
+    <ul class="dc-mensajes-list" aria-label="Estudiantes del curso">
+        {% for contacto in mensajes_clase_contactos %}
+        <li class="dc-mensajes-item{% if contacto.no_leidos %} dc-mensajes-item--unread{% endif %}">
+            <span class="dc-mensajes-item__avatar" aria-hidden="true">
+                {{ contacto.estudiante.nombre|slice:":1" }}{{ contacto.estudiante.apellido_paterno|slice:":1" }}
+            </span>
+            <div class="dc-mensajes-item__body">
+                <strong class="dc-mensajes-item__name">{{ contacto.estudiante.get_full_name }}</strong>
+                {% if contacto.ultimo_preview %}
+                <span class="dc-mensajes-item__preview">{{ contacto.ultimo_preview|truncatewords:12 }}</span>
+                {% elif not contacto.tiene_conversacion %}
+                <span class="dc-mensajes-item__preview dc-mensajes-item__preview--muted">Sin mensajes aún</span>
+                {% endif %}
+            </div>
+            <div class="dc-mensajes-item__actions">
+                {% if contacto.no_leidos %}
+                <span class="dc-mensajes-item__badge">{{ contacto.no_leidos }}</span>
+                {% endif %}
+                {% if detalle_clase_vista_previa %}
+                <span class="dc-mensajes-item__btn" style="opacity:0.55;cursor:default">Ejemplo</span>
+                {% elif contacto.conversacion_id %}
+                <a href="{% url 'mensajeria:ver_conversacion' contacto.conversacion_id %}" class="dc-mensajes-item__btn">Abrir chat</a>
+                {% else %}
+                <a href="{% url 'mensajeria:bandeja_mensajes' %}?clase_id={{ clase.id }}&amp;destinatario_id={{ contacto.estudiante.id }}"
+                   class="dc-mensajes-item__btn">Escribir</a>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="dc-empty-premium">
+        <span class="dc-empty-premium__icon" aria-hidden="true">💬</span>
+        <h3 class="dc-empty-premium__title">Sin estudiantes en el curso</h3>
+        <p class="dc-empty-premium__text">Cuando haya alumnos matriculados podrás enviarles mensajes desde aquí.</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,31 @@
+{# Hero mensajería docente — paleta lavanda (mc-hero) #}
+<section class="mc-hero mm-prof-hero" aria-label="{{ hero_aria|default:'Mensajes profesor' }}">
+    <header class="mc-hero__head">
+        <div class="mc-hero__head-text">
+            <p class="mc-hero__eyebrow">Comunicación</p>
+            <h1 class="mc-hero__title">{{ hero_title|default:'Mensajes' }}</h1>
+            <p class="mc-hero__sub">{% if hero_subtitle_mensajes %}{{ hero_subtitle_mensajes }}{% else %}Comunícate con estudiantes y apoderados de tus clases.{% endif %}</p>
+        </div>
+        <div class="mc-hero__actions" aria-label="Notificaciones">
+            {% include 'includes/_portal_welcome_notif.html' with theme='profesor' %}
+        </div>
+    </header>
+    <div class="mc-hero__metrics" aria-label="{{ metrics_aria|default:'Resumen de mensajería' }}">
+        <article class="mc-metric{% if no_leidos_count %} mc-metric--alert{% endif %}">
+            <span class="mc-metric__val">{{ no_leidos_count|default:"0" }}</span>
+            <span class="mc-metric__lbl">No leídos</span>
+        </article>
+        <article class="mc-metric">
+            <span class="mc-metric__val">{{ conversaciones_count|default:"0" }}</span>
+            <span class="mc-metric__lbl">Conversaciones</span>
+        </article>
+        <article class="mc-metric{% if estudiantes_sin_chat %} mc-metric--warn{% endif %}">
+            <span class="mc-metric__val">{{ estudiantes_sin_chat|default:"0" }}</span>
+            <span class="mc-metric__lbl">Sin chat</span>
+        </article>
+        <article class="mc-metric">
+            <span class="mc-metric__val">{{ total_mensajes_count|default:"0" }}</span>
+            <span class="mc-metric__lbl">Mensajes</span>
+        </article>
+    </div>
+</section>

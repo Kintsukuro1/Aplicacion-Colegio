@@ -1,0 +1,564 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_estudiantes.css' %}">
+
+<div class="estudiantes-container">
+    <!-- Encabezado y Estadísticas -->
+    <div class="header-section">
+        <div class="titulo-modulo">
+            <i class="fas fa-user-graduate"></i>
+            <h2>Gestión de Estudiantes</h2>
+        </div>
+        
+        <div class="estadisticas-grid">
+            <div class="stat-card blue">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_estudiantes|default:0 }}</span>
+                    <span class="stat-label">Total Estudiantes</span>
+                </div>
+            </div>
+            
+            <div class="stat-card green">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ estudiantes_activos|default:0 }}</span>
+                    <span class="stat-label">Activos</span>
+                </div>
+            </div>
+            
+            <div class="stat-card orange">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ estudiantes_sin_curso|default:0 }}</span>
+                    <span class="stat-label">Sin Curso Asignado</span>
+                </div>
+            </div>
+            
+            <div class="stat-card purple">
+                <div class="stat-icon">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_cursos_con_estudiantes|default:0 }}</span>
+                    <span class="stat-label">Cursos con Estudiantes</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="filtros-section">
+        <form method="GET" action="{% url 'dashboard' %}" class="filtros-form">
+            <input type="hidden" name="pagina" value="gestionar_estudiantes">
+            
+            <div class="filtro-group">
+                <label for="busqueda">
+                    <i class="fas fa-search"></i> Buscar
+                </label>
+                <input 
+                    type="text" 
+                    id="busqueda" 
+                    name="busqueda" 
+                    placeholder="Nombre, RUT, Email..."
+                    value="{{ filtro_busqueda }}"
+                >
+            </div>
+            
+            <div class="filtro-group">
+                <label for="curso">
+                    <i class="fas fa-chalkboard"></i> Curso
+                </label>
+                <select id="curso" name="curso">
+                    <option value="">Todos los cursos</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id_curso }}" {% if filtro_curso == curso.id_curso|stringformat:"s" %}selected{% endif %}>
+                            {{ curso.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filtro-group">
+                <label for="estado">
+                    <i class="fas fa-flag"></i> Estado
+                </label>
+                <select id="estado" name="estado">
+                    <option value="">Todos los estados</option>
+                    <option value="Activo" {% if filtro_estado == 'Activo' %}selected{% endif %}>Activo</option>
+                    <option value="Retirado" {% if filtro_estado == 'Retirado' %}selected{% endif %}>Retirado</option>
+                    <option value="Suspendido" {% if filtro_estado == 'Suspendido' %}selected{% endif %}>Suspendido</option>
+                    <option value="Graduado" {% if filtro_estado == 'Graduado' %}selected{% endif %}>Graduado</option>
+                </select>
+            </div>
+            
+            <div class="filtro-actions">
+                <button type="submit" class="btn-filtrar">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <a href="{% url 'dashboard' %}?pagina=gestionar_estudiantes" class="btn-limpiar">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </div>
+        </form>
+        
+        <button onclick="abrirModalCrear()" class="btn-nuevo-estudiante">
+            <i class="fas fa-user-plus"></i> Nuevo Estudiante
+        </button>
+    </div>
+
+    <!-- Tabla de Estudiantes -->
+    <div class="tabla-container">
+        {% if estudiantes %}
+        <table class="tabla-estudiantes">
+            <thead>
+                <tr>
+                    <th>RUT</th>
+                    <th>Nombre Completo</th>
+                    <th>Email</th>
+                    <th>Curso</th>
+                    <th>Estado</th>
+                    <th>Fecha Ingreso</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for estudiante in estudiantes %}
+                <tr {% if estudiante.perfil_estudiante.tiene_nee %}class="fila-nee" style="background: linear-gradient(to right, #fef3c7 0%, #ffffff 100%);"{% endif %}>
+                    <td>{{ estudiante.rut|default:"—" }}</td>
+                    <td>
+                        <div class="estudiante-nombre">
+                            <div class="avatar-small">
+                                {{ estudiante.nombre.0 }}{{ estudiante.apellido_paterno.0 }}
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span>{{ estudiante.get_full_name }}</span>
+                                {% if estudiante.perfil_estudiante.tiene_nee %}
+                                <span class="badge-nee">
+                                    <i class="fas fa-info-circle"></i> NEE: {{ estudiante.perfil_estudiante.tipo_nee|default:"No especificado" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ estudiante.email }}</td>
+                    <td>
+                        {% if estudiante.perfil_estudiante.curso_actual_id %}
+                            <span class="badge-curso">{{ estudiante.perfil_estudiante.curso_actual_id.nombre }}</span>
+                        {% elif estudiante.matriculas.all.0.curso %}
+                            <span class="badge-curso">{{ estudiante.matriculas.all.0.curso.nombre }}</span>
+                        {% else %}
+                            <span class="badge-sin-curso">Sin asignar</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% with estado=estudiante.perfil_estudiante.estado_academico|default:"Activo" %}
+                            <span class="badge-estado estado-{{ estado|lower }}">{{ estado }}</span>
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if estudiante.perfil_estudiante.fecha_ingreso %}
+                            {{ estudiante.perfil_estudiante.fecha_ingreso|date:"d/m/Y" }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="acciones-grupo">
+                            <button 
+                                class="btn-icono btn-editar" 
+                                title="Editar"
+                                onclick="abrirModalEditar(this)"
+                                data-id="{{ estudiante.id }}"
+                                data-rut="{{ estudiante.rut|default:'' }}"
+                                data-nombre="{{ estudiante.nombre }}"
+                                data-apellido-paterno="{{ estudiante.apellido_paterno }}"
+                                data-apellido-materno="{{ estudiante.apellido_materno|default:'' }}"
+                                data-email="{{ estudiante.email }}"
+                                data-fecha-nacimiento="{{ estudiante.perfil_estudiante.fecha_nacimiento|date:'Y-m-d'|default:'' }}"
+                                data-direccion="{{ estudiante.perfil_estudiante.direccion|default:'' }}"
+                                data-telefono="{{ estudiante.perfil_estudiante.telefono|default:'' }}"
+                                data-contacto-nombre="{{ estudiante.perfil_estudiante.contacto_emergencia_nombre|default:'' }}"
+                                data-contacto-telefono="{{ estudiante.perfil_estudiante.contacto_emergencia_telefono|default:'' }}"
+                                data-apoderado-nombre="{{ estudiante.perfil_estudiante.apoderado_nombre|default:'' }}"
+                                data-apoderado-rut="{{ estudiante.perfil_estudiante.apoderado_rut|default:'' }}"
+                                data-apoderado-email="{{ estudiante.perfil_estudiante.apoderado_email|default:'' }}"
+                                data-apoderado-telefono="{{ estudiante.perfil_estudiante.apoderado_telefono|default:'' }}"
+                                data-estado="{{ estudiante.perfil_estudiante.estado_academico|default:'Activo' }}"
+                                data-fecha-ingreso="{{ estudiante.perfil_estudiante.fecha_ingreso|date:'Y-m-d'|default:'' }}"
+                                data-observaciones="{{ estudiante.perfil_estudiante.observaciones|default:'' }}"
+                            >
+                                ✏️
+                            </button>
+                            <button 
+                                class="btn-icono btn-asignar" 
+                                title="Asignar Curso"
+                                onclick="abrirModalAsignar(this)"
+                                data-estudiante-id="{{ estudiante.id }}"
+                                data-estudiante-nombre="{{ estudiante.get_full_name }}"
+                                data-curso-actual-id="{{ estudiante.perfil_estudiante.curso_actual_id_id|default:'' }}"
+                            >
+                                📚
+                            </button>
+                            <a 
+                                href="{% url 'generar_informe_academico' estudiante.id %}"
+                                class="btn-icono" 
+                                title="Generar Informe Académico"
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;"
+                            >
+                                📄
+                            </a>
+                            <button 
+                                class="btn-icono btn-password" 
+                                title="Resetear Contraseña"
+                                onclick="resetearPassword(this)"
+                                data-estudiante-id="{{ estudiante.id }}"
+                                data-estudiante-nombre="{{ estudiante.get_full_name }}"
+                            >
+                                🔑
+                            </button>
+                            <button 
+                                class="btn-icono btn-eliminar" 
+                                title="Desactivar"
+                                onclick="confirmarEliminar(this)"
+                                data-estudiante-id="{{ estudiante.id }}"
+                                data-estudiante-nombre="{{ estudiante.get_full_name }}"
+                            >
+                                🚫
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>No se encontraron estudiantes</p>
+            <button onclick="abrirModalCrear()" class="btn-nuevo-estudiante">
+                <i class="fas fa-user-plus"></i> Crear Primer Estudiante
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Estudiante -->
+<div id="modalEstudiante" class="modal-overlay d-none">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Nuevo Estudiante</h3>
+            <button class="btn-close-modal" onclick="cerrarModal('modalEstudiante')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{% url 'gestionar_estudiantes' %}" class="form-estudiante">
+            {% csrf_token %}
+            <input type="hidden" name="accion" id="accionForm" value="crear">
+            <input type="hidden" name="id" id="estudianteId">
+            
+            <div class="form-section">
+                <h4><i class="fas fa-user"></i> Datos Personales</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="rut">RUT</label>
+                        <input type="text" id="rut" name="rut" placeholder="12.345.678-9">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email <span class="required">*</span></label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nombre">Nombre <span class="required">*</span></label>
+                        <input type="text" id="nombre" name="nombre" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apellido_paterno">Apellido Paterno <span class="required">*</span></label>
+                        <input type="text" id="apellido_paterno" name="apellido_paterno" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apellido_materno">Apellido Materno</label>
+                        <input type="text" id="apellido_materno" name="apellido_materno">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" placeholder="+56 9 1234 5678">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" name="direccion">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4><i class="fas fa-school"></i> Información Académica</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fecha_ingreso">Fecha de Ingreso</label>
+                        <input type="date" id="fecha_ingreso" name="fecha_ingreso">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="estado_academico">Estado Académico</label>
+                        <select id="estado_academico" name="estado_academico">
+                            <option value="Activo" selected>Activo</option>
+                            <option value="Retirado">Retirado</option>
+                            <option value="Suspendido">Suspendido</option>
+                            <option value="Graduado">Graduado</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4><i class="fas fa-user-friends"></i> Apoderado</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="apoderado_nombre">Nombre Completo</label>
+                        <input type="text" id="apoderado_nombre" name="apoderado_nombre">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apoderado_rut">RUT</label>
+                        <input type="text" id="apoderado_rut" name="apoderado_rut" placeholder="12.345.678-9">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apoderado_email">Email</label>
+                        <input type="email" id="apoderado_email" name="apoderado_email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apoderado_telefono">Teléfono</label>
+                        <input type="tel" id="apoderado_telefono" name="apoderado_telefono">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4><i class="fas fa-phone-alt"></i> Contacto de Emergencia</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="contacto_emergencia_nombre">Nombre Completo</label>
+                        <input type="text" id="contacto_emergencia_nombre" name="contacto_emergencia_nombre">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contacto_emergencia_telefono">Teléfono</label>
+                        <input type="tel" id="contacto_emergencia_telefono" name="contacto_emergencia_telefono">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section d-none" id="observacionesSection">
+                <h4><i class="fas fa-comment-alt"></i> Observaciones</h4>
+                <div class="form-group full-width">
+                    <textarea id="observaciones" name="observaciones" rows="3" placeholder="Información adicional..."></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalEstudiante')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-guardar">
+                    <i class="fas fa-save"></i> Guardar Estudiante
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Asignar Curso -->
+<div id="modalAsignarCurso" class="modal-overlay d-none">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Asignar Curso</h3>
+            <button class="btn-close-modal" onclick="cerrarModal('modalAsignarCurso')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{% url 'gestionar_estudiantes' %}">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="asignar_curso">
+            <input type="hidden" name="estudiante_id" id="asignarEstudianteId">
+            
+            <p class="info-estudiante">
+                <strong>Estudiante:</strong> <span id="asignarEstudianteNombre"></span>
+            </p>
+            
+            <div class="form-group">
+                <label for="curso_id">Seleccionar Curso <span class="required">*</span></label>
+                <select id="curso_id" name="curso_id" required>
+                    <option value="">-- Seleccione un curso --</option>
+                    {% for curso in cursos %}
+                        <option value="{{ curso.id_curso }}">{{ curso.nombre }} ({{ curso.nivel.nombre }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalAsignarCurso')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-guardar">
+                    <i class="fas fa-check"></i> Asignar Curso
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Form Eliminar (Hidden) -->
+<form id="formEliminar" method="POST" action="{% url 'gestionar_estudiantes' %}" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="eliminar">
+    <input type="hidden" name="id" id="eliminarId">
+</form>
+
+<!-- Form Resetear Password (Hidden) -->
+<form id="formResetPassword" method="POST" action="{% url 'gestionar_estudiantes' %}" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="resetear_password">
+    <input type="hidden" name="id" id="resetPasswordId">
+</form>
+
+<script>
+// Funciones para manejo de modales
+function abrirModalCrear() {
+    document.getElementById('modalTitulo').textContent = 'Nuevo Estudiante';
+    document.getElementById('accionForm').value = 'crear';
+    document.getElementById('estudianteId').value = '';
+    
+    // Limpiar formulario
+    document.querySelector('.form-estudiante').reset();
+    
+    // Ocultar sección de observaciones en crear
+    document.getElementById('observacionesSection').style.display = 'none';
+    
+    // Mostrar modal
+    document.getElementById('modalEstudiante').style.display = 'flex';
+}
+
+function abrirModalEditar(button) {
+    const data = button.dataset;
+    
+    document.getElementById('modalTitulo').textContent = 'Editar Estudiante';
+    document.getElementById('accionForm').value = 'editar';
+    document.getElementById('estudianteId').value = data.id;
+    
+    // Llenar campos
+    document.getElementById('rut').value = data.rut;
+    document.getElementById('email').value = data.email;
+    document.getElementById('nombre').value = data.nombre;
+    document.getElementById('apellido_paterno').value = data.apellidoPaterno;
+    document.getElementById('apellido_materno').value = data.apellidoMaterno;
+    document.getElementById('fecha_nacimiento').value = data.fechaNacimiento;
+    document.getElementById('direccion').value = data.direccion;
+    document.getElementById('telefono').value = data.telefono;
+    document.getElementById('contacto_emergencia_nombre').value = data.contactoNombre;
+    document.getElementById('contacto_emergencia_telefono').value = data.contactoTelefono;
+    document.getElementById('apoderado_nombre').value = data.apoderadoNombre;
+    document.getElementById('apoderado_rut').value = data.apoderadoRut;
+    document.getElementById('apoderado_email').value = data.apoderadoEmail;
+    document.getElementById('apoderado_telefono').value = data.apoderadoTelefono;
+    document.getElementById('estado_academico').value = data.estado;
+    document.getElementById('fecha_ingreso').value = data.fechaIngreso;
+    document.getElementById('observaciones').value = data.observaciones;
+    
+    // Mostrar sección de observaciones
+    document.getElementById('observacionesSection').style.display = 'block';
+    
+    // Mostrar modal
+    document.getElementById('modalEstudiante').style.display = 'flex';
+}
+
+function abrirModalAsignar(button) {
+    const data = button.dataset;
+    
+    document.getElementById('asignarEstudianteId').value = data.estudianteId;
+    document.getElementById('asignarEstudianteNombre').textContent = data.estudianteNombre;
+    
+    // Preseleccionar curso actual si existe
+    if (data.cursoActualId) {
+        document.getElementById('curso_id').value = data.cursoActualId;
+    } else {
+        document.getElementById('curso_id').value = '';
+    }
+    
+    document.getElementById('modalAsignarCurso').style.display = 'flex';
+}
+
+function cerrarModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function confirmarEliminar(button) {
+    const data = button.dataset;
+    
+    if (confirm(`¿Está seguro que desea desactivar al estudiante ${data.estudianteNombre}?\n\nEsta acción cambiará su estado a inactivo.`)) {
+        document.getElementById('eliminarId').value = data.estudianteId;
+        document.getElementById('formEliminar').submit();
+    }
+}
+
+function resetearPassword(button) {
+    const data = button.dataset;
+    
+    if (confirm(`¿Resetear la contraseña de ${data.estudianteNombre}?\n\nSe generará una contraseña temporal basada en su RUT.`)) {
+        document.getElementById('resetPasswordId').value = data.estudianteId;
+        document.getElementById('formResetPassword').submit();
+    }
+}
+
+// Cerrar modal al hacer clic fuera
+document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+});
+
+// Cerrar modal con tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.style.display = 'none';
+        });
+    }
+});
+
+// Abrir modal automáticamente si viene del botón de inserción manual
+window.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const abrirModal = urlParams.get('abrir_modal');
+    
+    if (abrirModal === 'crear') {
+        setTimeout(() => {
+            abrirModalCrear();
+        }, 100);
+    }
+});
+</script>

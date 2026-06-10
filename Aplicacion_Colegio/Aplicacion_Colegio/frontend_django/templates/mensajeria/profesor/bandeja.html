@@ -1,0 +1,246 @@
+{% extends 'frontend/templates/common/base_app.html' %}
+{% load static %}
+
+{% block page_title %}Mensajería - {{ institucion.nombre }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mensajeria/css/profesor/bandeja.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+{% include 'frontend/templates/common/components/breadcrumb_nav.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="page-header-content">
+        <h1 class="page-title">
+            <i class="fas fa-envelope"></i>
+            Mensajería
+        </h1>
+        <p class="page-subtitle">Comunícate con profesores y compañeros</p>
+    </div>
+    <div class="page-header-actions">
+        <button type="button" class="btn btn-primary" id="btnNuevoMensaje">
+            <i class="fas fa-plus"></i>
+            Nuevo Mensaje
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="mensajeria-container">
+    
+    <!-- Layout 2 Columnas: Sidebar + Chat -->
+    <div class="mensajeria-layout">
+        
+        <!-- Sidebar: Lista de Conversaciones -->
+        <aside class="conversaciones-sidebar">
+            <div class="sidebar-header">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchConversacion" placeholder="Buscar..." class="search-input">
+                </div>
+            </div>
+            
+            <div class="sidebar-tabs">
+                <button class="tab-button active" data-tab="todos">
+                    Todos
+                    <span class="tab-badge">{{ total_conversaciones|default:'0' }}</span>
+                </button>
+                <button class="tab-button" data-tab="no_leidos">
+                    No leídos
+                    <span class="tab-badge badge-primary">{{ total_no_leidos|default:'0' }}</span>
+                </button>
+            </div>
+            
+            <div class="conversaciones-list" id="conversacionesList">
+                {% if conversaciones %}
+                {% for conversacion in conversaciones %}
+                <div class="conversacion-item {% if conversacion.id == conversacion_activa %}active{% endif %} {% if conversacion.hay_no_leidos %}no-leido{% endif %}"
+                     data-id="{{ conversacion.id }}"
+                     data-leido="{{ conversacion.hay_no_leidos|yesno:'false,true' }}">
+                    
+                    <div class="conversacion-avatar">
+                        {% if conversacion.participante.foto %}
+                        <img src="{{ conversacion.participante.foto.url }}" alt="{{ conversacion.participante.get_full_name }}">
+                        {% else %}
+                        <div class="avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {% endif %}
+                        {% if conversacion.participante.online %}
+                        <span class="status-indicator online"></span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="conversacion-info">
+                        <div class="conversacion-header">
+                            <h4 class="conversacion-nombre">{{ conversacion.participante.get_full_name }}</h4>
+                            <span class="conversacion-fecha">{{ conversacion.ultimo_mensaje_fecha|date:"H:i" }}</span>
+                        </div>
+                        <p class="conversacion-ultimo-mensaje">
+                            {% if conversacion.ultimo_mensaje_propio %}<i class="fas fa-check"></i>{% endif %}
+                            {{ conversacion.ultimo_mensaje|truncatewords:8 }}
+                        </p>
+                    </div>
+                    
+                    {% if conversacion.mensajes_no_leidos > 0 %}
+                    <span class="conversacion-badge">{{ conversacion.mensajes_no_leidos }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state-sidebar">
+                    <i class="fas fa-inbox"></i>
+                    <p>No tienes conversaciones</p>
+                </div>
+                {% endif %}
+            </div>
+        </aside>
+        
+        <!-- Main: Área de Chat -->
+        <main class="chat-area">
+            {% if conversacion_actual %}
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-participante">
+                    <div class="participante-avatar">
+                        {% if conversacion_actual.participante.foto %}
+                        <img src="{{ conversacion_actual.participante.foto.url }}" alt="{{ conversacion_actual.participante.get_full_name }}">
+                        {% else %}
+                        <div class="avatar-placeholder-sm">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="participante-info">
+                        <h3 class="participante-nombre">{{ conversacion_actual.participante.get_full_name }}</h3>
+                        <p class="participante-rol">{{ conversacion_actual.participante.get_rol_display }}</p>
+                    </div>
+                </div>
+                
+                <div class="chat-actions">
+                    <button type="button" class="btn-icon" title="Más opciones">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mensajes -->
+            <div class="chat-mensajes" id="chatMensajes">
+                {% for mensaje in mensajes %}
+                <div class="mensaje {% if mensaje.es_propio %}mensaje-propio{% else %}mensaje-recibido{% endif %}">
+                    {% if not mensaje.es_propio %}
+                    <div class="mensaje-avatar">
+                        {% if mensaje.remitente.foto %}
+                        <img src="{{ mensaje.remitente.foto.url }}" alt="{{ mensaje.remitente.get_full_name }}">
+                        {% else %}
+                        <div class="avatar-placeholder-xs">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mensaje-content">
+                        <div class="mensaje-bubble">
+                            <p class="mensaje-texto">{{ mensaje.contenido }}</p>
+                            {% if mensaje.adjunto %}
+                            <div class="mensaje-adjunto">
+                                <i class="fas fa-paperclip"></i>
+                                <a href="{{ mensaje.adjunto.url }}" target="_blank">{{ mensaje.adjunto_nombre }}</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <span class="mensaje-hora">
+                            {{ mensaje.fecha_envio|date:"H:i" }}
+                            {% if mensaje.es_propio %}
+                                {% if mensaje.leido %}
+                                <i class="fas fa-check-double mensaje-leido"></i>
+                                {% else %}
+                                <i class="fas fa-check"></i>
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Input de Mensaje -->
+            <div class="chat-input">
+                <form id="formEnviarMensaje" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="conversacion_id" value="{{ conversacion_actual.id }}">
+                    
+                    <button type="button" class="btn-icon btn-adjuntar" title="Adjuntar archivo">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input type="file" id="inputAdjunto" name="adjunto" class="d-none">
+                    
+                    <textarea id="mensajeTexto" name="contenido" placeholder="Escribe un mensaje..." rows="1"></textarea>
+                    
+                    <button type="submit" class="btn-icon btn-enviar" title="Enviar">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <div class="empty-state-chat">
+                <i class="fas fa-comments"></i>
+                <h3>Selecciona una conversación</h3>
+                <p>Escoge un contacto para comenzar a chatear</p>
+            </div>
+            {% endif %}
+        </main>
+        
+    </div>
+    
+</div>
+
+<!-- Modal: Nuevo Mensaje -->
+<div class="modal" id="modalNuevoMensaje">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Nuevo Mensaje</h3>
+                <button type="button" class="modal-close" data-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="formNuevoMensaje" class="modal-body">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="destinatario" class="form-label">Para: *</label>
+                    <select id="destinatario" name="destinatario" class="form-control" required>
+                        <option value="">Selecciona un destinatario</option>
+                        {% for profesor in profesores %}
+                        <option value="{{ profesor.id }}">{{ profesor.get_full_name }} - {{ profesor.get_rol_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mensaje" class="form-label">Mensaje: *</label>
+                    <textarea id="mensaje" name="contenido" class="form-control" rows="5" required></textarea>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btnEnviarNuevo">
+                    <i class="fas fa-paper-plane"></i>
+                    Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'mensajeria/js/profesor/bandeja.js' %}"></script>
+{% endblock %}

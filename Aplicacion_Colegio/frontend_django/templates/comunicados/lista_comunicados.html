@@ -6,12 +6,21 @@
 {% block content %}
 {% if rol == 'apoderado' %}
 {% include 'apoderado/_apoderado_portal_styles.html' %}
-<link rel="stylesheet" href="{% static 'css/apoderado/comunicados.css' %}?v=20260615">
+<link rel="stylesheet" href="{% static 'css/apoderado/comunicados.css' %}?v=20260602-wide">
 
 <div class="aco-page">
     {% include 'apoderado/_apoderado_hero.html' with hero_title="Comunicados y Circulares" hero_subtitle="Información oficial y avisos importantes del colegio." hero_aria="Comunicados" %}
     {% include 'comunicados/lista_comunicados_apoderado.html' %}
 </div>
+
+{% elif rol == 'profesor' or rol == 'Profesor' %}
+{% include 'profesor/_personal_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/profesor/comunicados.css' %}?v=20260528-premium">
+
+<div class="content-wrapper com-prof-wrap">
+    {% include 'profesor/_comunicados_lista.html' %}
+</div>
+{% include 'profesor/_personal_wrap_end.html' %}
 
 {% else %}
 <link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados.css' %}">

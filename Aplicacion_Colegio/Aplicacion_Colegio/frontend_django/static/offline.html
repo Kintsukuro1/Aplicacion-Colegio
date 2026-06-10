@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sin conexion | Sistema Escolar</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #4b5563;
+      --brand: #1f5aa6;
+      --border: #dbe3ef;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 20%, rgba(31, 90, 166, 0.12), transparent 40%),
+        radial-gradient(circle at 80% 10%, rgba(31, 90, 166, 0.08), transparent 35%),
+        var(--bg);
+      padding: 24px;
+    }
+
+    main {
+      width: min(560px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 12px 30px rgba(17, 24, 39, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+      color: var(--brand);
+    }
+
+    p {
+      margin: 0 0 10px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    button {
+      margin-top: 14px;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--brand);
+      cursor: pointer;
+    }
+
+    button:hover {
+      filter: brightness(1.08);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Sin conexion a internet</h1>
+    <p>No pudimos cargar esta seccion en este momento.</p>
+    <p>Cuando recuperes conexion, vuelve a intentarlo para sincronizar los datos mas recientes.</p>
+    <button type="button" onclick="location.reload()">Reintentar</button>
+  </main>
+</body>
+</html>

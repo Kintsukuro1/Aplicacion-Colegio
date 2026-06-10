@@ -1,0 +1,33 @@
+<article
+  class="aco-item aco-item--{{ comunicado.tipo }}{% if comunicado.es_prioritario %} aco-item--prioritario{% endif %}"
+  data-aco-tipo="{{ comunicado.tipo }}"
+  data-aco-prioritario="{% if comunicado.es_prioritario %}1{% else %}0{% endif %}"
+  data-aco-search="{{ comunicado.titulo|lower }} {{ comunicado.contenido|lower }}"
+>
+  <span class="aco-item__accent" aria-hidden="true"></span>
+  <div class="aco-item__body">
+    <div class="aco-item__top">
+      <span class="aco-badge aco-badge--{{ comunicado.tipo }}">{{ comunicado.get_tipo_display }}</span>
+      {% if comunicado.es_prioritario %}
+      <span class="aco-badge aco-badge--prioritario">Prioritario</span>
+      {% endif %}
+      {% if comunicado.es_destacado %}
+      <span class="aco-badge aco-badge--destacado">Destacado</span>
+      {% endif %}
+    </div>
+    <h3 class="aco-item__title">
+      <a href="{% url 'comunicados:detalle' comunicado.id_comunicado %}">{{ comunicado.titulo }}</a>
+    </h3>
+    <p class="aco-item__excerpt">{{ comunicado.contenido|truncatewords:28 }}</p>
+    <div class="aco-item__meta">
+      <span>{{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}</span>
+      {% if comunicado.fecha_evento %}
+      <span>Evento: {{ comunicado.fecha_evento|date:"d/m/Y H:i" }}</span>
+      {% endif %}
+      {% if comunicado.publicado_por %}
+      <span>{{ comunicado.publicado_por.get_full_name }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <a href="{% url 'comunicados:detalle' comunicado.id_comunicado %}" class="aco-item__cta">Ver detalle</a>
+</article>

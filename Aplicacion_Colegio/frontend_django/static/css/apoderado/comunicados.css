@@ -239,9 +239,22 @@ a.aco-refine__clear {
 
 .aco-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(13rem, 16rem);
+    grid-template-columns: 1fr;
     gap: 1rem;
     align-items: start;
+    width: 100%;
+}
+
+.aco-aside {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.65rem;
+    align-items: start;
+}
+
+.aco-aside .aco-aside-card {
+    margin-bottom: 0;
+    height: 100%;
 }
 
 .aco-section__head {
@@ -543,7 +556,7 @@ a.aco-refine__clear {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .aco-layout {
+    .aco-aside {
         grid-template-columns: 1fr;
     }
 

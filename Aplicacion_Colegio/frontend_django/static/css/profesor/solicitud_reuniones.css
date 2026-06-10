@@ -1,3 +1,5 @@
+/* Solicitud de reuniones — portal docente (lavanda) */
+
 .sr-page {
     display: grid;
     gap: 1rem;
@@ -7,27 +9,38 @@
     margin-bottom: 0.5rem;
 }
 
+.sr-header h1,
+.sr-card h3 {
+    color: #4c1d95;
+}
+
+.sr-header .subtitle {
+    color: #6d28d9;
+}
+
 .sr-feedback {
     margin-bottom: 0.75rem;
 }
 
 .sr-feedback--success {
-    border: 1px solid #b8d8bf;
-    background: #edf8f0;
-    color: #1e5f2f;
+    border: 1px solid #c4b5fd;
+    background: #f5f3ff;
+    color: #5b21b6;
 }
 
 .sr-feedback--error {
-    border: 1px solid #d7acb5;
-    background: #f7ebee;
-    color: #8f1d2c;
+    border: 1px solid #e9d5ff;
+    background: #faf5ff;
+    color: #7c3aed;
 }
 
 .sr-card {
     margin-bottom: 1rem;
     padding: 1rem;
-    border: 1px solid #d8d8d8;
-    border-radius: 12px;
+    border: 1px solid #ddd6fe;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 8px 28px rgba(76, 29, 149, 0.07);
 }
 
 .sr-grid {
@@ -38,7 +51,7 @@
 .sr-grid label {
     display: grid;
     gap: 0.35rem;
-    color: #253246;
+    color: #4c1d95;
     font-weight: 600;
     font-size: 0.94rem;
 }
@@ -48,20 +61,20 @@
 .sr-grid textarea {
     width: 100%;
     min-height: 40px;
-    border: 1px solid #cfd6df;
+    border: 1px solid #ddd6fe;
     border-radius: 10px;
     padding: 0.45rem 0.65rem;
     background: #fff;
     font-weight: 500;
-    color: #1e293b;
+    color: #4c1d95;
 }
 
 .sr-grid input:focus,
 .sr-grid select:focus,
 .sr-grid textarea:focus {
     outline: none;
-    border-color: #1f8f58;
-    box-shadow: 0 0 0 3px rgba(31, 143, 88, 0.15);
+    border-color: #6a5ab8;
+    box-shadow: 0 0 0 3px rgba(106, 90, 184, 0.18);
 }
 
 .sr-grid--filters {
@@ -79,10 +92,10 @@
 .sr-helper {
     margin: 0;
     padding: 0.65rem 0.75rem;
-    border: 1px dashed #cfd6df;
+    border: 1px dashed #ddd6fe;
     border-radius: 10px;
-    background: #f8fafc;
-    color: #334155;
+    background: #faf5ff;
+    color: #6d28d9;
     font-weight: 500;
 }
 
@@ -105,11 +118,17 @@
     border-collapse: collapse;
 }
 
+.sr-table th {
+    color: #4c1d95;
+    font-weight: 700;
+    background: #faf5ff;
+}
+
 .sr-table th,
 .sr-table td {
     text-align: left;
     padding: 0.65rem;
-    border-bottom: 1px solid #ececec;
+    border-bottom: 1px solid #ede9fe;
     vertical-align: top;
 }
 
@@ -121,6 +140,30 @@
 
 .sr-action-btn {
     min-width: 96px;
+}
+
+body.vista-personal .sr-page .btn-primary {
+    background: #6a5ab8;
+    border-color: #6a5ab8;
+    color: #fff;
+    font-weight: 600;
+}
+
+body.vista-personal .sr-page .btn-primary:hover {
+    background: #5b4aa8;
+    border-color: #5b4aa8;
+}
+
+body.vista-personal .sr-page .btn-secondary {
+    background: #faf5ff;
+    border-color: #ddd6fe;
+    color: #6d28d9;
+}
+
+body.vista-personal .sr-page .btn-secondary:hover {
+    background: #f3e8ff;
+    border-color: #c4b5fd;
+    color: #4c1d95;
 }
 
 @media (max-width: 768px) {

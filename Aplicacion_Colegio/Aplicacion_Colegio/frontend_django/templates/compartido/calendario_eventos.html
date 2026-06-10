@@ -1,0 +1,343 @@
+<div class="content-wrapper ce-page">
+    <div class="page-header ce-header">
+        <h1>Calendario Escolar</h1>
+        <p class="subtitle">Gestion de eventos academicos por capability.</p>
+    </div>
+
+    <div id="calendar-feedback" class="alert ce-feedback" hidden></div>
+
+    <div class="card ce-card ce-card--filters">
+        <h3 class="ce-card-title">Filtros</h3>
+        <form id="calendar-filters" class="row ce-grid ce-grid--filters">
+            <label>Tipo
+                <select name="tipo">
+                    <option value="">Todos</option>
+                    <option value="feriado">feriado</option>
+                    <option value="vacaciones">vacaciones</option>
+                    <option value="evaluacion">evaluacion</option>
+                    <option value="reunion">reunion</option>
+                    <option value="actividad">actividad</option>
+                    <option value="ceremonia">ceremonia</option>
+                    <option value="administrativo">administrativo</option>
+                    <option value="otro">otro</option>
+                </select>
+            </label>
+            <label>Mes
+                <input name="mes" type="number" min="1" max="12" />
+            </label>
+            <label>Anio
+                <input name="anio" type="number" min="2020" max="2100" />
+            </label>
+            <label>Desde
+                <input name="desde" type="date" />
+            </label>
+            <label>Hasta
+                <input name="hasta" type="date" />
+            </label>
+            <div class="ce-actions-row ce-actions-row--align-end">
+                <button type="submit" class="btn btn-primary">Aplicar</button>
+                <button type="button" id="calendar-clean" class="btn btn-secondary">Limpiar</button>
+            </div>
+        </form>
+    </div>
+
+    {% if rol != 'profesor' %}
+    <div class="card ce-card ce-card--form">
+        <h3 class="ce-card-title">Nuevo Evento</h3>
+        <form id="calendar-form" class="ce-grid ce-grid--form">
+            <input type="hidden" name="id_evento" />
+            <label>Titulo
+                <input name="titulo" required />
+            </label>
+            <label>Tipo
+                <select name="tipo" required>
+                    <option value="actividad">actividad</option>
+                    <option value="feriado">feriado</option>
+                    <option value="vacaciones">vacaciones</option>
+                    <option value="evaluacion">evaluacion</option>
+                    <option value="reunion">reunion</option>
+                    <option value="ceremonia">ceremonia</option>
+                    <option value="administrativo">administrativo</option>
+                    <option value="otro">otro</option>
+                </select>
+            </label>
+            <label>Fecha Inicio
+                <input name="fecha_inicio" type="date" required />
+            </label>
+            <label>Fecha Fin
+                <input name="fecha_fin" type="date" />
+            </label>
+            <label>Hora Inicio
+                <input name="hora_inicio" type="time" />
+            </label>
+            <label>Hora Fin
+                <input name="hora_fin" type="time" />
+            </label>
+            <label>Visibilidad
+                <select name="visibilidad">
+                    <option value="todos">todos</option>
+                    <option value="profesores">profesores</option>
+                    <option value="estudiantes">estudiantes</option>
+                    <option value="apoderados">apoderados</option>
+                    <option value="administrativos">administrativos</option>
+                </select>
+            </label>
+            <label>Lugar
+                <input name="lugar" />
+            </label>
+            <label>Color
+                <input name="color" type="color" value="#3B82F6" />
+            </label>
+            <label class="ce-checkbox-label ce-checkbox-label--spaced">
+                <input name="todo_el_dia" type="checkbox" checked />
+                Todo el dia
+            </label>
+            <label class="ce-checkbox-label ce-checkbox-label--spaced">
+                <input name="es_feriado_nacional" type="checkbox" />
+                Feriado nacional
+            </label>
+            <label class="ce-field-full">Descripcion
+                <input name="descripcion" />
+            </label>
+            <div class="ce-actions-row ce-actions-row--full">
+                <button type="submit" class="btn btn-primary">Guardar Evento</button>
+                <button type="button" id="calendar-cancel" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="card ce-card ce-card--table">
+        <h3 class="ce-card-title">Listado</h3>
+        <table class="tabla-reporte ce-table">
+            <thead>
+                <tr>
+                    <th>Titulo</th>
+                    <th>Tipo</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Visibilidad</th>
+                    {% if rol != 'profesor' %}
+                    <th>Acciones</th>
+                    {% else %}
+                    <th>Estado</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody id="calendar-rows">
+                <tr><td colspan="6">Cargando eventos...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+    const canManageEvents = {% if rol == 'profesor' %}false{% else %}true{% endif %};
+    const filtersForm = document.getElementById('calendar-filters');
+    const eventForm = document.getElementById('calendar-form');
+    const rowsEl = document.getElementById('calendar-rows');
+    const feedback = document.getElementById('calendar-feedback');
+    const cleanButton = document.getElementById('calendar-clean');
+    const cancelButton = document.getElementById('calendar-cancel');
+
+    function notify(message, isError) {
+        feedback.hidden = false;
+        feedback.textContent = message;
+        feedback.classList.remove('ce-feedback--error', 'ce-feedback--success');
+        feedback.classList.add(isError ? 'ce-feedback--error' : 'ce-feedback--success');
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+            return parts.pop().split(';').shift();
+        }
+        return '';
+    }
+
+    function getCsrfToken() {
+        const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (csrfInput && csrfInput.value) {
+            return csrfInput.value;
+        }
+        return getCookie('csrftoken');
+    }
+
+    function resetForm() {
+        if (!eventForm) return;
+        eventForm.reset();
+        eventForm.id_evento.value = '';
+        eventForm.todo_el_dia.checked = true;
+        eventForm.color.value = '#3B82F6';
+    }
+
+    function buildListQuery() {
+        const params = new URLSearchParams();
+        const data = new FormData(filtersForm);
+        for (const [key, value] of data.entries()) {
+            if (value) params.set(key, value);
+        }
+        return params.toString();
+    }
+
+    async function loadEvents() {
+        rowsEl.innerHTML = '<tr><td colspan="6">Cargando eventos...</td></tr>';
+        try {
+            const response = await fetch(`/api/v1/calendario/?${buildListQuery()}`, {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin',
+            });
+            const payload = await response.json();
+            const results = Array.isArray(payload?.results) ? payload.results : Array.isArray(payload) ? payload : [];
+            if (!results.length) {
+                rowsEl.innerHTML = '<tr><td colspan="6">Sin eventos para los filtros seleccionados.</td></tr>';
+                return;
+            }
+
+            rowsEl.innerHTML = '';
+            results.forEach((row) => {
+                const tr = document.createElement('tr');
+                const accionesCell = canManageEvents
+                    ? `<div class="ce-table-actions">
+                            <button type="button" class="btn btn-secondary btn-sm ce-action-btn" data-action="edit" data-id="${row.id_evento}">Editar</button>
+                            <button type="button" class="btn btn-danger btn-sm ce-action-btn" data-action="delete" data-id="${row.id_evento}">Eliminar</button>
+                       </div>`
+                    : '<span class="text-muted">Solo lectura</span>';
+
+                tr.innerHTML = `
+                    <td>${row.titulo || ''}</td>
+                    <td>${row.tipo_display || row.tipo || ''}</td>
+                    <td>${row.fecha_inicio || ''}</td>
+                    <td>${row.fecha_fin || '-'}</td>
+                    <td>${row.visibilidad || ''}</td>
+                    <td>${accionesCell}</td>
+                `;
+                if (canManageEvents) {
+                    tr.querySelector('[data-action="edit"]').addEventListener('click', () => startEdit(row.id_evento));
+                    tr.querySelector('[data-action="delete"]').addEventListener('click', () => removeEvent(row.id_evento, row.titulo));
+                }
+                rowsEl.appendChild(tr);
+            });
+        } catch (error) {
+            rowsEl.innerHTML = '<tr><td colspan="6">No se pudo cargar el calendario.</td></tr>';
+            notify('No se pudo cargar el calendario.', true);
+        }
+    }
+
+    async function startEdit(idEvento) {
+        if (!canManageEvents || !eventForm) return;
+        try {
+            const response = await fetch(`/api/v1/calendario/${idEvento}/`, {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin',
+            });
+            const row = await response.json();
+            if (!response.ok) {
+                notify(row?.detail || 'No fue posible cargar el evento.', true);
+                return;
+            }
+            eventForm.id_evento.value = row.id_evento || '';
+            eventForm.titulo.value = row.titulo || '';
+            eventForm.tipo.value = row.tipo || 'actividad';
+            eventForm.fecha_inicio.value = row.fecha_inicio || '';
+            eventForm.fecha_fin.value = row.fecha_fin || '';
+            eventForm.hora_inicio.value = row.hora_inicio || '';
+            eventForm.hora_fin.value = row.hora_fin || '';
+            eventForm.visibilidad.value = row.visibilidad || 'todos';
+            eventForm.lugar.value = row.lugar || '';
+            eventForm.color.value = row.color || '#3B82F6';
+            eventForm.todo_el_dia.checked = Boolean(row.todo_el_dia);
+            eventForm.es_feriado_nacional.checked = Boolean(row.es_feriado_nacional);
+            eventForm.descripcion.value = row.descripcion || '';
+        } catch (error) {
+            notify('No fue posible cargar el evento.', true);
+        }
+    }
+
+    async function removeEvent(idEvento, titulo) {
+        if (!window.confirm(`Eliminar evento ${titulo || ''}?`)) return;
+        try {
+            const response = await fetch(`/api/v1/calendario/${idEvento}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                },
+                credentials: 'same-origin',
+            });
+            if (!response.ok) {
+                const payload = await response.json();
+                notify(payload?.detail || 'No se pudo eliminar el evento.', true);
+                return;
+            }
+            notify('Evento eliminado correctamente.', false);
+            loadEvents();
+        } catch (error) {
+            notify('No se pudo eliminar el evento.', true);
+        }
+    }
+
+    filtersForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        loadEvents();
+    });
+
+    cleanButton.addEventListener('click', function () {
+        filtersForm.reset();
+        loadEvents();
+    });
+
+    if (cancelButton) {
+        cancelButton.addEventListener('click', resetForm);
+    }
+
+    if (eventForm && canManageEvents) {
+        eventForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const idEvento = eventForm.id_evento.value;
+            const body = {
+                titulo: eventForm.titulo.value,
+                descripcion: eventForm.descripcion.value,
+                tipo: eventForm.tipo.value,
+                fecha_inicio: eventForm.fecha_inicio.value,
+                fecha_fin: eventForm.fecha_fin.value || null,
+                hora_inicio: eventForm.todo_el_dia.checked ? null : (eventForm.hora_inicio.value || null),
+                hora_fin: eventForm.todo_el_dia.checked ? null : (eventForm.hora_fin.value || null),
+                todo_el_dia: eventForm.todo_el_dia.checked,
+                lugar: eventForm.lugar.value,
+                visibilidad: eventForm.visibilidad.value,
+                es_feriado_nacional: eventForm.es_feriado_nacional.checked,
+                color: eventForm.color.value,
+            };
+
+            try {
+                const response = await fetch(idEvento ? `/api/v1/calendario/${idEvento}/` : '/api/v1/calendario/', {
+                    method: idEvento ? 'PATCH' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(body),
+                });
+
+                if (!response.ok) {
+                    const payload = await response.json();
+                    notify(payload?.detail || JSON.stringify(payload || {}), true);
+                    return;
+                }
+
+                notify(idEvento ? 'Evento actualizado correctamente.' : 'Evento creado correctamente.', false);
+                resetForm();
+                loadEvents();
+            } catch (error) {
+                notify('No se pudo guardar el evento.', true);
+            }
+        });
+    }
+
+    loadEvents();
+})();
+</script>

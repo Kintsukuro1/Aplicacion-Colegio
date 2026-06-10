@@ -1,0 +1,180 @@
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Portal Académico</title>
+    <link rel="stylesheet" href="{% static 'css/perfil_estudiante.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
+</head>
+
+<div class="perfil-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>👤 Mi Perfil</h1>
+        <p>Administra tu información personal y configuración de cuenta</p>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mensaje-box {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% endif %}">
+                <span class="icon-md">{% if message.tags == 'success' %}✔{% else %}✖{% endif %}</span>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Estadísticas -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-value">{{ estadisticas.total_calificaciones|default:0 }}</div>
+            <div class="stat-label">Calificaciones</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value">{{ estadisticas.promedio_general|default:0|floatformat:1 }}</div>
+            <div class="stat-label">Promedio General</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎓</div>
+            <div class="stat-value">{% if estudiante.curso %}✔{% else %}✖{% endif %}</div>
+            <div class="stat-label">Curso Asignado</div>
+        </div>
+    </div>
+
+    <div class="perfil-grid">
+        <!-- Columna izquierda: Información personal -->
+        <div>
+            <!-- Avatar -->
+            <div class="avatar-section">
+                <div class="avatar">
+                    {{ user.nombre|first|upper }}{{ user.apellido_paterno|first|upper }}
+                </div>
+                <div class="avatar-name">{{ user.get_full_name }}</div>
+                <div class="avatar-role">Estudiante</div>
+            </div>
+
+            <!-- Información no editable -->
+            <div class="card">
+                <h2>📋 Información Personal</h2>
+                
+                <div class="info-item">
+                    <span class="info-label">RUT</span>
+                    <span class="info-value">{{ user.rut }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Nombre Completo</span>
+                    <span class="info-value">{{ user.get_full_name }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Curso</span>
+                    <span class="info-value">
+                        {% if estudiante.curso %}
+                            {{ estudiante.curso.nombre }}
+                        {% else %}
+                            Sin asignar
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Colegio</span>
+                    <span class="info-value">{{ escuela_nombre }}</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label">RBD</span>
+                    <span class="info-value">{{ escuela_rbd }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Estado de Cuenta</span>
+                    <span class="info-value">
+                        {% if user.is_active %}
+                            <span class="badge badge-success">✔ Activo</span>
+                        {% else %}
+                            <span class="badge badge-warning">Inactivo</span>
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Fecha de Registro</span>
+                    <span class="info-value">
+                        {{ user.fecha_creacion|date:"d/m/Y" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha: Edición de perfil y contraseña -->
+        <div>
+            <!-- Formulario de edición -->
+            <div class="card">
+                <h2>✏️ Editar Información de Contacto</h2>
+                <form method="POST" action="{% url 'accounts:actualizar_perfil_estudiante' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" 
+                               value="{{ user.email }}" 
+                               required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="text" id="telefono" name="telefono" 
+                               value="{{ estudiante.telefono|default:'' }}" 
+                               placeholder="+56 9 1234 5678">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" name="direccion" 
+                               value="{{ estudiante.direccion|default:'' }}" 
+                               placeholder="Calle, número, comuna">
+                    </div>
+                    
+                    <button type="submit" name="actualizar_perfil" class="btn btn-primary">
+                        💾 Guardar Cambios
+                    </button>
+                </form>
+            </div>
+
+            <!-- Formulario de cambio de contraseña -->
+            <div class="card mt-5">
+                <h2>🔐 Cambiar Contraseña</h2>
+                <form method="POST" action="{% url 'accounts:cambiar_password_estudiante' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="password_actual">Contraseña Actual</label>
+                        <input type="password" id="password_actual" name="password_actual" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password_nueva">Nueva Contraseña</label>
+                        <input type="password" id="password_nueva" name="password_nueva" 
+                               minlength="6" required>
+                        <small style="color: #666; font-size: 12px;">Mínimo 6 caracteres</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password_confirmar">Confirmar Nueva Contraseña</label>
+                        <input type="password" id="password_confirmar" name="password_confirmar" 
+                               minlength="6" required>
+                    </div>
+                    
+                    <button type="submit" name="cambiar_password" class="btn btn-primary">
+                        🔒 Cambiar Contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

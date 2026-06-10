@@ -1,0 +1,422 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/admin_escolar/infraestructura.css' %}">
+
+<div class="infraestructura-container">
+    <div class="page-header">
+        <h1>🏗️ Gestión de Infraestructura</h1>
+        <p>Administra los espacios físicos de tu establecimiento</p>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Estadísticas -->
+    <div class="estadisticas-grid">
+        <div class="stat-card blue">
+            <div class="stat-icon">🏢</div>
+            <div class="stat-info">
+                <div class="stat-label">Total Espacios</div>
+                <div class="stat-value">{{ estadisticas.total_espacios|default:0 }}</div>
+            </div>
+        </div>
+        
+        <div class="stat-card green">
+            <div class="stat-icon">🚪</div>
+            <div class="stat-info">
+                <div class="stat-label">Salas de Clases</div>
+                <div class="stat-value">{{ estadisticas.total_salas|default:0 }}</div>
+            </div>
+        </div>
+        
+        <div class="stat-card purple">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+                <div class="stat-label">Capacidad Total</div>
+                <div class="stat-value">{{ estadisticas.capacidad_total|default:0|floatformat:0 }}</div>
+            </div>
+        </div>
+        
+        <div class="stat-card orange">
+            <div class="stat-icon">📐</div>
+            <div class="stat-info">
+                <div class="stat-label">Área Total</div>
+                <div class="stat-value">{{ estadisticas.area_total|default:0|floatformat:1 }} m²</div>
+            </div>
+        </div>
+        
+        <div class="stat-card cyan">
+            <div class="stat-icon">🔼</div>
+            <div class="stat-info">
+                <div class="stat-label">Total Pisos</div>
+                <div class="stat-value">{{ estadisticas.total_pisos|default:0 }}</div>
+            </div>
+        </div>
+        
+        <div class="stat-card success">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <div class="stat-label">Operativos</div>
+                <div class="stat-value">{{ estadisticas.espacios_operativos|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón para agregar nueva sala -->
+    <div style="margin: 30px 0;">
+        <button class="btn-primary" onclick="abrirModalCrear()">
+            <span>➕</span>
+            <span>Agregar Sala/Espacio</span>
+        </button>
+    </div>
+
+    <!-- Listado de infraestructura por tipo -->
+    {% if not infraestructura %}
+        <div class="empty-state">
+            <div class="empty-icon">🏢</div>
+            <h3>No hay infraestructura registrada</h3>
+            <p>Comienza agregando las salas y espacios de tu establecimiento</p>
+        </div>
+    {% else %}
+        {% for tipo, items in infraestructura_agrupada.items %}
+            <div class="tipo-section">
+                <h2 class="tipo-title">
+                    {% if tipo == 'Sala de Clases' %}🚪
+                    {% elif tipo == 'Laboratorio' %}🔬
+                    {% elif tipo == 'Biblioteca' %}📚
+                    {% elif tipo == 'Gimnasio' %}🏃
+                    {% elif tipo == 'Comedor' %}🍽️
+                    {% elif tipo == 'Auditorio' %}🎭
+                    {% elif tipo == 'Sala de Profesores' %}👨‍🏫
+                    {% elif tipo == 'Oficina Administrativa' %}💼
+                    {% elif tipo == 'Baños' %}🚻
+                    {% elif tipo == 'Patio' %}🌳
+                    {% elif tipo == 'Cancha Deportiva' %}⚽
+                    {% else %}🏢{% endif %}
+                    {{ tipo }}
+                    <span class="badge-count">{{ items|length }}</span>
+                </h2>
+                
+                <div class="infraestructura-grid">
+                    {% for item in items %}
+                        <div class="infra-card estado-{{ item.estado|lower|cut:' '|cut:'ó' }}">
+                            <div class="infra-header">
+                                <h3>{{ item.nombre }}</h3>
+                                <span class="badge-estado {{ item.estado|lower|cut:' '|cut:'ó' }}">
+                                    {{ item.estado }}
+                                </span>
+                            </div>
+                            
+                            <div class="infra-details">
+                                <div class="detail-row">
+                                    <span class="detail-icon">🔼</span>
+                                    <span class="detail-label">Piso:</span>
+                                    <span class="detail-value">{{ item.piso }}</span>
+                                </div>
+                                
+                                <div class="detail-row">
+                                    <span class="detail-icon">👥</span>
+                                    <span class="detail-label">Capacidad:</span>
+                                    <span class="detail-value">{{ item.capacidad_estudiantes }} estudiantes</span>
+                                </div>
+                                
+                                {% if item.area_m2 %}
+                                    <div class="detail-row">
+                                        <span class="detail-icon">📐</span>
+                                        <span class="detail-label">Área:</span>
+                                        <span class="detail-value">{{ item.area_m2|floatformat:2 }} m²</span>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if item.ancho_metros and item.largo_metros %}
+                                    <div class="detail-row">
+                                        <span class="detail-icon">📏</span>
+                                        <span class="detail-label">Dimensiones:</span>
+                                        <span class="detail-value">
+                                            {{ item.ancho_metros|floatformat:2 }} × 
+                                            {{ item.largo_metros|floatformat:2 }}
+                                            {% if item.alto_metros %} × {{ item.alto_metros|floatformat:2 }}{% endif %}
+                                            m
+                                        </span>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if item.observaciones %}
+                                    <div class="detail-row full-width">
+                                        <span class="detail-icon">📝</span>
+                                        <span class="detail-label">Observaciones:</span>
+                                        <span class="detail-value">{{ item.observaciones|linebreaks }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="infra-actions">
+                                <button class="btn-edit" 
+                                    data-id="{{ item.id }}"
+                                    data-nombre="{{ item.nombre }}"
+                                    data-tipo="{{ item.tipo }}"
+                                    data-piso="{{ item.piso }}"
+                                    data-capacidad="{{ item.capacidad_estudiantes }}"
+                                    data-ancho="{{ item.ancho_metros|default:'' }}"
+                                    data-largo="{{ item.largo_metros|default:'' }}"
+                                    data-alto="{{ item.alto_metros|default:'' }}"
+                                    data-estado="{{ item.estado }}"
+                                    data-observaciones="{{ item.observaciones|default:'' }}"
+                                    onclick="abrirModalEditar(this)">
+                                    ✏️ Editar
+                                </button>
+                                <form method="POST" action="{% url 'gestionar_infraestructura' %}" class="d-inline-block" onsubmit="return confirm('¿Eliminar este espacio?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="accion" value="eliminar">
+                                    <input type="hidden" name="id" value="{{ item.id }}">
+                                    <button type="submit" class="btn-delete">🗑️ Eliminar</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<!-- Modal Crear -->
+<div class="modal-overlay" id="modalCrear">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>➕ Agregar Sala/Espacio</h2>
+            <button class="modal-close" onclick="cerrarModal('modalCrear')">×</button>
+        </div>
+        
+        <form method="POST" action="{% url 'gestionar_infraestructura' %}" id="formCrear">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="crear">
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre <span class="required">*</span></label>
+                    <input type="text" name="nombre" required placeholder="Ej: Sala 101">
+                </div>
+                
+                <div class="form-group">
+                    <label>Tipo de Espacio <span class="required">*</span></label>
+                    <select name="tipo" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="Sala de Clases">🚪 Sala de Clases</option>
+                        <option value="Laboratorio">🔬 Laboratorio</option>
+                        <option value="Biblioteca">📚 Biblioteca</option>
+                        <option value="Gimnasio">🏃 Gimnasio</option>
+                        <option value="Comedor">🍽️ Comedor</option>
+                        <option value="Auditorio">🎭 Auditorio</option>
+                        <option value="Sala de Profesores">👨‍🏫 Sala de Profesores</option>
+                        <option value="Oficina Administrativa">💼 Oficina Administrativa</option>
+                        <option value="Baños">🚻 Baños</option>
+                        <option value="Patio">🌳 Patio</option>
+                        <option value="Cancha Deportiva">⚽ Cancha Deportiva</option>
+                        <option value="Otro">🏢 Otro</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Piso <span class="required">*</span></label>
+                    <input type="number" name="piso" required min="-2" max="20" value="1" placeholder="1">
+                    <small>Use números negativos para subterráneos</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Capacidad de Estudiantes <span class="required">*</span></label>
+                    <input type="number" name="capacidad" required min="1" placeholder="30">
+                </div>
+                
+                <div class="form-group">
+                    <label>Ancho (metros)</label>
+                    <input type="number" name="ancho" step="0.01" min="0" placeholder="8.5" oninput="calcularArea('formCrear')">
+                </div>
+                
+                <div class="form-group">
+                    <label>Largo (metros)</label>
+                    <input type="number" name="largo" step="0.01" min="0" placeholder="10.0" oninput="calcularArea('formCrear')">
+                </div>
+                
+                <div class="form-group">
+                    <label>Alto (metros)</label>
+                    <input type="number" name="alto" step="0.01" min="0" placeholder="3.0">
+                </div>
+                
+                <div class="form-group">
+                    <label>Estado <span class="required">*</span></label>
+                    <select name="estado" required>
+                        <option value="Operativo">✅ Operativo</option>
+                        <option value="En Mantenimiento">🔧 En Mantenimiento</option>
+                        <option value="Fuera de Servicio">❌ Fuera de Servicio</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Observaciones</label>
+                <textarea name="observaciones" rows="3" placeholder="Notas adicionales sobre el espacio..."></textarea>
+            </div>
+            
+            <div class="area-preview d-none" id="areaPreviewCrear">
+                <strong>Área calculada:</strong> <span id="areaValueCrear">0</span> m²
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="cerrarModal('modalCrear')">Cancelar</button>
+                <button type="submit" class="btn-primary">Crear Espacio</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal-overlay" id="modalEditar">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>✏️ Editar Sala/Espacio</h2>
+            <button class="modal-close" onclick="cerrarModal('modalEditar')">×</button>
+        </div>
+        
+        <form method="POST" action="{% url 'gestionar_infraestructura' %}" id="formEditar">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="editar">
+            <input type="hidden" name="id" id="edit_id">
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre <span class="required">*</span></label>
+                    <input type="text" name="nombre" id="edit_nombre" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tipo de Espacio <span class="required">*</span></label>
+                    <select name="tipo" id="edit_tipo" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="Sala de Clases">🚪 Sala de Clases</option>
+                        <option value="Laboratorio">🔬 Laboratorio</option>
+                        <option value="Biblioteca">📚 Biblioteca</option>
+                        <option value="Gimnasio">🏃 Gimnasio</option>
+                        <option value="Comedor">🍽️ Comedor</option>
+                        <option value="Auditorio">🎭 Auditorio</option>
+                        <option value="Sala de Profesores">👨‍🏫 Sala de Profesores</option>
+                        <option value="Oficina Administrativa">💼 Oficina Administrativa</option>
+                        <option value="Baños">🚻 Baños</option>
+                        <option value="Patio">🌳 Patio</option>
+                        <option value="Cancha Deportiva">⚽ Cancha Deportiva</option>
+                        <option value="Otro">🏢 Otro</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Piso <span class="required">*</span></label>
+                    <input type="number" name="piso" id="edit_piso" required min="-2" max="20">
+                </div>
+                
+                <div class="form-group">
+                    <label>Capacidad de Estudiantes <span class="required">*</span></label>
+                    <input type="number" name="capacidad" id="edit_capacidad" required min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>Ancho (metros)</label>
+                    <input type="number" name="ancho" id="edit_ancho" step="0.01" min="0" oninput="calcularArea('formEditar')">
+                </div>
+                
+                <div class="form-group">
+                    <label>Largo (metros)</label>
+                    <input type="number" name="largo" id="edit_largo" step="0.01" min="0" oninput="calcularArea('formEditar')">
+                </div>
+                
+                <div class="form-group">
+                    <label>Alto (metros)</label>
+                    <input type="number" name="alto" id="edit_alto" step="0.01" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label>Estado <span class="required">*</span></label>
+                    <select name="estado" id="edit_estado" required>
+                        <option value="Operativo">✅ Operativo</option>
+                        <option value="En Mantenimiento">🔧 En Mantenimiento</option>
+                        <option value="Fuera de Servicio">❌ Fuera de Servicio</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Observaciones</label>
+                <textarea name="observaciones" id="edit_observaciones" rows="3"></textarea>
+            </div>
+            
+            <div class="area-preview d-none" id="areaPreviewEditar">
+                <strong>Área calculada:</strong> <span id="areaValueEditar">0</span> m²
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="cerrarModal('modalEditar')">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalCrear() {
+    document.getElementById('modalCrear').classList.add('active');
+}
+
+function abrirModalEditar(button) {
+    const data = button.dataset;
+    
+    document.getElementById('edit_id').value = data.id;
+    document.getElementById('edit_nombre').value = data.nombre;
+    document.getElementById('edit_tipo').value = data.tipo;
+    document.getElementById('edit_piso').value = data.piso;
+    document.getElementById('edit_capacidad').value = data.capacidad;
+    document.getElementById('edit_ancho').value = data.ancho || '';
+    document.getElementById('edit_largo').value = data.largo || '';
+    document.getElementById('edit_alto').value = data.alto || '';
+    document.getElementById('edit_estado').value = data.estado;
+    document.getElementById('edit_observaciones').value = data.observaciones || '';
+    
+    calcularArea('formEditar');
+    
+    document.getElementById('modalEditar').classList.add('active');
+}
+
+function cerrarModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function calcularArea(formId) {
+    const form = document.getElementById(formId);
+    const ancho = parseFloat(form.querySelector('[name="ancho"]').value) || 0;
+    const largo = parseFloat(form.querySelector('[name="largo"]').value) || 0;
+    
+    if (ancho > 0 && largo > 0) {
+        const area = ancho * largo;
+        const previewId = formId === 'formCrear' ? 'areaPreviewCrear' : 'areaPreviewEditar';
+        const valueId = formId === 'formCrear' ? 'areaValueCrear' : 'areaValueEditar';
+        
+        document.getElementById(previewId).style.display = 'block';
+        document.getElementById(valueId).textContent = area.toFixed(2);
+    } else {
+        const previewId = formId === 'formCrear' ? 'areaPreviewCrear' : 'areaPreviewEditar';
+        document.getElementById(previewId).style.display = 'none';
+    }
+}
+
+// Cerrar modal al hacer clic fuera
+document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModal(this.id);
+        }
+    });
+});
+</script>

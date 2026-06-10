@@ -1,0 +1,198 @@
+{% load static %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/estudiante/mis_notas.css' %}?v=20260609">
+
+<div class="mn-page">
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Mis Calificaciones" hero_subtitle="Consulta tus notas, promedios y avance por asignatura" hero_aria="Mis Calificaciones" metrics_aria="Resumen académico" m1_value=promedio_general|default:"0.0" m1_label="Promedio general" m1_mod="promedio" m1_progress=promedio_progress|default:"0" m2_value=total_notas|default:"0" m2_label="Evaluaciones" m2_mod="clases" m3_value=total_asignaturas|default:"0" m3_label="Asignaturas" m3_mod="tareas" m4_value=total_reforzar|default:"0" m4_label="Por reforzar" m4_mod="asistencia" %}
+
+    {% if curso_actual %}
+    <p class="mn-course-chip">{{ curso_actual.nombre }}</p>
+    {% endif %}
+
+    <section class="mn-refine" aria-label="Refinar asignaturas">
+        <div class="mn-refine__head">
+            <h2 class="mn-refine__title">Refinar listado</h2>
+            <button type="button" class="mn-refine__clear" id="mnClearFilters" hidden>Limpiar</button>
+        </div>
+        <div class="mn-refine__grid">
+            <div class="mn-refine__field">
+                <label class="mn-refine__label" for="mnStatusFilter">Estado</label>
+                <select class="mn-refine__control" id="mnStatusFilter">
+                    <option value="">Todos</option>
+                    <option value="aprobado">Aprobado</option>
+                    <option value="reprobado">Por reforzar</option>
+                </select>
+            </div>
+            <div class="mn-refine__field mn-refine__field--grow">
+                <label class="mn-refine__label" for="mnSearch">Buscar asignatura</label>
+                <input type="search" class="mn-refine__control" id="mnSearch" placeholder="Ej: Matemática, Lenguaje..." autocomplete="off">
+            </div>
+        </div>
+        <p class="mn-refine__hint" id="mnFilterHint" hidden></p>
+    </section>
+
+    <section class="alumno-section-card mn-section" aria-label="Notas por asignatura">
+        <div class="mn-section__head">
+            <h2 class="alumno-section-title">
+                <span class="alumno-section-title__icon" aria-hidden="true">📚</span>
+                Notas por asignatura
+            </h2>
+            <span class="mn-section__count">{{ notas_por_asignatura|length }} materia{{ notas_por_asignatura|length|pluralize:"s" }}</span>
+        </div>
+
+        {% if notas_por_asignatura %}
+        <div class="mn-list" id="mnSubjectList" role="list">
+            {% for item in notas_por_asignatura %}
+            <article class="mn-row {% if item.estado == 'Reprobado' %}mn-row--risk{% endif %}"
+                id="mn-subject-{{ forloop.counter }}"
+                role="listitem"
+                data-mn-subject="{{ item.asignatura_key|default:item.asignatura|lower }}"
+                data-mn-status="{% if item.estado == 'Reprobado' %}reprobado{% else %}aprobado{% endif %}">
+                <button type="button" class="mn-row__head mn-toggle-detail"
+                    aria-expanded="false"
+                    aria-controls="mn-detail-{{ forloop.counter }}"
+                    data-mn-target="mn-detail-{{ forloop.counter }}"
+                    data-subject="{{ item.asignatura_key|default:item.asignatura|lower }}">
+                    <span class="mn-row__bar" aria-hidden="true"></span>
+                    <span class="mn-row__info">
+                        <span class="mn-row__title">{{ item.asignatura }}</span>
+                        <span class="mn-row__prof">{{ item.profesor }}</span>
+                    </span>
+                    <span class="mn-row__prom {% if item.estado == 'Reprobado' %}mn-row__prom--low{% else %}mn-row__prom--ok{% endif %}">{{ item.promedio }}</span>
+                    <span class="mn-badge mn-badge--{% if item.estado == 'Reprobado' %}risk{% else %}ok{% endif %}">{{ item.estado }}</span>
+                    <span class="mn-row__chev" aria-hidden="true"></span>
+                </button>
+                <div class="mn-detail" id="mn-detail-{{ forloop.counter }}" hidden>
+                    <div class="mn-detail__inner">
+                        <p class="mn-detail__summary">
+                            {{ item.total_evaluaciones }} evaluación{{ item.total_evaluaciones|pluralize:"es" }}
+                            {% if item.nota_min is not None %} · Rango <strong>{{ item.nota_min }} – {{ item.nota_max }}</strong>{% endif %}
+                        </p>
+                        <table class="mn-detail__table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Evaluación</th>
+                                    <th scope="col">Ponderación</th>
+                                    <th scope="col">Nota</th>
+                                    <th scope="col">Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluacion in item.evaluaciones %}
+                                <tr>
+                                    <td class="mn-detail__name" data-label="Evaluación">{{ evaluacion.nombre }}</td>
+                                    <td data-label="Ponderación">{{ evaluacion.ponderacion }}%</td>
+                                    <td data-label="Nota">
+                                        <span class="mn-detail__nota {% if evaluacion.aprobada %}mn-detail__nota--ok{% else %}mn-detail__nota--low{% endif %}">
+                                            {{ evaluacion.nota }}
+                                        </span>
+                                    </td>
+                                    <td class="mn-detail__fecha" data-label="Fecha">{% if evaluacion.fecha %}{{ evaluacion.fecha|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="mn-empty">
+            <span class="mn-empty__icon" aria-hidden="true">📝</span>
+            <p class="mn-empty__title">Sin calificaciones registradas</p>
+            <p class="mn-empty__text">Las notas aparecerán aquí cuando tus profesores las publiquen en el sistema.</p>
+        </div>
+        {% endif %}
+    </section>
+</div>
+
+<script>
+(function () {
+    var SUBJECT_COLORS = {
+        matem: '#3B82F6', lengua: '#EF4444', comunic: '#EF4444', castellano: '#EF4444',
+        cienc: '#10B981', natur: '#10B981', histor: '#8B5CF6', geograf: '#8B5CF6',
+        ingl: '#F59E0B', educ: '#06B6D4', física: '#06B6D4', edfis: '#06B6D4',
+        arte: '#EC4899', visual: '#EC4899', músic: '#F97316', music: '#F97316',
+        tecno: '#6B7280', comput: '#6B7280'
+    };
+
+    function resolveAccent(key) {
+        var s = (key || '').toLowerCase();
+        var k;
+        for (k in SUBJECT_COLORS) {
+            if (s.indexOf(k) !== -1) return SUBJECT_COLORS[k];
+        }
+        return '#94A3B8';
+    }
+
+    document.querySelectorAll('.mn-row__head[data-subject]').forEach(function (el) {
+        el.style.setProperty('--mn-accent', resolveAccent(el.getAttribute('data-subject')));
+    });
+
+    function setRowOpen(row, open) {
+        if (!row) return;
+        row.classList.toggle('mn-row--open', open);
+    }
+
+    function closeAllDetails(exceptId) {
+        document.querySelectorAll('.mn-detail').forEach(function (panel) {
+            if (panel.id === exceptId) return;
+            panel.hidden = true;
+            setRowOpen(panel.closest('.mn-row'), false);
+        });
+        document.querySelectorAll('.mn-toggle-detail').forEach(function (btn) {
+            if (btn.getAttribute('aria-controls') === exceptId) return;
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    document.querySelectorAll('.mn-toggle-detail').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var targetId = btn.getAttribute('data-mn-target');
+            var panel = document.getElementById(targetId);
+            if (!panel) return;
+            var row = panel.closest('.mn-row');
+            var open = panel.hidden;
+            closeAllDetails(open ? targetId : null);
+            panel.hidden = !open;
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            setRowOpen(row, open);
+            if (open) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    });
+
+    function applyFilters() {
+        var status = document.getElementById('mnStatusFilter').value;
+        var q = (document.getElementById('mnSearch').value || '').trim().toLowerCase();
+        var visible = 0;
+        document.querySelectorAll('.mn-row').forEach(function (card) {
+            var matchStatus = !status || card.getAttribute('data-mn-status') === status;
+            var matchSearch = !q || (card.getAttribute('data-mn-subject') || '').indexOf(q) !== -1;
+            var show = matchStatus && matchSearch;
+            card.hidden = !show;
+            if (show) visible++;
+        });
+        document.getElementById('mnClearFilters').hidden = !(status || q);
+        var hint = document.getElementById('mnFilterHint');
+        if (status || q) {
+            hint.hidden = false;
+            hint.textContent = visible
+                ? visible + ' asignatura(s) coinciden con el filtro.'
+                : 'Ninguna asignatura coincide. Prueba otro filtro.';
+        } else {
+            hint.hidden = true;
+        }
+    }
+
+    document.getElementById('mnStatusFilter').addEventListener('change', applyFilters);
+    document.getElementById('mnSearch').addEventListener('input', applyFilters);
+    document.getElementById('mnClearFilters').addEventListener('click', function () {
+        document.getElementById('mnStatusFilter').value = '';
+        document.getElementById('mnSearch').value = '';
+        applyFilters();
+    });
+})();
+</script>
+
+{% include 'estudiante/_alumno_wrap_end.html' %}

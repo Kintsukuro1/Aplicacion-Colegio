@@ -1,378 +1,428 @@
 {% load static %}
 {% load custom_filters %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/profesor/libro_clases.css' %}">
+<link rel="stylesheet" href="{% static 'css/profesor/libro_clases.css' %}?v=20260528-demo">
 
-<div class="content-wrapper">
-    <div class="page-header">
-        <h1>📖 Libro de Clases</h1>
-        <p class="subtitle">Matriz completa de calificaciones por clase</p>
+<div class="lc-page">
+
+    <section class="lc-toolbar" aria-label="Selección de clase">
+        <div class="lc-toolbar__head">
+            <h2 class="lc-toolbar__title">Matriz de calificaciones</h2>
+            <p class="lc-toolbar__hint">
+                {% if clase_seleccionada %}
+                Visualizando <strong>{{ clase_seleccionada.curso.nombre }}</strong> · {{ clase_seleccionada.asignatura.nombre }}
+                {% else %}
+                Elige un curso para ver notas, promedios y alumnos en seguimiento.
+                {% endif %}
+            </p>
+        </div>
+        <form method="GET" class="lc-toolbar__form">
+            <input type="hidden" name="pagina" value="libro_clases">
+            {% if rol == 'admin_escolar' %}
+            <div class="lc-field">
+                <label class="lc-field__label" for="filtro_curso_nombre">Curso</label>
+                <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
+                    <option value="">Todos los cursos</option>
+                    {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                    {% for grupo in clases_por_curso %}
+                    <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="lc-field">
+                <label class="lc-field__label" for="clase_id">Clase</label>
+                <select name="clase_id" id="clase_id" onchange="this.form.submit()">
+                    <option value="">— Seleccione una clase —</option>
+                    {% include 'profesor/_clase_select_options.html' with filtro_clase_id=filtro_clase_id %}
+                </select>
+            </div>
+        </form>
+    </section>
+
+    {% if clase_seleccionada %}
+
+    <header class="lc-class-bar" aria-label="Resumen de la clase">
+        <div class="lc-class-bar__main">
+            <p class="lc-class-bar__eyebrow">Clase activa</p>
+            <h2 class="lc-class-bar__title">{{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</h2>
+            <p class="lc-class-bar__meta">
+                Docente: {{ clase_seleccionada.profesor.get_full_name }}
+                · {{ total_evaluaciones }} evaluación{{ total_evaluaciones|pluralize:"es" }}
+                · {{ total_estudiantes }} estudiante{{ total_estudiantes|pluralize }}
+            </p>
+        </div>
+        <div class="lc-class-bar__prom">
+            <span class="lc-class-bar__prom-lbl">Promedio del curso</span>
+            {% if evaluaciones %}
+            <span class="lc-class-bar__prom-val {% if promedio_general >= 4.0 %}lc-class-bar__prom-val--ok{% else %}lc-class-bar__prom-val--risk{% endif %}">
+                {{ promedio_general|default:"—" }}
+            </span>
+            {% else %}
+            <span class="lc-class-bar__prom-val lc-class-bar__prom-val--ok">5.4</span>
+            {% endif %}
+        </div>
+    </header>
+
+    {% if not evaluaciones %}
+    <div class="lc-demo-banner" role="status">
+        <p class="lc-demo-banner__text">
+            <strong>Vista demostración</strong> — Esta clase aún no tiene evaluaciones en el sistema.
+            Los números, gráficos y tabla siguientes son <strong>ejemplos ficticios</strong> para que veas el diseño final.
+        </p>
+        <a class="lc-demo-banner__cta" href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase_seleccionada.id }}">Crear evaluaciones reales →</a>
+    </div>
+    {% endif %}
+
+    <div class="lc-insights" aria-label="Indicadores del libro">
+        <article class="lc-insight lc-insight--ok">
+            <span class="lc-insight__icon" aria-hidden="true">👨‍🎓</span>
+            <div>
+                {% if evaluaciones %}
+                <span class="lc-insight__val">{{ total_estudiantes|default:0 }}</span>
+                {% else %}
+                <span class="lc-insight__val">4</span>
+                {% endif %}
+                <span class="lc-insight__lbl">Estudiantes</span>
+                <span class="lc-insight__hint">{% if evaluaciones %}Matrícula en esta clase{% else %}Ejemplo · matrícula ficticia{% endif %}</span>
+            </div>
+        </article>
+        <article class="lc-insight lc-insight--neutral">
+            <span class="lc-insight__icon" aria-hidden="true">📝</span>
+            <div>
+                {% if evaluaciones %}
+                <span class="lc-insight__val">{{ total_evaluaciones|default:0 }}</span>
+                {% else %}
+                <span class="lc-insight__val">4</span>
+                {% endif %}
+                <span class="lc-insight__lbl">Evaluaciones</span>
+                <span class="lc-insight__hint">{% if evaluaciones %}Columnas en la matriz{% else %}Ejemplo · evaluaciones ficticias{% endif %}</span>
+            </div>
+        </article>
+        <article class="lc-insight">
+            <span class="lc-insight__icon" aria-hidden="true">📊</span>
+            <div>
+                {% if evaluaciones %}
+                <span class="lc-insight__val">{{ promedio_general|default:"—" }}</span>
+                {% else %}
+                <span class="lc-insight__val">5.4</span>
+                {% endif %}
+                <span class="lc-insight__lbl">Promedio</span>
+                <span class="lc-insight__hint">{% if evaluaciones %}{% if promedio_general >= 5.0 %}Rendimiento destacado{% elif promedio_general >= 4.0 %}Curso en zona aprobada{% elif total_evaluaciones %}Revisar refuerzo{% else %}Sin notas aún{% endif %}{% else %}Ejemplo · curso en zona aprobada{% endif %}</span>
+            </div>
+        </article>
+        <article class="lc-insight lc-insight--warn">
+            <span class="lc-insight__icon" aria-hidden="true">⚠️</span>
+            <div>
+                {% if evaluaciones %}
+                <span class="lc-insight__val" id="lcRiskCount">—</span>
+                {% else %}
+                <span class="lc-insight__val" id="lcRiskCount">1</span>
+                {% endif %}
+                <span class="lc-insight__lbl">En seguimiento</span>
+                <span class="lc-insight__hint">{% if evaluaciones %}Promedio &lt; 4.0{% else %}Ejemplo · seguimiento ficticio{% endif %}</span>
+            </div>
+        </article>
     </div>
 
-    <div class="libro-container">
-        
-        {# Filtros #}
-        <div class="filtros-section">
-            <form method="GET" class="filtros-form">
-                <input type="hidden" name="pagina" value="libro_clases">
-                {% if rol == 'admin_escolar' %}
-                <div class="filtro-item">
-                    <label for="filtro_curso_nombre">Seleccionar Curso:</label>
-                    <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
-                        <option value="">-- Todos los cursos --</option>
-                        {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
-                        {% for grupo in clases_por_curso %}
-                            <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+    {% if evaluaciones %}
+    <section class="lc-risk-strip" id="lcRiskStrip" hidden aria-label="Alumnos en seguimiento">
+        <p class="lc-risk-strip__title">Alumnos que requieren seguimiento académico</p>
+        <ul class="lc-risk-strip__list" id="lcRiskList"></ul>
+    </section>
+    {% else %}
+    <section class="lc-risk-strip" aria-label="Alumnos en seguimiento (ejemplo)">
+        <p class="lc-risk-strip__title">Alumnos que requieren seguimiento académico (ejemplo)</p>
+        <ul class="lc-risk-strip__list">
+            <li class="lc-risk-strip__item"><span>Benjamín Sepúlveda R.</span></li>
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if evaluaciones %}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <div class="lc-charts">
+        <div class="lc-chart-card">
+            <h3>📈 Rendimiento por evaluación</h3>
+            <div class="chart-container">
+                <canvas id="rendimientoChart"></canvas>
+            </div>
+        </div>
+        <div class="lc-chart-card lc-chart-card--donut">
+            <h3>📊 Estado de aprobación</h3>
+            <div class="chart-container">
+                <canvas id="aprobacionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="lc-table-panel">
+        <div class="lc-table-panel__head">
+            <div>
+                <h3 class="lc-table-panel__title">Libro de calificaciones</h3>
+                <p class="lc-table-panel__sub">Desplaza horizontalmente si hay muchas evaluaciones · Primera columna fija</p>
+            </div>
+        </div>
+        <div class="tabla-scroll">
+            <table class="tabla-libro">
+                <thead>
+                    <tr>
+                        <th class="col-numero">#</th>
+                        <th class="col-estudiante">Estudiante</th>
+                        {% for evaluacion in evaluaciones %}
+                        <th class="col-evaluacion" title="{{ evaluacion.nombre }} - {{ evaluacion.fecha_evaluacion|date:'d/m/Y' }} ({{ evaluacion.ponderacion }}%)">
+                            <div class="eval-header">
+                                <span class="eval-nombre">{{ evaluacion.nombre|truncatechars:15 }}</span>
+                                <span class="eval-fecha">{{ evaluacion.fecha_evaluacion|date:"d/m" }}</span>
+                                <span class="eval-pond">{{ evaluacion.ponderacion }}%</span>
+                            </div>
+                        </th>
                         {% endfor %}
-                    </select>
-                </div>
-                {% endif %}
-                
-                <div class="filtro-item">
-                    <label for="clase_id">Seleccionar Clase:</label>
-                    <select name="clase_id" id="clase_id" onchange="this.form.submit()">
-                        <option value="">-- Seleccione una clase --</option>
-                        {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
-                        {% for grupo in clases_por_curso %}
-                            <optgroup label="{{ grupo.grouper }}">
-                                {% for clase in grupo.list %}
-                                    <option value="{{ clase.id }}" {% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ clase.asignatura.nombre }}
-                                    </option>
-                                {% endfor %}
-                            </optgroup>
+                        <th class="col-promedio">Promedio</th>
+                        <th class="col-estado">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in matriz_calificaciones %}
+                    <tr data-promedio="{% if fila.promedio %}{{ fila.promedio }}{% endif %}"
+                        data-nombre="{{ fila.estudiante.apellido_paterno }} {{ fila.estudiante.apellido_materno }}, {{ fila.estudiante.nombre }}">
+                        <td class="col-numero">{{ forloop.counter }}</td>
+                        <td class="col-estudiante">
+                            {{ fila.estudiante.apellido_paterno }} {{ fila.estudiante.apellido_materno }}, {{ fila.estudiante.nombre }}
+                        </td>
+                        {% for nota in fila.notas %}
+                        <td class="col-nota">
+                            {% if nota %}
+                            <span class="nota {% if nota >= 5.0 %}nota-alta{% elif nota >= 4.0 %}nota-media{% else %}nota-baja{% endif %}">{{ nota }}</span>
+                            {% else %}
+                            <span class="nota-vacia">-</span>
+                            {% endif %}
+                        </td>
                         {% endfor %}
-                    </select>
-                </div>
-            </form>
+                        <td class="col-promedio">
+                            {% if fila.promedio %}
+                            <span class="promedio {% if fila.promedio >= 4.0 %}aprobado{% else %}reprobado{% endif %}">{{ fila.promedio }}</span>
+                            {% else %}
+                            <span class="promedio-vacio">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="col-estado">
+                            <span class="badge badge-{{ fila.estado|lower|cut:' ' }}">{{ fila.estado }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="fila-promedios">
+                        <td colspan="2" class="label-promedios">Promedio por evaluación</td>
+                        {% for promedio in promedios_evaluaciones %}
+                        <td class="col-nota">
+                            {% if promedio %}
+                            <span class="promedio-eval {% if promedio >= 4.0 %}aprobado{% else %}reprobado{% endif %}">{{ promedio }}</span>
+                            {% else %}
+                            <span class="promedio-vacio">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td colspan="2"></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+    </div>
 
-        {% if clase_seleccionada %}
-        
-        {# Información de la Clase #}
-        <div class="info-clase">
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Curso:</span>
-                    <span class="info-value">{{ clase_seleccionada.curso.nombre }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Asignatura:</span>
-                    <span class="info-value">{{ clase_seleccionada.asignatura.nombre }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Profesor:</span>
-                    <span class="info-value">{{ clase_seleccionada.profesor.get_full_name }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Promedio General:</span>
-                    <span class="info-value {% if promedio_general >= 4.0 %}aprobado{% else %}reprobado{% endif %}">
-                        {{ promedio_general|default:"0.0" }}
-                    </span>
-                </div>
-            </div>
-        </div>
+    <div class="lc-actions">
+        <button type="button" class="lc-btn lc-btn--secondary" onclick="window.print()">
+            <span aria-hidden="true">🖨️</span> Imprimir
+        </button>
+        <button type="button" class="lc-btn lc-btn--primary" onclick="exportarExcel()">
+            <span aria-hidden="true">📊</span> Exportar CSV
+        </button>
+    </div>
 
-        {# Estadísticas Rápidas #}
-        <div class="stats-rapidas">
-            <div class="stat-card">
-                <span class="stat-icon">👨‍🎓</span>
-                <div class="stat-info">
-                    <span class="stat-numero">{{ total_estudiantes }}</span>
-                    <span class="stat-label">Estudiantes</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-icon">📝</span>
-                <div class="stat-info">
-                    <span class="stat-numero">{{ total_evaluaciones }}</span>
-                    <span class="stat-label">Evaluaciones</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-icon">📊</span>
-                <div class="stat-info">
-                    <span class="stat-numero">{{ promedio_general|default:"0.0" }}</span>
-                    <span class="stat-label">Promedio Curso</span>
-                </div>
-            </div>
-        </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('.tabla-libro tbody tr[data-promedio]');
+        const riskNames = [];
+        rows.forEach(function(row) {
+            const p = parseFloat(row.getAttribute('data-promedio'));
+            if (!isNaN(p) && p < 4.0) {
+                riskNames.push(row.getAttribute('data-nombre'));
+            }
+        });
+        const countEl = document.getElementById('lcRiskCount');
+        if (countEl) countEl.textContent = riskNames.length;
+        const strip = document.getElementById('lcRiskStrip');
+        const list = document.getElementById('lcRiskList');
+        if (strip && list && riskNames.length > 0) {
+            strip.hidden = false;
+            const max = 8;
+            riskNames.slice(0, max).forEach(function(name) {
+                const li = document.createElement('li');
+                li.className = 'lc-risk-strip__item';
+                li.innerHTML = '<span>' + name.replace(/</g, '&lt;') + '</span>';
+                list.appendChild(li);
+            });
+            if (riskNames.length > max) {
+                const more = document.createElement('li');
+                more.className = 'lc-risk-strip__more';
+                more.textContent = '+' + (riskNames.length - max) + ' más en la tabla';
+                list.appendChild(more);
+            }
+        }
 
-        {% if evaluaciones %}
-        <style>
-            .libro-charts-container {
-                display: grid;
-                grid-template-columns: 1.5fr 1fr;
-                gap: 20px;
-                margin-bottom: 25px;
-                align-items: stretch;
-            }
-            .libro-chart-card {
-                background: #ffffff;
-                border-radius: 12px;
-                padding: 20px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                border-top: 4px solid #6366f1;
-            }
-            .libro-chart-card.card-aprobacion {
-                border-top-color: #10b981;
-            }
-            .libro-chart-card h3 {
-                margin-top: 0;
-                margin-bottom: 15px;
-                font-family: 'Outfit', sans-serif;
-                font-size: 1.1rem;
-                color: #1e293b;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .libro-chart-card .chart-container {
-                position: relative;
-                height: 200px;
-                width: 100%;
-            }
-            @media (max-width: 992px) {
-                .libro-charts-container {
-                    grid-template-columns: 1fr;
+        const ctxRendimiento = document.getElementById('rendimientoChart');
+        if (ctxRendimiento && typeof Chart !== 'undefined') {
+            const evalNames = [{% for eval in evaluaciones %}"{{ eval.nombre|escapejs }}",{% endfor %}];
+            const evalAverages = [{% for promedio in promedios_evaluaciones %}{{ promedio|default:0.0 }},{% endfor %}];
+            new Chart(ctxRendimiento, {
+                type: 'line',
+                data: {
+                    labels: evalNames.length ? evalNames : ['Sin evaluaciones'],
+                    datasets: [{
+                        label: 'Promedio del curso',
+                        data: evalAverages.length ? evalAverages : [0],
+                        fill: true,
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderColor: '#6366f1',
+                        borderWidth: 3,
+                        tension: 0.35,
+                        pointBackgroundColor: '#6366f1',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 1.0, max: 7.0, ticks: { stepSize: 1.0 } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
                 }
-            }
-        </style>
+            });
+        }
+
+        const ctxAprobacion = document.getElementById('aprobacionChart');
+        if (ctxAprobacion && typeof Chart !== 'undefined') {
+            let aprobados = 0, reprobados = 0, sinNotas = 0;
+            {% for fila in matriz_calificaciones %}
+            {% if fila.promedio %}
+            if (parseFloat("{{ fila.promedio }}") >= 4.0) { aprobados++; } else { reprobados++; }
+            {% else %}
+            sinNotas++;
+            {% endif %}
+            {% endfor %}
+            new Chart(ctxAprobacion, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Aprobados (≥ 4.0)', 'En seguimiento (< 4.0)', 'Sin calificación'],
+                    datasets: [{
+                        data: [aprobados, reprobados, sinNotas],
+                        backgroundColor: ['#818cf8', '#f87171', '#94a3b8'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+    });
+    </script>
+
+    {% else %}
+    <div class="lc-demo-live" data-lc-demo="1" aria-label="Libro de clases — vista demostración">
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-        <div class="libro-charts-container">
-            <div class="libro-chart-card">
-                <h3>📈 Rendimiento Histórico por Evaluación</h3>
+        <div class="lc-charts">
+            <div class="lc-chart-card">
+                <h3>📈 Rendimiento por evaluación <span class="lc-preview__badge" style="margin:0;font-size:0.7rem;">Ejemplo</span></h3>
                 <div class="chart-container">
-                    <canvas id="rendimientoChart"></canvas>
+                    <canvas id="rendimientoChartDemo"></canvas>
                 </div>
             </div>
-            <div class="libro-chart-card card-aprobacion">
-                <h3>📊 Estado de Aprobación</h3>
+            <div class="lc-chart-card lc-chart-card--donut">
+                <h3>📊 Estado de aprobación <span class="lc-preview__badge" style="margin:0;font-size:0.7rem;">Ejemplo</span></h3>
                 <div class="chart-container">
-                    <canvas id="aprobacionChart"></canvas>
+                    <canvas id="aprobacionChartDemo"></canvas>
                 </div>
             </div>
         </div>
 
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                // 1. Rendimiento por Evaluación
-                const ctxRendimiento = document.getElementById('rendimientoChart');
-                if (ctxRendimiento) {
-                    const evalNames = [
-                        {% for eval in evaluaciones %}
-                            "{{ eval.nombre|escapejs }}",
-                        {% endfor %}
-                    ];
-                    const evalAverages = [
-                        {% for promedio in promedios_evaluaciones %}
-                            {{ promedio|default:0.0 }},
-                        {% endfor %}
-                    ];
-                    
-                    new Chart(ctxRendimiento, {
-                        type: 'line',
-                        data: {
-                            labels: evalNames.length ? evalNames : ['Sin evaluaciones'],
-                            datasets: [{
-                                label: 'Promedio del Curso',
-                                data: evalAverages.length ? evalAverages : [0],
-                                fill: true,
-                                backgroundColor: 'rgba(99, 102, 241, 0.08)',
-                                borderColor: '#6366f1',
-                                borderWidth: 3,
-                                tension: 0.35,
-                                pointBackgroundColor: '#6366f1',
-                                pointRadius: 4,
-                                pointHoverRadius: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    min: 1.0,
-                                    max: 7.0,
-                                    ticks: {
-                                        stepSize: 1.0,
-                                        font: { family: "'Inter', sans-serif" }
-                                    },
-                                    grid: {
-                                        color: '#e2e8f0'
-                                    }
-                                },
-                                x: {
-                                    ticks: {
-                                        font: { family: "'Inter', sans-serif", size: 10 }
-                                    },
-                                    grid: {
-                                        display: false
-                                    }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return 'Promedio: ' + context.parsed.y.toFixed(1);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // 2. Aprobación del Curso (Calculado en base a matriz_calificaciones)
-                const ctxAprobacion = document.getElementById('aprobacionChart');
-                if (ctxAprobacion) {
-                    let aprobados = 0;
-                    let reprobados = 0;
-                    let sinNotas = 0;
-
-                    {% for fila in matriz_calificaciones %}
-                        {% if fila.promedio %}
-                            if (parseFloat("{{ fila.promedio }}") >= 4.0) {
-                                aprobados++;
-                            } else {
-                                reprobados++;
-                            }
-                        {% else %}
-                            sinNotas++;
-                        {% endif %}
-                    {% endfor %}
-
-                    new Chart(ctxAprobacion, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Aprobados (≥ 4.0)', 'Reprobados (< 4.0)', 'Sin Calificación'],
-                            datasets: [{
-                                data: [aprobados, reprobados, sinNotas],
-                                backgroundColor: [
-                                    '#10b981', // green esmeralda
-                                    '#f43f5e', // rose
-                                    '#94a3b8'  // slate / neutral
-                                ],
-                                borderWidth: 2,
-                                borderColor: '#ffffff',
-                                hoverOffset: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'right',
-                                    labels: {
-                                        font: {
-                                            family: "'Inter', sans-serif",
-                                            size: 11
-                                        },
-                                        color: '#475569',
-                                        boxWidth: 12
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            let label = context.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            let value = context.parsed;
-                                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            let percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                            return label + value + ' estudiante(s) (' + percentage + '%)';
-                                        }
-                                    }
-                                }
-                            },
-                            cutout: '65%'
-                        }
-                    });
-                }
-            });
-        </script>
-
-        {# Tabla Matriz de Calificaciones #}
-        <div class="tabla-container">
+        <div class="lc-table-panel">
+            <div class="lc-table-panel__head">
+                <div>
+                    <h3 class="lc-table-panel__title">Libro de calificaciones</h3>
+                    <p class="lc-table-panel__sub">Matriz de ejemplo · se reemplaza al registrar evaluaciones reales</p>
+                </div>
+            </div>
             <div class="tabla-scroll">
-                <table class="tabla-libro">
+                <table class="tabla-libro" id="lcDemoTable" data-lc-demo="1">
                     <thead>
                         <tr>
                             <th class="col-numero">#</th>
                             <th class="col-estudiante">Estudiante</th>
-                            {% for evaluacion in evaluaciones %}
-                            <th class="col-evaluacion" title="{{ evaluacion.nombre }} - {{ evaluacion.fecha_evaluacion|date:'d/m/Y' }} ({{ evaluacion.ponderacion }}%)">
-                                <div class="eval-header">
-                                    <span class="eval-nombre">{{ evaluacion.nombre|truncatechars:15 }}</span>
-                                    <span class="eval-fecha">{{ evaluacion.fecha_evaluacion|date:"d/m" }}</span>
-                                    <span class="eval-pond">{{ evaluacion.ponderacion }}%</span>
-                                </div>
-                            </th>
-                            {% endfor %}
+                            <th class="col-evaluacion"><div class="eval-header"><span class="eval-nombre">Prueba 1</span><span class="eval-fecha">12/03</span><span class="eval-pond">25%</span></div></th>
+                            <th class="col-evaluacion"><div class="eval-header"><span class="eval-nombre">Prueba 2</span><span class="eval-fecha">26/03</span><span class="eval-pond">25%</span></div></th>
+                            <th class="col-evaluacion"><div class="eval-header"><span class="eval-nombre">Tarea 1</span><span class="eval-fecha">05/04</span><span class="eval-pond">20%</span></div></th>
+                            <th class="col-evaluacion"><div class="eval-header"><span class="eval-nombre">Examen</span><span class="eval-fecha">20/04</span><span class="eval-pond">30%</span></div></th>
                             <th class="col-promedio">Promedio</th>
                             <th class="col-estado">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for fila in matriz_calificaciones %}
-                        <tr>
-                            <td class="col-numero">{{ forloop.counter }}</td>
-                            <td class="col-estudiante">
-                                {{ fila.estudiante.apellido_paterno }} {{ fila.estudiante.apellido_materno }}, {{ fila.estudiante.nombre }}
-                            </td>
-                            {% for nota in fila.notas %}
-                            <td class="col-nota">
-                                {% if nota %}
-                                    <span class="nota {% if nota >= 4.0 %}aprobado{% else %}reprobado{% endif %}">
-                                        {{ nota }}
-                                    </span>
-                                {% else %}
-                                    <span class="nota-vacia">-</span>
-                                {% endif %}
-                            </td>
-                            {% endfor %}
-                            <td class="col-promedio">
-                                {% if fila.promedio %}
-                                    <span class="promedio {% if fila.promedio >= 4.0 %}aprobado{% else %}reprobado{% endif %}">
-                                        {{ fila.promedio }}
-                                    </span>
-                                {% else %}
-                                    <span class="promedio-vacio">-</span>
-                                {% endif %}
-                            </td>
-                            <td class="col-estado">
-                                <span class="badge badge-{{ fila.estado|lower|cut:' ' }}">{{ fila.estado }}</span>
-                            </td>
+                        <tr data-promedio="6.1" data-nombre="Amanda Silva G.">
+                            <td class="col-numero">1</td>
+                            <td class="col-estudiante">Amanda Silva G.</td>
+                            <td class="col-nota"><span class="nota nota-alta">6.5</span></td>
+                            <td class="col-nota"><span class="nota nota-alta">5.8</span></td>
+                            <td class="col-nota"><span class="nota nota-alta">6.0</span></td>
+                            <td class="col-nota"><span class="nota nota-alta">5.9</span></td>
+                            <td class="col-promedio"><span class="promedio aprobado">6.1</span></td>
+                            <td class="col-estado"><span class="badge badge-aprobado">Aprobado</span></td>
                         </tr>
-                        {% endfor %}
-                        
-                        {# Fila de promedios por evaluación #}
+                        <tr data-promedio="3.9" data-nombre="Benjamín Sepúlveda R.">
+                            <td class="col-numero">2</td>
+                            <td class="col-estudiante">Benjamín Sepúlveda R.</td>
+                            <td class="col-nota"><span class="nota nota-media">4.5</span></td>
+                            <td class="col-nota"><span class="nota nota-baja">3.8</span></td>
+                            <td class="col-nota"><span class="nota nota-media">4.2</span></td>
+                            <td class="col-nota"><span class="nota nota-baja">3.5</span></td>
+                            <td class="col-promedio"><span class="promedio reprobado">3.9</span></td>
+                            <td class="col-estado"><span class="badge badge-reprobado">Seguimiento</span></td>
+                        </tr>
+                        <tr data-promedio="6.8" data-nombre="Catalina Muñoz T.">
+                            <td class="col-numero">3</td>
+                            <td class="col-estudiante">Catalina Muñoz T.</td>
+                            <td class="col-nota"><span class="nota nota-alta">7.0</span></td>
+                            <td class="col-nota"><span class="nota nota-alta">6.8</span></td>
+                            <td class="col-nota"><span class="nota nota-alta">6.5</span></td>
+                            <td class="col-nota"><span class="nota nota-alta">6.9</span></td>
+                            <td class="col-promedio"><span class="promedio aprobado">6.8</span></td>
+                            <td class="col-estado"><span class="badge badge-aprobado">Aprobado</span></td>
+                        </tr>
+                        <tr data-promedio="5.0" data-nombre="Diego Morales P.">
+                            <td class="col-numero">4</td>
+                            <td class="col-estudiante">Diego Morales P.</td>
+                            <td class="col-nota"><span class="nota nota-alta">5.0</span></td>
+                            <td class="col-nota"><span class="nota nota-alta">5.2</span></td>
+                            <td class="col-nota"><span class="nota nota-media">4.8</span></td>
+                            <td class="col-nota"><span class="nota nota-alta">5.1</span></td>
+                            <td class="col-promedio"><span class="promedio aprobado">5.0</span></td>
+                            <td class="col-estado"><span class="badge badge-aprobado">Aprobado</span></td>
+                        </tr>
                         <tr class="fila-promedios">
-                            <td colspan="2" class="label-promedios">Promedio por Evaluación:</td>
-                            {% for promedio in promedios_evaluaciones %}
-                            <td class="col-nota">
-                                {% if promedio %}
-                                    <span class="promedio-eval {% if promedio >= 4.0 %}aprobado{% else %}reprobado{% endif %}">
-                                        {{ promedio }}
-                                    </span>
-                                {% else %}
-                                    <span class="promedio-vacio">-</span>
-                                {% endif %}
-                            </td>
-                            {% endfor %}
+                            <td colspan="2" class="label-promedios">Promedio por evaluación</td>
+                            <td class="col-nota"><span class="promedio-eval aprobado">5.8</span></td>
+                            <td class="col-nota"><span class="promedio-eval aprobado">5.4</span></td>
+                            <td class="col-nota"><span class="promedio-eval aprobado">5.4</span></td>
+                            <td class="col-nota"><span class="promedio-eval aprobado">5.3</span></td>
                             <td colspan="2"></td>
                         </tr>
                     </tbody>
@@ -380,47 +430,148 @@
             </div>
         </div>
 
-        {# Botones de Acción #}
-        <div class="acciones-libro">
-            <button type="button" class="btn-exportar" onclick="window.print()">
-                <span class="icon">🖨️</span>
-                Imprimir
-            </button>
-            <button type="button" class="btn-exportar btn-excel" onclick="exportarExcel()">
-                <span class="icon">📊</span>
-                Exportar a Excel
-            </button>
+        <div class="lc-actions">
+            <button type="button" class="lc-btn lc-btn--secondary" disabled title="Disponible con datos reales">🖨️ Imprimir</button>
+            <button type="button" class="lc-btn lc-btn--primary" disabled title="Disponible con datos reales">📊 Exportar CSV</button>
         </div>
 
-        {% else %}
-        <div class="mensaje-vacio">
-            <span class="icon">📝</span>
-            <p>No hay evaluaciones registradas para esta clase.</p>
-            <p class="hint">Crea evaluaciones desde el módulo "Evaluaciones y Notas".</p>
-        </div>
-        {% endif %}
-
-        {% else %}
-        {# Fix: cierre de {% if clase_seleccionada %} — antes causaba TemplateSyntaxError #}
-        <div class="mensaje-vacio">
-            <span class="icon">📚</span>
-            <p>Selecciona una clase para ver el libro de calificaciones.</p>
-        </div>
-        {% endif %}
-
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Chart === 'undefined') return;
+            var lineEl = document.getElementById('rendimientoChartDemo');
+            if (lineEl) {
+                new Chart(lineEl, {
+                    type: 'line',
+                    data: {
+                        labels: ['Prueba 1', 'Prueba 2', 'Tarea 1', 'Examen'],
+                        datasets: [{
+                            label: 'Promedio del curso (ejemplo)',
+                            data: [5.8, 5.4, 5.4, 5.3],
+                            fill: true,
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            borderColor: '#6366f1',
+                            borderWidth: 3,
+                            tension: 0.35,
+                            pointBackgroundColor: '#6366f1',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { min: 1.0, max: 7.0, ticks: { stepSize: 1.0 } },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+            var donutEl = document.getElementById('aprobacionChartDemo');
+            if (donutEl) {
+                new Chart(donutEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Aprobados (≥ 4.0)', 'En seguimiento (< 4.0)', 'Sin calificación'],
+                        datasets: [{
+                            data: [3, 1, 0],
+                            backgroundColor: ['#818cf8', '#f87171', '#94a3b8'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: { legend: { position: 'right' } }
+                    }
+                });
+            }
+        });
+        </script>
     </div>
+    {% endif %}
+
+    {% else %}
+
+    <section class="lc-guide" aria-label="Guía del libro de clases">
+        <div class="lc-guide__icon" aria-hidden="true">📚</div>
+        <h3>Selecciona una clase para abrir el libro</h3>
+        <p>
+            Verás la matriz completa, el promedio del curso, gráficos de rendimiento y una lista automática
+            de alumnos en seguimiento (promedio menor a 4.0). También podrás exportar los datos.
+        </p>
+        <div class="lc-legend" role="list" aria-label="Leyenda de notas">
+            <span class="lc-legend__item" role="listitem"><span class="lc-legend__dot lc-legend__dot--alta"></span> ≥ 5.0 Destacado</span>
+            <span class="lc-legend__item" role="listitem"><span class="lc-legend__dot lc-legend__dot--media"></span> 4.0 – 4.9 Aprobado</span>
+            <span class="lc-legend__item" role="listitem"><span class="lc-legend__dot lc-legend__dot--baja"></span> &lt; 4.0 Seguimiento</span>
+        </div>
+    </section>
+
+    {% if clases %}
+    <section class="lc-quickpick" aria-label="Acceso rápido a clases">
+        <p class="lc-quickpick__label">Acceso rápido · {{ clases|length }} clase{{ clases|length|pluralize }} disponible{{ clases|length|pluralize }}</p>
+        {% for clase in clases|slice:":8" %}
+        <a class="lc-quickpick__chip" href="?pagina=libro_clases&amp;clase_id={{ clase.id }}">
+            {{ clase.curso.nombre }} · {{ clase.asignatura.nombre|truncatechars:18 }}
+        </a>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <div class="lc-preview" aria-hidden="true">
+        <span class="lc-preview__badge">Vista previa — datos de ejemplo</span>
+        <div class="tabla-scroll">
+            <table class="tabla-libro matriz-notas">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Prueba 1</th><th>Prueba 2</th><th>Tarea 1</th><th>Examen</th><th>Promedio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Amanda Silva G.</td>
+                        <td><span class="nota nota-alta">6.5</span></td>
+                        <td><span class="nota nota-alta">5.8</span></td>
+                        <td><span class="nota nota-alta">6.0</span></td>
+                        <td><span class="nota nota-alta">5.9</span></td>
+                        <td><strong class="nota nota-alta">6.1</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Benjamín Sepúlveda R.</td>
+                        <td><span class="nota nota-media">4.5</span></td>
+                        <td><span class="nota nota-baja">3.8</span></td>
+                        <td><span class="nota nota-media">4.2</span></td>
+                        <td><span class="nota nota-media">4.0</span></td>
+                        <td><strong class="nota nota-baja">4.1</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Catalina Muñoz T.</td>
+                        <td><span class="nota nota-alta">7.0</span></td>
+                        <td><span class="nota nota-alta">6.8</span></td>
+                        <td><span class="nota nota-alta">6.5</span></td>
+                        <td><span class="nota nota-alta">6.9</span></td>
+                        <td><strong class="nota nota-alta">6.8</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% endif %}
+
 </div>
 
 <script>
 function exportarExcel() {
-    const table = document.querySelector('.tabla-libro');
+    const table = document.querySelector('.tabla-libro:not([data-lc-demo])');
     if (!table) return;
-    
+
     let csv = [];
-    // Get headers
     const headers = [];
-    const headerCols = table.querySelectorAll('thead th');
-    headerCols.forEach((col, idx) => {
+    table.querySelectorAll('thead th').forEach(function(col, idx) {
         if (idx === 0) {
             headers.push('Nº');
             return;
@@ -431,117 +582,40 @@ function exportarExcel() {
             const nombre = evalHeader.querySelector('.eval-nombre')?.textContent.trim() || '';
             const fecha = evalHeader.querySelector('.eval-fecha')?.textContent.trim() || '';
             const pond = evalHeader.querySelector('.eval-pond')?.textContent.trim() || '';
-            text = `${nombre} (${fecha} - ${pond})`;
+            text = nombre + ' (' + fecha + ' - ' + pond + ')';
         } else {
             text = col.textContent.trim();
         }
         headers.push('"' + text.replace(/"/g, '""') + '"');
     });
     csv.push(headers.join(';'));
-    
-    // Get body rows
-    const rows = table.querySelectorAll('tbody tr');
-    rows.forEach(row => {
+
+    table.querySelectorAll('tbody tr').forEach(function(row) {
         if (row.classList.contains('fila-promedios')) {
-            const cells = [];
-            cells.push('Promedio por Evaluación');
-            cells.push('');
-            row.querySelectorAll('td.col-nota').forEach(td => {
+            const cells = ['Promedio por Evaluación', ''];
+            row.querySelectorAll('td.col-nota').forEach(function(td) {
                 cells.push(td.textContent.trim());
             });
             csv.push(cells.join(';'));
             return;
         }
-        
-        const cols = row.querySelectorAll('td');
         const rowData = [];
-        cols.forEach((col, idx) => {
+        row.querySelectorAll('td').forEach(function(col) {
             let val = col.textContent.trim();
-            if (col.classList.contains('col-nota') || col.classList.contains('col-promedio')) {
-                val = val.replace(/\s+/g, '');
-            }
             rowData.push('"' + val.replace(/"/g, '""') + '"');
         });
-        if (rowData.length > 0) {
-            csv.push(rowData.join(';'));
-        }
+        if (rowData.length) csv.push(rowData.join(';'));
     });
-    
-    const csvContent = "\ufeff" + csv.join("\n"); // Add BOM for Excel UTF-8 support
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    
-    const curso = '{{ clase_seleccionada.curso.nombre|escapejs }}';
-    const asig = '{{ clase_seleccionada.asignatura.nombre|escapejs }}';
-    const filename = `Libro_Clases_${curso.replace(/\s+/g, '_')}_${asig.replace(/\s+/g, '_')}.csv`;
-    
-    link.setAttribute("download", filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
+
+    const blob = new Blob(['\ufeff' + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'Libro_Clases_{{ clase_seleccionada.curso.nombre|escapejs }}_{{ clase_seleccionada.asignatura.nombre|escapejs }}.csv'.replace(/\s+/g, '_');
     link.click();
-    document.body.removeChild(link);
 }
 </script>
 
 {% if rol == 'admin_escolar' %}
-<script>
-function filtrarClasesPorCurso(cursoNombre) {
-    const claseSelect = document.getElementById('clase_id');
-    if (!claseSelect) return;
-    
-    const optgroups = claseSelect.querySelectorAll('optgroup');
-    
-    // Si cursoNombre es vacío, mostramos todos los optgroups
-    if (!cursoNombre) {
-        optgroups.forEach(group => group.style.display = '');
-        return;
-    }
-    
-    // Ocultar todos los optgroups excepto el seleccionado
-    optgroups.forEach(group => {
-        if (group.getAttribute('label') === cursoNombre) {
-            group.style.display = '';
-        } else {
-            group.style.display = 'none';
-        }
-    });
-    
-    // Auto-seleccionar la primera opción visible si la opción seleccionada actualmente está oculta
-    const currentSelected = claseSelect.options[claseSelect.selectedIndex];
-    if (currentSelected && currentSelected.value !== "") {
-        const parentGroup = currentSelected.parentNode;
-        if (parentGroup && parentGroup.tagName === 'OPTGROUP' && parentGroup.style.display === 'none') {
-            const targetGroup = Array.from(optgroups).find(g => g.getAttribute('label') === cursoNombre);
-            if (targetGroup) {
-                const firstOption = targetGroup.querySelector('option');
-                if (firstOption) {
-                    claseSelect.value = firstOption.value;
-                    claseSelect.dispatchEvent(new Event('change'));
-                }
-            }
-        }
-    }
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    const cursoFiltro = document.getElementById('filtro_curso_nombre');
-    if (cursoFiltro) {
-        const claseSelect = document.getElementById('clase_id');
-        if (claseSelect) {
-            const selectedOption = claseSelect.options[claseSelect.selectedIndex];
-            if (selectedOption && selectedOption.value !== "") {
-                const parentGroup = selectedOption.parentNode;
-                if (parentGroup && parentGroup.tagName === 'OPTGROUP') {
-                    const cursoNombre = parentGroup.getAttribute('label');
-                    cursoFiltro.value = cursoNombre;
-                    filtrarClasesPorCurso(cursoNombre);
-                }
-            }
-        }
-    }
-});
-</script>
+{% include 'profesor/_filtrar_clases_por_curso_script.html' %}
 {% endif %}
 {% include 'profesor/_personal_wrap_end.html' %}

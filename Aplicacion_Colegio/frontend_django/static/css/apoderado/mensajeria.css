@@ -1,8 +1,11 @@
 /* Mensajería — portal apoderado (amm-) */
 
 .amm-page {
+    width: 100%;
+    max-width: none;
     min-width: 0;
     padding: 0 0 1.5rem;
+    box-sizing: border-box;
 }
 
 .amm-chips {
@@ -220,14 +223,18 @@
 
 .amm-layout {
     display: grid;
-    grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
+    grid-template-columns: minmax(17rem, min(22rem, 24vw)) minmax(0, 1fr);
     gap: 1rem;
     align-items: stretch;
-    min-height: 32rem;
+    min-height: min(72vh, 42rem);
+    width: 100%;
 }
 
 .amm-layout--with-aside {
-    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr) minmax(14rem, 17rem);
+    grid-template-columns:
+        minmax(16rem, min(20rem, 22vw))
+        minmax(0, 1fr)
+        minmax(14rem, min(18rem, 22vw));
 }
 
 .amm-panel {

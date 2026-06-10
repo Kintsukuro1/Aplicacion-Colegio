@@ -1,0 +1,86 @@
+{% if mis_clases_inteligencia %}
+
+<section class="mc-intel" aria-label="Resumen inteligente de mis clases">
+
+  <header class="mc-intel__head">
+
+    <div>
+
+      <span class="mc-intel__badge mc-intel__badge--{{ mis_clases_inteligencia.estado }}">{{ mis_clases_inteligencia.estado_label }}</span>
+
+      <p class="mc-intel__hint">{{ mis_clases_inteligencia.estado_hint }}</p>
+
+    </div>
+
+    {% if mis_clases_inteligencia.mejor_asignatura or mis_clases_inteligencia.peor_asignatura %}
+
+    <div class="mc-intel__highlights">
+
+      {% if mis_clases_inteligencia.mejor_asignatura %}
+
+      <span class="mc-intel__pill mc-intel__pill--ok">
+
+        Mejor: {{ mis_clases_inteligencia.mejor_asignatura.nombre }} ({{ mis_clases_inteligencia.mejor_asignatura.nota }})
+
+      </span>
+
+      {% endif %}
+
+      {% if mis_clases_inteligencia.peor_asignatura %}
+
+      <span class="mc-intel__pill mc-intel__pill--warn">
+
+        Reforzar: {{ mis_clases_inteligencia.peor_asignatura.nombre }} ({{ mis_clases_inteligencia.peor_asignatura.nota }})
+
+      </span>
+
+      {% endif %}
+
+    </div>
+
+    {% endif %}
+
+  </header>
+
+
+
+  {% if mis_clases_inteligencia.alertas %}
+
+  <ul class="mc-intel__alertas">
+
+    {% for alerta in mis_clases_inteligencia.alertas %}
+
+    <li>{{ alerta }}</li>
+
+    {% endfor %}
+
+  </ul>
+
+  {% endif %}
+
+
+
+  <p class="mc-intel__consejo">
+
+    <span aria-hidden="true">💡</span> {{ mis_clases_inteligencia.consejo }}
+
+  </p>
+
+
+
+  <nav class="mc-intel__links" aria-label="Acciones relacionadas">
+
+    <a href="{% url 'dashboard' %}?pagina=mis_notas">Mis notas</a>
+
+    <a href="{% url 'dashboard' %}?pagina=mis_tareas">Tareas pendientes</a>
+
+    <a href="{% url 'dashboard' %}?pagina=mi_horario">Mi horario</a>
+
+    <a href="{% url 'dashboard' %}?pagina=asistencia">Asistencia</a>
+
+  </nav>
+
+</section>
+
+{% endif %}
+

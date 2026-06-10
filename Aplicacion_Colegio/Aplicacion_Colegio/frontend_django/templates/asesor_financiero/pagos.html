@@ -1,0 +1,489 @@
+{% load static %}
+
+<!-- PAGOS - ASESOR FINANCIERO -->
+
+<link rel="stylesheet" href="{% static 'css/asesor_financiero/pagos.css' %}">
+
+<div class="asesor-financiero-page">
+    <div class="page-header">
+        <div>
+            <h1>💳 Registrar Pagos</h1>
+            <p class="text-muted">Procesar pagos y conciliación bancaria</p>
+        </div>
+        <button class="btn btn-primary" onclick="mostrarFormularioNuevoPago()">
+            <i class="fas fa-plus"></i> Nuevo Pago
+        </button>
+    </div>
+
+    <!-- Resumen del día -->
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-icon">💰</div>
+            <div class="summary-content">
+                <h4>Total Recaudado</h4>
+                <p class="summary-value" id="total-recaudado">$0</p>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">📊</div>
+            <div class="summary-content">
+                <h4>Pagos Procesados</h4>
+                <p class="summary-value" id="pagos-procesados">0</p>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">⏰</div>
+            <div class="summary-content">
+                <h4>Pendientes de Conciliación</h4>
+                <p class="summary-value" id="pendientes-conciliacion">0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-card">
+        <div class="filter-header">
+            <h3>🔍 Buscar Pagos</h3>
+            <button class="btn-collapse" onclick="toggleFiltrosPagos()">
+                <i class="fas fa-chevron-up" id="filter-icon-pagos"></i>
+            </button>
+        </div>
+        <form id="filtro-pagos-form" class="filter-form">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label><i class="fas fa-search"></i> Búsqueda</label>
+                    <input type="text" class="form-control" name="busqueda" placeholder="Nombre, RUT o N° comprobante">
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-credit-card"></i> Método</label>
+                    <select class="form-control" name="metodo">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-info-circle"></i> Estado</label>
+                    <select class="form-control" name="estado">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar"></i> Desde</label>
+                    <input type="date" class="form-control" name="fecha_desde">
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar"></i> Hasta</label>
+                    <input type="date" class="form-control" name="fecha_hasta">
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-search">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                    <button type="button" class="btn btn-clear" onclick="limpiarFiltrosPagos()">
+                        <i class="fas fa-eraser"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de pagos recientes -->
+    <div class="data-table-card">
+        <div class="table-header">
+            <h3>📋 Pagos Recientes</h3>
+            <div class="table-actions">
+                <button class="btn btn-export" onclick="exportarPagosExcel()">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </button>
+            </div>
+        </div>
+        <div class="table-body" id="tabla-pagos">
+            <div class="empty-state">
+                <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                <h3>No hay pagos registrados</h3>
+                <p class="text-muted">Los pagos procesados aparecerán aquí</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let metodosDisponibles = [];
+let estadosDisponibles = [];
+
+// Cargar datos al inicio
+document.addEventListener('DOMContentLoaded', function() {
+    cargarPagos();
+    
+    // Evento de envío del formulario
+    const form = document.getElementById('filtro-pagos-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            cargarPagos();
+        });
+    }
+});
+
+// Cargar pagos con filtros
+function cargarPagos() {
+    const form = document.getElementById('filtro-pagos-form');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    // Mostrar loader
+    const tablaPagos = document.getElementById('tabla-pagos');
+    tablaPagos.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-3">Cargando...</p></div>';
+    
+    fetch(`/api/asesor-financiero/pagos/?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            // Guardar opciones para formularios
+            metodosDisponibles = data.metodos;
+            estadosDisponibles = data.estados;
+            
+            // Poblar selects de filtros si están vacíos
+            poblarSelectFiltros(data.metodos, data.estados);
+            
+            // Actualizar estadísticas
+            actualizarEstadisticasPagos(data.estadisticas);
+            
+            // Mostrar resultados
+            mostrarResultadosPagos(data.resultados);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            tablaPagos.innerHTML = '<div class="alert alert-danger">Error al cargar datos</div>';
+        });
+}
+
+// Poblar selects de filtros
+function poblarSelectFiltros(metodos, estados) {
+    const selectMetodo = document.querySelector('select[name="metodo"]');
+    const selectEstado = document.querySelector('select[name="estado"]');
+    
+    // Poblar métodos si está vacío
+    if (selectMetodo && selectMetodo.options.length === 1) {
+        metodos.forEach(m => {
+            const option = document.createElement('option');
+            option.value = m.code;
+            option.textContent = m.label;
+            selectMetodo.appendChild(option);
+        });
+    }
+    
+    // Poblar estados si está vacío
+    if (selectEstado && selectEstado.options.length === 1) {
+        estados.forEach(e => {
+            const option = document.createElement('option');
+            option.value = e.code;
+            option.textContent = e.label;
+            selectEstado.appendChild(option);
+        });
+    }
+}
+
+// Actualizar estadísticas
+function actualizarEstadisticasPagos(stats) {
+    document.getElementById('total-recaudado').textContent = formatMonto(stats.total_recaudado_hoy);
+    document.getElementById('pagos-procesados').textContent = stats.pagos_procesados_hoy;
+    document.getElementById('pendientes-conciliacion').textContent = stats.pendientes_conciliacion;
+}
+
+// Mostrar resultados en tabla
+function mostrarResultadosPagos(resultados) {
+    const tablaPagos = document.getElementById('tabla-pagos');
+    
+    if (resultados.length === 0) {
+        tablaPagos.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                <h3>No hay pagos registrados</h3>
+                <p class="text-muted">Los pagos procesados aparecerán aquí</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <table class="table-results">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Estudiante</th>
+                    <th>Concepto</th>
+                    <th>Monto</th>
+                    <th>Método</th>
+                    <th>Estado</th>
+                    <th>N° Comprobante</th>
+                    <th>Conciliado</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    resultados.forEach(p => {
+        const estadoBadge = getEstadoBadge(p.estado_code);
+        const conciliadoBadge = p.conciliado ? '<span class="badge badge-success">Sí</span>' : '<span class="badge badge-warning">No</span>';
+        
+        html += `
+            <tr>
+                <td>#${p.id}</td>
+                <td>${p.fecha_pago}</td>
+                <td><strong>${p.estudiante.nombre}</strong><br><small class="text-muted">${p.estudiante.rut}</small></td>
+                <td>${p.cuota.concepto}<br><small class="text-muted">${p.cuota.mes}</small></td>
+                <td><strong>$${formatNumber(p.monto_pagado)}</strong></td>
+                <td>${p.metodo}</td>
+                <td>${estadoBadge}</td>
+                <td>${p.numero_comprobante || '-'}</td>
+                <td>${conciliadoBadge}</td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table>';
+    tablaPagos.innerHTML = html;
+}
+
+// Obtener badge de estado
+function getEstadoBadge(estado) {
+    const badges = {
+        'APROBADO': '<span class="badge badge-success">Aprobado</span>',
+        'PENDIENTE': '<span class="badge badge-warning">Pendiente</span>',
+        'RECHAZADO': '<span class="badge badge-danger">Rechazado</span>',
+        'REVERSADO': '<span class="badge badge-info">Reversado</span>',
+    };
+    return badges[estado] || '<span class="badge">' + estado + '</span>';
+}
+
+// Mostrar formulario de nuevo pago
+function mostrarFormularioNuevoPago() {
+    const html = `
+        <div class="modal-overlay" onclick="cerrarModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>💳 Nuevo Pago</h3>
+                    <button class="btn-close" onclick="cerrarModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevoPago">
+                        <div class="form-group">
+                            <label>Estudiante ID (por ahora ingrese directamente)</label>
+                            <input type="number" class="form-control" id="estudiante-id" name="estudiante_id" placeholder="ID del estudiante" required>
+                            <button type="button" class="btn btn-secondary mt-2" onclick="cargarCuotasEstudiante()">Cargar Cuotas</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Cuota a Pagar</label>
+                            <select class="form-control" name="cuota_id" id="select-cuota" required disabled>
+                                <option value="">Seleccione primero un estudiante</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Monto a Pagar ($)</label>
+                            <input type="number" class="form-control" name="monto" id="input-monto" required min="1" step="1">
+                            <small class="text-muted">Saldo pendiente: <span id="saldo-pendiente">$0</span></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Método de Pago</label>
+                            <select class="form-control" name="metodo" required>
+                                <option value="">Seleccionar...</option>
+                                ${metodosDisponibles.map(m => `<option value="${m.code}">${m.label}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>N° Comprobante (opcional)</label>
+                            <input type="text" class="form-control" name="numero_comprobante" placeholder="Número de boleta o transferencia">
+                        </div>
+                        <div class="form-group">
+                            <label>Banco Origen (opcional)</label>
+                            <input type="text" class="form-control" name="banco_origen" placeholder="Banco desde donde se realizó la transferencia">
+                        </div>
+                        <div class="form-group">
+                            <label>Observaciones (opcional)</label>
+                            <textarea class="form-control" name="observaciones" rows="3"></textarea>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" name="aprobar_automatico" value="true" checked>
+                            <label>Aprobar automáticamente (solo para efectivo y transferencia)</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="guardarNuevoPago()">
+                        <i class="fas fa-save"></i> Registrar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', html);
+}
+
+// Cargar cuotas del estudiante
+function cargarCuotasEstudiante() {
+    const estudianteId = document.getElementById('estudiante-id').value;
+    if (!estudianteId) {
+        alert('Ingrese el ID del estudiante');
+        return;
+    }
+    
+    fetch(`/api/asesor-financiero/estudiante/cuotas/?estudiante_id=${estudianteId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            
+            // Poblar select de cuotas
+            const selectCuota = document.getElementById('select-cuota');
+            selectCuota.innerHTML = '<option value="">Seleccionar cuota...</option>';
+            selectCuota.disabled = false;
+            
+            data.cuotas.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = `${c.concepto} - ${c.mes} (Saldo: $${formatNumber(c.saldo_pendiente)})`;
+                option.setAttribute('data-saldo', c.saldo_pendiente);
+                if (c.vencida) {
+                    option.textContent += ' ⚠️ VENCIDA';
+                }
+                selectCuota.appendChild(option);
+            });
+            
+            // Event listener para cambio de cuota
+            selectCuota.addEventListener('change', function() {
+                const option = this.options[this.selectedIndex];
+                if (option.value) {
+                    const saldo = option.getAttribute('data-saldo');
+                    document.getElementById('saldo-pendiente').textContent = '$' + formatNumber(saldo);
+                    document.getElementById('input-monto').value = saldo;
+                    document.getElementById('input-monto').max = saldo;
+                }
+            });
+            
+            alert('Cuotas cargadas. Estudiante: ' + data.estudiante.nombre);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar cuotas del estudiante');
+        });
+}
+
+// Guardar nuevo pago
+function guardarNuevoPago() {
+    const form = document.getElementById('formNuevoPago');
+    const formData = new FormData(form);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+    // Validación básica
+    if (!formData.get('estudiante_id')) {
+        alert('Debe ingresar el ID del estudiante');
+        return;
+    }
+    
+    if (!formData.get('cuota_id')) {
+        alert('Debe seleccionar una cuota');
+        return;
+    }
+    
+    if (!formData.get('monto') || parseFloat(formData.get('monto')) <= 0) {
+        alert('Debe ingresar un monto válido');
+        return;
+    }
+    
+    if (!formData.get('metodo')) {
+        alert('Debe seleccionar un método de pago');
+        return;
+    }
+    
+    // Deshabilitar botón
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    
+    fetch('/api/asesor-financiero/pago/crear/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            cerrarModal();
+            cargarPagos(); // Recargar tabla
+        } else {
+            alert('Error: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Registrar Pago';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al registrar pago');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Registrar Pago';
+    });
+}
+
+// Exportar a Excel
+function exportarPagosExcel() {
+    const form = document.getElementById('filtro-pagos-form');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    window.location.href = `/api/asesor-financiero/pagos/exportar-excel/?${params.toString()}`;
+}
+
+// Funciones auxiliares
+function toggleFiltrosPagos() {
+    const form = document.getElementById('filtro-pagos-form');
+    const icon = document.getElementById('filter-icon-pagos');
+    
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        form.style.display = 'none';
+        icon.className = 'fas fa-chevron-down';
+    }
+}
+
+function limpiarFiltrosPagos() {
+    document.getElementById('filtro-pagos-form').reset();
+    cargarPagos();
+}
+
+function cerrarModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) modal.remove();
+}
+
+function formatNumber(num) {
+    return Number(num).toLocaleString('es-CL');
+}
+
+function formatMonto(num) {
+    return '$' + Number(num).toLocaleString('es-CL');
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>

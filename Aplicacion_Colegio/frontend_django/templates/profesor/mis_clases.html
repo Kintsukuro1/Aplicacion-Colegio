@@ -1,126 +1,144 @@
 {% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/profesor/mis_clases.css' %}">
+<link rel="stylesheet" href="{% static 'css/profesor/mis_clases.css' %}?v=20260528-lavanda">
 
-<div class="clases-container">
-    <!-- Header -->
-    <div class="page-header">
-        <h1>📚 Mis Clases</h1>
-        <p>Selecciona una clase para ver su información completa</p>
-    </div>
-
-    <!-- Estadísticas -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">📖</div>
-            <div class="stat-value">{{ total_clases|default:0 }}</div>
-            <div class="stat-label">Clases Activas</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">🎓</div>
-            <div class="stat-value">{{ total_cursos|default:0 }}</div>
-            <div class="stat-label">Cursos Diferentes</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">⏰</div>
-            <div class="stat-value">{{ total_horas_semanales|default:0 }}</div>
-            <div class="stat-label">Horas Semanales Totales</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-value">{{ promedio_estudiantes|default:0 }}</div>
-            <div class="stat-label">Estudiantes (promedio)</div>
-        </div>
-    </div>
-
+<div class="mc-page">
     {% if mis_clases %}
-        <!-- Grid de Clases -->
-        <div class="clases-grid">
-            {% for clase in mis_clases %}
-                <div class="clase-card" style="border-left: 4px solid {{ clase.color }}; cursor: pointer;" onclick="if(!event.target.closest('.card-btn')) window.location.href='{% url 'ver_detalle_clase' clase.id_clase %}';">
-                    <div class="clase-header">
-                        <div class="clase-icon" style="background-color: {{ clase.color }}20; color: {{ clase.color }}">
-                            📖
-                        </div>
-                        <div class="clase-info">
-                            <h3 class="clase-titulo">{{ clase.asignatura }}</h3>
-                            <span class="clase-codigo">{{ clase.codigo }}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="clase-body">
-                        <div class="info-row">
-                            <span class="icon">🎓</span>
-                            <span class="text">{{ clase.curso_nombre }}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="icon">👥</span>
-                            <span class="text">{{ clase.total_estudiantes }} estudiantes</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="icon">⏱️</span>
-                            <span class="text">{{ clase.horas_semanales }} horas semanales</span>
-                        </div>
-
-                        <!-- Indicadores Dinámicos HSL Premium -->
-                        <div class="clase-indicators" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                            {% if clase.tareas_sin_corregir > 0 %}
-                                <div class="indicator-tag tag-danger" style="background-color: hsla(0, 100%, 97%, 0.85); color: #dc2626; border: 1px solid hsla(0, 100%, 90%, 0.8); padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;" title="Tareas entregadas pendientes de revisión">
-                                    ⚠️ <span>{{ clase.tareas_sin_corregir }} tarea{{ clase.tareas_sin_corregir|pluralize }} sin corregir</span>
-                                </div>
-                            {% else %}
-                                <div class="indicator-tag tag-success" style="background-color: hsla(142, 70%, 97%, 0.85); color: #16a34a; border: 1px solid hsla(142, 70%, 90%, 0.8); padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                                    ✅ <span>Al día con correcciones</span>
-                                </div>
-                            {% endif %}
-                            
-                            {% if clase.alumnos_riesgo > 0 %}
-                                <div class="indicator-tag tag-warning" style="background-color: hsla(38, 92%, 97%, 0.85); color: #d97706; border: 1px solid hsla(38, 92%, 90%, 0.8); padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;" title="Alumnos con promedio < 4.5 o asistencia < 80% en esta clase">
-                                    🚨 <span>{{ clase.alumnos_riesgo }} alumno{{ clase.alumnos_riesgo|pluralize }} en riesgo</span>
-                                </div>
-                            {% else %}
-                                <div class="indicator-tag tag-success" style="background-color: hsla(142, 70%, 97%, 0.85); color: #16a34a; border: 1px solid hsla(142, 70%, 90%, 0.8); padding: 6px 10px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                                    🛡️ <span>Sin alumnos en riesgo</span>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    {% if clase.horarios_por_dia %}
-                        <div class="clase-footer">
-                            <div class="horarios-mini">
-                                {% for dia, bloques in clase.horarios_por_dia.items %}
-                                    <div class="horario-dia">
-                                        <strong>{{ dia }}:</strong>
-                                        {% for bloque in bloques %}
-                                            <span class="bloque-tag">{{ bloque.hora_inicio }}-{{ bloque.hora_fin }}</span>
-                                        {% endfor %}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-
-                    <!-- Acciones rápidas (Reducir clics) -->
-                    <div class="clase-quick-actions">
-                        <a href="{% url 'gestionar_tareas_profesor' clase.id_clase %}?crear=1" class="card-btn btn-action-tarea" title="Crear nueva tarea para esta clase">➕ Nueva tarea</a>
-                        <a href="{% url 'registro_asistencia_clase' clase.id_clase %}" class="card-btn btn-action-asistencia" title="Registrar asistencia para esta clase">📋 Asistencia</a>
-                        <a href="{% url 'ver_detalle_clase' clase.id_clase %}?subir_material=1" class="card-btn btn-action-material" title="Subir material para esta clase">📁 Material</a>
-                    </div>
-                    
-                    <div class="clase-action">
-                        <span class="ver-detalle">Ver detalles →</span>
-                    </div>
+        <section class="mc-panel" aria-label="Filtros y listado">
+            <div class="mc-panel__toolbar">
+                <div class="mc-panel__toolbar-head">
+                    <h2 class="mc-panel__title">Tus cursos</h2>
+                    <p class="mc-panel__count" id="mcVisibleCount" aria-live="polite">
+                        {{ total_clases }} clase{{ total_clases|pluralize }} asignada{{ total_clases|pluralize }}
+                    </p>
                 </div>
-            {% endfor %}
-        </div>
+                <div class="mc-toolbar">
+                    <label class="mc-search" for="mcSearchInput">
+                        <span class="mc-search__icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        </span>
+                        <input type="search" id="mcSearchInput" class="mc-search__input" placeholder="Buscar por curso o asignatura…" autocomplete="off">
+                    </label>
+                    <select id="mcFilterSelect" class="mc-filter" aria-label="Filtrar clases">
+                        <option value="all">Todas</option>
+                        <option value="atencion">Requieren atención</option>
+                        <option value="correcciones">Con correcciones</option>
+                        <option value="riesgo">Con alumnos en riesgo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mc-grid" id="mcGrid">
+                {% for clase in mis_clases %}
+                <article
+                    class="mc-card{% if clase.tareas_sin_corregir or clase.alumnos_riesgo %} mc-card--attention{% endif %}"
+                    data-curso="{{ clase.curso_nombre|lower }}"
+                    data-asignatura="{{ clase.asignatura|lower }}"
+                    data-atencion="{% if clase.tareas_sin_corregir or clase.alumnos_riesgo %}1{% else %}0{% endif %}"
+                    data-correcciones="{% if clase.tareas_sin_corregir %}1{% else %}0{% endif %}"
+                    data-riesgo="{% if clase.alumnos_riesgo %}1{% else %}0{% endif %}"
+                    style="--mc-card-stripe: {{ clase.color|default:'#8b7cc8' }};"
+                >
+                    <div class="mc-card__accent" aria-hidden="true"></div>
+
+                    <header class="mc-card__head">
+                        <div class="mc-card__badge" aria-hidden="true">{{ clase.asignatura|slice:":1"|upper }}</div>
+                        <div class="mc-card__titles">
+                            <p class="mc-card__subject">{{ clase.asignatura }}{% if clase.codigo %} · {{ clase.codigo }}{% endif %}</p>
+                            <h2 class="mc-card__course">{{ clase.curso_nombre }}</h2>
+                        </div>
+                    </header>
+
+                    <div class="mc-card__stats">
+                        <span class="mc-stat-pill">{{ clase.total_estudiantes }} alumno{{ clase.total_estudiantes|pluralize }}</span>
+                        <span class="mc-stat-pill">{{ clase.horas_semanales }} h/sem</span>
+                        {% if clase.horarios_por_dia %}
+                            {% for dia, bloques in clase.horarios_por_dia.items %}
+                                {% if forloop.first %}
+                                <span class="mc-stat-pill mc-stat-pill--schedule">
+                                    {{ dia|slice:":3" }}
+                                    {% for bloque in bloques %}{{ bloque.hora_inicio }}–{{ bloque.hora_fin }}{% endfor %}
+                                </span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="mc-card__signals">
+                        {% if clase.tareas_sin_corregir > 0 %}
+                        <a href="{% url 'ver_detalle_clase' clase.id_clase %}?tab=entregas" class="mc-signal mc-signal--danger">
+                            {{ clase.tareas_sin_corregir }} entrega{{ clase.tareas_sin_corregir|pluralize }} por corregir
+                        </a>
+                        {% endif %}
+                        {% if clase.alumnos_riesgo > 0 %}
+                        <a href="{% url 'ver_detalle_clase' clase.id_clase %}" class="mc-signal mc-signal--warn">
+                            {{ clase.alumnos_riesgo }} en seguimiento académico
+                        </a>
+                        {% endif %}
+                        {% if not clase.tareas_sin_corregir and not clase.alumnos_riesgo %}
+                        <span class="mc-signal mc-signal--ok">Al día</span>
+                        {% endif %}
+                    </div>
+
+                    <footer class="mc-card__foot">
+                        <div class="mc-card__actions">
+                            <a href="{% url 'ver_detalle_clase' clase.id_clase %}" class="mc-card__cta">
+                                Ver detalle
+                                <svg class="mc-card__cta-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </a>
+                            <a href="{% url 'dashboard' %}?pagina=asistencia&amp;clase_id={{ clase.id_clase }}" class="mc-card__btn-sec">Asistencia</a>
+                            <a href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase.id_clase }}" class="mc-card__btn-sec">Notas</a>
+                        </div>
+                    </footer>
+                </article>
+                {% endfor %}
+            </div>
+
+            <p class="mc-no-results" id="mcNoResults" hidden>No hay clases que coincidan con tu búsqueda o filtro.</p>
+        </section>
     {% else %}
-        <!-- Estado vacío -->
-        <div class="empty-state">
-            <div class="empty-icon">📚</div>
+        <div class="mc-empty">
+            <div class="mc-empty__icon" aria-hidden="true">📚</div>
             <h3>No tienes clases asignadas</h3>
-            <p>Contacta con el administrador para que te asigne clases</p>
+            <p>Contacta con el administrador para que te asigne cursos.</p>
         </div>
     {% endif %}
 </div>
+
+<script>
+(function () {
+    const search = document.getElementById('mcSearchInput');
+    const filter = document.getElementById('mcFilterSelect');
+    const countEl = document.getElementById('mcVisibleCount');
+    const noResults = document.getElementById('mcNoResults');
+    const total = {{ total_clases|default:0 }};
+
+    function applyFilters() {
+        const q = (search && search.value || '').trim().toLowerCase();
+        const mode = filter ? filter.value : 'all';
+        let visible = 0;
+        document.querySelectorAll('.mc-card').forEach((card) => {
+            const curso = card.dataset.curso || '';
+            const asig = card.dataset.asignatura || '';
+            const textOk = !q || curso.includes(q) || asig.includes(q);
+            let modeOk = true;
+            if (mode === 'atencion') modeOk = card.dataset.atencion === '1';
+            if (mode === 'correcciones') modeOk = card.dataset.correcciones === '1';
+            if (mode === 'riesgo') modeOk = card.dataset.riesgo === '1';
+            const show = textOk && modeOk;
+            card.hidden = !show;
+            if (show) visible += 1;
+        });
+        if (countEl) {
+            countEl.textContent = visible === total
+                ? total + ' clase' + (total === 1 ? '' : 's') + ' asignada' + (total === 1 ? '' : 's')
+                : 'Mostrando ' + visible + ' de ' + total;
+        }
+        if (noResults) noResults.hidden = visible > 0;
+    }
+
+    if (search) search.addEventListener('input', applyFilters);
+    if (filter) filter.addEventListener('change', applyFilters);
+})();
+</script>
 {% include 'profesor/_personal_wrap_end.html' %}

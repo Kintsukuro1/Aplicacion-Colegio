@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1f5aa6">
+    {% include 'includes/_portal_favicon.html' %}
+    <title>{% block title %}{% include 'includes/_portal_tab_title.html' with rol=rol|default:'estudiante' wrap_title=False %}{% endblock %}</title>
+    <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Sistema UI/UX Moderno -->
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
+</head>
+<body>
+    <!-- Skip Link para Accesibilidad -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+    
+    <!-- Navbar -->
+    {% if request.GET.layout != 'bare' %}
+    <nav class="navbar" role="navigation" style="background-color: var(--color-primary); color: var(--color-white); padding: var(--spacing-md) 0; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: var(--z-sticky);">
+        <div class="container-xl">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <!-- Logo y Nombre -->
+                <a href="{% url 'dashboard' %}" style="font-size: var(--text-xl); font-weight: var(--font-bold); color: var(--color-white); text-decoration: none; display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span class="hidden md:inline-block">Portal Estudiante</span>
+                </a>
+                
+                <!-- Menú Desktop -->
+                <div class="hidden lg:flex" style="gap: var(--spacing-md);">
+                    <a href="{% url 'dashboard' %}" class="btn btn-ghost text-white">
+                        <i class="fas fa-home"></i> Inicio
+                    </a>
+                    <a href="{% url 'ver_tareas_estudiante' %}" class="btn btn-ghost text-white">
+                        <i class="fas fa-tasks"></i> Tareas
+                    </a>
+                    <a href="{% url 'mi_asistencia_estudiante' %}" class="btn btn-ghost text-white">
+                        <i class="fas fa-calendar-check"></i> Asistencia
+                    </a>
+                    <a href="{% url 'comunicados:lista' %}" class="btn btn-ghost text-white">
+                        <i class="fas fa-bullhorn"></i> Comunicados
+                    </a>
+                </div>
+                
+                <!-- Acciones de Usuario -->
+                <div class="d-flex align-center gap-md">
+                    <!-- Dark Mode Toggle -->
+                    <button id="theme-toggle" class="btn btn-ghost btn-icon text-white" aria-label="Cambiar tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    
+                    <!-- Notificaciones -->
+                    {% if user.is_authenticated %}
+                    <div class="dropdown pos-relative" id="notifications-dropdown">
+                        <button class="btn btn-ghost btn-icon" data-dropdown-toggle="notifications-dropdown" aria-label="Notificaciones" style="color: var(--color-white); position: relative;">
+                            <i class="fas fa-bell"></i>
+                            {% if notificaciones_count > 0 %}
+                            <span class="badge badge-error" style="position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem;">
+                                {{ notificaciones_count }}
+                            </span>
+                            {% endif %}
+                        </button>
+                        <div class="dropdown-menu" style="right: 0; left: auto; min-width: 300px;">
+                            <div style="padding: var(--spacing-md); border-bottom: 1px solid var(--border-color);">
+                                <h4 class="text-sm font-semibold">Notificaciones</h4>
+                            </div>
+                            {% if notificaciones_recientes %}
+                                {% for notif in notificaciones_recientes %}
+                                <a href="{{ notif.url }}" class="dropdown-item">
+                                    <div class="d-flex gap-sm">
+                                        <div style="color: var(--color-primary);">
+                                            <i class="fas fa-{{ notif.icono|default:'bell' }}"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium">{{ notif.titulo }}</div>
+                                            <div class="text-xs text-secondary">{{ notif.fecha|timesince }}</div>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            {% else %}
+                                <div class="dropdown-item text-center text-secondary">
+                                    <i class="fas fa-inbox"></i>
+                                    <p class="text-sm mt-xs">No hay notificaciones</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Usuario Dropdown -->
+                    {% if user.is_authenticated %}
+                    <div class="dropdown pos-relative" id="user-dropdown">
+                        <button class="btn btn-ghost dropdown-toggle" data-dropdown-toggle="user-dropdown" style="color: var(--color-white); display: flex; align-items: center; gap: var(--spacing-sm);">
+                            <div class="avatar avatar-sm">
+                                {% if user.estudiante.foto %}
+                                    <img src="{{ user.estudiante.foto.url }}" alt="{{ user.get_full_name }}">
+                                {% else %}
+                                    <i class="fas fa-user"></i>
+                                {% endif %}
+                            </div>
+                            <span class="hidden md:inline-block">{{ user.get_full_name }}</span>
+                        </button>
+                        <div class="dropdown-menu" style="right: 0; left: auto;">
+                            <a href="{% url 'dashboard' %}?pagina=perfil" class="dropdown-item">
+                                <i class="fas fa-user"></i> Mi Perfil
+                            </a>
+                            <a href="{% url 'dashboard' %}?pagina=mis_certificados" class="dropdown-item">
+                                <i class="fas fa-certificate"></i> Certificados
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'logout' %}" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Menu Mobile Toggle -->
+                    <button id="mobile-menu-toggle" class="btn btn-ghost btn-icon lg:hidden text-white" aria-label="Menú">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Menú Mobile -->
+            <div id="mobile-menu" class="lg:hidden" style="display: none; margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid rgba(255,255,255,0.2);">
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-xs);">
+                    <a href="{% url 'dashboard' %}" class="btn btn-ghost nav-link-mobile">
+                        <i class="fas fa-home"></i> Inicio
+                    </a>
+                    <a href="{% url 'ver_tareas_estudiante' %}" class="btn btn-ghost nav-link-mobile">
+                        <i class="fas fa-tasks"></i> Tareas
+                    </a>
+                    <a href="{% url 'mi_asistencia_estudiante' %}" class="btn btn-ghost nav-link-mobile">
+                        <i class="fas fa-calendar-check"></i> Asistencia
+                    </a>
+                    <a href="{% url 'comunicados:lista' %}" class="btn btn-ghost nav-link-mobile">
+                        <i class="fas fa-bullhorn"></i> Comunicados
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Breadcrumbs -->
+    {% block breadcrumbs %}
+    {% endblock %}
+    
+    <!-- Mensajes Django -->
+    {% if messages %}
+    <div class="container-xl mt-md">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">
+            <div class="alert-icon">
+                {% if message.tags == 'success' %}
+                    <i class="fas fa-check-circle"></i>
+                {% elif message.tags == 'error' or message.tags == 'danger' %}
+                    <i class="fas fa-exclamation-circle"></i>
+                {% elif message.tags == 'warning' %}
+                    <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                    <i class="fas fa-info-circle"></i>
+                {% endif %}
+            </div>
+            <div class="alert-content">
+                <div class="alert-message">{{ message }}</div>
+            </div>
+            <button class="alert-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Contenido Principal -->
+    <main id="main-content" class="container-xl py-xl">
+        {% block content %}
+        {% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    {% if request.GET.layout != 'bare' %}
+    <footer class="bg-secondary py-xl mt-3xl">
+        <div class="container-xl">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+                <div>
+                    <h4 class="font-semibold mb-md">Portal Estudiante</h4>
+                    <p class="text-sm text-secondary">Sistema de Gestión Escolar 2026</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-md">Enlaces Rápidos</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li><a href="{% url 'dashboard' %}" class="text-sm text-secondary hover:text-primary">Inicio</a></li>
+                        <li><a href="{% url 'ver_tareas_estudiante' %}" class="text-sm text-secondary hover:text-primary">Tareas</a></li>
+                        <li><a href="{% url 'mi_asistencia_estudiante' %}" class="text-sm text-secondary hover:text-primary">Asistencia</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-md">Soporte</h4>
+                    <p class="text-sm text-secondary">¿Necesitas ayuda?</p>
+                    {% url 'mensajeria:bandeja_mensajes' as soporte_mensajes_url %}
+                    <a href="{% if soporte_mensajes_url %}{{ soporte_mensajes_url }}{% else %}{% url 'dashboard' %}{% endif %}" class="text-sm text-primary">Contactar a tu profesor</a>
+                </div>
+            </div>
+            <div class="text-center mt-lg pt-lg" style="border-top: 1px solid var(--border-color);">
+                <p class="text-sm text-tertiary">
+                    © 2026 Sistema Escolar. Todos los derechos reservados.
+                </p>
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+    
+    <!-- JavaScript -->
+    <script src="{% static 'js/ui-system.js' %}"></script>
+    
+    <script>
+        // Toggle Mobile Menu
+        document.getElementById('mobile-menu-toggle')?.addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu.style.display === 'none' || !menu.style.display) {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        });
+        
+        // Cerrar menú móvil al hacer clic en un enlace
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('mobile-menu').style.display = 'none';
+            });
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register("/service-worker.js?v=20260306").catch(function() {
+                    return null;
+                });
+            });
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

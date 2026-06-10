@@ -1,0 +1,160 @@
+.ce-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.ce-header {
+    margin-bottom: 0.5rem;
+}
+
+.ce-feedback {
+    margin-bottom: 0.75rem;
+}
+
+.ce-feedback--success {
+    border: 1px solid #b8d8bf;
+    background: #edf8f0;
+    color: #1e5f2f;
+}
+
+.ce-feedback--error {
+    border: 1px solid #d7acb5;
+    background: #f7ebee;
+    color: #8f1d2c;
+}
+
+.ce-card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+}
+
+.ce-card-title {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+}
+
+.ce-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.ce-grid label {
+    display: grid;
+    gap: 0.35rem;
+    color: #253246;
+    font-weight: 600;
+    font-size: 0.94rem;
+}
+
+.ce-grid input,
+.ce-grid select {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid #cfd6df;
+    border-radius: 10px;
+    padding: 0.45rem 0.65rem;
+    background: #fff;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.ce-grid input:focus,
+.ce-grid select:focus {
+    outline: none;
+    border-color: #1f8f58;
+    box-shadow: 0 0 0 3px rgba(31, 143, 88, 0.15);
+}
+
+.ce-grid input[type='checkbox'] {
+    width: auto;
+    min-height: auto;
+    margin: 0;
+    accent-color: #1f8f58;
+}
+
+.ce-grid input[type='color'] {
+    min-height: 40px;
+    padding: 0.2rem;
+}
+
+.ce-grid--filters {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.ce-grid--form {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.ce-actions-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.ce-actions-row--align-end {
+    align-items: end;
+}
+
+.ce-actions-row--full,
+.ce-field-full {
+    grid-column: 1 / -1;
+}
+
+.ce-checkbox-label {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.ce-checkbox-label--spaced {
+    margin-top: 1.6rem;
+}
+
+.ce-card--table {
+    overflow: auto;
+}
+
+.ce-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ce-table th,
+.ce-table td {
+    text-align: left;
+    padding: 0.65rem;
+    border-bottom: 1px solid #ececec;
+    vertical-align: top;
+}
+
+.ce-table-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.ce-action-btn {
+    min-width: 84px;
+}
+
+@media (max-width: 768px) {
+    .ce-card {
+        padding: 0.85rem;
+    }
+
+    .ce-grid--filters,
+    .ce-grid--form {
+        grid-template-columns: 1fr;
+    }
+
+    .ce-checkbox-label--spaced {
+        margin-top: 0.3rem;
+    }
+
+    .ce-table th,
+    .ce-table td {
+        padding: 0.55rem;
+    }
+}

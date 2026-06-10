@@ -1,0 +1,200 @@
+<div class="notifications-page">
+    <div class="notifications-page-header">
+        <div>
+            <h1>Notificaciones</h1>
+            <p>Revisa tu historial completo de notificaciones.</p>
+        </div>
+        <div class="notifications-page-stats">
+            <span class="pill">Total: {{ notificaciones_total|default:0 }}</span>
+            <span class="pill pill-unread">No leídas: {{ notificaciones_no_leidas|default:0 }}</span>
+        </div>
+    </div>
+
+    <div class="notifications-page-filters">
+        <a href="/dashboard/?pagina=notificaciones" class="filter-chip {% if not notificaciones_filtro_estado %}active{% endif %}">Todas</a>
+        <a href="/dashboard/?pagina=notificaciones&estado=no_leidas" class="filter-chip {% if notificaciones_filtro_estado == 'no_leidas' %}active{% endif %}">No leídas</a>
+        <a href="/dashboard/?pagina=notificaciones&estado=leidas" class="filter-chip {% if notificaciones_filtro_estado == 'leidas' %}active{% endif %}">Leídas</a>
+    </div>
+
+    <div class="notifications-page-list">
+        {% if notificaciones_todas %}
+            {% for n in notificaciones_todas %}
+                <a href="{{ n.enlace }}" class="notifications-page-item {% if not n.leido %}is-unread{% endif %}">
+                    <div class="item-icon">{{ n.icono }}</div>
+                    <div class="item-content">
+                        <div class="item-title">{{ n.titulo }}</div>
+                        <div class="item-message">{{ n.mensaje }}</div>
+                        <div class="item-meta">
+                            <span>{{ n.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                            {% if n.prioridad == 'alta' %}
+                                <span class="priority-high">Prioridad alta</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <div class="notifications-empty">No hay notificaciones para este filtro.</div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.notifications-page {
+    max-width: 980px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1rem;
+}
+
+.notifications-page-header {
+    background: #ffffff;
+    border: 1px solid #ece8e2;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.notifications-page-header h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: #1f2937;
+}
+
+.notifications-page-header p {
+    margin: 0.2rem 0 0;
+    color: #6b7280;
+    font-size: 0.92rem;
+}
+
+.notifications-page-stats {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pill {
+    background: #eef2ff;
+    color: #374151;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.pill-unread {
+    background: #fff3e6;
+    color: #9a3412;
+}
+
+.notifications-page-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    text-decoration: none;
+    color: #374151;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.filter-chip.active {
+    background: #ff8a00;
+    border-color: #ff8a00;
+    color: #ffffff;
+}
+
+.notifications-page-list {
+    background: #ffffff;
+    border: 1px solid #ece8e2;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.notifications-page-item {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 0.8rem;
+    align-items: start;
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    text-decoration: none;
+    color: #111827;
+}
+
+.notifications-page-item:last-child {
+    border-bottom: none;
+}
+
+.notifications-page-item:hover {
+    background: #fffaf3;
+}
+
+.notifications-page-item.is-unread {
+    background: #fff4e8;
+}
+
+.item-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+}
+
+.item-title {
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1.35;
+}
+
+.item-message {
+    margin-top: 0.15rem;
+    font-size: 0.84rem;
+    color: #4b5563;
+    line-height: 1.4;
+}
+
+.item-meta {
+    margin-top: 0.35rem;
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.priority-high {
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 999px;
+    padding: 0.15rem 0.5rem;
+    font-weight: 700;
+}
+
+.notifications-empty {
+    padding: 1.8rem;
+    text-align: center;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .notifications-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>

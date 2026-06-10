@@ -1,0 +1,69 @@
+/* REGISTRAR ASISTENCIA - PROFESOR */
+
+/* Estados grupo */
+.estados-grupo {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+.radio-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.radio-estado input[type="radio"] {
+    display: none;
+}
+
+.radio-estado span {
+    font-size: var(--text-sm);
+    font-weight: 500;
+}
+
+.radio-estado.presente {
+    background-color: rgba(72, 187, 120, 0.1);
+}
+
+.radio-estado.presente input:checked ~ span {
+    color: var(--color-success);
+}
+
+.radio-estado.ausente {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.radio-estado.ausente input:checked ~ span {
+    color: var(--color-error);
+}
+
+.radio-estado.tardanza {
+    background-color: rgba(246, 173, 85, 0.1);
+}
+
+.radio-estado.tardanza input:checked ~ span {
+    color: var(--color-warning);
+}
+
+.radio-estado input:checked {
+    border-color: currentColor;
+}
+
+/* Avatar Small */
+.avatar-sm {
+    width: 2rem;
+    height: 2rem;
+    font-size: var(--text-sm);
+}
+
+/* Form Control Small */
+.form-control-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-sm);
+}

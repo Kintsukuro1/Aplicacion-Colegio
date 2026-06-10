@@ -27,9 +27,11 @@ def _resolve_mensajeria_rol(user) -> str:
 
 
 def _mensajeria_content_template(user) -> str:
-    # Fix: apoderado tiene plantilla propia (sidebar verde); el resto comparte la bandeja MM.
-    if _resolve_mensajeria_rol(user) == 'apoderado':
+    rol = _resolve_mensajeria_rol(user)
+    if rol == 'apoderado':
         return 'apoderado/mensajeria.html'
+    if rol == 'profesor':
+        return 'profesor/mensajeria.html'
     return 'estudiante/mensajeria.html'
 
 
@@ -39,6 +41,11 @@ def _apply_mensajeria_shell(context: dict, user) -> None:
     mensajeria_rol = _resolve_mensajeria_rol(user)
     context['rol'] = mensajeria_rol
     context['sidebar_template'] = DashboardAuthService.get_sidebar_template(mensajeria_rol)
+
+
+def _finalize_profesor_mensajeria_context(context: dict, user) -> None:
+    """Usa hero lavanda propio de mensajería (_mensajeria_hero), no el genérico del wrap."""
+    context['prof_hero_manual'] = True
 
 
 def _pupilo_nombre_por_clase(user, clase_id) -> str:
@@ -184,7 +191,17 @@ def bandeja_mensajes(request):
     # Fix: bandeja MM compartida por los tres roles del portal SSR (no solo por hasattr de perfil).
     uses_mm_bandeja = mensajeria_rol in {'estudiante', 'apoderado', 'profesor'}
 
-    if uses_mm_bandeja:
+    if mensajeria_rol == 'profesor':
+        context.update(
+            MensajeriaService.get_profesor_bandeja_context(
+                request.user,
+                request.GET,
+                clases=clases,
+                notificaciones_count=context.get('notificaciones_count'),
+            ),
+        )
+        _finalize_profesor_mensajeria_context(context, request.user)
+    elif uses_mm_bandeja:
         context.update(
             MensajeriaService.get_alumno_bandeja_context(
                 request.user,

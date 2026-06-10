@@ -1,8 +1,14 @@
+{% if rol == 'profesor' or rol == 'Profesor' %}
+{% include 'profesor/_personal_wrap_start.html' %}
+{% endif %}
 <div class="content-wrapper sr-page">
+    {% if rol == 'profesor' or rol == 'Profesor' %}
+    {% else %}
     <div class="page-header sr-header">
         <h1>Solicitud de Reuniones</h1>
         <p class="subtitle">Bandeja de reuniones para profesor y administracion.</p>
     </div>
+    {% endif %}
 
     <div id="meet-feedback" class="alert sr-feedback" hidden></div>
 
@@ -417,3 +423,6 @@
         loadMeetings();
     })();
 </script>
+{% if rol == 'profesor' or rol == 'Profesor' %}
+{% include 'profesor/_personal_wrap_end.html' %}
+{% endif %}

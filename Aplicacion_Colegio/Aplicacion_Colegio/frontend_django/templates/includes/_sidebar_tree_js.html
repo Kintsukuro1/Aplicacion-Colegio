@@ -1,0 +1,94 @@
+<script>
+(function() {
+    'use strict';
+
+    // ─── Sidebar Hierarchical Tree Navigation ───
+    var STORAGE_KEY = 'sidebar_tree_state';
+
+    function loadState() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        } catch(e) { return {}; }
+    }
+
+    function saveState(state) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+    }
+
+    function toggleGroup(group, forceOpen) {
+        var btn = group.querySelector('.nav-tree__toggle');
+        var children = group.querySelector('.nav-tree__children');
+        if (!btn || !children) return;
+
+        var isOpen = forceOpen !== undefined ? forceOpen : btn.getAttribute('aria-expanded') !== 'true';
+
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        group.classList.toggle('nav-tree__group--open', isOpen);
+
+        if (isOpen) {
+            children.style.maxHeight = children.scrollHeight + 'px';
+            children.addEventListener('transitionend', function handler() {
+                children.style.maxHeight = 'none';
+                children.removeEventListener('transitionend', handler);
+            });
+        } else {
+            children.style.maxHeight = children.scrollHeight + 'px';
+            requestAnimationFrame(function() {
+                children.style.maxHeight = '0px';
+            });
+        }
+
+        var state = loadState();
+        state[group.dataset.group] = isOpen;
+        saveState(state);
+    }
+
+    function initSidebarTree() {
+        var groups = document.querySelectorAll('.nav-tree__group');
+        if (!groups.length) return;
+
+        var savedState = loadState();
+
+        groups.forEach(function(group) {
+            var btn = group.querySelector('.nav-tree__toggle');
+            var children = group.querySelector('.nav-tree__children');
+            var key = group.dataset.group;
+
+            // Auto-expand if has active child
+            var hasActive = group.querySelector('.nav-tree__item.active') !== null;
+            var shouldOpen = hasActive || savedState[key] === true;
+
+            if (shouldOpen) {
+                toggleGroup(group, true);
+            } else {
+                if (children) children.style.maxHeight = '0px';
+            }
+
+            // Click handler
+            if (btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleGroup(group);
+                });
+            }
+        });
+
+        // Update badge counts
+        groups.forEach(function(group) {
+            var badge = group.querySelector('.nav-tree__toggle-badge');
+            if (badge) {
+                var count = group.querySelectorAll('.nav-tree__item').length;
+                badge.setAttribute('data-count', count);
+                badge.textContent = count;
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSidebarTree);
+    } else {
+        initSidebarTree();
+    }
+})();
+</script>

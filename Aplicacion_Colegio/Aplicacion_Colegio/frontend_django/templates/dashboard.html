@@ -1,0 +1,242 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include 'includes/_portal_favicon.html' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% include 'includes/_portal_tab_title.html' with rol=rol %}
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Design System -->
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <!-- Dashboard CSS -->
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=20260405-notif-ui">
+    <!-- Page-specific CSS -->
+    {% if pagina_actual == 'gestionar_ciclos' %}
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_ciclos.css' %}">
+    {% endif %}
+    {% if pagina_actual == 'calendario_eventos' %}
+    {% if rol == 'profesor' or rol == 'Profesor' %}
+    <link rel="stylesheet" href="{% static 'css/profesor/calendario_eventos.css' %}">
+    {% elif rol == 'admin_escolar' or rol == 'admin_general' or rol == 'Administrador escolar' or rol == 'Administrador general' %}
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/calendario_eventos.css' %}">
+    {% endif %}
+    {% endif %}
+    {% if pagina_actual == 'solicitud_reuniones' %}
+    {% if rol == 'profesor' or rol == 'Profesor' %}
+    <link rel="stylesheet" href="{% static 'css/profesor/solicitud_reuniones.css' %}">
+    {% elif rol == 'admin_escolar' or rol == 'admin_general' or rol == 'Administrador escolar' or rol == 'Administrador general' %}
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/solicitud_reuniones.css' %}">
+    {% endif %}
+    {% endif %}
+    {% if pagina_actual == 'importar_datos' %}
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/importar_datos.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/importar_csv.css' %}">
+    {% endif %}
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
+</head>
+
+<body class="pagina-{{ pagina_actual }}">
+    <div class="dashboard-container">
+
+        {# Incluir sidebar dinámicamente según rol #}
+        {% include sidebar_template %}
+
+        <main class="main-content">
+
+            <header class="top-header">
+                <button class="dashboard-sidebar-toggle" type="button" aria-label="Abrir menu" aria-controls="dashboard-sidebar">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="breadcrumbs">
+                    <span>{{ year }} | Portal Académico</span>
+                    <div class="school-info">
+                        <div class="school-badge">
+                            <span class="school-icon">🏫</span>
+                            <div class="school-details">
+                                <span class="school-name">{{ escuela_nombre }}</span>
+                                {% if rol in 'Administrador general,Administrador escolar' and escuela_rbd %}
+                                <span class="school-rbd">RBD: {{ escuela_rbd }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-info">
+                    {# Portales con layout propio: campana en banner o wrap (no duplicar en inicio) #}
+                    {% if rol|lower != 'apoderado' and rol|lower != 'estudiante' and rol|lower != 'alumno' %}
+                        {% if rol|lower != 'profesor' or pagina_actual != 'inicio' %}
+                    <div class="portal-notif portal-notif--profesor">
+                        {% include 'includes/_portal_notifications.html' %}
+                    </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <span>{{ nombre_usuario }}</span>
+                    <div class="user-menu">
+                        <div class="user-avatar">
+                            {{ nombre_usuario|first|upper }}
+                        </div>
+                        <div class="user-dropdown" id="userDropdown">
+                            <div class="dropdown-header">
+                                <strong>{{ nombre_usuario }}</strong>
+                                <span class="user-dropdown-role">{{ rol|title }}</span>
+                                <span class="user-dropdown-school">
+                                    🏫 {{ escuela_nombre }}
+                                </span>
+                            </div>
+                            <hr class="user-dropdown-divider">
+                            <a href="{% url 'dashboard' %}?pagina=perfil" class="dropdown-item">
+                                👤 Mi Perfil
+                            </a>
+                            {% if rol == 'Administrador general' %}
+                            <a href="{% url 'seleccionar_escuela' %}" class="dropdown-item">
+                                🏫 Cambiar Escuela
+                            </a>
+                            {% endif %}
+                            <form method="POST" action="{% url 'accounts:logout' %}" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item logout logout-btn">
+                                    🚪 Cerrar Sesión
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="content-area">
+
+                {# Banner de Configuración Incompleta (solo para admin/admin_escolar) #}
+                {% if setup_incomplete %}
+                <div class="setup-banner">
+                    <div class="setup-banner-content">
+                        <div class="setup-banner-icon">⚙️</div>
+                        <div>
+                            <div class="setup-banner-title">
+                                Configuración Incompleta
+                            </div>
+                            <div class="setup-banner-desc">
+                                Tu colegio está configurado al {{ setup_progress }}%. Completa los pasos pendientes para
+                                desbloquear todas las funcionalidades.
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'setup_checklist' %}" class="setup-banner-cta">
+                        Ver Checklist →
+                    </a>
+                </div>
+                {% endif %}
+
+                {# Mostrar mensajes de Django #}
+                {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {# Incluir contenido dinámicamente según página solicitada #}
+                {% if content_template %}
+                {% include content_template %}
+                {% else %}
+                {% block content %}{% endblock %}
+                {% endif %}
+
+            </section>
+        </main>
+    </div>
+    <div class="dashboard-sidebar-overlay" hidden></div>
+
+    <!-- Bootstrap JS Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Dashboard scripts -->
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    <script src="{% static 'js/notificaciones.js' %}?v=20260528-mensajeria"></script>
+    {# Floating Action Button (FAB) de Acciones Rápidas (moderno y premium) #}
+    {% if rol == 'profesor' or rol == 'Profesor' %}
+    <div class="quick-action-fab-container" id="quickActionFab">
+        <div class="quick-action-fab-menu">
+            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="quick-action-item">
+                <span class="quick-action-label">Nueva tarea</span>
+                <span class="quick-action-icon icon-purple">📝</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=asistencia" class="quick-action-item">
+                <span class="quick-action-label">Registrar asistencia</span>
+                <span class="quick-action-icon icon-emerald">📋</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="quick-action-item">
+                <span class="quick-action-label">Subir material</span>
+                <span class="quick-action-icon icon-blue">📁</span>
+            </a>
+            <a href="{% if menu_access.comunicados %}{% url 'comunicados:lista' %}{% else %}/comunicados/{% endif %}" class="quick-action-item">
+                <span class="quick-action-label">Enviar anuncio</span>
+                <span class="quick-action-icon icon-amber">📢</span>
+            </a>
+        </div>
+        <button class="quick-action-fab-trigger" onclick="toggleQuickActionFab()" aria-label="Acciones rápidas">
+            <span><span>+</span></span>
+        </button>
+    </div>
+    {% elif rol == 'admin_escolar' or rol == 'admin_general' or rol == 'Administrador escolar' or rol == 'Administrador general' %}
+    <div class="quick-action-fab-container" id="quickActionFab">
+        <div class="quick-action-fab-menu">
+            <a href="{% url 'dashboard' %}?pagina=gestionar_cursos&abrir_modal=crear" class="quick-action-item">
+                <span class="quick-action-label">Nuevo curso</span>
+                <span class="quick-action-icon icon-blue">🎒</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=gestionar_profesores&abrir_modal=crear" class="quick-action-item">
+                <span class="quick-action-label">Nuevo profesor</span>
+                <span class="quick-action-icon icon-emerald">👨‍🏫</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=gestionar_estudiantes&abrir_modal=crear" class="quick-action-item">
+                <span class="quick-action-label">Nuevo estudiante</span>
+                <span class="quick-action-icon icon-purple">👨‍🎓</span>
+            </a>
+            <a href="{% if menu_access.comunicados %}{% url 'comunicados:lista' %}{% else %}/comunicados/{% endif %}" class="quick-action-item">
+                <span class="quick-action-label">Nuevo comunicado</span>
+                <span class="quick-action-icon icon-amber">📢</span>
+            </a>
+        </div>
+        <button class="quick-action-fab-trigger" onclick="toggleQuickActionFab()" aria-label="Acciones rápidas">
+            <span><span>+</span></span>
+        </button>
+    </div>
+    {% endif %}
+
+    <script>
+        function toggleQuickActionFab() {
+            const fab = document.getElementById('quickActionFab');
+            if (fab) {
+                fab.classList.toggle('active');
+            }
+        }
+
+        // Cerrar FAB al hacer clic fuera del mismo
+        document.addEventListener('click', function(event) {
+            const fab = document.getElementById('quickActionFab');
+            if (fab && fab.classList.contains('active')) {
+                const isClickInside = fab.contains(event.target);
+                if (!isClickInside) {
+                    fab.classList.remove('active');
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -15,8 +15,12 @@
 }
 
 .portal-notif--profesor {
-    --portal-notif-accent: #10b981;
-    --portal-notif-accent-deep: #059669;
+    --portal-notif-accent: #8b7cc8;
+    --portal-notif-accent-deep: #6a5ab8;
+}
+
+.portal-notif--profesor .notif-item.notif-no-leida {
+    background: #faf5ff;
 }
 
 /* Campana integrada en banner de bienvenida (apoderado, estudiante, profesor) */
@@ -71,13 +75,13 @@ body.pagina-comunicados.vista-apoderado .portal-welcome-notif .btn-notificacione
 }
 
 .portal-notif--profesor.portal-welcome-notif .btn-notificaciones {
-    border-color: #bbf7d0;
-    color: #059669;
-    box-shadow: 0 4px 12px rgba(21, 128, 61, 0.08);
+    border-color: #ddd6fe;
+    color: #6a5ab8;
+    box-shadow: 0 4px 12px rgba(106, 90, 184, 0.1);
 }
 
 .portal-notif--profesor.portal-welcome-notif .btn-notificaciones:hover {
-    background: #d1fae5;
+    background: #ede9fe;
 }
 
 .portal-welcome-notif .btn-notificaciones__icon {
@@ -97,6 +101,36 @@ body.pagina-comunicados.vista-apoderado .portal-welcome-notif .btn-notificacione
 .portal-welcome-notif .dropdown-notificaciones {
     top: calc(100% + 10px);
     right: 0;
+}
+
+/* Portal docente: campana anclada al contenido, no al viewport */
+body.vista-personal .prof-hero .dropdown-notificaciones,
+body.vista-personal .prof-hero .portal-welcome-notif .dropdown-notificaciones,
+body.vista-personal .pers-page-toolbar .dropdown-notificaciones,
+body.vista-personal .mc-hero__head .dropdown-notificaciones,
+body.vista-personal .mc-hero__actions .dropdown-notificaciones,
+body.vista-personal .prof-welcome-bar .dropdown-notificaciones {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    right: 0 !important;
+    left: auto !important;
+    width: min(380px, calc(100vw - 32px)) !important;
+    max-height: min(500px, calc(100vh - 120px)) !important;
+}
+
+@media (max-width: 768px) {
+    body.vista-personal .prof-hero .dropdown-notificaciones,
+    body.vista-personal .prof-hero .portal-welcome-notif .dropdown-notificaciones,
+    body.vista-personal .pers-page-toolbar .dropdown-notificaciones,
+    body.vista-personal .mc-hero__head .dropdown-notificaciones,
+    body.vista-personal .mc-hero__actions .dropdown-notificaciones,
+    body.vista-personal .prof-welcome-bar .dropdown-notificaciones {
+        position: fixed !important;
+        top: 72px !important;
+        right: 0.75rem !important;
+        left: 0.75rem !important;
+        width: auto !important;
+    }
 }
 
 .notificaciones-container {

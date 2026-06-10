@@ -1,0 +1,797 @@
+{% load static %}
+{% load custom_filters %}
+{% include 'profesor/_personal_wrap_start.html' %}
+
+<link rel="stylesheet" href="{% static 'css/profesor/notas.css' %}">
+
+<div class="notas-container">
+    <!-- Encabezado y Estadísticas -->
+    <div class="header-section">
+        <div class="titulo-modulo">
+            <i class="fas fa-graduation-cap"></i>
+            <h2>{% if modo == 'calificar' %}Ingresar Calificaciones{% else %}Gestión de Evaluaciones{% endif %}</h2>
+        </div>
+        
+        <!-- Estadísticas Generales - Siempre visibles -->
+        <div class="estadisticas-grid">
+            <div class="stat-card blue">
+                <div class="stat-icon">
+                    📝
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_evaluaciones|default:0 }}</span>
+                    <span class="stat-label">Evaluaciones Activas</span>
+                </div>
+            </div>
+            
+            <div class="stat-card green">
+                <div class="stat-icon">
+                    ✅
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_calificaciones|default:0 }}</span>
+                    <span class="stat-label">Calificaciones Registradas</span>
+                </div>
+            </div>
+            
+            <div class="stat-card purple">
+                <div class="stat-icon">
+                    📊
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ promedio_general|default:0 }}</span>
+                    <span class="stat-label">Promedio General</span>
+                </div>
+            </div>
+            
+            <div class="stat-card orange">
+                <div class="stat-icon">
+                    🎯
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{% if promedio_general >= 4.0 %}🟢{% else %}🔴{% endif %}</span>
+                    <span class="stat-label">Estado Curso</span>
+                </div>
+            </div>
+        </div>
+        
+        {% if clase_seleccionada %}
+        <!-- Estadísticas específicas de la clase seleccionada (si se necesitan en el futuro) -->
+        {% endif %}
+    </div>
+
+    <!-- Filtros y Selección -->
+    <div class="filtros-section">
+        <form method="GET" action="{% url 'dashboard' %}" class="filtros-form" id="formFiltros">
+            <input type="hidden" name="pagina" value="notas">
+            <input type="hidden" name="modo" value="{{ modo }}">
+            
+            {% if rol == 'admin_escolar' %}
+            <div class="filtro-group">
+                <label for="filtro_curso_nombre">
+                    <i class="fas fa-filter"></i> Curso
+                </label>
+                <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
+                    <option value="">-- Todos los cursos --</option>
+                    {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                    {% for grupo in clases_por_curso %}
+                        <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            <div class="filtro-group">
+                <label for="clase_id">
+                    <i class="fas fa-chalkboard"></i> Clase
+                </label>
+                <select id="clase_id" name="clase_id" required onchange="document.getElementById('formFiltros').submit()">
+                    <option value="">-- Seleccione una clase --</option>
+                    {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                    {% for grupo in clases_por_curso %}
+                        <optgroup label="{{ grupo.grouper }}">
+                            {% for clase in grupo.list %}
+                                <option value="{{ clase.id }}" {% if filtro_clase_id == clase.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ clase.asignatura.nombre }}
+                                </option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filtro-actions">
+                <button type="submit" class="btn-filtrar">
+                    <i class="fas fa-filter"></i> Cargar
+                </button>
+                <a href="{% url 'dashboard' %}?pagina=notas" class="btn-limpiar">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </div>
+        </form>
+
+        {% if clase_seleccionada and evaluaciones %}
+        <div class="filtro-group filtro-evaluacion">
+            <label>
+                <i class="fas fa-list-check"></i> EvaluaciÃ³n
+            </label>
+            <div class="evaluation-filter-buttons">
+                <a
+                    href="{% url 'dashboard' %}?pagina=notas&clase_id={{ clase_seleccionada.id }}&evaluacion_id=all"
+                    class="{% if evaluacion_filtro_id == 'all' %}active{% endif %}"
+                    aria-pressed="{% if evaluacion_filtro_id == 'all' %}true{% else %}false{% endif %}"
+                >
+                    Todas
+                </a>
+                {% for evaluacion in evaluaciones %}
+                    {% with eval_id=evaluacion.id_evaluacion|stringformat:"s" %}
+                    <a
+                        href="{% url 'dashboard' %}?pagina=notas&clase_id={{ clase_seleccionada.id }}&evaluacion_id={{ evaluacion.id_evaluacion }}"
+                        class="{% if evaluacion_filtro_id == eval_id %}active{% endif %}"
+                        aria-pressed="{% if evaluacion_filtro_id == eval_id %}true{% else %}false{% endif %}"
+                    >
+                        {{ evaluacion.nombre }} ({{ evaluacion.fecha_evaluacion|date:"d/m" }}){% if evaluacion_filtro_id == 'all' %} - {{ evaluacion.total_calificaciones }}{% endif %}
+                    </a>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if clase_seleccionada %}
+        <button onclick="abrirModalCrearEvaluacion()" class="btn-nueva-evaluacion">
+            <i class="fas fa-plus"></i> Nueva Evaluación
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Contenido según modo -->
+    {% if clase_seleccionada %}
+        
+        {% if modo == 'evaluaciones' or not modo %}
+        <!-- MODO: LISTA DE EVALUACIONES -->
+        <div class="tabla-container">
+            {% if evaluaciones %}
+            <table class="tabla-evaluaciones">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Fecha</th>
+                        <th>Ponderación</th>
+                        <th>Calificaciones</th>
+                        <th>Promedio</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluacion in evaluaciones %}
+                    <tr>
+                        <td>
+                                <div class="evaluacion-nombre">
+                                    <div class="evaluacion-icon">
+                                    📄
+                                </div>
+                                <div>
+                                    <div><strong>{{ evaluacion.nombre }}</strong></div>
+                                    <div class="mt-1 d-flex flex-wrap gap-1">
+                                                <span class="badge bg-secondary">{{ evaluacion.get_tipo_evaluacion_display }}</span>
+                                                {% if evaluacion.modalidad_publicacion %}
+                                                    {% if evaluacion.modalidad_publicacion == 'PDF' %}
+                                                    <span class="badge bg-dark text-white">PDF</span>
+                                                    {% elif evaluacion.modalidad_publicacion == 'MIXTA' %}
+                                                    <span class="badge bg-primary text-white">PDF + Online</span>
+                                                    {% else %}
+                                                    <span class="badge bg-primary text-white">Formulario</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% if evaluacion.periodo %}
+                                                <span class="badge bg-info text-dark">{{ evaluacion.get_periodo_display }}</span>
+                                                {% endif %}
+                                                {% if evaluacion.es_recuperacion %}
+                                                <span class="badge bg-warning text-dark">Recuperación</span>
+                                                {% endif %}
+                                                {% if evaluacion.estado_publicacion %}
+                                                    {% if evaluacion.estado_publicacion == 'EN_REVISION' %}
+                                                    <span class="badge bg-warning text-dark">Pendiente de revisión</span>
+                                                    {% elif evaluacion.estado_publicacion == 'APROBADA' %}
+                                                    <span class="badge bg-success text-white">Aprobada</span>
+                                                    {% elif evaluacion.estado_publicacion == 'PUBLICADA' %}
+                                                    <span class="badge bg-success text-white">Publicada</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ evaluacion.fecha_evaluacion|date:"d/m" }}</td>
+                        <td>
+                            <span class="badge-ponderacion">{{ evaluacion.ponderacion }}%</span>
+                        </td>
+                        <td>
+                            <span class="badge-count">{{ evaluacion.total_calificaciones }} nota{{ evaluacion.total_calificaciones|pluralize }}</span>
+                        </td>
+                        <td>
+                            {% if evaluacion.total_calificaciones > 0 %}
+                                <span class="badge-nota {% if evaluacion.promedio_calculado >= 4.0 %}nota-aprobado{% else %}nota-reprobado{% endif %}">
+                                    {{ evaluacion.promedio_calculado }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="acciones-grupo">
+                                <button 
+                                    class="btn-icono btn-editar" 
+                                    title="Editar"
+                                    onclick="window.location.href='{% url 'crear_evaluacion_online_profesor' %}?clase_id={{ clase_seleccionada.id }}&evaluacion_id={{ evaluacion.id_evaluacion }}'"
+                                >
+                                    ✏️
+                                </button>
+                                {% if evaluacion.estado_publicacion and evaluacion.estado_publicacion != 'APROBADA' %}
+                                <button
+                                    class="btn-icono btn-calificar"
+                                    title="Aprobar publicación"
+                                    onclick="aprobarPublicacion(this)"
+                                    data-id="{{ evaluacion.id_evaluacion }}"
+                                    data-nombre="{{ evaluacion.nombre }}"
+                                >
+                                    ✅
+                                </button>
+                                {% endif %}
+                                <a href="{% url 'dashboard' %}?pagina=notas&modo=calificar&clase_id={{ clase_seleccionada.id }}&evaluacion_id={{ evaluacion.id_evaluacion }}" 
+                                   class="btn-icono btn-calificar" 
+                                   title="Calificar">
+                                    📝
+                                </a>
+                                <button 
+                                    class="btn-icono btn-eliminar" 
+                                    title="Desactivar"
+                                    onclick="confirmarEliminar(this)"
+                                    data-id="{{ evaluacion.id_evaluacion }}"
+                                    data-nombre="{{ evaluacion.nombre }}"
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-alt"></i>
+                <p>No hay evaluaciones registradas</p>
+                <button onclick="abrirModalCrearEvaluacion()" class="btn-nueva-evaluacion">
+                    <i class="fas fa-plus"></i> Crear Primera Evaluación
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if evaluaciones %}
+        <div class="tabla-container tabla-calificaciones-resumen">
+            <div class="section-card-head">
+                <div>
+                    <h3>Listado de Calificaciones</h3>
+                    <p>
+                        {% if evaluacion_filtro_id == 'all' %}
+                            Vista agrupada por estudiante con todas las evaluaciones de la clase.
+                        {% else %}
+                            Vista de calificaciones para la evaluaciÃ³n seleccionada.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            {% if evaluacion_filtro_id == 'all' %}
+            <div class="tabla-scroll">
+                <table class="tabla-calificaciones tabla-calificaciones-matriz">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Evaluaciones</th>
+                            <th>Estudiante</th>
+                            {% for evaluacion in evaluaciones %}
+                            <th title="{{ evaluacion.nombre }} {{ evaluacion.fecha_evaluacion|date:'d/m' }}">
+                                <span class="gradebook-note-head">
+                                    {% if forloop.first %}Nota{% else %}Nota {{ forloop.counter }}{% endif %}
+                                    <small>{{ evaluacion.nombre }}</small>
+                                </span>
+                            </th>
+                            {% endfor %}
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in calificaciones_matriz %}
+                        <tr>
+                            <td>{{ fila.estudiante.id }}</td>
+                            <td class="evaluaciones-cell" title="{{ evaluaciones_resumen }}">{{ evaluaciones_resumen|default:"-" }}</td>
+                            <td>{{ fila.estudiante.get_full_name }}</td>
+                            {% for item in fila.calificaciones %}
+                            <td class="col-nota">
+                                {% if item.nota %}
+                                    <span class="nota-valor {% if item.es_baja %}nota-baja{% endif %}">{{ item.nota }}</span>
+                                {% else %}
+                                    <span class="nota-vacia">-</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                            <td>{{ fila.fecha_ultima|date:"d/m"|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ evaluaciones|length|add:'4' }}">Sin registros</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="tabla-scroll">
+                <table class="tabla-calificaciones">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>EvaluaciÃ³n</th>
+                            <th>Estudiante</th>
+                            <th>Nota</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in calificaciones_listado %}
+                        <tr>
+                            <td>{% if item.calificacion %}{{ item.calificacion.id_calificacion }}{% else %}-{% endif %}</td>
+                            <td>{{ item.evaluacion.nombre }}</td>
+                            <td>{{ item.estudiante.get_full_name }}</td>
+                            <td>
+                                {% if item.nota %}
+                                    <span class="nota-valor {% if item.es_baja %}nota-baja{% endif %}">{{ item.nota }}</span>
+                                {% else %}
+                                    <span class="nota-vacia">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.fecha_registro|date:"d/m"|default:"-" }}</td>
+                            <td>
+                                <a
+                                    class="btn-accion-texto"
+                                    href="{% url 'dashboard' %}?pagina=notas&modo=calificar&clase_id={{ clase_seleccionada.id }}&evaluacion_id={{ item.evaluacion.id_evaluacion }}"
+                                >
+                                    Calificar
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">Sin registros</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% elif modo == 'calificar' %}
+        <!-- MODO: INGRESAR CALIFICACIONES -->
+        {% if evaluacion_seleccionada %}
+        <div class="info-evaluacion">
+            <h3>📝 {{ evaluacion_seleccionada.nombre }}</h3>
+            <p>
+                <strong>Fecha:</strong> {{ evaluacion_seleccionada.fecha_evaluacion|date:"d/m" }}
+                <span class="separador">|</span>
+                <strong>Ponderación:</strong> {{ evaluacion_seleccionada.ponderacion }}%
+                <span class="separador">|</span>
+                <strong>Clase:</strong> {{ clase_seleccionada.curso.nombre }} - {{ clase_seleccionada.asignatura.nombre }}
+            </p>
+            <a href="{% url 'dashboard' %}?pagina=notas&clase_id={{ clase_seleccionada.id }}" class="btn-volver">
+                <i class="fas fa-arrow-left"></i> Volver a Evaluaciones
+            </a>
+        </div>
+        
+        <div class="tabla-container">
+            {% if estudiantes_con_notas %}
+            <form method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}" id="formCalificaciones">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="registrar_calificaciones">
+                <input type="hidden" name="evaluacion_id" value="{{ evaluacion_seleccionada.id_evaluacion }}">
+                
+                <div class="acciones-calificar">
+                    <button type="submit" class="btn-guardar-calificaciones">
+                        <i class="fas fa-save"></i> Guardar Calificaciones
+                    </button>
+                </div>
+                
+                <table class="tabla-calificaciones">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Estudiante</th>
+                            <th>RUT</th>
+                            <th>Nota (1.0 - 7.0)</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in estudiantes_con_notas %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <div class="estudiante-info">
+                                    <div class="avatar-small">
+                                        {{ item.estudiante.nombre.0 }}{{ item.estudiante.apellido_paterno.0 }}
+                                    </div>
+                                    <span>{{ item.estudiante.get_full_name }}</span>
+                                </div>
+                            </td>
+                            <td>{{ item.estudiante.rut|default:"—" }}</td>
+                            <td>
+                                <input 
+                                    type="number" 
+                                    name="nota_{{ item.estudiante.id }}" 
+                                    class="input-nota {% if item.es_baja %}nota-baja{% endif %}"
+                                    value="{% if item.nota %}{{ item.nota }}{% endif %}"
+                                    min="1.0" 
+                                    max="7.0" 
+                                    step="0.1"
+                                    placeholder="Ej: 5.5"
+                                    onchange="actualizarEstadoNota(this)"
+                                >
+                            </td>
+                            <td class="col-estado">
+                                {% if item.nota %}
+                                    {% if item.nota >= 4.0 %}
+                                        <span class="badge-estado estado-aprobado">✅ Aprobado</span>
+                                    {% else %}
+                                        <span class="badge-estado estado-reprobado">❌ Reprobado</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge-estado estado-pendiente">⏳ Pendiente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </form>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-users-slash"></i>
+                <p>No hay estudiantes asignados a este curso</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% endif %}
+        
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-hand-pointer"></i>
+        <p>Seleccione una clase para gestionar evaluaciones y calificaciones</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal opciones de nueva evaluación -->
+<div id="modalOpcionEvaluacion" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:720px;">
+        <div class="modal-header">
+            <h3>Nueva Evaluación</h3>
+            <button class="btn-close-modal" onclick="cerrarModal('modalOpcionEvaluacion')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                <button type="button" class="card p-lg text-left hover:shadow-lg transition-all" onclick="abrirCargaPdf()">
+                    <div class="text-4xl mb-sm">📄</div>
+                    <h4 class="text-xl font-semibold mb-xs">Cargar evaluación PDF</h4>
+                    <p class="text-secondary">Sube solo un PDF. El sistema extrae su contenido y lo transforma en una evaluación online.</p>
+                </button>
+                <button type="button" class="card p-lg text-left hover:shadow-lg transition-all" onclick="irAEvaluacionOnline()">
+                    <div class="text-4xl mb-sm">🧠</div>
+                    <h4 class="text-xl font-semibold mb-xs">Crear evaluación online</h4>
+                    <p class="text-secondary">Abre una página nueva para configurar la clase, preguntas y criterios con más espacio.</p>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal carga PDF -->
+<div id="modalPdfEvaluacion" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:860px;">
+        <div class="modal-header">
+            <h3>Cargar evaluación PDF</h3>
+            <button class="btn-close-modal" onclick="cerrarModal('modalPdfEvaluacion')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="crear_evaluacion">
+            <input type="hidden" name="formato_evaluacion" value="pdf">
+            <input type="hidden" name="clase_id" value="{{ clase_seleccionada.id }}">
+            <div class="modal-body">
+                <div class="alert-info mb-md">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Solo se acepta PDF. El archivo se usa como fuente para convertir la evaluación en formato online.</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombre_pdf">Nombre de la evaluación <span class="required">*</span></label>
+                        <input type="text" id="nombre_pdf" name="nombre" required placeholder="Ej: Prueba Unidad 1">
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha_pdf">Fecha <span class="required">*</span></label>
+                        <input type="date" id="fecha_pdf" name="fecha" required value="{{ fecha_hoy }}">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="ponderacion_pdf">Ponderación (%) <span class="required">*</span></label>
+                        <input type="number" id="ponderacion_pdf" name="ponderacion" value="100" required min="1" max="100" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo_evaluacion_pdf">Tipo de evaluación</label>
+                        <select id="tipo_evaluacion_pdf" name="tipo_evaluacion" class="form-select">
+                            <option value="sumativa">Sumativa</option>
+                            <option value="formativa">Formativa</option>
+                            <option value="diagnostica">Diagnóstica</option>
+                            <option value="acumulativa">Acumulativa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="periodo_pdf">Período</label>
+                        <select id="periodo_pdf" name="periodo" class="form-select">
+                            <option value="">Sin especificar</option>
+                            <option value="semestre1">Primer Semestre</option>
+                            <option value="semestre2">Segundo Semestre</option>
+                            <option value="trimestre1">Primer Trimestre</option>
+                            <option value="trimestre2">Segundo Trimestre</option>
+                            <option value="trimestre3">Tercer Trimestre</option>
+                            <option value="bimestre1">Primer Bimestre</option>
+                            <option value="bimestre2">Segundo Bimestre</option>
+                            <option value="bimestre3">Tercer Bimestre</option>
+                            <option value="bimestre4">Cuarto Bimestre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="archivo_pdf">Archivo PDF <span class="required">*</span></label>
+                        <input type="file" id="archivo_pdf" name="archivo_pdf" accept="application/pdf,.pdf" required>
+                    </div>
+                </div>
+
+                <label class="d-flex align-items-center gap-2 mt-3">
+                    <input type="checkbox" name="es_recuperacion" value="1">
+                    <span>Es evaluación de recuperación</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalPdfEvaluacion')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-guardar">
+                    <i class="fas fa-upload"></i> Cargar PDF
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Form Eliminar (Hidden) -->
+<form id="formEliminar" method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="eliminar_evaluacion">
+    <input type="hidden" name="id" id="eliminarId">
+</form>
+
+<!-- Form Aprobar Publicación (Hidden) -->
+<form id="formAprobarPublicacion" method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="aprobar_publicacion_evaluacion">
+    <input type="hidden" name="id" id="aprobarId">
+    <input type="hidden" name="clase_id" value="{{ clase_seleccionada.id }}">
+</form>
+
+<script>
+function abrirModalCrearEvaluacion() {
+    const claseSelect = document.getElementById('clase_id');
+    if (claseSelect && !claseSelect.value) {
+        alert('Selecciona una clase primero.');
+        return;
+    }
+    document.getElementById('modalOpcionEvaluacion').style.display = 'flex';
+}
+
+function aprobarPublicacion(button) {
+    const data = button.dataset;
+
+    if (confirm(`¿Aprobar la publicación de la evaluación "${data.nombre}"?\n\nLos estudiantes podrán verla inmediatamente.`)) {
+        document.getElementById('aprobarId').value = data.id;
+        document.getElementById('formAprobarPublicacion').submit();
+    }
+}
+
+function cerrarModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function abrirCargaPdf() {
+    cerrarModal('modalOpcionEvaluacion');
+    document.getElementById('modalPdfEvaluacion').style.display = 'flex';
+}
+
+function irAEvaluacionOnline() {
+    const claseSelector = document.getElementById('clase_id');
+    const claseId = claseSelector ? claseSelector.value : '{{ clase_seleccionada.id|default:"" }}';
+
+    if (!claseId) {
+        alert('Selecciona una clase antes de crear una evaluación online.');
+        return;
+    }
+
+    window.location.href = "{% url 'crear_evaluacion_online_profesor' %}?clase_id=" + encodeURIComponent(claseId);
+}
+
+function confirmarEliminar(button) {
+    const data = button.dataset;
+    
+    if (confirm(`¿Está seguro que desea desactivar la evaluación "${data.nombre}"?\n\nLas calificaciones asociadas no se eliminarán.`)) {
+        document.getElementById('eliminarId').value = data.id;
+        document.getElementById('formEliminar').submit();
+    }
+}
+
+// Actualizar estado de nota al ingresar
+function actualizarEstadoNota(input) {
+    const nota = parseFloat(input.value);
+    const row = input.closest('tr');
+    const colEstado = row.querySelector('.col-estado');
+    
+    if (!isNaN(nota) && nota >= 1.0 && nota <= 7.0) {
+        if (nota >= 4.0) {
+            input.classList.remove('nota-baja');
+            colEstado.innerHTML = '<span class="badge-estado estado-aprobado">✅ Aprobado</span>';
+        } else {
+            input.classList.add('nota-baja');
+            colEstado.innerHTML = '<span class="badge-estado estado-reprobado">❌ Reprobado</span>';
+        }
+        input.classList.remove('input-error');
+    } else if (input.value === '') {
+        input.classList.remove('nota-baja');
+        colEstado.innerHTML = '<span class="badge-estado estado-pendiente">⏳ Pendiente</span>';
+        input.classList.remove('input-error');
+    } else {
+        input.classList.add('input-error');
+    }
+}
+
+// Cerrar modal al hacer clic fuera
+document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+});
+
+// Cerrar modal con tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.style.display = 'none';
+        });
+    }
+});
+
+// Confirmar antes de salir si hay cambios sin guardar (modo calificar)
+(function() {
+    const formCalif = document.getElementById('formCalificaciones');
+    if (formCalif) {
+        let formModificado = false;
+        
+        document.querySelectorAll('.input-nota').forEach(input => {
+            input.addEventListener('change', () => {
+                formModificado = true;
+            });
+        });
+        
+        formCalif.addEventListener('submit', (e) => {
+            let count = 0;
+            document.querySelectorAll('.input-nota').forEach(i => {
+                if (i.value.trim() !== '') {
+                    count++;
+                }
+            });
+            const evalNombre = "{{ evaluacion_seleccionada.nombre|escapejs }}";
+            const cursoNombre = "{{ clase_seleccionada.curso.nombre|escapejs }}";
+            const confirmed = confirm(`¿Desea publicar ${count} calificaciones para la evaluación "${evalNombre}" del curso "${cursoNombre}"?`);
+            if (!confirmed) {
+                e.preventDefault();
+                return false;
+            }
+            formModificado = false;
+        });
+        
+        window.addEventListener('beforeunload', (e) => {
+            if (formModificado) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    }
+})();
+</script>
+
+{% if rol == 'admin_escolar' %}
+<script>
+function filtrarClasesPorCurso(cursoNombre) {
+    const claseSelect = document.getElementById('clase_id');
+    if (!claseSelect) return;
+    
+    const optgroups = claseSelect.querySelectorAll('optgroup');
+    
+    // Si cursoNombre es vacío, mostramos todos los optgroups
+    if (!cursoNombre) {
+        optgroups.forEach(group => group.style.display = '');
+        return;
+    }
+    
+    // Ocultar todos los optgroups excepto el seleccionado
+    optgroups.forEach(group => {
+        if (group.getAttribute('label') === cursoNombre) {
+            group.style.display = '';
+        } else {
+            group.style.display = 'none';
+        }
+    });
+    
+    // Auto-seleccionar la primera opción visible si la opción seleccionada actualmente está oculta
+    const currentSelected = claseSelect.options[claseSelect.selectedIndex];
+    if (currentSelected && currentSelected.value !== "") {
+        const parentGroup = currentSelected.parentNode;
+        if (parentGroup && parentGroup.tagName === 'OPTGROUP' && parentGroup.style.display === 'none') {
+            const targetGroup = Array.from(optgroups).find(g => g.getAttribute('label') === cursoNombre);
+            if (targetGroup) {
+                const firstOption = targetGroup.querySelector('option');
+                if (firstOption) {
+                    claseSelect.value = firstOption.value;
+                    claseSelect.dispatchEvent(new Event('change'));
+                }
+            }
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const cursoFiltro = document.getElementById('filtro_curso_nombre');
+    if (cursoFiltro) {
+        const claseSelect = document.getElementById('clase_id');
+        if (claseSelect) {
+            const selectedOption = claseSelect.options[claseSelect.selectedIndex];
+            if (selectedOption && selectedOption.value !== "") {
+                const parentGroup = selectedOption.parentNode;
+                if (parentGroup && parentGroup.tagName === 'OPTGROUP') {
+                    const cursoNombre = parentGroup.getAttribute('label');
+                    cursoFiltro.value = cursoNombre;
+                    filtrarClasesPorCurso(cursoNombre);
+                }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+{% include 'profesor/_personal_wrap_end.html' %}

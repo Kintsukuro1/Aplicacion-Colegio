@@ -1,0 +1,198 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block page_title %}Mi Perfil{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'academico/css/profesor/perfil.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+{% include 'common/components/breadcrumb_nav.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block page_header %}
+<div>
+    <h1 class="text-4xl font-bold mb-sm">👨‍💼 Mi Perfil</h1>
+    <p class="text-lg text-secondary">Administra tu información personal y configuración</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+    <!-- Columna Izquierda -->
+    <div class="lg:col-span-1">
+        <!-- Avatar -->
+        <div class="card mb-lg">
+            <div class="card-body text-center">
+                <div class="avatar avatar-xl mb-md">
+                    {{ user.nombre.0|upper }}{{ user.apellido_paterno.0|upper }}
+                </div>
+                <h3 class="text-2xl font-bold mb-xs">{{ user.get_full_name }}</h3>
+                <p class="text-sm text-secondary mb-md">Profesor</p>
+                
+                <span class="badge {% if user.is_active %}badge-success{% else %}badge-warning{% endif %} badge-lg">
+                    {% if user.is_active %}✔ Activo{% else %}Inactivo{% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Información Personal -->
+        <div class="card mb-lg">
+            <div class="card-header">
+                <h4 class="card-title">📋 Información Personal</h4>
+            </div>
+            <div class="card-body">
+                <div class="profile-info-list">
+                    <div class="profile-info-item">
+                        <i class="fas fa-id-card"></i>
+                        <div>
+                            <div class="text-xs text-secondary">RUT</div>
+                            <div class="font-semibold">{{ user.rut }}</div>
+                        </div>
+                    </div>
+                    <div class="profile-info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <div class="text-xs text-secondary">Email</div>
+                            <div class="font-semibold">{{ user.email }}</div>
+                        </div>
+                    </div>
+                    <div class="profile-info-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <div class="text-xs text-secondary">Teléfono</div>
+                            <div class="font-semibold">{{ user.telefono|default:"-" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estadísticas -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">📊 Mis Estadísticas</h4>
+            </div>
+            <div class="card-body">
+                <div class="stats-list">
+                    <div class="stat-item">
+                        <span class="text-sm text-secondary">Asignaturas</span>
+                        <span class="font-bold text-lg text-primary">{{ estadisticas.total_asignaturas|default:"0" }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="text-sm text-secondary">Evaluaciones</span>
+                        <span class="font-bold text-lg text-success">{{ estadisticas.total_evaluaciones|default:"0" }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="text-sm text-secondary">Estudiantes</span>
+                        <span class="font-bold text-lg text-info">{{ estadisticas.total_estudiantes|default:"0" }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="text-sm text-secondary">Planificaciones</span>
+                        <span class="font-bold text-lg text-warning">{{ estadisticas.total_planificaciones|default:"0" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Columna Derecha -->
+    <div class="lg:col-span-2">
+        <!-- Tabs -->
+        <div class="card mb-lg">
+            <div class="card-header border-b-0">
+                <div class="tabs">
+                    <button class="tab active" data-tab="contacto">
+                        <i class="fas fa-user"></i> Información de Contacto
+                    </button>
+                    <button class="tab" data-tab="seguridad">
+                        <i class="fas fa-lock"></i> Seguridad
+                    </button>
+                </div>
+            </div>
+            
+            <div class="tab-content">
+                <!-- Tab Contacto -->
+                <div id="contacto" class="tab-pane active">
+                    <form method="POST" action="{% url 'accounts:actualizar_perfil_profesor' %}">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label class="form-label form-label-required" for="email">Email</label>
+                            <input type="email" id="email" name="email" class="form-control" value="{{ user.email }}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="telefono">Teléfono</label>
+                            <input type="text" id="telefono" name="telefono" class="form-control" value="{{ user.telefono|default:'' }}" placeholder="+56 9 1234 5678">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="direccion">Dirección</label>
+                            <input type="text" id="direccion" name="direccion" class="form-control" value="{{ user.direccion|default:'' }}" placeholder="Calle, número, comuna">
+                        </div>
+                        
+                        <div class="flex justify-end gap-sm mt-lg">
+                            <button type="button" class="btn btn-outline" onclick="location.reload()">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Tab Seguridad -->
+                <div id="seguridad" class="tab-pane">
+                    <form method="POST" action="{% url 'accounts:cambiar_password_profesor' %}">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info mb-lg">
+                            <div class="alert-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-message">
+                                    Tu contraseña debe tener al menos 6 caracteres.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label form-label-required" for="password_actual">Contraseña Actual</label>
+                            <input type="password" id="password_actual" name="password_actual" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label form-label-required" for="password_nueva">Nueva Contraseña</label>
+                            <input type="password" id="password_nueva" name="password_nueva" class="form-control" minlength="6" required>
+                            <span class="form-help">Mínimo 6 caracteres</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label form-label-required" for="password_confirmar">Confirmar Nueva Contraseña</label>
+                            <input type="password" id="password_confirmar" name="password_confirmar" class="form-control" minlength="6" required>
+                        </div>
+                        
+                        <div class="flex justify-end gap-sm mt-lg">
+                            <button type="button" class="btn btn-outline" onclick="resetSecurityForm()">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-key"></i> Cambiar Contraseña
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'academico/js/profesor/perfil.js' %}"></script>
+{% endblock %}
+

@@ -1,0 +1,44 @@
+{# Hero unificado portal docente (estilo alumno). Variables: hero_eyebrow, hero_title, hero_subtitle, hero_hint, hero_aria, metrics_aria, m1..m4, m1_mod..m4_mod, hero_show_date, hero_hide_metrics #}
+<section class="prof-hero{% if hero_extra_class %} {{ hero_extra_class }}{% endif %}" aria-label="{% if hero_aria %}{{ hero_aria }}{% elif hero_title %}{{ hero_title }}{% else %}Portal docente{% endif %}">
+    <header class="prof-hero__head">
+        <div class="prof-hero__content">
+            {% if hero_eyebrow %}
+            <p class="prof-hero__eyebrow">{{ hero_eyebrow }}</p>
+            {% endif %}
+            {% if hero_greeting %}
+            <h1 class="prof-hero__title">¡Hola, Profesor(a) {{ nombre_usuario }}! 🎓</h1>
+            {% else %}
+            <h1 class="prof-hero__title">{{ hero_title }}</h1>
+            {% endif %}
+            {% if hero_subtitle %}
+            <p class="prof-hero__meta">{{ hero_subtitle }}</p>
+            {% elif pagina_actual == 'mensajes' or '/mensajeria/' in request.path %}
+            <p class="prof-hero__meta">Comunícate con estudiantes y apoderados de tus clases.</p>
+            {% endif %}
+            {% if hero_hint %}
+            <p class="prof-hero__hint">{{ hero_hint }}</p>
+            {% endif %}
+        </div>
+        {% include 'profesor/_profesor_hero_notif.html' %}
+    </header>
+    {% if not hero_hide_metrics %}
+    <div class="prof-hero__metrics" aria-label="{{ metrics_aria|default:'Resumen' }}">
+        <article class="prof-hero-metric prof-hero-metric--{{ m1_mod|default:'clases' }}{% if m1_alert %} prof-hero-metric--alert{% endif %}">
+            <p class="prof-hero-metric__value">{{ m1_value|default:"0" }}</p>
+            <p class="prof-hero-metric__label">{{ m1_label|default:"—" }}</p>
+        </article>
+        <article class="prof-hero-metric prof-hero-metric--{{ m2_mod|default:'tareas' }}{% if m2_alert %} prof-hero-metric--alert{% endif %}">
+            <p class="prof-hero-metric__value">{{ m2_value|default:"0" }}</p>
+            <p class="prof-hero-metric__label">{{ m2_label|default:"—" }}</p>
+        </article>
+        <article class="prof-hero-metric prof-hero-metric--{{ m3_mod|default:'riesgo' }}{% if m3_alert %} prof-hero-metric--alert{% endif %}">
+            <p class="prof-hero-metric__value">{{ m3_value|default:"0" }}</p>
+            <p class="prof-hero-metric__label">{{ m3_label|default:"—" }}</p>
+        </article>
+        <article class="prof-hero-metric prof-hero-metric--{{ m4_mod|default:'asistencia' }}{% if m4_alert %} prof-hero-metric--alert{% endif %}">
+            <p class="prof-hero-metric__value">{{ m4_value|default:"0" }}</p>
+            <p class="prof-hero-metric__label">{{ m4_label|default:"—" }}</p>
+        </article>
+    </div>
+    {% endif %}
+</section>

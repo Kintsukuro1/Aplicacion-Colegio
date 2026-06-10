@@ -9,10 +9,117 @@ from django.contrib import messages
 from django.urls import reverse
 from datetime import date, datetime
 
+from django.db.models import Avg
+
 from backend.apps.academico.services.attendance_service import AttendanceService
 from backend.apps.academico.services.grades_service import GradesService
 from backend.apps.core.services.dashboard_service import DashboardService
 from backend.apps.core.views import load_dashboard_context
+
+
+def _build_evaluacion_online_inteligencia(clase, evaluacion_actual=None):
+    """Datos accionables para crear/editar evaluación online."""
+    from backend.apps.academico.models import Calificacion, Evaluacion
+    from backend.apps.cursos.models import ClaseEstudiante
+
+    vacio = {
+        'eval_intel_resumen': 'Selecciona una clase para ver alumnos, ponderación disponible y alertas del curso.',
+        'eval_intel_alertas': [],
+        'eval_intel_sugerencias': [],
+        'eval_total_estudiantes': 0,
+        'eval_evaluaciones_clase': 0,
+        'eval_ponderacion_usada': 0,
+        'eval_ponderacion_disponible': 100,
+        'eval_promedio_clase': None,
+        'eval_notas_bajas': 0,
+    }
+    if not clase:
+        return vacio
+
+    evaluaciones_qs = Evaluacion.objects.filter(clase=clase, activa=True)
+    evaluaciones_clase = list(evaluaciones_qs)
+    ponderacion_usada = sum(float(ev.ponderacion or 0) for ev in evaluaciones_clase)
+    if evaluacion_actual:
+        ponderacion_usada -= float(evaluacion_actual.ponderacion or 0)
+    ponderacion_usada = max(ponderacion_usada, 0)
+    ponderacion_disponible = max(0, round(100 - ponderacion_usada, 1))
+
+    total_estudiantes = ClaseEstudiante.objects.filter(clase=clase, activo=True).count()
+    promedio_clase = None
+    notas_bajas = 0
+    if evaluaciones_clase:
+        agg = Calificacion.objects.filter(
+            evaluacion__in=evaluaciones_clase,
+        ).aggregate(prom=Avg('nota'))
+        if agg['prom'] is not None:
+            promedio_clase = round(float(agg['prom']), 1)
+        notas_bajas = Calificacion.objects.filter(
+            evaluacion__in=evaluaciones_clase,
+            nota__lt=4,
+        ).count()
+
+    alertas = []
+    sugerencias = []
+    asignatura = getattr(getattr(clase, 'asignatura', None), 'nombre', 'la asignatura')
+    curso = getattr(getattr(clase, 'curso', None), 'nombre', '')
+
+    if ponderacion_disponible <= 0:
+        alertas.append({
+            'tipo': 'danger',
+            'titulo': 'Ponderación completa',
+            'texto': f'En {asignatura} ya sumas 100%. Ajusta o desactiva otra evaluación antes de agregar peso.',
+        })
+    elif ponderacion_disponible < 20:
+        alertas.append({
+            'tipo': 'warn',
+            'titulo': 'Poco peso disponible',
+            'texto': f'Solo quedan {ponderacion_disponible:.0f}% de ponderación libre en este curso.',
+        })
+
+    if notas_bajas >= 3:
+        alertas.append({
+            'tipo': 'warn',
+            'titulo': 'Alumnos en seguimiento',
+            'texto': f'{notas_bajas} calificaciones bajo 4.0 — considera ítems formativos o recuperación.',
+        })
+
+    if promedio_clase is not None and promedio_clase < 4.0:
+        sugerencias.append({
+            'icono': '📊',
+            'texto': f'Promedio del curso: {promedio_clase}. Evalúa reforzar contenidos previos en el cuestionario.',
+        })
+
+    if total_estudiantes:
+        sugerencias.append({
+            'icono': '👥',
+            'texto': f'{total_estudiantes} estudiante(s) recibirán la evaluación en {curso}.',
+        })
+
+    ultima = evaluaciones_qs.order_by('-fecha_evaluacion').first()
+    if ultima and (not evaluacion_actual or ultima.id_evaluacion != evaluacion_actual.id_evaluacion):
+        sugerencias.append({
+            'icono': '📅',
+            'texto': f'Última evaluación: {ultima.nombre} ({ultima.fecha_evaluacion.strftime("%d/%m/%Y")}).',
+        })
+
+    resumen = (
+        f'{asignatura} · {curso}: {len(evaluaciones_clase)} evaluación(es) activa(s), '
+        f'{ponderacion_disponible:.0f}% de ponderación disponible.'
+    )
+    if total_estudiantes:
+        resumen += f' {total_estudiantes} alumnos inscritos.'
+
+    return {
+        'eval_intel_resumen': resumen,
+        'eval_intel_alertas': alertas,
+        'eval_intel_sugerencias': sugerencias,
+        'eval_total_estudiantes': total_estudiantes,
+        'eval_evaluaciones_clase': len(evaluaciones_clase),
+        'eval_ponderacion_usada': round(ponderacion_usada, 1),
+        'eval_ponderacion_disponible': ponderacion_disponible,
+        'eval_promedio_clase': promedio_clase,
+        'eval_notas_bajas': notas_bajas,
+    }
 
 
 @login_required
@@ -244,9 +351,11 @@ def crear_evaluacion_online_profesor(request):
 
     base_context = load_dashboard_context(request)
     rol_contexto = base_context.get('rol') or getattr(getattr(request.user, 'role', None), 'nombre', 'profesor')
+    eval_intel = _build_evaluacion_online_inteligencia(clase_seleccionada, evaluacion_seleccionada)
 
     context = {
         **base_context,
+        **eval_intel,
         'clases': clases,
         'total_clases': clases.count(),
         'clase_seleccionada': clase_seleccionada,
@@ -256,14 +365,14 @@ def crear_evaluacion_online_profesor(request):
         'filtro_clase_id': filtro_clase_id,
         'modo_formulario': 'editar' if evaluacion_seleccionada else 'crear',
         'fecha_hoy': date.today().strftime('%Y-%m-%d'),
-        'sidebar_template': DashboardService.get_sidebar_template(rol_contexto),
-        'hide_top_navbar': True,
+        'pagina_actual': 'notas',
+        'content_template': 'academico/profesor/crear_evaluacion_online.html',
     }
 
     if request.GET.get('json'):
         return JsonResponse(context, safe=False)
 
-    return render(request, 'academico/profesor/crear_evaluacion_online.html', context)
+    return render(request, 'dashboard.html', context)
 
 
 @login_required

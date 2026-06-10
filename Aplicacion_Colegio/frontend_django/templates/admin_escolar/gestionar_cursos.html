@@ -371,7 +371,7 @@ function abrirModalCrear() {
     document.getElementById('nombre').value = '';
     document.getElementById('nivel_id').value = '';
     document.getElementById('anio_escolar').value = '2025';
-    document.getElementById('modalCurso').style.display = 'flex';
+    document.getElementById('modalCurso').classList.remove('d-none');
 }
 
 function abrirModalEditar(button) {
@@ -383,7 +383,7 @@ function abrirModalEditar(button) {
     document.getElementById('nombre').value = data.nombre;
     document.getElementById('nivel_id').value = data.nivelId;
     document.getElementById('anio_escolar').value = data.anio;
-    document.getElementById('modalCurso').style.display = 'flex';
+    document.getElementById('modalCurso').classList.remove('d-none');
 }
 
 function abrirModalEstudiantes(button) {
@@ -403,7 +403,7 @@ function abrirModalEstudiantes(button) {
     
     const modal = document.getElementById('modalEstudiantes');
     console.log('Modal encontrado:', modal);
-    modal.style.display = 'flex';
+    modal.classList.remove('d-none');
 }
 
 function abrirModalProfesores(button) {
@@ -413,11 +413,11 @@ function abrirModalProfesores(button) {
     document.getElementById('profesoresCursoNombre').textContent = data.nombre;
     document.getElementById('asignatura_id').value = '';
     document.getElementById('profesor_id').value = '';
-    document.getElementById('modalProfesores').style.display = 'flex';
+    document.getElementById('modalProfesores').classList.remove('d-none');
 }
 
 function cerrarModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
+    document.getElementById(modalId).classList.add('d-none');
 }
 
 function confirmarEliminar(button) {
@@ -439,7 +439,7 @@ function toggleAllEstudiantes() {
 document.querySelectorAll('.modal-overlay').forEach(modal => {
     modal.addEventListener('click', function(e) {
         if (e.target === this) {
-            this.style.display = 'none';
+            this.classList.add('d-none');
         }
     });
 });
@@ -448,7 +448,7 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.style.display = 'none';
+            modal.classList.add('d-none');
         });
     }
 });

@@ -1,0 +1,58 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/coordinador_academico/rendimiento.css' %}">
+
+<!-- RENDIMIENTO ACADÉMICO - COORDINADOR ACADÉMICO -->
+
+<div class="coordinador-dashboard">
+    <div class="section-header">
+        <h2><span class="section-icon">📈</span> Rendimiento por Curso</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Curso</th>
+                    <th>Promedio General</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in rendimiento_por_curso %}
+                <tr>
+                    <td>{{ item.curso }}</td>
+                    <td>{{ item.promedio|default:"Sin datos" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">No hay datos disponibles</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-header">
+        <h2><span class="section-icon">📊</span> Rendimiento por Asignatura</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Asignatura</th>
+                    <th>Promedio General</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in rendimiento_por_asignatura %}
+                <tr>
+                    <td>{{ item.asignatura }}</td>
+                    <td>{{ item.promedio|default:"Sin datos" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">No hay datos disponibles</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

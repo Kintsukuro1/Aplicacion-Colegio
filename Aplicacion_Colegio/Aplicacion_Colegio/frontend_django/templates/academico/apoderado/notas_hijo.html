@@ -1,0 +1,134 @@
+{% extends 'frontend/templates/common/base_app.html' %}
+{% load static %}
+
+{% block page_title %}Notas de mi Hijo - Portal Apoderados{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'academico/css/apoderado/notas_hijo.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+{% include 'frontend/templates/common/components/breadcrumb_nav.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block page_header %}
+<div class="page-header-content">
+    <div class="page-title-group">
+        <h1 class="page-title">📊 Notas y Calificaciones</h1>
+        <p class="page-subtitle">Seguimiento académico de sus hijos</p>
+    </div>
+    
+    {% if estudiantes and estudiantes|length > 1 %}
+    <div class="hijo-selector-container">
+        <label for="hijoSelect" class="hijo-selector-label">
+            <i class="fas fa-user-graduate"></i>
+            Seleccionar hijo:
+        </label>
+        <select id="hijoSelect" class="hijo-selector" onchange="cambiarHijo(this.value)">
+            {% for est in estudiantes %}
+            <option value="{{ est.id }}" {% if estudiante_seleccionado and est.id == estudiante_seleccionado.id %}selected{% endif %}>
+                {{ est.get_full_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="notas-container">
+    {% if estudiante_seleccionado %}
+    
+    <!-- Tarjeta de Información del Estudiante -->
+    <div class="estudiante-info-card card">
+        <div class="estudiante-avatar-large">
+            {{ estudiante_seleccionado.nombre.0 }}{{ estudiante_seleccionado.apellido_paterno.0 }}
+        </div>
+        <div class="estudiante-datos">
+            <h2 class="estudiante-nombre">{{ estudiante_seleccionado.get_full_name }}</h2>
+            <p class="estudiante-curso">
+                <i class="fas fa-graduation-cap"></i>
+                {{ estudiante_seleccionado.perfil_estudiante.curso_actual.nombre|default:"Sin curso asignado" }}
+            </p>
+        </div>
+        <div class="promedio-general-card">
+            <span class="promedio-label">Promedio General</span>
+            <div class="promedio-valor {% if promedio_general >= 5.5 %}excelente{% elif promedio_general >= 4.0 %}bueno{% else %}necesita-mejorar{% endif %}">
+                {{ promedio_general|floatformat:1|default:"N/A" }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tarjetas de Estadísticas Rápidas -->
+    <div class="stats-grid">
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-book' label='Asignaturas' value=total_asignaturas|default:'0' color='primary' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-file-alt' label='Evaluaciones' value=total_evaluaciones|default:'0' color='info' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-check-circle' label='Aprobadas' value=asignaturas_aprobadas|default:'0' color='success' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-exclamation-triangle' label='En Riesgo' value=asignaturas_riesgo|default:'0' color='warning' %}
+    </div>
+    
+    {% if notas_por_asignatura %}
+    <!-- Grid de Asignaturas -->
+    <div class="asignaturas-grid">
+        {% for asignatura_data in notas_por_asignatura %}
+        <div class="asignatura-card card">
+            <div class="asignatura-header" style="background: linear-gradient(135deg, {{ asignatura_data.asignatura.color|default:'#4f46e5' }} 0%, {{ asignatura_data.asignatura.color|default:'#4f46e5' }}dd 100%);">
+                <div class="asignatura-title-group">
+                    <h3 class="asignatura-nombre">{{ asignatura_data.asignatura.nombre }}</h3>
+                    <span class="asignatura-codigo">{{ asignatura_data.asignatura.codigo }}</span>
+                </div>
+                <div class="asignatura-promedio-badge">
+                    <span class="badge-label">Promedio</span>
+                    <span class="badge-valor">{{ asignatura_data.promedio|floatformat:1|default:"S/N" }}</span>
+                </div>
+            </div>
+            
+            <div class="asignatura-body">
+                {% if asignatura_data.evaluaciones %}
+                <div class="evaluaciones-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        Evaluaciones Registradas
+                    </h4>
+                    <div class="evaluaciones-lista">
+                        {% for evaluacion in asignatura_data.evaluaciones %}
+                        {% include 'frontend/templates/academico/components/grade_row.html' with evaluacion=evaluacion %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="asignatura-footer">
+                    <span class="evaluaciones-count">
+                        <i class="fas fa-file-alt"></i>
+                        {{ asignatura_data.evaluaciones|length }} evaluación{{ asignatura_data.evaluaciones|length|pluralize:"es" }}
+                    </span>
+                    <a href="{% url 'academico:detalle_asignatura' asignatura_data.asignatura.id %}" class="btn-link">
+                        Ver detalle <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="empty-state-small">
+                    <i class="fas fa-inbox text-muted"></i>
+                    <p>No hay evaluaciones registradas aún</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Estado Vacío: Sin Notas -->
+    {% include 'frontend/templates/common/components/empty_state.html' with icon='fas fa-book-open' title='No hay calificaciones disponibles' message='Aún no se han registrado notas para este estudiante en el período actual.' %}
+    {% endif %}
+    
+    {% else %}
+    <!-- Estado Vacío: Sin Estudiante Seleccionado -->
+    {% include 'frontend/templates/common/components/empty_state.html' with icon='fas fa-user-graduate' title='Selecciona un hijo' message='Selecciona un estudiante del menú superior para visualizar sus calificaciones.' %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'academico/js/apoderado/notas_hijo.js' %}"></script>
+{% endblock %}

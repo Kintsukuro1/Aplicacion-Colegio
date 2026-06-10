@@ -1,0 +1,117 @@
+.content-wrapper {
+    padding: 2rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.page-header h1 {
+    margin: 0;
+}
+
+.page-header .subtitle {
+    margin: 0;
+    color: #6b7280;
+}
+
+.estudiante-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.estudiante-selector label {
+    font-weight: 600;
+    color: #666;
+    margin: 0;
+}
+
+.estudiante-selector select {
+    padding: 0.6rem 0.9rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+    min-width: 240px;
+}
+
+.section-spacing {
+    margin-bottom: 1rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    line-height: 1;
+    border: 1px solid transparent;
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* Pagos (valores típicos: aprobado, rechazado, pendiente) */
+.status-aprobado {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.status-rechazado {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.status-pendiente {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+/* Reuso por si el estado viene con otros nombres */
+.status-pagada {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.status-vencida {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.status-pagada_parcial,
+.status-pagada-parcial {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 1rem;
+    }
+
+    .page-header {
+        align-items: flex-start;
+    }
+
+    .estudiante-selector {
+        width: 100%;
+    }
+
+    .estudiante-selector select {
+        min-width: 0;
+        width: 100%;
+    }
+}

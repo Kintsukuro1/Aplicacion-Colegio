@@ -1,0 +1,84 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/coordinador_academico/inicio.css' %}">
+
+<!-- DASHBOARD PRINCIPAL - COORDINADOR ACADÉMICO -->
+
+<div class="coordinador-dashboard">
+    <div class="welcome-banner">
+        <div class="welcome-content">
+            <h1>¡Bienvenido/a, {{ nombre_usuario }}! 📋</h1>
+            <p class="welcome-date">{{ year }} - Coordinación Académica</p>
+        </div>
+    </div>
+
+    <!-- Resumen Rápido -->
+    <div class="quick-stats">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">📚</div>
+            <div class="stat-info">
+                <h3>Cursos Activos</h3>
+                <p class="stat-number">{{ total_cursos|default:"0" }}</p>
+            </div>
+        </div>
+        <div class="stat-card stat-success">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+                <h3>Promedio Global</h3>
+                <p class="stat-number">{{ promedio_global|default:"—" }}</p>
+            </div>
+        </div>
+        <div class="stat-card stat-danger">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-info">
+                <h3>Reprobación</h3>
+                <p class="stat-number">{{ tasa_reprobacion|default:"0" }}%</p>
+            </div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-icon">📝</div>
+            <div class="stat-info">
+                <h3>Evaluaciones</h3>
+                <p class="stat-number">{{ total_evaluaciones|default:"0" }}</p>
+            </div>
+        </div>
+        <div class="stat-card stat-info">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <h3>Asistencia Semanal</h3>
+                <p class="stat-number">{{ tasa_asistencia_semanal|default:"0" }}%</p>
+            </div>
+        </div>
+        <div class="stat-card {% if planificaciones_pendientes %}stat-warning{% else %}stat-success{% endif %}">
+            <div class="stat-icon">📒</div>
+            <div class="stat-info">
+                <h3>Plan. Pendientes</h3>
+                <p class="stat-number">{{ planificaciones_pendientes|default:"0" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulos -->
+    <div class="section-header">
+        <h2><span class="section-icon">📊</span> Supervisión Académica</h2>
+    </div>
+    <div class="modules-grid">
+        <div class="module-card">
+            <div class="module-icon">📈</div>
+            <h3>Rendimiento Académico</h3>
+            <p>Promedios por curso y asignatura, gráficas de rendimiento</p>
+            <a href="{% url 'dashboard' %}?pagina=rendimiento" class="btn-module">Acceder</a>
+        </div>
+        <div class="module-card">
+            <div class="module-icon">👨‍🏫</div>
+            <h3>Profesores</h3>
+            <p>Actividad docente, notas pendientes, última actividad</p>
+            <a href="{% url 'dashboard' %}?pagina=profesores" class="btn-module">Acceder</a>
+        </div>
+        <div class="module-card">
+            <div class="module-icon">📒</div>
+            <h3>Planificaciones</h3>
+            <p>Revisar y aprobar planificaciones docentes</p>
+            <a href="{% url 'dashboard' %}?pagina=planificacion" class="btn-module">Acceder</a>
+        </div>
+    </div>
+</div>

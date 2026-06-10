@@ -1,0 +1,166 @@
+{% load static %}
+{% url 'mensajeria:bandeja_mensajes' as mensajes_url %}
+<aside class="apod-sidebar" aria-label="Navegación del portal apoderado">
+    <div class="apod-sidebar__top">
+        <div class="apod-sidebar__brand">
+            {% include 'includes/_portal_brand_logo.html' with logo_alt=escuela_nombre|default:"Portal Académico" extra_class='portal-brand-logo--sidebar' %}
+            <span class="apod-sidebar__brand-text">{{ escuela_nombre|default:"Portal Académico" }}</span>
+        </div>
+
+        <div class="apod-sidebar__profile">
+            {% if foto_perfil_url %}
+            <img src="{{ foto_perfil_url }}" alt="" class="apod-sidebar__avatar apod-sidebar__avatar--photo">
+            {% else %}
+            <div class="apod-sidebar__avatar" aria-hidden="true">{% if iniciales %}{{ iniciales }}{% else %}{{ user.nombre|first|upper }}{{ user.apellido_paterno|first|upper }}{% endif %}</div>
+            {% endif %}
+            <p class="apod-sidebar__name">{{ nombre_usuario|default:user.get_full_name }}</p>
+            <p class="apod-sidebar__course">Apoderado</p>
+        </div>
+    </div>
+
+    <nav class="apod-sidebar__nav">
+        {% if 'inicio' in paginas_habilitadas %}
+        <p class="apod-sidebar__section-label">Principal</p>
+        <ul class="apod-sidebar__list">
+            <li class="apod-sidebar__item{% if pagina_actual == 'inicio' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">🏠</span>
+                    <span>Inicio</span>
+                </a>
+            </li>
+        </ul>
+        <div class="apod-sidebar__divider" aria-hidden="true"></div>
+        {% endif %}
+
+        <p class="apod-sidebar__section-label">Mis pupilos</p>
+        <ul class="apod-sidebar__list">
+            {% if 'mis_pupilos' in paginas_habilitadas %}
+            <li class="apod-sidebar__item{% if pagina_actual == 'mis_pupilos' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=mis_pupilos">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">👨‍👩‍👧‍👦</span>
+                    <span>Mis Pupilos</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'notas' in paginas_habilitadas %}
+            <li class="apod-sidebar__item{% if pagina_actual == 'notas' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=notas">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">📊</span>
+                    <span>Notas y Calificaciones</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'asistencia' in paginas_habilitadas %}
+            <li class="apod-sidebar__item{% if pagina_actual == 'asistencia' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=asistencia">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">📅</span>
+                    <span>Asistencia</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'mis_certificados' in paginas_habilitadas %}
+            <li class="apod-sidebar__item{% if pagina_actual == 'mis_certificados' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=mis_certificados">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">🎓</span>
+                    <span>Certificados</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'justificativos' in paginas_habilitadas %}
+            <li class="apod-sidebar__item{% if pagina_actual == 'justificativos' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=justificativos">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">📝</span>
+                    <span>Justificativos</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'calendario_pupilo' in paginas_habilitadas %}
+            <li class="apod-sidebar__item{% if pagina_actual == 'calendario_pupilo' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=calendario_pupilo">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">📆</span>
+                    <span>Calendario</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="apod-sidebar__divider" aria-hidden="true"></div>
+
+        <p class="apod-sidebar__section-label">Gestión</p>
+        <ul class="apod-sidebar__list">
+            {% if 'firmas_pendientes' in paginas_habilitadas %}
+            <li class="apod-sidebar__item{% if pagina_actual == 'firmas_pendientes' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=firmas_pendientes">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">✍️</span>
+                    <span>Firmas Pendientes</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'admision_matricula' in paginas_habilitadas %}
+            <li class="apod-sidebar__item{% if pagina_actual == 'admision_matricula' %} apod-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=admision_matricula">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">🏫</span>
+                    <span>Admisión y Matrícula</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="apod-sidebar__divider" aria-hidden="true"></div>
+
+        <p class="apod-sidebar__section-label">Comunicación</p>
+        <ul class="apod-sidebar__list">
+            {% if menu_access.comunicados %}
+            <li class="apod-sidebar__item">
+                <a href="{% url 'comunicados:lista' %}">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">📢</span>
+                    <span>Comunicados</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if menu_access.mensajes %}
+            <li class="apod-sidebar__item">
+                <a href="{% if mensajes_url %}{{ mensajes_url }}{% else %}{% url 'dashboard' %}?pagina=inicio{% endif %}">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">💬</span>
+                    <span>Mensajes</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="apod-sidebar__divider" aria-hidden="true"></div>
+
+        <p class="apod-sidebar__section-label">Pagos</p>
+        <ul class="apod-sidebar__list">
+            {% if menu_access.estado_cuenta %}
+            <li class="apod-sidebar__item">
+                <a href="{% url 'matriculas:mi_estado_cuenta' %}">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">💳</span>
+                    <span>Estado de Cuenta</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if menu_access.mis_pagos %}
+            <li class="apod-sidebar__item">
+                <a href="{% url 'matriculas:mis_pagos' %}">
+                    <span class="apod-sidebar__emoji" aria-hidden="true">💵</span>
+                    <span>Mis Pagos</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <div class="apod-sidebar__footer">
+        {% if 'perfil' in paginas_habilitadas %}
+        <a href="{% url 'dashboard' %}?pagina=perfil" class="apod-sidebar__footer-link{% if pagina_actual == 'perfil' %} apod-sidebar__item--active{% endif %}">
+            <span class="apod-sidebar__emoji" aria-hidden="true">👤</span>
+            <span>Mi Perfil</span>
+        </a>
+        {% endif %}
+        <form method="POST" action="{% url 'accounts:logout' %}" class="apod-sidebar__logout-form">
+            {% csrf_token %}
+            <button type="submit" class="apod-sidebar__footer-link apod-sidebar__footer-link--logout">
+                <span class="apod-sidebar__emoji" aria-hidden="true">🚪</span>
+                <span>Cerrar Sesión</span>
+            </button>
+        </form>
+    </div>
+</aside>

@@ -1,3 +1,5 @@
+/* Calendario escolar — portal docente (lavanda) */
+
 .ce-page {
     display: grid;
     gap: 1rem;
@@ -7,27 +9,38 @@
     margin-bottom: 0.5rem;
 }
 
+.ce-header h1,
+.ce-card-title {
+    color: #4c1d95;
+}
+
+.ce-header .subtitle {
+    color: #6d28d9;
+}
+
 .ce-feedback {
     margin-bottom: 0.75rem;
 }
 
 .ce-feedback--success {
-    border: 1px solid #b8d8bf;
-    background: #edf8f0;
-    color: #1e5f2f;
+    border: 1px solid #c4b5fd;
+    background: #f5f3ff;
+    color: #5b21b6;
 }
 
 .ce-feedback--error {
-    border: 1px solid #d7acb5;
-    background: #f7ebee;
-    color: #8f1d2c;
+    border: 1px solid #e9d5ff;
+    background: #faf5ff;
+    color: #7c3aed;
 }
 
 .ce-card {
     margin-bottom: 1rem;
     padding: 1rem;
-    border: 1px solid #d8d8d8;
-    border-radius: 12px;
+    border: 1px solid #ddd6fe;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 8px 28px rgba(76, 29, 149, 0.07);
 }
 
 .ce-card-title {
@@ -43,7 +56,7 @@
 .ce-grid label {
     display: grid;
     gap: 0.35rem;
-    color: #253246;
+    color: #4c1d95;
     font-weight: 600;
     font-size: 0.94rem;
 }
@@ -52,26 +65,26 @@
 .ce-grid select {
     width: 100%;
     min-height: 40px;
-    border: 1px solid #cfd6df;
+    border: 1px solid #ddd6fe;
     border-radius: 10px;
     padding: 0.45rem 0.65rem;
     background: #fff;
     font-weight: 500;
-    color: #1e293b;
+    color: #4c1d95;
 }
 
 .ce-grid input:focus,
 .ce-grid select:focus {
     outline: none;
-    border-color: #1f8f58;
-    box-shadow: 0 0 0 3px rgba(31, 143, 88, 0.15);
+    border-color: #6a5ab8;
+    box-shadow: 0 0 0 3px rgba(106, 90, 184, 0.18);
 }
 
 .ce-grid input[type='checkbox'] {
     width: auto;
     min-height: auto;
     margin: 0;
-    accent-color: #1f8f58;
+    accent-color: #6a5ab8;
 }
 
 .ce-grid input[type='color'] {
@@ -121,11 +134,17 @@
     border-collapse: collapse;
 }
 
+.ce-table th {
+    color: #4c1d95;
+    font-weight: 700;
+    background: #faf5ff;
+}
+
 .ce-table th,
 .ce-table td {
     text-align: left;
     padding: 0.65rem;
-    border-bottom: 1px solid #ececec;
+    border-bottom: 1px solid #ede9fe;
     vertical-align: top;
 }
 
@@ -137,6 +156,341 @@
 
 .ce-action-btn {
     min-width: 84px;
+}
+
+body.vista-personal .ce-page .btn-primary {
+    background: #6a5ab8;
+    border-color: #6a5ab8;
+    color: #fff;
+    font-weight: 600;
+}
+
+body.vista-personal .ce-page .btn-primary:hover {
+    background: #5b4aa8;
+    border-color: #5b4aa8;
+}
+
+body.vista-personal .ce-page .btn-secondary {
+    background: #faf5ff;
+    border-color: #ddd6fe;
+    color: #6d28d9;
+}
+
+body.vista-personal .ce-page .btn-secondary:hover {
+    background: #f3e8ff;
+    border-color: #c4b5fd;
+    color: #4c1d95;
+}
+
+.proximos-eventos-widget {
+    padding: 1.1rem 1.25rem;
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    border: 1px solid #e0e7ff;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+}
+
+.proximos-eventos-widget h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #3730a3;
+}
+
+.proximos-eventos-widget .widget-desc {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #64748b;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+#calendar-filters button[type="submit"],
+.ce-page .btn.btn-primary {
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#calendar-filters button[type="submit"]:hover,
+.ce-page .btn.btn-primary:hover {
+    background: #4f46e5;
+}
+
+.tipo-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.tipo-vacaciones { background: #fef3c7; color: #92400e; }
+.tipo-feriado,
+.tipo-feriado_nacional { background: #fee2e2; color: #991b1b; }
+.tipo-evaluacion { background: #e0e7ff; color: #3730a3; }
+.tipo-reunion { background: #dcfce7; color: #166534; }
+.tipo-actividad { background: #f0f9ff; color: #0c4a6e; }
+.tipo-ceremonia,
+.tipo-administrativo,
+.tipo-otro { background: #f3f4f6; color: #4b5563; }
+
+.estado-badge {
+    font-size: 0.82rem;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.estado-lectura { background: #f1f5f9; color: #64748b; }
+.estado-activo { background: #dcfce7; color: #16a34a; }
+
+/* Guía y demostración (solo vista docente) */
+.ce-guide {
+    padding: 1.1rem 1.25rem;
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    border: 1px solid #c7d2fe;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+}
+
+.ce-guide__title {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #3730a3;
+}
+
+.ce-guide__text {
+    margin: 0 0 0.85rem;
+    font-size: 0.88rem;
+    color: #475569;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.ce-guide__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.ce-guide__item {
+    display: flex;
+    gap: 0.65rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid #e0e7ff;
+    border-radius: 12px;
+}
+
+.ce-guide__item strong {
+    display: block;
+    color: #312e81;
+    font-size: 0.9rem;
+}
+
+.ce-guide__item p {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.ce-guide__icon {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.ce-demo-tag {
+    display: inline-block;
+    margin-left: 0.35rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #fef3c7;
+    color: #92400e;
+    vertical-align: middle;
+}
+
+.ce-demo-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    background: #fffbeb;
+    color: #78350f;
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.ce-demo-banner__cta {
+    color: #4f46e5;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.ce-demo-banner__cta:hover {
+    text-decoration: underline;
+}
+
+.ce-demo-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+}
+
+.ce-demo-kpi {
+    padding: 0.75rem 0.85rem;
+    border-radius: 14px;
+    border: 1px solid #e0e7ff;
+    background: #fff;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.08);
+}
+
+.ce-demo-kpi__val {
+    display: block;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #312e81;
+    line-height: 1.1;
+}
+
+.ce-demo-kpi__lbl {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6366f1;
+}
+
+.ce-demo-kpi__hint {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.ce-demo-kpi--clases { background: linear-gradient(180deg, #eef2ff, #fff); }
+.ce-demo-kpi--tareas { background: linear-gradient(180deg, #fef9c3, #fff); }
+.ce-demo-kpi--warn { background: linear-gradient(180deg, #fee2e2, #fff); }
+.ce-demo-kpi--neutral { background: linear-gradient(180deg, #f8fafc, #fff); }
+
+.ce-intel-demo {
+    margin-bottom: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #c7d2fe;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.ce-intel-demo__title {
+    margin: 0 0 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #3730a3;
+}
+
+.ce-intel-demo__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.ce-intel-demo__list li {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.45;
+    padding-left: 0.1rem;
+}
+
+.ce-proximos-demo {
+    margin-bottom: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #e0e7ff;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.ce-proximos-demo__title {
+    margin: 0 0 0.65rem;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #4c1d95;
+}
+
+.ce-proximos-demo__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.ce-proximos-demo__item {
+    display: grid;
+    grid-template-columns: 4.5rem 6.5rem 1fr;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem 0.55rem;
+    border-radius: 10px;
+    background: #faf5ff;
+    border: 1px solid #ede9fe;
+}
+
+.ce-proximos-demo__date {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #6366f1;
+    text-transform: lowercase;
+}
+
+.ce-proximos-demo__titulo {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.ce-row--demo td {
+    background: #fffbeb;
+}
+
+.ce-row--demo td:first-child strong::after {
+    content: '';
+}
+
+@media (max-width: 768px) {
+    .ce-demo-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ce-proximos-demo__item {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
 }
 
 @media (max-width: 768px) {

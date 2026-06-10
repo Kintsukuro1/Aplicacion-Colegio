@@ -45,6 +45,11 @@ body.vista-personal .mm-page,
 body.vista-personal .aec-page,
 body.vista-personal .apg-page,
 body.vista-personal .apf-page,
+body.vista-personal .ce-page,
+body.vista-personal .sr-page,
+body.vista-personal .disponibilidad-container,
+body.vista-personal .eo-page,
+body.vista-personal .prof-hero,
 body.vista-personal .pers-hero {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -92,10 +97,14 @@ body.pagina-inicio:has(.perfil-personal) .dashboard-container > .sidebar {
 
 body.vista-personal .main-content,
 body:has(.perfil-personal) .main-content,
+body:has(.vista-personal) .main-content,
 body.pagina-inicio:has(.vista-personal) .main-content,
-body.pagina-inicio:has(.perfil-personal) .main-content {
+body.pagina-inicio:has(.perfil-personal) .main-content,
+body.pagina-comunicados:has(.vista-personal) .main-content,
+body.pagina-mensajes:has(.vista-personal) .main-content {
     margin-left: 0 !important;
     width: 100% !important;
+    max-width: none !important;
     background: var(--pers-bg) !important;
 }
 
@@ -454,14 +463,24 @@ body.pagina-inicio:has(.perfil-personal) {
     gap: 12px;
 }
 
-.pers-main-header--compact {
+/* Barra de campana dentro del contenido (mismo padding que la página) */
+.pers-page-toolbar {
+    display: flex;
+    align-items: center;
     justify-content: flex-end;
-    min-height: 0;
-    padding: 16px 28px 0;
-    border-bottom: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    position: relative;
+    z-index: 40;
 }
 
-.pers-main-header--compact .pers-main-header__actions .btn-notificaciones {
+.pers-page-toolbar .portal-notif,
+.pers-page-toolbar .notificaciones-container {
+    position: relative;
+    margin: 0;
+}
+
+.pers-page-toolbar .btn-notificaciones {
     width: 42px;
     height: 42px;
     display: inline-flex;
@@ -469,17 +488,41 @@ body.pagina-inicio:has(.perfil-personal) {
     justify-content: center;
     border-radius: 12px;
     background: var(--pers-accent-light);
+    border: 1px solid var(--pers-border);
     padding: 0;
+    color: var(--pers-accent-deep);
 }
 
-.pers-main-header--compact .pers-main-header__actions .btn-notificaciones:hover {
+.pers-page-toolbar .btn-notificaciones:hover {
     background: var(--pers-accent-hover);
 }
 
-.pers-main-header--compact .pers-main-header__actions .badge-notificaciones {
+.pers-page-toolbar .badge-notificaciones {
     top: 4px;
     right: 4px;
     border: 2px solid var(--pers-surface);
+}
+
+/* Hero docente: campana arriba a la derecha (refuerzo sobre mis_clases.css) */
+body.vista-personal .mm-prof-hero .mc-hero__head,
+body.vista-personal .mc-hero__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: nowrap;
+}
+
+body.vista-personal .mc-hero__head-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.vista-personal .mc-hero__actions,
+body.vista-personal .mc-hero__head .portal-welcome-actions {
+    flex: 0 0 auto;
+    margin-left: auto;
+    align-self: flex-start;
 }
 
 .pers-main-header__notif {
@@ -571,7 +614,7 @@ body.pagina-inicio:has(.perfil-personal) {
 
 .perfil-personal .stat-success,
 .pers-metric.stat-success {
-    border-top: 3px solid #22c55e;
+    border-top: 3px solid #6366f1;
 }
 
 .perfil-personal .pers-metric.stat-asistencia,
@@ -637,7 +680,7 @@ body.pagina-inicio:has(.perfil-personal) {
 
 .perfil-personal .stat-success .stat-number,
 .perfil-personal .stat-success .pers-metric__value {
-    color: #22c55e;
+    color: #6366f1;
 }
 
 .perfil-personal .stat-asistencia .stat-number,
@@ -667,7 +710,7 @@ body.pagina-inicio:has(.perfil-personal) {
 }
 
 .pers-metric__progress-bar--ok {
-    background: #22c55e;
+    background: #6366f1;
 }
 
 .pers-metric__progress-bar--warn {
@@ -698,6 +741,51 @@ body.vista-personal .pers-page-content .section-header h2 {
 
 body.vista-personal .pers-page-content .page-header h1 {
     color: var(--pers-text);
+}
+
+body.vista-personal .ce-page .ce-header h1,
+body.vista-personal .sr-page .sr-header h1,
+body.vista-personal .disponibilidad-container .page-header h1 {
+    color: var(--pers-text);
+}
+
+body.vista-personal .ce-page .subtitle,
+body.vista-personal .sr-page .subtitle,
+body.vista-personal .disponibilidad-container .page-header p {
+    color: var(--pers-text-soft);
+}
+
+body.vista-personal .comunicados-container .header-comunicados h1 {
+    color: var(--pers-text);
+}
+
+body.vista-personal .comunicados-container .btn-crear {
+    background: var(--pers-accent-deep);
+    color: #fff;
+}
+
+body.vista-personal .comunicados-container .btn-crear:hover {
+    background: #5b4aa8;
+    filter: none;
+}
+
+body.vista-personal .comunicados-container .comunicado-card {
+    border-left-color: var(--pers-accent);
+    border: 1px solid var(--pers-border);
+    border-left-width: 4px;
+    box-shadow: var(--pers-shadow);
+}
+
+body.vista-personal .comunicados-container .filtro-select:focus {
+    border-color: var(--pers-accent-deep);
+    box-shadow: 0 0 0 3px rgba(106, 90, 184, 0.15);
+}
+
+body.vista-personal .comunicados-container .empty-state {
+    background: #faf5ff;
+    border: 1px solid var(--pers-border);
+    border-radius: 16px;
+    color: var(--pers-text-soft);
 }
 
 /* ── 5. Feed ───────────────────────────────────────────────── */
@@ -1352,25 +1440,25 @@ body.vista-personal .pers-page-content .page-header h1 {
 }
 
 .pers-btn--primary {
-    background: #047857;
+    background: #6366f1;
     color: #ffffff;
 }
 
 .pers-btn--primary:hover {
-    background: #065f46;
+    background: #4f46e5;
     color: #ffffff;
-    box-shadow: 0 4px 10px rgba(6, 95, 70, 0.26);
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.28);
     transform: translateY(-1px);
 }
 
 .pers-btn--ghost {
-    border-color: #86efac;
+    border-color: #c7d2fe;
     background: #f3e8ff;
     color: #6d28d9;
 }
 
 .pers-btn--ghost:hover {
-    background: #dcfce7;
+    background: #eef2ff;
     color: #4c1d95;
     transform: translateY(-1px);
 }
@@ -1484,7 +1572,7 @@ body.vista-personal .pers-page-content .page-header h1 {
 }
 
 .pers-kpi__fill--ok {
-    background: linear-gradient(90deg, #22c55e, #16a34a);
+    background: linear-gradient(90deg, #818cf8, #6366f1);
 }
 
 .pers-kpi__fill--warn {
@@ -1938,13 +2026,43 @@ body.vista-personal .pers-page-content .page-header h1 {
 .pers-page-content .af-page,
 .pers-page-content .am-page,
 .pers-page-content .amm-page,
+.pers-page-content .mm-page,
+.pers-page-content .mm-page--prof,
 .pers-page-content .aec-page,
 .pers-page-content .apg-page,
-.pers-page-content .apf-page {
-    max-width: none;
-    width: 100%;
-    padding: 0;
+.pers-page-content .apf-page,
+/* Portal docente — contenedores raíz a ancho completo */
+.pers-page-content > .mc-page,
+.pers-page-content > .lc-page,
+.pers-page-content > .reportes-container,
+.pers-page-content > .prof-dashboard,
+.pers-page-content > .asistencia-container,
+.pers-page-content > .notas-container,
+.pers-page-content > .perfil-container,
+.pers-page-content > .disponibilidad-container,
+.pers-page-content > .ra-page,
+.pers-page-content > .gt-page,
+.pers-page-content > .rep-page,
+.pers-page-content > .dashboard-graficos,
+.pers-page-content > div.content-wrapper {
+    max-width: none !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0;
+    padding-right: 0;
     box-sizing: border-box;
+}
+
+/* Mis Clases: más columnas según ancho disponible */
+body.vista-personal .mc-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+}
+
+@media (min-width: 1400px) {
+    body.vista-personal .mc-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    }
 }
 
 @media (max-width: 900px) {

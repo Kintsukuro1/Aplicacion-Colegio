@@ -5,37 +5,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seleccionar Escuela - Portal Académico</title>
-    <link rel="stylesheet" href="{% static 'css/admin/seleccionar_escuela.css' %}">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{% static 'css/admin/seleccionar_escuela.css' %}?v=20260607">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
-            <h1>🏫 Seleccionar Escuela</h1>
-            <p>Elige la escuela que deseas administrar</p>
+            <div class="header-title-area">
+                <h1>🏫 Seleccionar Escuela</h1>
+                <p>Elige el establecimiento que deseas administrar o registra uno nuevo</p>
+            </div>
             <div class="user-info">
-                <span>👤 <strong>{{ nombre_usuario }}</strong> (Administrador General)</span>
+                <span class="user-name">👤 <strong>{{ nombre_usuario }}</strong> (Admin General)</span>
                 <a href="{% url 'accounts:logout' %}">Cerrar Sesión</a>
             </div>
         </div>
 
+        <!-- Mensajes de Alerta -->
         {% if mensaje %}
             <div class="mensaje {{ tipo_mensaje }}">
-                {{ mensaje }}
+                {% if tipo_mensaje == 'success' %}
+                    <span>✓</span>
+                {% else %}
+                    <span>⚠️</span>
+                {% endif %}
+                <span>{{ mensaje }}</span>
             </div>
         {% endif %}
 
-        <!-- Botones de acción -->
+        <!-- Botones de Acción Principal -->
         <div class="action-buttons">
-            <button class="form-toggle btn-create" onclick="abrirModalTipo()">
+            <button class="form-toggle btn-create" onclick="abrirModalTipo()" id="btn_crear_colegio">
                 <span>➕</span>
                 <span>Crear Nuevo Colegio</span>
             </button>
             
-            <button class="form-toggle btn-admin" onclick="abrirModalAdminEscolar()">
+            <button class="form-toggle btn-admin" onclick="abrirModalAdminEscolar()" id="btn_crear_admin">
                 <span>👤</span>
                 <span>Crear Admin Escolar</span>
             </button>
+        </div>
+
+        <!-- Buscador y Filtros Dinámicos -->
+        <div class="search-filter-card">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="buscarColegio" placeholder="Buscar colegio por nombre o RBD..." onkeyup="filtrarColegios()">
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-select-wrapper">
+                    <span class="filter-label">Tipo:</span>
+                    <select id="filtroTipo" onchange="filtrarColegios()">
+                        <option value="all">Todos los tipos</option>
+                        <option value="presencial">Presencial 🏫</option>
+                        <option value="online">Online 💻</option>
+                        <option value="híbrido">Híbrido 🔄</option>
+                    </select>
+                </div>
+                
+                <div class="filter-select-wrapper">
+                    <span class="filter-label">Plan:</span>
+                    <select id="filtroPlan" onchange="filtrarColegios()">
+                        <option value="all">Todos los planes</option>
+                        <option value="tester">Tester 🎯</option>
+                        <option value="trial">Trial ⏰</option>
+                        <option value="basic">Basic 📦</option>
+                        <option value="standard">Standard ⭐</option>
+                        <option value="premium">Premium 💎</option>
+                        <option value="enterprise">Enterprise 🏢</option>
+                        <option value="sin-plan">Sin plan ❌</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <!-- Modal de selección de tipo de establecimiento -->
@@ -77,7 +125,7 @@
                 <h2 class="modal-title">👤 Crear Administrador Escolar</h2>
                 
                 {% if not escuelas %}
-                    <div class="alert-info" style="background: #fff3cd; border-color: #ffc107; color: #856404;">
+                    <div class="alert-info">
                         <strong>⚠️ Atención:</strong> No hay colegios registrados. Debes crear al menos un colegio antes de crear un administrador escolar.
                     </div>
                     <button type="button" class="btn-submit" onclick="cerrarModalAdminEscolar(); abrirModalTipo();">
@@ -89,9 +137,11 @@
                         {% csrf_token %}
                         <input type="hidden" name="crear_admin_escolar" value="1">
                         
-                        <div class="form-grid">
+                        <!-- Sección 1: Colegio -->
+                        <div class="form-section">
+                            <h3 class="form-section-title"><span class="section-number">1</span> Establecimiento</h3>
                             <div class="form-group full-width">
-                                <label>Colegio <span class="required">*</span></label>
+                                <label for="rbd_admin">Colegio Asociado <span class="required">*</span></label>
                                 <select name="rbd_admin" id="rbd_admin" required>
                                     <option value="">Seleccionar colegio...</option>
                                     {% for esc in escuelas %}
@@ -101,45 +151,57 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            
-                            <div class="form-group">
-                                <label>RUT <span class="required">*</span></label>
-                                <input type="text" name="rut_admin" id="rut_admin" required placeholder="12.345.678-9">
+                        </div>
+                        
+                        <!-- Sección 2: Datos del Admin -->
+                        <div class="form-section">
+                            <h3 class="form-section-title"><span class="section-number">2</span> Datos Personales</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="rut_admin">RUT <span class="required">*</span></label>
+                                    <input type="text" name="rut_admin" id="rut_admin" required placeholder="12.345.678-9">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="email_admin">Email <span class="required">*</span></label>
+                                    <input type="email" name="email_admin" id="email_admin" required placeholder="admin@colegio.cl">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="nombre_admin">Nombre <span class="required">*</span></label>
+                                    <input type="text" name="nombre_admin" id="nombre_admin" required placeholder="Juan">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="apellido_paterno_admin">Apellido Paterno <span class="required">*</span></label>
+                                    <input type="text" name="apellido_paterno_admin" id="apellido_paterno_admin" required placeholder="Pérez">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="apellido_materno_admin">Apellido Materno</label>
+                                    <input type="text" name="apellido_materno_admin" id="apellido_materno_admin" placeholder="González">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="telefono_admin">Teléfono</label>
+                                    <input type="tel" name="telefono_admin" id="telefono_admin" placeholder="+56912345678">
+                                </div>
                             </div>
-                            
-                            <div class="form-group">
-                                <label>Email <span class="required">*</span></label>
-                                <input type="email" name="email_admin" id="email_admin" required placeholder="admin@colegio.cl">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Nombre <span class="required">*</span></label>
-                                <input type="text" name="nombre_admin" id="nombre_admin" required placeholder="Juan">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Apellido Paterno <span class="required">*</span></label>
-                                <input type="text" name="apellido_paterno_admin" id="apellido_paterno_admin" required placeholder="Pérez">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Apellido Materno</label>
-                                <input type="text" name="apellido_materno_admin" id="apellido_materno_admin" placeholder="González">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Teléfono</label>
-                                <input type="tel" name="telefono_admin" id="telefono_admin" placeholder="+56912345678">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Contraseña <span class="required">*</span></label>
-                                <input type="password" name="contrasena_admin" id="contrasena_admin" required minlength="12" placeholder="Mínimo 12 caracteres">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Confirmar Contraseña <span class="required">*</span></label>
-                                <input type="password" name="confirmar_contrasena_admin" id="confirmar_contrasena_admin" required minlength="12" placeholder="Repetir contraseña (mínimo 12)">
+                        </div>
+                        
+                        <!-- Sección 3: Seguridad -->
+                        <div class="form-section">
+                            <h3 class="form-section-title"><span class="section-number">3</span> Seguridad</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="contrasena_admin">Contraseña <span class="required">*</span></label>
+                                    <input type="password" name="contrasena_admin" id="contrasena_admin" required minlength="12" placeholder="Mínimo 12 caracteres">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="confirmar_contrasena_admin">Confirmar Contraseña <span class="required">*</span></label>
+                                    <input type="password" name="confirmar_contrasena_admin" id="confirmar_contrasena_admin" required minlength="12" placeholder="Repetir contraseña (mínimo 12)">
+                                </div>
                             </div>
                         </div>
                         
@@ -157,41 +219,43 @@
             <div class="modal-content">
                 <button class="modal-close" onclick="cerrarModalPlan()">×</button>
                 <h2 class="modal-title">💳 Gestionar Plan de Suscripción</h2>
-                <p id="modalPlanEscuela" style="color: #666; margin-bottom: 20px;"></p>
+                <p id="modalPlanEscuela" style="color: var(--muted); margin-bottom: 25px; text-align: center; font-weight: 500;"></p>
                 
                 <form method="POST" onsubmit="return confirm('¿Estás seguro de cambiar el plan de este colegio?');">
                     {% csrf_token %}
                     <input type="hidden" name="cambiar_plan" value="1">
                     <input type="hidden" name="rbd_plan" id="rbd_plan">
                     
-                    <div class="form-group full-width">
-                        <label>Seleccionar Plan <span class="required">*</span></label>
-                        <select name="plan_codigo" id="plan_codigo" required onchange="mostrarInfoPlan(this.value)">
-                            <option value="">Seleccionar plan...</option>
-                            {% for plan in planes %}
-                                <option value="{{ plan.codigo }}" 
-                                    data-precio="{{ plan.precio_mensual }}"
-                                    data-estudiantes="{{ plan.max_estudiantes }}"
-                                    data-mensajes="{{ plan.max_mensajes_mes }}"
-                                    data-evaluaciones="{{ plan.max_evaluaciones_mes }}"
-                                    data-unlimited="{{ plan.is_unlimited }}"
-                                    data-trial="{{ plan.is_trial }}"
-                                    data-duracion="{{ plan.duracion_dias }}">
-                                    {{ plan.nombre }} 
-                                    {% if plan.is_unlimited %}🎯{% elif plan.is_trial %}⏰{% endif %}
-                                    - ${{ plan.precio_mensual }}/mes
-                                </option>
-                            {% endfor %}
-                        </select>
+                    <div class="form-section">
+                        <div class="form-group full-width">
+                            <label for="plan_codigo">Seleccionar Plan <span class="required">*</span></label>
+                            <select name="plan_codigo" id="plan_codigo" required onchange="mostrarInfoPlan(this.value)">
+                                <option value="">Seleccionar plan...</option>
+                                {% for plan in planes %}
+                                    <option value="{{ plan.codigo }}" 
+                                        data-precio="{{ plan.precio_mensual }}"
+                                        data-estudiantes="{{ plan.max_estudiantes }}"
+                                        data-mensajes="{{ plan.max_mensajes_mes }}"
+                                        data-evaluaciones="{{ plan.max_evaluaciones_mes }}"
+                                        data-unlimited="{{ plan.is_unlimited }}"
+                                        data-trial="{{ plan.is_trial }}"
+                                        data-duracion="{{ plan.duracion_dias }}">
+                                        {{ plan.nombre }} 
+                                        {% if plan.is_unlimited %}🎯{% elif plan.is_trial %}⏰{% endif %}
+                                        - ${{ plan.precio_mensual }}/mes
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div id="infoPlanSeleccionado" style="display: none; background: var(--bg-main); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-top: 20px;">
+                            <h4 style="margin-top: 0; margin-bottom: 12px; font-weight: 700; color: var(--dark);">📋 Características del Plan</h4>
+                            <ul id="caracteristicasPlan" style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.9rem; display: flex; flex-direction: column; gap: 6px;">
+                            </ul>
+                        </div>
                     </div>
                     
-                    <div id="infoPlanSeleccionado" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 15px;">
-                        <h4 style="margin-top: 0;">📋 Características del Plan</h4>
-                        <ul id="caracteristicasPlan" style="margin: 0; padding-left: 20px;">
-                        </ul>
-                    </div>
-                    
-                    <button type="submit" class="btn-submit mt-4">
+                    <button type="submit" class="btn-submit">
                         <span>✓</span>
                         <span>Cambiar Plan</span>
                     </button>
@@ -199,7 +263,7 @@
             </div>
         </div>
 
-        <!-- Modal de formulario -->
+        <!-- Modal de formulario (Crear Colegio) -->
         <div class="modal-overlay" id="modalFormulario">
             <div class="modal-content">
                 <button class="modal-close" onclick="cerrarModalFormulario()">×</button>
@@ -209,102 +273,118 @@
                     <input type="hidden" name="crear_escuela" value="1">
                     <input type="hidden" name="tipo_establecimiento" id="tipo_establecimiento_hidden">
                     
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Nombre del Colegio <span class="required">*</span></label>
-                            <input type="text" name="nombre" id="nombre" required placeholder="Ej: Liceo Nacional de Maipú">
+                    <!-- Sección 1: Datos Básicos -->
+                    <div class="form-section">
+                        <h3 class="form-section-title"><span class="section-number">1</span> Datos del Establecimiento</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="nombre">Nombre del Colegio <span class="required">*</span></label>
+                                <input type="text" name="nombre" id="nombre" required placeholder="Ej: Liceo Nacional de Maipú">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rbd">RBD <span class="required">*</span></label>
+                                <input type="text" name="rbd" id="rbd" required placeholder="Ej: 25770">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rut_establecimiento">RUT Establecimiento <span class="required">*</span></label>
+                                <input type="text" name="rut_establecimiento" id="rut_establecimiento" required placeholder="Ej: 76.543.210-9">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="dependencia">Dependencia Administrativa <span class="required">*</span></label>
+                                <select name="dependencia" id="dependencia" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for dep in dependencias %}
+                                        <option value="{{ dep.id_dependencia }}">{{ dep.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
-                        
-                        <div class="form-group">
-                            <label>RBD <span class="required">*</span></label>
-                            <input type="text" name="rbd" id="rbd" required placeholder="Ej: 25770">
+                    </div>
+                    
+                    <!-- Sección 2: Ubicación y Dirección -->
+                    <div class="form-section">
+                        <h3 class="form-section-title"><span class="section-number">2</span> Ubicación</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="region_id">Región <span class="required">*</span></label>
+                                <select name="region_id" id="region_id" required onchange="filtrarComunas()">
+                                    <option value="">Seleccionar...</option>
+                                    {% for region in regiones %}
+                                        <option value="{{ region.id_region }}">{{ region.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="comuna_id">Comuna <span class="required">*</span></label>
+                                <select name="comuna_id" id="comuna_id" required>
+                                    <option value="">Selecciona una región primero</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label for="direccion">Dirección <span class="required">*</span></label>
+                                <input type="text" name="direccion" id="direccion" required placeholder="Calle Principal 123">
+                            </div>
                         </div>
-                        
-                        <div class="form-group">
-                            <label>RUT Establecimiento <span class="required">*</span></label>
-                            <input type="text" name="rut_establecimiento" required placeholder="Ej: 76.543.210-9">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Dependencia Administrativa <span class="required">*</span></label>
-                            <select name="dependencia" required>
-                                <option value="">Seleccionar...</option>
-                                {% for dep in dependencias %}
-                                    <option value="{{ dep.id_dependencia }}">{{ dep.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Región <span class="required">*</span></label>
-                            <select name="region_id" id="region_id" required onchange="filtrarComunas()">
-                                <option value="">Seleccionar...</option>
-                                {% for region in regiones %}
-                                    <option value="{{ region.id_region }}">{{ region.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Comuna <span class="required">*</span></label>
-                            <select name="comuna_id" id="comuna_id" required>
-                                <option value="">Selecciona una región primero</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Dirección <span class="required">*</span></label>
-                            <input type="text" name="direccion" required placeholder="Calle Principal 123">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Teléfono</label>
-                            <input type="tel" name="telefono" placeholder="+56912345678">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" name="email" placeholder="contacto@colegio.cl">
-                        </div>
-                        
-                        <div class="form-group" id="field_web">
-                            <label>Sitio Web</label>
-                            <input type="url" name="web" placeholder="https://www.colegio.cl">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Capacidad Máxima</label>
-                            <input type="number" name="capacidad_maxima" placeholder="1000" min="1">
+                    </div>
+
+                    <!-- Sección 3: Contacto y Capacidad -->
+                    <div class="form-section">
+                        <h3 class="form-section-title"><span class="section-number">3</span> Contacto y Capacidad</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="telefono">Teléfono</label>
+                                <input type="tel" name="telefono" id="telefono" placeholder="+56912345678">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" name="email" id="email" placeholder="contacto@colegio.cl">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="web">Sitio Web</label>
+                                <input type="url" name="web" id="web" placeholder="https://www.colegio.cl">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="capacidad_maxima">Capacidad Máxima</label>
+                                <input type="number" name="capacidad_maxima" id="capacidad_maxima" placeholder="1000" min="1">
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Sección de Infraestructura (solo para Presencial) -->
-                    <div id="infraestructura-section" class="d-none">
-                        <h3 style="margin-top: 30px; margin-bottom: 20px; color: #2c3e50;">🏗️ Infraestructura del Colegio</h3>
+                    <div id="infraestructura-section" class="form-section d-none">
+                        <h3 class="form-section-title"><span class="section-number">4</span> Infraestructura del Colegio</h3>
                         <div class="form-grid">
                             <div class="form-group">
-                                <label>Salas de Clases</label>
-                                <input type="number" name="infra_salas" min="0" placeholder="0" value="0">
+                                <label for="infra_salas">Salas de Clases</label>
+                                <input type="number" name="infra_salas" id="infra_salas" min="0" placeholder="0" value="0">
                             </div>
                             
                             <div class="form-group">
-                                <label>Laboratorios de Computación</label>
-                                <input type="number" name="infra_laboratorio" min="0" placeholder="0" value="0">
+                                <label for="infra_laboratorio">Laboratorios de Computación</label>
+                                <input type="number" name="infra_laboratorio" id="infra_laboratorio" min="0" placeholder="0" value="0">
                             </div>
                             
                             <div class="form-group">
-                                <label>Bibliotecas</label>
-                                <input type="number" name="infra_biblioteca" min="0" placeholder="0" value="0">
+                                <label for="infra_biblioteca">Bibliotecas</label>
+                                <input type="number" name="infra_biblioteca" id="infra_biblioteca" min="0" placeholder="0" value="0">
                             </div>
                             
                             <div class="form-group">
-                                <label>Gimnasios</label>
-                                <input type="number" name="infra_gimnasio" min="0" placeholder="0" value="0">
+                                <label for="infra_gimnasio">Gimnasios</label>
+                                <input type="number" name="infra_gimnasio" id="infra_gimnasio" min="0" placeholder="0" value="0">
                             </div>
                             
                             <div class="form-group">
-                                <label>Comedores</label>
-                                <input type="number" name="infra_comedor" min="0" placeholder="0" value="0">
+                                <label for="infra_comedor">Comedores</label>
+                                <input type="number" name="infra_comedor" id="infra_comedor" min="0" placeholder="0" value="0">
                             </div>
                         </div>
                     </div>
@@ -317,12 +397,18 @@
             </div>
         </div>
 
+        <!-- Título de Sección -->
         <h2 class="section-title">Colegios Disponibles</h2>
 
+        <!-- Grid de Colegios -->
         {% if escuelas %}
             <div class="escuelas-grid">
                 {% for escuela in escuelas %}
-                    <div class="escuela-card-wrapper">
+                    <div class="escuela-card-wrapper" 
+                         data-nombre="{{ escuela.nombre|lower }}" 
+                         data-rbd="{{ escuela.rbd }}" 
+                         data-tipo="{% if escuela.tipo_establecimiento %}{{ escuela.tipo_establecimiento.nombre|lower }}{% endif %}"
+                         data-plan="{% if escuela.subscription_info %}{{ escuela.subscription_info.plan.codigo|lower }}{% else %}sin-plan{% endif %}">
                         <a href="{% url 'entrar_escuela' escuela.rbd %}" class="escuela-card">
                             <div class="escuela-header">
                                 <div class="escuela-icon">
@@ -331,33 +417,36 @@
                                 <div class="escuela-title">
                                     <h3>{{ escuela.nombre }}</h3>
                                     <span class="escuela-rbd">RBD: {{ escuela.rbd }}</span>
-                                    {% if escuela.tipo_establecimiento %}
-                                        <span class="badge-tipo {{ escuela.tipo_establecimiento.nombre|lower }}">
-                                            {% if escuela.tipo_establecimiento.nombre == 'Presencial' %}🏫{% elif escuela.tipo_establecimiento.nombre == 'Online' %}💻{% else %}🔄{% endif %} {{ escuela.tipo_establecimiento.nombre }}
-                                        </span>
-                                    {% endif %}
                                     
-                                    {% if escuela.subscription_info %}
-                                        {% if escuela.subscription_info.plan.is_unlimited %}
-                                            <span class="badge-plan tester" title="Plan sin límites">🎯 TESTER</span>
-                                        {% elif escuela.subscription_info.plan.is_trial %}
-                                            <span class="badge-plan trial" title="Plan de prueba - {{ escuela.subscription_info.dias_restantes }} días restantes">⏰ TRIAL ({{ escuela.subscription_info.dias_restantes }}d)</span>
-                                        {% elif escuela.subscription_info.plan.codigo == 'basic' %}
-                                            <span class="badge-plan basic" title="Plan Básico - ${{ escuela.subscription_info.plan.precio_mensual }}/mes">📦 BASIC</span>
-                                        {% elif escuela.subscription_info.plan.codigo == 'standard' %}
-                                            <span class="badge-plan standard" title="Plan Estándar - ${{ escuela.subscription_info.plan.precio_mensual }}/mes">⭐ STANDARD</span>
-                                        {% elif escuela.subscription_info.plan.codigo == 'premium' %}
-                                            <span class="badge-plan premium" title="Plan Premium - ${{ escuela.subscription_info.plan.precio_mensual }}/mes">💎 PREMIUM</span>
-                                        {% elif escuela.subscription_info.plan.codigo == 'enterprise' %}
-                                            <span class="badge-plan enterprise" title="Plan Enterprise - ${{ escuela.subscription_info.plan.precio_mensual }}/mes">🏢 ENTERPRISE</span>
+                                    <div class="badges-container">
+                                        {% if escuela.tipo_establecimiento %}
+                                            <span class="badge-tipo {{ escuela.tipo_establecimiento.nombre|lower }}">
+                                                {% if escuela.tipo_establecimiento.nombre == 'Presencial' %}🏫{% elif escuela.tipo_establecimiento.nombre == 'Online' %}💻{% else %}🔄{% endif %} {{ escuela.tipo_establecimiento.nombre }}
+                                            </span>
                                         {% endif %}
                                         
-                                        {% if escuela.subscription_info.status != 'active' %}
-                                            <span class="badge-status {{ escuela.subscription_info.status }}">⚠️ {{ escuela.subscription_info.get_status_display }}</span>
+                                        {% if escuela.subscription_info %}
+                                            {% if escuela.subscription_info.plan.is_unlimited %}
+                                                <span class="badge-plan tester" title="Plan sin límites">🎯 TESTER</span>
+                                            {% elif escuela.subscription_info.plan.is_trial %}
+                                                <span class="badge-plan trial" title="Plan de prueba - {{ escuela.subscription_info.dias_restantes }} días restantes">⏰ TRIAL ({{ escuela.subscription_info.dias_restantes }}d)</span>
+                                            {% elif escuela.subscription_info.plan.codigo == 'basic' %}
+                                                <span class="badge-plan basic" title="Plan Básico - ${{ escuela.subscription_info.plan.precio_mensual }}/mes">📦 BASIC</span>
+                                            {% elif escuela.subscription_info.plan.codigo == 'standard' %}
+                                                <span class="badge-plan standard" title="Plan Estándar - ${{ escuela.subscription_info.plan.precio_mensual }}/mes">⭐ STANDARD</span>
+                                            {% elif escuela.subscription_info.plan.codigo == 'premium' %}
+                                                <span class="badge-plan premium" title="Plan Premium - ${{ escuela.subscription_info.plan.precio_mensual }}/mes">💎 PREMIUM</span>
+                                            {% elif escuela.subscription_info.plan.codigo == 'enterprise' %}
+                                                <span class="badge-plan enterprise" title="Plan Enterprise - ${{ escuela.subscription_info.plan.precio_mensual }}/mes">🏢 ENTERPRISE</span>
+                                            {% endif %}
+                                            
+                                            {% if escuela.subscription_info.status != 'active' %}
+                                                <span class="badge-status {{ escuela.subscription_info.status }}">⚠️ {{ escuela.subscription_info.get_status_display }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge-plan sin-plan" title="Sin plan asignado">❌ SIN PLAN</span>
                                         {% endif %}
-                                    {% else %}
-                                        <span class="badge-plan sin-plan" title="Sin plan asignado">❌ SIN PLAN</span>
-                                    {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         
@@ -401,7 +490,7 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="rbd" value="{{ escuela.rbd }}">
                                     <button type="submit" name="eliminar_escuela" class="btn-delete" onclick="event.stopPropagation();" title="Eliminar colegio">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                     </button>
@@ -425,45 +514,132 @@
         // Datos de comunas desde Django
         window.comunasData = JSON.parse(document.getElementById('comunas-data').textContent);
         
-        // Funciones para modales
-        function abrirModalTipo() {
-            document.getElementById('modalTipo').classList.add('active');
+        // Dynamic RUT Formatter
+        function formatRUT(rutInput) {
+            let value = rutInput.value.replace(/[^0-9kK]/g, '');
+            if (value.length === 0) {
+                rutInput.value = '';
+                return;
+            }
+            if (value.length > 9) {
+                value = value.slice(0, 9);
+            }
+            let dv = value.slice(-1).toUpperCase();
+            let body = value.slice(0, -1);
+            
+            if (body.length > 0) {
+                let formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                rutInput.value = formattedBody + '-' + dv;
+            } else {
+                rutInput.value = dv;
+            }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Bind formats
+            const rutAdmin = document.getElementById('rut_admin');
+            const rutEstablecimiento = document.getElementById('rut_establecimiento');
+            if (rutAdmin) {
+                rutAdmin.addEventListener('input', function() { formatRUT(this); });
+            }
+            if (rutEstablecimiento) {
+                rutEstablecimiento.addEventListener('input', function() { formatRUT(this); });
+            }
+        });
+
+        // Client-side instant search and filter
+        let currentFiltroTipo = 'all';
+        let currentFiltroPlan = 'all';
+
+        function filtrarColegios() {
+            const query = document.getElementById('buscarColegio').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.escuela-card-wrapper');
+            const filterTipo = document.getElementById('filtroTipo').value;
+            const filterPlan = document.getElementById('filtroPlan').value;
+            
+            cards.forEach(card => {
+                const nombre = card.dataset.nombre || '';
+                const rbd = card.dataset.rbd || '';
+                const tipo = card.dataset.tipo || '';
+                const plan = card.dataset.plan || '';
+                
+                const matchesSearch = nombre.includes(query) || rbd.includes(query);
+                const matchesTipo = filterTipo === 'all' || tipo === filterTipo;
+                const matchesPlan = filterPlan === 'all' || plan === filterPlan;
+                
+                if (matchesSearch && matchesTipo && matchesPlan) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Show no results feedback
+            const visibleCards = Array.from(cards).filter(c => c.style.display !== 'none');
+            const noResultsEl = document.getElementById('noResultsMessage');
+            if (visibleCards.length === 0) {
+                if (!noResultsEl) {
+                    const noResultsHtml = `
+                        <div id="noResultsMessage" class="no-escuelas" style="width: 100%; grid-column: 1 / -1; margin-top: 20px;">
+                            <h2>No se encontraron colegios</h2>
+                            <p>No hay establecimientos que coincidan con los filtros y la búsqueda aplicados.</p>
+                        </div>
+                    `;
+                    document.querySelector('.escuelas-grid').insertAdjacentHTML('beforeend', noResultsHtml);
+                }
+            } else {
+                if (noResultsEl) {
+                    noResultsEl.remove();
+                }
+            }
+        }
+
+        // Functions for Modals with animation transitions
+        function abrirModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.style.display = 'flex';
+                // Force a reflow
+                el.offsetHeight;
+                el.classList.add('active');
+            }
+        }
+
+        function cerrarModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('active');
+                setTimeout(() => {
+                    if (!el.classList.contains('active')) {
+                        el.style.display = 'none';
+                    }
+                }, 300); // match transition duration
+            }
+        }
+
+        function abrirModalTipo() { abrirModal('modalTipo'); }
+        function cerrarModalTipo() { cerrarModal('modalTipo'); }
         
-        function cerrarModalTipo() {
-            document.getElementById('modalTipo').classList.remove('active');
-        }
+        function abrirModalAdminEscolar() { abrirModal('modalAdminEscolar'); }
+        function cerrarModalAdminEscolar() { cerrarModal('modalAdminEscolar'); }
         
-        function abrirModalAdminEscolar() {
-            document.getElementById('modalAdminEscolar').classList.add('active');
-        }
-        
-        function cerrarModalAdminEscolar() {
-            document.getElementById('modalAdminEscolar').classList.remove('active');
-        }
-        
-        function abrirModalFormulario() {
-            document.getElementById('modalFormulario').classList.add('active');
-        }
-        
-        function cerrarModalFormulario() {
-            document.getElementById('modalFormulario').classList.remove('active');
-        }
+        function abrirModalFormulario() { abrirModal('modalFormulario'); }
+        function cerrarModalFormulario() { cerrarModal('modalFormulario'); }
         
         function seleccionarTipo(tipoId, tipoNombre) {
             document.getElementById('tipo_establecimiento_hidden').value = tipoId;
             document.getElementById('tituloFormulario').textContent = `Crear Colegio ${tipoNombre.charAt(0).toUpperCase() + tipoNombre.slice(1)}`;
             
-            // Mostrar/ocultar sección de infraestructura
             const infraSection = document.getElementById('infraestructura-section');
             if (tipoNombre.toLowerCase() === 'presencial') {
-                infraSection.style.display = 'block';
+                infraSection.classList.remove('d-none');
             } else {
-                infraSection.style.display = 'none';
+                infraSection.classList.add('d-none');
             }
             
             cerrarModalTipo();
-            abrirModalFormulario();
+            // Delay a bit to let the first modal fade out
+            setTimeout(() => { abrirModalFormulario(); }, 150);
         }
         
         function filtrarComunas() {
@@ -502,25 +678,27 @@
                 return false;
             }
             
-            if (pass1.length < 6) {
-                alert('La contraseña debe tener al menos 6 caracteres');
+            if (pass1.length < 12) {
+                alert('La contraseña debe tener al menos 12 caracteres');
                 return false;
             }
             
             return true;
         }
         
-        // Funciones para modal de planes
+        // Functions for subscription plans modal
         function abrirModalPlan(rbd, nombre) {
             document.getElementById('rbd_plan').value = rbd;
             document.getElementById('modalPlanEscuela').textContent = `Cambiar plan para: ${nombre} (RBD: ${rbd})`;
-            document.getElementById('modalPlan').classList.add('active');
+            abrirModal('modalPlan');
         }
         
         function cerrarModalPlan() {
-            document.getElementById('modalPlan').classList.remove('active');
-            document.getElementById('plan_codigo').value = '';
-            document.getElementById('infoPlanSeleccionado').style.display = 'none';
+            cerrarModal('modalPlan');
+            setTimeout(() => {
+                document.getElementById('plan_codigo').value = '';
+                document.getElementById('infoPlanSeleccionado').style.display = 'none';
+            }, 300);
         }
         
         function mostrarInfoPlan(codigo) {
@@ -559,14 +737,8 @@
             infoDiv.style.display = 'block';
         }
         
-        // Cerrar modales al hacer clic fuera
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('active');
-                }
-            });
-        });
+        // Modals should only be closed via the close button (x) to prevent accidental data loss or selection reset
+        // (Clicking outside the modal content on the backdrop will not close it)
     </script>
 </body>
 </html>

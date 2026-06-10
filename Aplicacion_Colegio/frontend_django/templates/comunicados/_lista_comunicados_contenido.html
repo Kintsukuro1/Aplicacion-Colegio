@@ -65,6 +65,9 @@
             Estimada/o {{ nombre_usuario|default:"Apoderado" }}, aquí verá comunicados, citaciones y circulares dirigidas a sus pupilos.
             Actualmente no hay publicaciones para los filtros seleccionados.
         </p>
+        {% elif rol == 'profesor' or rol == 'Profesor' %}
+        <h3>No hay comunicados disponibles</h3>
+        <p>Cuando la dirección o coordinación envíe comunicados, aparecerán aquí. Puedes usar el filtro para buscar por tipo.</p>
         {% else %}
         <h3>No hay comunicados disponibles</h3>
         <p>No se encontraron comunicados con los filtros seleccionados.</p>

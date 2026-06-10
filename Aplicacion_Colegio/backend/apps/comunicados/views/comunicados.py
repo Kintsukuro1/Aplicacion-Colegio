@@ -99,6 +99,7 @@ def lista_comunicados(request):
         return render(request, 'comunicados/lista_comunicados_alumno.html', context)
 
     tipo_filtro = request.GET.get('tipo')
+    comunicados_todos = comunicados
     comunicados = ComunicadosService.filter_comunicados_by_type(comunicados, tipo_filtro)
     ComunicadosService.mark_comunicados_as_read_for_user(request.user, comunicados)
     context = {
@@ -109,6 +110,18 @@ def lista_comunicados(request):
         'can_view_stats': can_view_stats,
         **shell_context,
     }
+    if rol_normalizado == 'profesor':
+        from backend.apps.core.services.profesor_hero_service import ProfesorHeroService
+
+        comunicados_lista = list(comunicados_todos)
+        colegio = getattr(request.user, 'colegio', None)
+        context.update(ComunicadosService.get_profesor_comunicados_list_context(comunicados_lista))
+        context['prof_hero'] = ProfesorHeroService.build(
+            'comunicados',
+            request.user,
+            colegio,
+            {'comunicados': comunicados_lista},
+        )
     return render(request, 'comunicados/lista_comunicados.html', context)
 
 

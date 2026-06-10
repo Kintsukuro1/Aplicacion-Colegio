@@ -1,0 +1,434 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block page_title %}{% if evaluacion_seleccionada %}Editar evaluación online{% else %}Crear evaluación online{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'academico/css/profesor/crear_evaluacion_online.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container-xl mt-md">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}?pagina=notas{% if clase_seleccionada %}&clase_id={{ clase_seleccionada.id }}{% endif %}">Notas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% if evaluacion_seleccionada %}Editar evaluación online{% else %}Crear evaluación online{% endif %}</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block page_header %}
+<div class="eo-hero-panel card mb-xl">
+    <div class="eo-hero-copy">
+        <h1 class="eo-hero-title">{% if evaluacion_seleccionada %}Editar evaluación{% else %}Crear Nueva Evaluación{% endif %}</h1>
+        <p class="eo-hero-description">Configura los parámetros y preguntas para tus estudiantes.</p>
+    </div>
+    <div class="eo-page-actions flex flex-wrap items-center gap-sm">
+        <a href="{% url 'dashboard' %}?pagina=notas{% if clase_seleccionada %}&clase_id={{ clase_seleccionada.id }}{% endif %}" class="btn eo-btn-outline">
+            Guardar Borrador
+        </a>
+        <button type="submit" form="form-evaluacion-online" class="btn eo-btn-primary">
+            Vista Previa
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="eo-page">
+{% if evaluacion_seleccionada %}
+<div class="card mb-xl" style="border-left: 4px solid var(--color-primary);">
+    <div class="card-body flex flex-col md:flex-row md:items-center md:justify-between gap-md">
+        <div>
+            <p class="text-sm text-secondary mb-xs">Evaluación seleccionada</p>
+            <h3 class="text-2xl font-semibold mb-xs">{{ evaluacion_seleccionada.nombre }}</h3>
+            <p class="text-secondary">{% if clase_seleccionada %}{{ clase_seleccionada.curso.nombre }} - {{ clase_seleccionada.asignatura.nombre }}{% endif %}</p>
+        </div>
+        <div class="flex flex-wrap gap-xs">
+            {% if actividad_principal %}
+                <span class="badge badge-info">{{ actividad_principal.get_modalidad_display }}</span>
+                <span class="badge {% if actividad_principal.estado == 'APROBADA' or actividad_principal.estado == 'PUBLICADA' %}badge-success{% else %}badge-warning{% endif %}">{{ actividad_principal.get_estado_display }}</span>
+            {% endif %}
+            {% if evaluacion_seleccionada.periodo %}
+                <span class="badge badge-primary">{{ evaluacion_seleccionada.get_periodo_display }}</span>
+            {% endif %}
+            {% if evaluacion_seleccionada.es_recuperacion %}
+                <span class="badge badge-warning">Recuperación</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<form id="form-evaluacion-online" method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="{% if evaluacion_seleccionada %}editar_evaluacion{% else %}crear_evaluacion{% endif %}">
+    <input type="hidden" name="formato_evaluacion" value="form">
+    {% if evaluacion_seleccionada %}
+        <input type="hidden" name="evaluacion_id" value="{{ evaluacion_seleccionada.id_evaluacion }}">
+    {% endif %}
+
+    <div class="space-y-xl eo-main-column">
+        <div class="card eo-form-card" id="seccion-clase">
+            <div class="card-header">
+                <div class="eo-section-head">
+                    <div class="eo-section-icon" aria-hidden="true"><i class="fas fa-school"></i></div>
+                    <h3 class="card-title">Clase y Asignatura</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                    <div class="form-group">
+                        <label class="form-label form-label-required" for="clase_id">Curso</label>
+                        <select id="clase_id" name="clase_id" class="form-control" required>
+                            <option value="">-- Seleccione una clase --</option>
+                            {% for clase in clases %}
+                                <option value="{{ clase.id }}" {% if filtro_clase_id == clase.id|stringformat:'s' %}selected{% endif %}>{{ clase.curso.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="grupo_visual">Grupo</label>
+                        <input id="grupo_visual" class="form-control" type="text" value="{% if clase_seleccionada %}{{ clase_seleccionada.asignatura.nombre }}{% else %}Selecciona una clase{% endif %}" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card eo-form-card" id="seccion-datos-generales">
+            <div class="card-header">
+                <div class="eo-section-head">
+                    <div class="eo-section-icon" aria-hidden="true"><i class="fas fa-file-alt"></i></div>
+                    <h3 class="card-title">Datos Generales</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label form-label-required" for="nombre">Título de la evaluación</label>
+                        <input type="text" id="nombre" name="nombre" class="form-control" required maxlength="120" value="{% if evaluacion_seleccionada %}{{ evaluacion_seleccionada.nombre }}{% endif %}" placeholder="Ej: Parcial de Geometría Analítica">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label form-label-required" for="fecha">Fecha programada</label>
+                        <input type="date" id="fecha" name="fecha" class="form-control" required value="{% if evaluacion_seleccionada %}{{ evaluacion_seleccionada.fecha_evaluacion|date:'Y-m-d' }}{% else %}{{ fecha_hoy }}{% endif %}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label form-label-required" for="tipo_evaluacion">Tipo de evaluación</label>
+                        <select id="tipo_evaluacion" name="tipo_evaluacion" class="form-control" required>
+                            <option value="formativa" {% if evaluacion_seleccionada and evaluacion_seleccionada.tipo_evaluacion == 'formativa' %}selected{% endif %}>Examen Parcial</option>
+                            <option value="sumativa" {% if evaluacion_seleccionada and evaluacion_seleccionada.tipo_evaluacion == 'sumativa' %}selected{% endif %}>Quiz Semanal</option>
+                            <option value="diagnostica" {% if evaluacion_seleccionada and evaluacion_seleccionada.tipo_evaluacion == 'diagnostica' %}selected{% endif %}>Diagnóstica</option>
+                            <option value="acumulativa" {% if evaluacion_seleccionada and evaluacion_seleccionada.tipo_evaluacion == 'acumulativa' %}selected{% endif %}>Proyecto Final</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label form-label-required" for="ponderacion">Ponderación (%)</label>
+                        <input type="number" id="ponderacion" name="ponderacion" class="form-control" required min="1" max="100" value="{% if evaluacion_seleccionada %}{{ evaluacion_seleccionada.ponderacion }}{% else %}20{% endif %}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label form-label-required" for="periodo">Período académico</label>
+                        <select id="periodo" name="periodo" class="form-control" required>
+                            <option value="semestre1" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'semestre1' %}selected{% endif %}>Primer Semestre</option>
+                            <option value="semestre2" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'semestre2' %}selected{% endif %}>Segundo Semestre</option>
+                            <option value="trimestre1" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'trimestre1' %}selected{% endif %}>Primer Trimestre</option>
+                            <option value="trimestre2" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'trimestre2' %}selected{% endif %}>Segundo Trimestre</option>
+                            <option value="trimestre3" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'trimestre3' %}selected{% endif %}>Tercer Trimestre</option>
+                            <option value="bimestre1" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'bimestre1' %}selected{% endif %}>Primer Bimestre</option>
+                            <option value="bimestre2" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'bimestre2' %}selected{% endif %}>Segundo Bimestre</option>
+                            <option value="bimestre3" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'bimestre3' %}selected{% endif %}>Tercer Bimestre</option>
+                            <option value="bimestre4" {% if evaluacion_seleccionada and evaluacion_seleccionada.periodo == 'bimestre4' %}selected{% endif %}>Cuarto Bimestre</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group md:col-span-2 flex flex-wrap gap-md eo-checkbox-line">
+                        <label class="inline-flex items-center gap-sm">
+                            <input type="checkbox" name="es_recuperacion" value="1" {% if evaluacion_seleccionada and evaluacion_seleccionada.es_recuperacion %}checked{% endif %}>
+                            <span>Es evaluación de recuperación</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card eo-form-card" id="seccion-preguntas">
+            <div class="card-header flex items-center justify-between gap-md">
+                <div class="eo-section-head">
+                    <div class="eo-section-icon" aria-hidden="true"><i class="fas fa-list-ol"></i></div>
+                    <h3 class="card-title">Cuestionario</h3>
+                </div>
+                <button type="button" class="eo-add-question" aria-label="Nueva pregunta">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Nueva Pregunta</span>
+                </button>
+            </div>
+            <div class="card-body space-y-lg">
+                {% for pregunta in preguntas_formulario %}
+                <section class="card border border-base-300 eo-question-card" data-question-card="{{ forloop.counter }}">
+                    <div class="card-header flex items-center justify-between gap-md">
+                        <div class="eo-question-label-wrap">
+                            <span class="eo-question-label">Pregunta {{ forloop.counter|stringformat:'02d' }}</span>
+                            <h4 class="card-title">Ítem evaluativo</h4>
+                        </div>
+                        <div class="form-group m-0" style="min-width: 220px;">
+                            <label class="form-label sr-only" for="pregunta_{{ forloop.counter }}_tipo">Tipo de pregunta</label>
+                            <select id="pregunta_{{ forloop.counter }}_tipo" name="pregunta_{{ forloop.counter }}_tipo" class="form-control" data-question-type="{{ forloop.counter }}">
+                                <option value="opcion_multiple" {% if pregunta.tipo == 'opcion_multiple' %}selected{% endif %}>Opción múltiple</option>
+                                <option value="respuesta_corta" {% if pregunta.tipo == 'respuesta_corta' %}selected{% endif %}>Respuesta corta</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
+                            <div class="form-group lg:col-span-2">
+                                <label class="form-label form-label-required" for="pregunta_{{ forloop.counter }}_enunciado">Enunciado</label>
+                                <textarea id="pregunta_{{ forloop.counter }}_enunciado" name="pregunta_{{ forloop.counter }}_enunciado" class="form-control" rows="3" required placeholder="Escribe la pregunta">{{ pregunta.enunciado }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label-required" for="pregunta_{{ forloop.counter }}_puntaje">Puntaje</label>
+                                <input type="number" id="pregunta_{{ forloop.counter }}_puntaje" name="pregunta_{{ forloop.counter }}_puntaje" class="form-control" min="0.1" step="0.1" value="{{ pregunta.puntaje|default:1 }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mt-md" data-question-short="{{ forloop.counter }}" {% if pregunta.tipo == 'opcion_multiple' %}hidden{% endif %}>
+                            <label class="form-label" for="pregunta_{{ forloop.counter }}_respuesta_correcta">Respuesta correcta esperada</label>
+                            <textarea id="pregunta_{{ forloop.counter }}_respuesta_correcta" name="pregunta_{{ forloop.counter }}_respuesta_correcta" class="form-control" rows="2" placeholder="Respuesta orientativa para revisión o corrección automática">{{ pregunta.respuesta_correcta }}</textarea>
+                            <label class="inline-flex items-center gap-sm mt-sm">
+                                <input type="checkbox" name="pregunta_{{ forloop.counter }}_requiere_revision_docente" value="1" {% if pregunta.requiere_revision_docente %}checked{% endif %}>
+                                <span>Requiere revisión docente</span>
+                            </label>
+                        </div>
+
+                        <div class="mt-md space-y-sm" data-question-multiple="{{ forloop.counter }}" {% if pregunta.tipo == 'respuesta_corta' %}hidden{% endif %}>
+                            <p class="text-sm text-secondary mb-xs">Marca la o las opciones correctas.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                                {% for opcion in pregunta.opciones %}
+                                <div class="form-group">
+                                    <label class="form-label" for="pregunta_{{ forloop.parentloop.counter }}_opcion_{{ forloop.counter }}_texto">Opción {{ forloop.counter }}</label>
+                                    <input type="text" id="pregunta_{{ forloop.parentloop.counter }}_opcion_{{ forloop.counter }}_texto" name="pregunta_{{ forloop.parentloop.counter }}_opcion_{{ forloop.counter }}_texto" class="form-control" value="{{ opcion.texto }}" placeholder="Texto de la opción">
+                                    <label class="inline-flex items-center gap-sm mt-xs">
+                                        <input type="checkbox" name="pregunta_{{ forloop.parentloop.counter }}_opcion_{{ forloop.counter }}_correcta" value="1" {% if opcion.es_correcta %}checked{% endif %}>
+                                        <span>Correcta</span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <aside class="space-y-xl eo-sidebar-column">
+        <div class="card eo-checklist-card">
+            <div class="eo-checklist-top">
+                <h3 class="card-title">Resumen de publicación</h3>
+                <p class="text-sm">Verifica los campos obligatorios antes de enviar.</p>
+            </div>
+            <div class="card-body">
+                <div class="eo-checklist-header">
+                    <p class="text-sm text-secondary eo-progress-label">Progreso de edición</p>
+                    <p class="text-sm eo-progress-value" id="eo-progress-value">65%</p>
+                </div>
+                <div class="eo-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="65" id="eo-progressbar">
+                    <span id="eo-progress-fill" style="width:65%"></span>
+                </div>
+                <nav class="eo-checklist-nav" aria-label="Secciones de la evaluación">
+                    <a href="#seccion-datos-generales" class="eo-check-item active" aria-current="true">Datos generales</a>
+                    <a href="#seccion-clase" class="eo-check-item">Clase</a>
+                    <a href="#seccion-preguntas" class="eo-check-item">Banco de preguntas</a>
+                </nav>
+                <ul class="eo-checklist-tips text-sm text-secondary">
+                    <li>Nombre, fecha y ponderación obligatorios.</li>
+                    <li>Define el período y si corresponde a recuperación.</li>
+                    <li>Completa al menos una pregunta por bloque.</li>
+                    <li>Si necesitas subir un PDF, vuelve al flujo de carga desde notas.</li>
+                </ul>
+
+                <div class="eo-summary-metrics">
+                    <div class="eo-metric-row">
+                        <span>Total Preguntas</span>
+                        <strong id="eo-total-preguntas">{{ preguntas_formulario|length }}</strong>
+                    </div>
+                    <div class="eo-metric-row">
+                        <span>Puntaje Total</span>
+                        <strong id="eo-puntaje-total">0 pts</strong>
+                    </div>
+                    <div class="eo-metric-row">
+                        <span>Duración Estimada</span>
+                        <strong id="eo-duracion-estimada">60 min</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card eo-primary-action-card">
+            <div class="card-body space-y-md">
+                <div>
+                    <p class="text-sm text-secondary mb-xs">Acción principal</p>
+                    <h3 class="text-xl font-semibold">{% if evaluacion_seleccionada %}Actualizar evaluación{% else %}Guardar evaluación{% endif %}</h3>
+                </div>
+                <p class="text-sm text-secondary">El formulario se enviará al servicio de evaluaciones con formato online.</p>
+                <button type="submit" class="btn btn-primary w-full">
+                    <i class="fas fa-rocket"></i> {% if evaluacion_seleccionada %}Publicar actualización{% else %}Publicar Evaluación{% endif %}
+                </button>
+            </div>
+        </div>
+
+        <div class="card eo-mentor-card">
+            <div class="card-body">
+                <div class="eo-mentor-icon"><i class="fas fa-lightbulb"></i></div>
+                <h4>Consejo del Mentor</h4>
+                <p>Alternar entre preguntas de opción múltiple y respuesta corta ayuda a evaluar tanto reconocimiento como síntesis del conocimiento.</p>
+            </div>
+        </div>
+    </aside>
+</form>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const checklistLinks = Array.from(document.querySelectorAll('.eo-check-item'));
+    const sections = checklistLinks
+        .map(function (link) {
+            return document.querySelector(link.getAttribute('href'));
+        })
+        .filter(Boolean);
+
+    function setActiveChecklist(hash) {
+        checklistLinks.forEach(function (link) {
+            const isActive = link.getAttribute('href') === hash;
+            link.classList.toggle('active', isActive);
+            if (isActive) {
+                link.setAttribute('aria-current', 'true');
+            } else {
+                link.removeAttribute('aria-current');
+            }
+        });
+    }
+
+    checklistLinks.forEach(function (link) {
+        link.addEventListener('click', function () {
+            setActiveChecklist(this.getAttribute('href'));
+        });
+    });
+
+    if ('IntersectionObserver' in window && sections.length > 0) {
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    setActiveChecklist('#' + entry.target.id);
+                }
+            });
+        }, {
+            rootMargin: '-35% 0px -45% 0px',
+            threshold: 0.1,
+        });
+
+        sections.forEach(function (section) {
+            observer.observe(section);
+        });
+    }
+
+    document.querySelectorAll('[data-question-type]').forEach(function (select) {
+        select.addEventListener('change', function () {
+            toggleQuestionSections(this.dataset.questionType, this.value);
+            recalculateSidebar();
+        });
+        toggleQuestionSections(select.dataset.questionType, select.value);
+    });
+
+    document.querySelectorAll('input[name$="_puntaje"], textarea[id$="_enunciado"], #nombre, #fecha, #tipo_evaluacion, #periodo, #clase_id').forEach(function (el) {
+        el.addEventListener('input', recalculateSidebar);
+        el.addEventListener('change', recalculateSidebar);
+    });
+
+    recalculateSidebar();
+});
+
+function toggleQuestionSections(index, value) {
+    const multipleSection = document.querySelector('[data-question-multiple="' + index + '"]');
+    const shortSection = document.querySelector('[data-question-short="' + index + '"]');
+
+    if (!multipleSection || !shortSection) {
+        return;
+    }
+
+    if (value === 'respuesta_corta') {
+        multipleSection.hidden = true;
+        multipleSection.setAttribute('aria-hidden', 'true');
+        shortSection.hidden = false;
+        shortSection.setAttribute('aria-hidden', 'false');
+    } else {
+        multipleSection.hidden = false;
+        multipleSection.setAttribute('aria-hidden', 'false');
+        shortSection.hidden = true;
+        shortSection.setAttribute('aria-hidden', 'true');
+    }
+}
+
+function recalculateSidebar() {
+    const puntajes = Array.from(document.querySelectorAll('input[name$="_puntaje"]'));
+    const totalPuntaje = puntajes.reduce(function (acc, input) {
+        const value = parseFloat(input.value || '0');
+        return acc + (isNaN(value) ? 0 : value);
+    }, 0);
+
+    const preguntasConTexto = Array.from(document.querySelectorAll('textarea[id$="_enunciado"]')).filter(function (textarea) {
+        return textarea.value.trim().length > 0;
+    }).length;
+
+    const requiredFields = ['#nombre', '#fecha', '#tipo_evaluacion', '#periodo', '#clase_id'];
+    const filledRequired = requiredFields.reduce(function (acc, selector) {
+        const field = document.querySelector(selector);
+        if (!field) {
+            return acc + 1;
+        }
+        return acc + (String(field.value || '').trim() ? 1 : 0);
+    }, 0);
+
+    const progress = Math.round(((filledRequired + preguntasConTexto) / (requiredFields.length + 4)) * 100);
+    const progressSafe = Math.max(10, Math.min(100, progress));
+
+    const fill = document.getElementById('eo-progress-fill');
+    const bar = document.getElementById('eo-progressbar');
+    const value = document.getElementById('eo-progress-value');
+
+    if (fill) {
+        fill.style.width = progressSafe + '%';
+    }
+    if (bar) {
+        bar.setAttribute('aria-valuenow', String(progressSafe));
+    }
+    if (value) {
+        value.textContent = progressSafe + '%';
+    }
+
+    const totalPreguntas = document.getElementById('eo-total-preguntas');
+    if (totalPreguntas) {
+        totalPreguntas.textContent = String(document.querySelectorAll('[data-question-card]').length);
+    }
+
+    const puntajeTotal = document.getElementById('eo-puntaje-total');
+    if (puntajeTotal) {
+        puntajeTotal.textContent = Math.round(totalPuntaje) + ' pts';
+    }
+
+    const duracion = document.getElementById('eo-duracion-estimada');
+    if (duracion) {
+        const minutos = Math.max(20, Math.round(document.querySelectorAll('[data-question-card]').length * 8));
+        duracion.textContent = minutos + ' min';
+    }
+}
+</script>
+{% endblock %}

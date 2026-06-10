@@ -1,0 +1,1024 @@
+{% load static %}
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+
+<style>
+    /* CSS Premium Adicional para el Dashboard Familiar */
+    .apod-dashboard-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        color: var(--apod-text);
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Grid de Estado de Mi Hijo */
+    .apod-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+    }
+
+    .apod-kpi-card {
+        background: var(--apod-surface);
+        border: 1px solid var(--apod-border);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--apod-shadow);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .apod-kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(20, 83, 45, 0.08);
+    }
+
+    .apod-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--apod-accent);
+    }
+
+    .apod-kpi-card--danger::before { background: #f43f5e; }
+    .apod-kpi-card--warning::before { background: #f59e0b; }
+    .apod-kpi-card--info::before { background: #3b82f6; }
+
+    .apod-kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .apod-kpi-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--apod-text-soft);
+    }
+
+    .apod-kpi-icon {
+        font-size: 1.25rem;
+    }
+
+    .apod-kpi-body {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+
+    .apod-kpi-value {
+        font-size: 2.25rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1;
+    }
+
+    .apod-kpi-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--apod-text-soft);
+    }
+
+    .apod-kpi-footer {
+        margin-top: 14px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--apod-text-soft);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Widget de Evaluación Próxima */
+    .apod-eval-badge {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+        padding: 10px 12px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .apod-eval-subject {
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .apod-eval-date {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #2563eb;
+    }
+
+    /* Alertas Automáticas */
+    .apod-alerts-section {
+        background: #fff;
+        border: 1px solid #fecaca;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 16px rgba(220, 38, 38, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .apod-alerts-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #991b1b;
+        margin-bottom: 4px;
+    }
+
+    .apod-alert-card {
+        background: #fff5f5;
+        border-left: 4px solid #ef4444;
+        border-radius: 0 12px 12px 0;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: pulseAlert 2s infinite alternate;
+    }
+
+    @keyframes pulseAlert {
+        0% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.1); }
+    }
+
+    .apod-alert-text {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #7f1d1d;
+    }
+
+    /* Evolución Académica (Charts) */
+    .apod-charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+    }
+
+    .apod-chart-card {
+        background: var(--apod-surface);
+        border: 1px solid var(--apod-border);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--apod-shadow);
+    }
+
+    .apod-chart-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0 0 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .apod-chart-container {
+        position: relative;
+        height: 240px;
+        width: 100%;
+    }
+
+    /* Comunicación Directa */
+    .apod-contact-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #fff;
+        border-radius: 16px;
+        padding: 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        box-shadow: 0 8px 30px rgba(5, 150, 105, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .apod-contact-card::before {
+        content: '💬';
+        position: absolute;
+        right: -10px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.1;
+        pointer-events: none;
+    }
+
+    .apod-contact-info h3 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .apod-contact-info p {
+        margin: 6px 0 0;
+        font-size: 0.88rem;
+        opacity: 0.9;
+        font-weight: 500;
+    }
+
+    .apod-contact-btn {
+        background: #fff;
+        color: #059669;
+        border: none;
+        padding: 12px 24px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    }
+
+    .apod-contact-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        background: #f8fafc;
+    }
+
+    /* Modal de Contactar Profesor */
+    .apod-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.35);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .apod-modal-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .apod-modal {
+        background: #fff;
+        border: 1px solid var(--apod-border);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 500px;
+        padding: 24px;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        transform: scale(0.9);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .apod-modal-backdrop.show .apod-modal {
+        transform: scale(1);
+    }
+
+    .apod-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 12px;
+    }
+
+    .apod-modal-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--apod-text);
+        margin: 0;
+    }
+
+    .apod-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        color: var(--apod-text-soft);
+        cursor: pointer;
+        padding: 4px;
+    }
+
+    .apod-form-group {
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .apod-form-group label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--apod-text-soft);
+    }
+
+    .apod-input, .apod-textarea {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: inherit;
+    }
+
+    .apod-input:focus, .apod-textarea:focus {
+        border-color: var(--apod-accent);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .apod-textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .apod-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 16px;
+        margin-top: 20px;
+    }
+
+    .apod-btn {
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .apod-btn--ghost {
+        background: #f1f5f9;
+        border: none;
+        color: #475569;
+    }
+
+    .apod-btn--ghost:hover {
+        background: #e2e8f0;
+    }
+
+    .apod-btn--primary {
+        background: var(--apod-accent);
+        border: none;
+        color: #fff;
+    }
+
+    .apod-btn--primary:hover {
+        background: var(--apod-accent-deep);
+    }
+
+    /* Toast Notification */
+    .apod-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #0f172a;
+        color: #fff;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 2000;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+    }
+
+    .apod-toast.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    /* Centro de Pendientes Premium Glassmorphism */
+    .pending-center-section {
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.04);
+        margin-bottom: 8px;
+    }
+    
+    .pending-center-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-top: 16px;
+    }
+    
+    .pending-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pending-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+        z-index: 1;
+        transition: opacity 0.3s ease;
+    }
+    
+    .pending-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+    }
+    
+    .pending-card-icon {
+        font-size: 2rem;
+        background: #ffffff;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
+        z-index: 2;
+        transition: transform 0.3s ease;
+    }
+
+    .pending-card:hover .pending-card-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .pending-card-info {
+        flex: 1;
+        margin-left: 16px;
+        display: flex;
+        flex-direction: column;
+        z-index: 2;
+    }
+    
+    .pending-card-count {
+        font-size: 1.8rem;
+        font-weight: 900;
+        line-height: 1.1;
+    }
+    
+    .pending-card-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-top: 4px;
+        opacity: 0.8;
+    }
+    
+    .pending-card-arrow {
+        font-size: 1.2rem;
+        font-weight: 700;
+        opacity: 0.5;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        z-index: 2;
+    }
+    
+    .pending-card:hover .pending-card-arrow {
+        transform: translateX(4px);
+        opacity: 1;
+    }
+    
+    /* Specific Colors */
+    .card-signatures {
+        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+        border-color: #fed7aa;
+    }
+    .card-signatures .pending-card-count, .card-signatures .pending-card-label, .card-signatures .pending-card-arrow {
+        color: #c2410c;
+    }
+    
+    .card-announcements {
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+        border-color: #ddd6fe;
+    }
+    .card-announcements .pending-card-count, .card-announcements .pending-card-label, .card-announcements .pending-card-arrow {
+        color: #6d28d9;
+    }
+</style>
+
+<div class="apod-dashboard-container">
+    
+    {% include 'apoderado/_apoderado_welcome_bar.html' with welcome_inicio=True welcome_subtitle="Resumen académico de tus pupilos" welcome_aria="Inicio portal familiar" show_pupil_selector=True selector_pagina='inicio' %}
+
+    <!-- Centro de Pendientes -->
+    <section class="pending-center-section" aria-label="Centro de Pendientes">
+        <h2 class="apod-chart-title" style="margin-bottom: 0;">🚨 Centro de Pendientes</h2>
+        <div class="pending-center-grid">
+            <a href="?pagina=firmas_pendientes" class="pending-card card-signatures">
+                <div class="pending-card-icon">✍️</div>
+                <div class="pending-card-info">
+                    <span class="pending-card-count">{{ citaciones_sin_confirmar_count }}</span>
+                    <span class="pending-card-label">Citaciones sin confirmar</span>
+                </div>
+                <div class="pending-card-arrow">→</div>
+            </a>
+            <a href="{% url 'comunicados:lista' %}" class="pending-card card-announcements">
+                <div class="pending-card-icon">📢</div>
+                <div class="pending-card-info">
+                    <span class="pending-card-count">{{ comunicados_sin_leer_count }}</span>
+                    <span class="pending-card-label">Comunicados sin leer</span>
+                </div>
+                <div class="pending-card-arrow">→</div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Panel de Alertas Automáticas (Si corresponden) -->
+    {% if alerta_inasistencia_consecutiva or alerta_promedio_drop %}
+    <div class="apod-alerts-section">
+        <div class="apod-alerts-header">
+            <span>⚠️</span>
+            <span>Alertas Automáticas de Seguimiento</span>
+        </div>
+        <div class="flex flex-col gap-2">
+            {% if alerta_inasistencia_consecutiva %}
+            <div class="apod-alert-card">
+                <span class="text-lg">🚨</span>
+                <span class="apod-alert-text">Atención: Tu hijo(a) {{ estudiante_seleccionado.nombre }} tiene 3 inasistencias consecutivas registradas en el mes.</span>
+            </div>
+            {% endif %}
+            {% if alerta_promedio_drop %}
+            <div class="apod-alert-card">
+                <span class="text-lg">📈</span>
+                <span class="apod-alert-text">Atención: El promedio general acumulado de tu hijo bajó de {{ alerta_promedio_drop.previo|floatformat:1 }} a {{ alerta_promedio_drop.actual|floatformat:1 }}.</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Estado de mi hijo (KPIs) -->
+    <div class="apod-kpi-grid">
+        <!-- Promedio General (Estado Académico) -->
+        <div class="apod-kpi-card {% if promedio_general < 4.0 %}apod-kpi-card--danger{% elif promedio_general < 5.5 %}apod-kpi-card--warning{% endif %}">
+            <div class="apod-kpi-header">
+                <span class="apod-kpi-title">Estado Académico</span>
+                <span class="apod-kpi-icon">📝</span>
+            </div>
+            <div class="apod-kpi-body">
+                <span class="apod-kpi-value">{{ promedio_general|floatformat:1 }}</span>
+                <span class="apod-kpi-label">/ 7.0</span>
+            </div>
+            <div class="apod-kpi-footer" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 10px;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: #475569;">
+                    Mes anterior: <strong style="color: #0f172a;">{{ promedio_mes_anterior|floatformat:1 }}</strong>
+                </div>
+                <div style="font-size: 0.76rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; 
+                    {% if comparacion_tendencia == 'mejora' %} background-color: #d1fae5; color: #065f46;
+                    {% elif comparacion_tendencia == 'descenso' %} background-color: #fee2e2; color: #991b1b;
+                    {% else %} background-color: #f1f5f9; color: #334155; {% endif %}">
+                    {{ comparacion_label }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Asistencia (Estado Asistencia) -->
+        <div class="apod-kpi-card {% if porcentaje_asistencia < 85 %}apod-kpi-card--danger{% elif porcentaje_asistencia < 90 %}apod-kpi-card--warning{% endif %}">
+            <div class="apod-kpi-header">
+                <span class="apod-kpi-title">Estado Asistencia</span>
+                <span class="apod-kpi-icon">📅</span>
+            </div>
+            <div class="apod-kpi-body">
+                <span class="apod-kpi-value">{{ porcentaje_asistencia }}%</span>
+            </div>
+            <div class="apod-kpi-footer">
+                <span>Asistencia Acumulada del Periodo</span>
+            </div>
+        </div>
+
+        <!-- Próximos Eventos -->
+        <div class="apod-kpi-card apod-kpi-card--info">
+            <div class="apod-kpi-header">
+                <span class="apod-kpi-title">Próximos Eventos</span>
+                <span class="apod-kpi-icon">🎯</span>
+            </div>
+            {% if proxima_evaluacion %}
+            <div class="apod-eval-badge">
+                <span class="apod-eval-subject">{{ proxima_evaluacion.asignatura }}</span>
+                <span class="apod-eval-date">{{ proxima_evaluacion.fecha|date:"d \d\e F"|default:proxima_evaluacion.fecha }}</span>
+                <span style="font-size: 0.72rem; color: #1e3a8a; font-weight: 600; margin-top: 2px;">{{ proxima_evaluacion.nombre }}</span>
+            </div>
+            {% else %}
+            <div class="apod-kpi-body">
+                <span class="apod-kpi-label text-secondary">Sin eventos programados</span>
+            </div>
+            {% endif %}
+            <div class="apod-kpi-footer">
+                <span>Calendario de Evaluaciones</span>
+            </div>
+        </div>
+
+        <!-- Mensajes Nuevos -->
+        <div class="apod-kpi-card {% if mensajes_nuevos_count > 0 %}apod-kpi-card--warning{% endif %}">
+            <div class="apod-kpi-header">
+                <span class="apod-kpi-title">Mensajes Nuevos</span>
+                <span class="apod-kpi-icon">💬</span>
+            </div>
+            <div class="apod-kpi-body">
+                <span class="apod-kpi-value">{{ mensajes_nuevos_count }}</span>
+                <span class="apod-kpi-label">sin leer</span>
+            </div>
+            <div class="apod-kpi-footer">
+                {% if mensajes_nuevos_count > 0 %}
+                    <span style="color: #b45309; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🔔 Tienes chats pendientes</span>
+                {% else %}
+                    <span>Bandeja de entrada al día</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Comunicados Recientes (Vista Resumen e interactiva) -->
+    <div class="apod-chart-card" style="margin-top: 8px;">
+        <h2 class="apod-chart-title">
+            <span>📢</span> Comunicados y Circulares Recientes
+        </h2>
+        <div style="font-size: 0.85rem; color: var(--apod-text-soft); margin-top: -10px; margin-bottom: 20px; font-weight: 600;">
+            Avisos oficiales del colegio y directivos para mantenerte informado.
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            {% for c in comunicados_list %}
+                <div class="comunicado-item-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 16px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                    <div style="display: flex; flex-direction: column; gap: 6px; flex: 1; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <span class="status-badge" style="font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;
+                                {% if c.status == 'urgente' %} background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;
+                                {% elif c.status == 'leido' %} background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;
+                                {% else %} background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; {% endif %}">
+                                {{ c.status_display }}
+                            </span>
+                            <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">{{ c.fecha_publicacion|date:"d M Y H:i" }} · Por: {{ c.publicado_por_name }}</span>
+                        </div>
+                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">{{ c.titulo }}</h3>
+                        <p style="margin: 0; font-size: 0.88rem; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.45;">{{ c.contenido }}</p>
+                    </div>
+                    <button class="apod-btn apod-btn--ghost" onclick="openComunicadoModal('{{ c.id_comunicado }}', '{{ c.titulo|escapejs }}', '{{ c.contenido|escapejs }}', '{{ c.publicado_por_name|escapejs }}', '{{ c.fecha_publicacion|date:"d/m/Y H:i" }}', '{{ c.status_display|escapejs }}')" style="padding: 8px 16px; font-size: 0.82rem; border-radius: 8px; flex-shrink: 0; background: #ffffff; border: 1px solid #cbd5e1; color: #334155; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                        Leer aviso
+                    </button>
+                </div>
+            {% empty %}
+                <div style="text-align: center; padding: 30px; background: #f8fafc; border-radius: 12px; color: #64748b; font-weight: 600;">
+                    No hay comunicados registrados recientemente.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Evolución Académica (Gráficos) -->
+    <div class="apod-charts-grid">
+        <!-- Gráfico de Notas -->
+        <div class="apod-chart-card">
+            <h2 class="apod-chart-title">
+                <span>📈</span> Evolución de Notas Recientes
+            </h2>
+            <div class="apod-chart-container">
+                <canvas id="chartNotas"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico de Asistencia -->
+        <div class="apod-chart-card">
+            <h2 class="apod-chart-title">
+                <span>📊</span> Historial de Asistencia Mensual
+            </h2>
+            <div class="apod-chart-container">
+                <canvas id="chartAsistencia"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comunicación Directa -->
+    <div class="apod-contact-card">
+        <div class="apod-contact-info" style="text-align: left;">
+            <h3>Comunicación Directa con Profesores</h3>
+            <p>Envía mensajes de consulta a los docentes de las asignaturas de tu hijo sin demoras.</p>
+        </div>
+        <button class="apod-contact-btn" id="btnContactarProfesor">
+            <span>💬</span> Contactar Profesor
+        </button>
+    </div>
+
+</div>
+
+<!-- Modal de Contactar Profesor -->
+<div class="apod-modal-backdrop" id="modalContactarProfesor">
+    <div class="apod-modal">
+        <div class="apod-modal-header">
+            <h2 class="apod-modal-title">Nueva Consulta al Profesor</h2>
+            <button class="apod-modal-close" id="btnCerrarModal">&times;</button>
+        </div>
+        <form id="formContactoProfesor">
+            {% csrf_token %}
+            
+            <div class="apod-form-group">
+                <label for="selectProfesor">Profesor / Asignatura</label>
+                <select id="selectProfesor" class="apod-input" required>
+                    <option value="" disabled selected>Selecciona un profesor...</option>
+                    {% for p in profesores_contacto %}
+                    <option value="{{ p.id }}" data-clase-id="{{ p.clase_id }}">
+                        {{ p.nombre }} ({{ p.asignatura }})
+                    </option>
+                    {% empty %}
+                    <option value="" disabled>No se encontraron docentes asociados</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="apod-form-group">
+                <label for="txtMensaje">Mensaje</label>
+                <textarea id="txtMensaje" class="apod-textarea" placeholder="Escribe tu consulta aquí de forma clara..." required></textarea>
+            </div>
+
+            <div class="apod-modal-footer">
+                <button type="button" class="apod-btn apod-btn--ghost" id="btnCancelarModal">Cancelar</button>
+                <button type="submit" class="apod-btn apod-btn--primary" id="btnEnviarMensaje">Enviar Mensaje</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast de Éxito -->
+<div class="apod-toast" id="toastNotificacion">
+    <span class="toast-icon">✅</span>
+    <span class="toast-message">¡Mensaje enviado con éxito!</span>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- Gráficos del Dashboard ---
+        
+        // Datos de Notas
+        const recentGradesRaw = {{ recent_grades|safe|default:"[]" }};
+        
+        let notasData = [];
+        let notasLabels = [];
+        
+        if (recentGradesRaw.length > 0 && typeof recentGradesRaw[0] === 'object') {
+            notasData = recentGradesRaw.map(item => item.nota);
+            notasLabels = recentGradesRaw.map(item => [item.asignatura, `(${item.evaluacion})`]);
+        } else {
+            notasData = recentGradesRaw.length > 0 ? recentGradesRaw : [6.0, 5.8, 5.5, 5.1];
+            notasLabels = notasData.map((_, i) => `Nota ${i + 1}`);
+        }
+
+        // Gráfico de Notas (Chart.js)
+        const ctxNotas = document.getElementById('chartNotas').getContext('2d');
+        new Chart(ctxNotas, {
+            type: 'line',
+            data: {
+                labels: notasLabels,
+                datasets: [{
+                    label: 'Calificación',
+                    data: notasData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        min: 1.0,
+                        max: 7.0,
+                        ticks: { stepSize: 1.0, color: '#475569', font: { weight: 600 } },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        ticks: { color: '#475569', font: { weight: 600 } },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Datos de Asistencia
+        const asistenciaRaw = {{ asistencia_mensual|safe|default:"[]" }};
+        const asistenciaLabels = asistenciaRaw.map(item => item.mes);
+        const asistenciaData = asistenciaRaw.map(item => item.porcentaje);
+
+        // Gráfico de Asistencia (Chart.js)
+        const ctxAsist = document.getElementById('chartAsistencia').getContext('2d');
+        new Chart(ctxAsist, {
+            type: 'bar',
+            data: {
+                labels: asistenciaLabels,
+                datasets: [{
+                    data: asistenciaData,
+                    backgroundColor: '#8b5cf6',
+                    hoverBackgroundColor: '#7c3aed',
+                    borderRadius: 8,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: { callback: value => value + '%', color: '#475569', font: { weight: 600 } },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        ticks: { color: '#475569', font: { weight: 600 } },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // --- Gestión de Modal de Contacto y AJAX ---
+
+        const btnContactar = document.getElementById('btnContactarProfesor');
+        const modalContacto = document.getElementById('modalContactarProfesor');
+        const btnCerrar = document.getElementById('btnCerrarModal');
+        const btnCancelar = document.getElementById('btnCancelarModal');
+        const formContacto = document.getElementById('formContactoProfesor');
+        const selectProfesor = document.getElementById('selectProfesor');
+        const txtMensaje = document.getElementById('txtMensaje');
+        const toast = document.getElementById('toastNotificacion');
+
+        const openModal = () => modalContacto.classList.add('show');
+        const closeModal = () => {
+            modalContacto.classList.remove('show');
+            formContacto.reset();
+        };
+
+        if (btnContactar) btnContactar.addEventListener('click', openModal);
+        if (btnCerrar) btnCerrar.addEventListener('click', closeModal);
+        if (btnCancelar) btnCancelar.addEventListener('click', closeModal);
+
+        // Cerrar modal al hacer clic en el backdrop
+        modalContacto.addEventListener('click', function(e) {
+            if (e.target === modalContacto) closeModal();
+        });
+
+        // Mostrar Toast Notification
+        const showToast = (message, isSuccess = true) => {
+            toast.querySelector('.toast-icon').textContent = isSuccess ? '✅' : '❌';
+            toast.querySelector('.toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        };
+
+        // Envío AJAX
+        formContacto.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const selectedOption = selectProfesor.options[selectProfesor.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                alert('Por favor selecciona un profesor.');
+                return;
+            }
+
+            const teacherId = selectedOption.value;
+            const classId = selectedOption.getAttribute('data-clase-id');
+            const messageText = txtMensaje.value.trim();
+
+            const submitBtn = document.getElementById('btnEnviarMensaje');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+
+            try {
+                const response = await fetch('/mensajeria/nueva/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        clase_id: parseInt(classId),
+                        destinatario_id: parseInt(teacherId),
+                        contenido: messageText
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeModal();
+                    showToast('¡Consulta enviada al profesor correctamente!');
+                } else {
+                    showToast(result.message || 'Error al enviar el mensaje', false);
+                }
+            } catch (error) {
+                console.error('Error en AJAX de mensajería:', error);
+                showToast('Error en la conexión con el servidor', false);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Enviar Mensaje';
+            }
+        });
+    });
+</script>
+
+<!-- Modal de Visualizar Comunicado -->
+<div class="apod-modal-backdrop" id="modalVerComunicado">
+    <div class="apod-modal" style="max-width: 600px; text-align: left;">
+        <div class="apod-modal-header">
+            <h2 class="apod-modal-title" id="lblComTitulo">Detalle de Comunicado</h2>
+            <button class="apod-modal-close" onclick="closeComunicadoModal()">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                <span id="lblComAutor">Publicado por: -</span>
+                <span id="lblComFecha">Fecha: -</span>
+            </div>
+            <div id="lblComEstado" style="font-weight: 800; font-size: 0.82rem;"></div>
+            <div id="lblComContenido" style="font-size: 0.95rem; color: #334155; line-height: 1.6; white-space: pre-wrap; max-height: 350px; overflow-y: auto; padding-right: 8px;"></div>
+        </div>
+        <div class="apod-modal-footer">
+            <button type="button" class="apod-btn apod-btn--primary" onclick="closeComunicadoModal()">Entendido</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openComunicadoModal(id, titulo, contenido, autor, fecha, estado) {
+    document.getElementById('lblComTitulo').textContent = titulo;
+    document.getElementById('lblComAutor').textContent = 'Publicado por: ' + autor;
+    document.getElementById('lblComFecha').textContent = 'Fecha: ' + fecha;
+    document.getElementById('lblComContenido').textContent = contenido;
+    
+    const estadoEl = document.getElementById('lblComEstado');
+    estadoEl.innerHTML = '<span style="display: inline-block; padding: 2px 8px; border-radius: 6px; background-color: #f1f5f9; color: #334155;">' + estado + '</span>';
+
+    // Show modal
+    document.getElementById('modalVerComunicado').classList.add('show');
+}
+
+function closeComunicadoModal() {
+    document.getElementById('modalVerComunicado').classList.remove('show');
+}
+
+// Cerrar modal al hacer clic en el backdrop de Ver Comunicado
+document.getElementById('modalVerComunicado').addEventListener('click', function(e) {
+    if (e.target === this) closeComunicadoModal();
+});
+</script>
+
+{% include 'apoderado/_apoderado_wrap_end.html' %}

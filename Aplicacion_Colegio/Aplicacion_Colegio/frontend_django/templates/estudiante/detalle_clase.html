@@ -1,0 +1,470 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ asignatura.nombre }} — Detalle</title>
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/estudiante/detalle_clase.css' %}?v=20260602-intel">
+</head>
+<body class="da-page"
+      data-asignatura="{{ asignatura.nombre|lower }}"
+      data-model-color="{{ asignatura.color|default:'#94A3B8' }}">
+
+    <div class="da-container">
+        <nav class="da-back" aria-label="Volver">
+            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="da-back__pill">
+                <svg class="da-back__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver a Mis Clases
+            </a>
+        </nav>
+
+        <header class="da-hero" aria-label="Resumen de la asignatura">
+            <span class="da-hero__orb da-hero__orb--tl" aria-hidden="true"></span>
+            <span class="da-hero__orb da-hero__orb--br" aria-hidden="true"></span>
+
+            <div class="da-hero__inner">
+                <div class="da-hero__badges">
+                    <span class="da-hero__badge da-hero__badge--code">{% if asignatura.codigo %}{{ asignatura.codigo|slice:":3"|upper }}{% else %}{{ asignatura.nombre|slice:":3"|upper }}{% endif %}</span>
+                    {% if curso.ciclo_academico %}
+                    <span class="da-hero__badge da-hero__badge--neutral">{{ curso.ciclo_academico.nombre }}</span>
+                    {% endif %}
+                    {% if curso %}
+                    <span class="da-hero__badge da-hero__badge--neutral">{{ curso.nombre }}</span>
+                    {% endif %}
+                </div>
+
+                <h1 class="da-hero__title">{{ asignatura.nombre }}</h1>
+                <p class="da-hero__subtitle">
+                    Prof. {{ profesor_display|default:profesor.get_full_name }}{% if curso %} · {{ curso.nombre }}{% endif %}
+                </p>
+
+                {% include 'estudiante/_estudiante_detalle_clase_inteligencia.html' %}
+
+                <div class="da-hero__metrics" aria-label="Indicadores del curso">
+                    <article class="da-metric da-metric--accent">
+                        <span class="da-metric__label">Nota actual</span>
+                        {% if nota_actual %}
+                        <span class="da-metric__value da-metric__value--{% if nota_actual >= 5.0 %}ok{% elif nota_actual >= 4.0 %}warn{% else %}low{% endif %}">{{ nota_actual|floatformat:1 }}</span>
+                        <span class="da-metric__hint da-metric__hint--{% if nota_actual >= 5.0 %}ok{% elif nota_actual >= 4.0 %}warn{% else %}low{% endif %}">
+                            {% if nota_actual >= 5.0 %}Aprobado{% elif nota_actual >= 4.0 %}En riesgo{% else %}Reprobado{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="da-metric__value da-metric__value--none">—</span>
+                        <span class="da-metric__hint da-metric__hint--none">Sin nota</span>
+                        {% endif %}
+                    </article>
+                    <article class="da-metric">
+                        <span class="da-metric__label">Evaluaciones</span>
+                        <span class="da-metric__value">{{ evaluaciones_con_nota|default:0 }}/{{ total_evaluaciones|default:0 }}</span>
+                        <span class="da-metric__hint">con nota publicada</span>
+                    </article>
+                    <article class="da-metric da-metric--tasks{% if tareas_pendientes_count %} da-metric--warn{% endif %}" id="daMetricTasks">
+                        <span class="da-metric__label">Tareas pendientes</span>
+                        <span class="da-metric__value" id="daPendingTasksCount">{{ tareas_pendientes_count|default:0 }}</span>
+                        <span class="da-metric__hint" id="daPendingTasksHint">{% if tareas_entregadas_count %}{{ tareas_entregadas_count }} entregada{{ tareas_entregadas_count|pluralize:"s" }}{% else %}por entregar{% endif %}</span>
+                    </article>
+                    <article class="da-metric">
+                        <span class="da-metric__label">Asistencia</span>
+                        {% if porcentaje_asistencia != None %}
+                        <span class="da-metric__value">{{ porcentaje_asistencia }}%</span>
+                        <span class="da-metric__hint">en esta asignatura</span>
+                        {% else %}
+                        <span class="da-metric__value da-metric__value--none">—</span>
+                        <span class="da-metric__hint">sin registros</span>
+                        {% endif %}
+                    </article>
+                    <article class="da-metric">
+                        <span class="da-metric__label">Avance evaluaciones</span>
+                        <span class="da-metric__value">{{ progreso|default:"0" }}%</span>
+                        <span class="da-metric__hint">{{ progreso_detalle|default:"Sin evaluaciones" }}</span>
+                        <span class="da-metric__progress" role="progressbar" aria-valuenow="{{ progreso|default:0 }}" aria-valuemin="0" aria-valuemax="100">
+                            <span class="da-metric__progress-fill" style="width: {{ progreso|default:0 }}%;"></span>
+                        </span>
+                    </article>
+                </div>
+
+                <section class="da-hero-pending" id="daHeroPending" hidden aria-label="Tareas pendientes">
+                    <h2 class="da-hero-pending__title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Tareas pendientes
+                    </h2>
+                    <ul class="da-hero-pending__list" id="daHeroPendingList">
+                        {% for item in tareas %}
+                        {% if not item.entrega %}
+                        <li class="da-hero-pending__item">
+                            <svg class="da-hero-pending__pencil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                            <span class="da-hero-pending__name">{{ item.tarea.titulo }}</span>
+                            <span class="da-hero-pending__badge">Pendiente</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </section>
+            </div>
+        </header>
+
+        <div class="da-tabs-wrap">
+            <div class="da-tabs" role="tablist" aria-label="Secciones del curso">
+                <button type="button" class="da-tabs__btn da-tabs__btn--active" data-tab="content" role="tab" aria-selected="true">Contenido</button>
+                <button type="button" class="da-tabs__btn" data-tab="materials" role="tab" aria-selected="false">Materiales</button>
+                <button type="button" class="da-tabs__btn" data-tab="assignments" role="tab" aria-selected="false">Tareas</button>
+                <button type="button" class="da-tabs__btn" data-tab="grades" role="tab" aria-selected="false">Calificaciones</button>
+            </div>
+        </div>
+
+        <div class="da-layout">
+            <main class="da-main">
+                <div class="da-tab-panel da-tab-panel--active" id="tab-content" role="tabpanel">
+                    <section class="da-card">
+                        <h2 class="da-card__title">Programación del curso</h2>
+
+                        <div class="da-accordion" id="daCourseAccordion">
+                            {% for item in tareas %}
+                            {% ifchanged item.entrega %}
+                            {% if not forloop.first %}</div></div>{% endif %}
+                            {% if item.entrega %}
+                            <div class="da-unit da-unit--done">
+                                <button type="button" class="da-unit__header" aria-expanded="false">
+                                    <span class="da-unit__icon da-unit__icon--done" aria-hidden="true">✓</span>
+                                    <span class="da-unit__text">
+                                        <span class="da-unit__title">Actividades entregadas</span>
+                                        <span class="da-unit__subtitle">Completado{% if item.entrega.fecha_entrega %} · {{ item.entrega.fecha_entrega|date:"d/m/Y" }}{% endif %}</span>
+                                    </span>
+                                    <span class="da-unit__chevron" aria-hidden="true">▶</span>
+                                </button>
+                                <div class="da-unit__body" hidden>
+                            {% else %}
+                            <div class="da-unit da-unit--current">
+                                <button type="button" class="da-unit__header" aria-expanded="true">
+                                    <span class="da-unit__icon da-unit__icon--current" aria-hidden="true">▶</span>
+                                    <span class="da-unit__text">
+                                        <span class="da-unit__title">Actividades en curso</span>
+                                        <span class="da-unit__subtitle" id="daUnitPendingSubtitle">En curso · actividades pendientes</span>
+                                    </span>
+                                    <span class="da-unit__chevron" aria-hidden="true">▼</span>
+                                </button>
+                                <div class="da-unit__body">
+                            {% endif %}
+                            {% endifchanged %}
+                                    <div class="da-activity {% if item.entrega %}da-activity--done{% else %}da-activity--pending{% endif %}">
+                                        <span class="da-activity__icon" aria-hidden="true">{% if item.entrega %}📄{% else %}📝{% endif %}</span>
+                                        <span class="da-activity__title">{{ item.tarea.titulo }}</span>
+                                        <span class="da-activity__status">{% if item.entrega %}Completado{% else %}Pendiente{% endif %}</span>
+                                    </div>
+                            {% empty %}
+                            <div class="da-empty da-empty--rich">
+                                <p class="da-empty__title">Sin actividades en el programa</p>
+                                <p class="da-empty__text">
+                                    {% if total_materiales %}
+                                    Hay {{ total_materiales }} material{{ total_materiales|pluralize:"es" }} en la pestaña Materiales.
+                                    {% else %}
+                                    El profesor aún no publica actividades para esta asignatura.
+                                    {% endif %}
+                                </p>
+                                {% if fechas_proximas %}
+                                <p class="da-empty__text">Revisa «Próximas fechas» en el panel derecho.</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            {% if tareas %}</div></div>{% endif %}
+                        </div>
+                    </section>
+                </div>
+
+                <div class="da-tab-panel" id="tab-materials" role="tabpanel" hidden>
+                    <section class="da-card">
+                        <h2 class="da-card__title">Materiales</h2>
+                        {% if materiales %}
+                        <ul class="da-materials">
+                            {% for material in materiales %}
+                            <li class="da-material">
+                                <div class="da-material__info">
+                                    <span class="da-material__name">{{ material.titulo }}</span>
+                                    <span class="da-material__meta">{{ material.get_tamanio_legible }} · {{ material.fecha_creacion|date:"d/m/Y" }}</span>
+                                </div>
+                                <a href="{{ material.archivo.url }}" class="da-material__btn" download>Descargar</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="da-empty">No hay materiales disponibles aún.</p>
+                        {% endif %}
+                    </section>
+                </div>
+
+                <div class="da-tab-panel" id="tab-assignments" role="tabpanel" hidden>
+                    <section class="da-card">
+                        <h2 class="da-card__title">Tareas</h2>
+                        {% if tareas %}
+                        <ul class="da-assignments">
+                            {% for item in tareas %}
+                            <li class="da-assignment">
+                                <div class="da-assignment__head">
+                                    <h3 class="da-assignment__title">{{ item.tarea.titulo }}</h3>
+                                    <span class="da-assignment__badge">{{ item.texto_estado }}</span>
+                                </div>
+                                {% if item.tarea.instrucciones %}
+                                <p class="da-assignment__desc">{{ item.tarea.instrucciones|truncatewords:24 }}</p>
+                                {% endif %}
+                                <p class="da-assignment__meta">
+                                    Fecha límite:
+                                    {% if item.tarea.fecha_entrega %}
+                                        {{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        Sin fecha
+                                    {% endif %}
+                                </p>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="da-empty">No hay tareas pendientes en este momento.</p>
+                        {% endif %}
+                    </section>
+                </div>
+
+                <div class="da-tab-panel" id="tab-grades" role="tabpanel" hidden>
+                    <section class="da-card">
+                        <h2 class="da-card__title">Calificaciones</h2>
+                        {% if calificaciones_detalle %}
+                        <div class="da-grades-table-wrap">
+                            <table class="da-grades-table">
+                                <thead>
+                                    <tr>
+                                        <th>Evaluación</th>
+                                        <th>Fecha</th>
+                                        <th>Nota</th>
+                                        <th>Ponderación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in calificaciones_detalle %}
+                                    <tr>
+                                        <td>{{ c.nombre }}</td>
+                                        <td>{{ c.fecha|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <span class="da-grade da-grade--{% if c.nota >= 5.0 %}ok{% elif c.nota >= 4.0 %}warn{% else %}low{% endif %}">{{ c.nota|floatformat:1 }}</span>
+                                        </td>
+                                        <td>{{ c.ponderacion|floatformat:0 }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="da-empty">Aún no hay notas publicadas para esta asignatura.</p>
+                        {% endif %}
+
+                        {% if evaluaciones_pendientes_lista %}
+                        <h3 class="da-card__subtitle">Evaluaciones sin nota</h3>
+                        <ul class="da-pending-grades">
+                            {% for ev in evaluaciones_pendientes_lista %}
+                            <li>
+                                <strong>{{ ev.nombre }}</strong>
+                                <span>{{ ev.fecha|date:"d/m/Y" }} · {{ ev.tipo }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </section>
+                </div>
+            </main>
+
+            <aside class="da-aside" aria-label="Información del curso">
+                <section class="da-card da-card--aside">
+                    <div class="da-teacher">
+                        <span class="da-teacher__avatar" aria-hidden="true">{{ profesor.nombre|first|upper }}{{ profesor.apellido_paterno|first|upper }}</span>
+                        <h3 class="da-teacher__name">{{ profesor.get_full_name }}</h3>
+                        <p class="da-teacher__role">Profesor/a de {{ asignatura.nombre }}</p>
+                        <a href="{% url 'mensajeria:bandeja_mensajes' %}?clase_id={{ clase.id }}&amp;destinatario_id={{ profesor.id }}" class="da-teacher__btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Enviar mensaje
+                        </a>
+                    </div>
+                </section>
+
+                <section class="da-card da-card--aside">
+                    <h3 class="da-aside__title">Próximas fechas</h3>
+                    {% if fechas_proximas %}
+                    <ul class="da-dates">
+                        {% for item in fechas_proximas|slice:":5" %}
+                        <li class="da-date da-date--{{ item.tipo }}">
+                            <div class="da-date__cal" aria-hidden="true">
+                                <span class="da-date__day">{{ item.fecha|date:"d" }}</span>
+                                <span class="da-date__month">{{ item.fecha|date:"M" }}</span>
+                            </div>
+                            <div class="da-date__body">
+                                <p class="da-date__name">{{ item.titulo }}</p>
+                                <p class="da-date__type">{{ item.subtipo }}</p>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="da-empty da-empty--aside">Sin fechas próximas</p>
+                    {% endif %}
+                </section>
+
+                <section class="da-card da-card--aside">
+                    <h3 class="da-aside__title">Accesos rápidos</h3>
+                    <ul class="da-resources">
+                        <li class="da-resource">
+                            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="da-resource__link">← Mis clases</a>
+                        </li>
+                        <li class="da-resource">
+                            <a href="{% url 'dashboard' %}?pagina=mis_notas" class="da-resource__link">Mis notas</a>
+                        </li>
+                        <li class="da-resource">
+                            <a href="{% url 'dashboard' %}?pagina=mi_horario" class="da-resource__link">Mi horario</a>
+                        </li>
+                        {% for material in materiales|slice:":2" %}
+                        <li class="da-resource">
+                            <a href="{{ material.archivo.url }}" class="da-resource__link" download>
+                                <span class="da-resource__icon" aria-hidden="true">📄</span>
+                                {{ material.titulo|truncatechars:28 }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var root = document.querySelector('.da-page');
+        if (!root) return;
+
+        function parseHex(hex) {
+            var h = (hex || '#94A3B8').trim().replace('#', '');
+            if (h.length === 3) {
+                h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+            }
+            if (h.length !== 6) return { r: 148, g: 163, b: 184 };
+            return {
+                r: parseInt(h.slice(0, 2), 16),
+                g: parseInt(h.slice(2, 4), 16),
+                b: parseInt(h.slice(4, 6), 16)
+            };
+        }
+
+        function darken(rgb, factor) {
+            factor = factor || 0.55;
+            var r = Math.max(0, Math.round(rgb.r * factor));
+            var g = Math.max(0, Math.round(rgb.g * factor));
+            var b = Math.max(0, Math.round(rgb.b * factor));
+            return '#' + [r, g, b].map(function (n) {
+                var s = n.toString(16);
+                return s.length === 1 ? '0' + s : s;
+            }).join('');
+        }
+
+        /** Paleta por nombre (igual que Mis Clases); si no coincide, usa asignatura.color del modelo */
+        function resolveAccent(name, modelColor) {
+            var s = (name || '').toLowerCase();
+            var accent = '#94A3B8';
+            var text = '#1E293B';
+            if (s.indexOf('matem') !== -1) {
+                accent = '#3B82F6'; text = '#1E3A8A';
+            } else if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1 || s.indexOf('castellano') !== -1) {
+                accent = '#EF4444'; text = '#7F1D1D';
+            } else if (s.indexOf('cienc') !== -1 || s.indexOf('biolog') !== -1 || s.indexOf('naturales') !== -1) {
+                accent = '#10B981'; text = '#064E3B';
+            } else if (s.indexOf('histor') !== -1 || s.indexOf('geograf') !== -1) {
+                accent = '#8B5CF6'; text = '#2E1065';
+            } else if (s.indexOf('ingl') !== -1 || s.indexOf('english') !== -1) {
+                accent = '#F59E0B'; text = '#78350F';
+            } else if (s.indexOf('educación física') !== -1 || s.indexOf('educacion fisica') !== -1 || s.indexOf('edfis') !== -1 || s.indexOf('deport') !== -1) {
+                accent = '#06B6D4'; text = '#164E63';
+            } else if (s.indexOf('músic') !== -1 || s.indexOf('music') !== -1) {
+                accent = '#F97316'; text = '#7C2D12';
+            } else if (s.indexOf('arte') !== -1 || s.indexOf('visuales') !== -1) {
+                accent = '#EC4899'; text = '#831843';
+            } else if (s.indexOf('tecno') !== -1 || s.indexOf('comput') !== -1 || s.indexOf('inform') !== -1) {
+                accent = '#6B7280'; text = '#1F2937';
+            } else if (modelColor) {
+                accent = modelColor;
+                text = darken(parseHex(modelColor), 0.52);
+            }
+            return { accent: accent, text: text };
+        }
+
+        var subjectName = root.getAttribute('data-asignatura') || '';
+        var modelColor = (root.getAttribute('data-model-color') || '').trim();
+        var theme = resolveAccent(subjectName, modelColor);
+        var rgb = parseHex(theme.accent);
+        root.style.setProperty('--da-accent', theme.accent);
+        root.style.setProperty('--da-accent-rgb', rgb.r + ', ' + rgb.g + ', ' + rgb.b);
+        root.style.setProperty('--da-accent-text', theme.text);
+
+        var pending = 0;
+        {% for item in tareas %}{% if not item.entrega %}pending += 1;{% endif %}{% endfor %}
+
+        var pendingEl = document.getElementById('daPendingTasksCount');
+        var pendingHint = document.getElementById('daPendingTasksHint');
+        var metricTasks = document.getElementById('daMetricTasks');
+        if (pendingEl) pendingEl.textContent = String(pending);
+        if (pending > 0 && metricTasks) metricTasks.classList.add('da-metric--warn');
+        if (pendingHint && pending > 0) pendingHint.classList.add('da-metric__hint--warn');
+
+        var heroPending = document.getElementById('daHeroPending');
+        var heroList = document.getElementById('daHeroPendingList');
+        if (heroPending && heroList && heroList.children.length > 0) {
+            heroPending.hidden = false;
+        }
+
+        var unitSub = document.getElementById('daUnitPendingSubtitle');
+        if (unitSub && pending > 0) {
+            unitSub.textContent = 'En curso · ' + pending + ' actividad' + (pending === 1 ? '' : 'es') + ' pendientes';
+        }
+
+        document.querySelectorAll('.da-tabs__btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var tab = btn.getAttribute('data-tab');
+                document.querySelectorAll('.da-tabs__btn').forEach(function (b) {
+                    b.classList.remove('da-tabs__btn--active');
+                    b.setAttribute('aria-selected', 'false');
+                });
+                document.querySelectorAll('.da-tab-panel').forEach(function (p) {
+                    p.classList.remove('da-tab-panel--active');
+                    p.hidden = true;
+                });
+                btn.classList.add('da-tabs__btn--active');
+                btn.setAttribute('aria-selected', 'true');
+                var panel = document.getElementById('tab-' + tab);
+                if (panel) {
+                    panel.classList.add('da-tab-panel--active');
+                    panel.hidden = false;
+                }
+            });
+        });
+
+        document.querySelectorAll('.da-unit__header').forEach(function (header) {
+            var unit = header.closest('.da-unit');
+            if (unit && unit.classList.contains('da-unit--locked')) return;
+
+            header.addEventListener('click', function () {
+                var body = unit.querySelector('.da-unit__body');
+                var chevron = header.querySelector('.da-unit__chevron');
+                var open = header.getAttribute('aria-expanded') === 'true';
+                header.setAttribute('aria-expanded', open ? 'false' : 'true');
+                if (body) body.hidden = open;
+                if (chevron) chevron.textContent = open ? '▶' : '▼';
+            });
+        });
+    })();
+    </script>
+</body>
+</html>

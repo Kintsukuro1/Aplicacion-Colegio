@@ -1,20 +1,8 @@
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Disponibilidad Horaria</title>
-    <link rel="stylesheet" href="{% static 'css/profesor/disponibilidad.css' %}">
-    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
-</head>
+{% include 'profesor/_personal_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/profesor/disponibilidad.css' %}?v=20260602-lavanda">
 
-<div class="disponibilidad-container">
-    <!-- Header -->
-    <div class="page-header">
-        <h1>🕐 Mi Disponibilidad Horaria</h1>
-        <p>Configura los bloques horarios en los que estás disponible para dictar clases</p>
-    </div>
+<div class="disponibilidad-container content-wrapper">
 
     <!-- Mensajes -->
     {% if messages %}
@@ -25,30 +13,6 @@
             </div>
         {% endfor %}
     {% endif %}
-
-    <!-- Estadísticas -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-value">{{ estadisticas.bloques_disponibles }}/{{ estadisticas.total_bloques }}</div>
-            <div class="stat-label">Bloques Disponibles</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">📅</div>
-            <div class="stat-value">{{ estadisticas.bloques_con_clases }}</div>
-            <div class="stat-label">Bloques con Clases</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-value">{{ estadisticas.bloques_libres }}</div>
-            <div class="stat-label">Bloques Libres</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">📈</div>
-            <div class="stat-value">{{ estadisticas.porcentaje_disponibilidad }}%</div>
-            <div class="stat-label">Disponibilidad</div>
-        </div>
-    </div>
 
     <!-- Instrucciones -->
     <div class="instrucciones-card">
@@ -150,5 +114,4 @@ function desmarcarTodos() {
     }
 }
 </script>
-
-</html>
+{% include 'profesor/_personal_wrap_end.html' %}

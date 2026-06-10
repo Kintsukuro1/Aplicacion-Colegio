@@ -1,0 +1,178 @@
+{% load static %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Escuela - Portal Académico</title>
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/mi_escuela.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
+</head>
+    <!-- Header -->
+    <div class="page-header">
+        <h1>🏫 Mi Escuela</h1>
+        <p>Información y administración de la institución educativa</p>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mensaje-box {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% endif %}">
+                <span class="icon-md">{% if message.tags == 'success' %}✔{% else %}✖{% endif %}</span>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if colegio %}
+    <div class="escuela-grid">
+        <!-- Columna izquierda: Información resumida -->
+        <div>
+            <!-- Logo y nombre -->
+            <div class="card">
+                <div class="escuela-logo">
+                    <div class="logo-circle">
+                        {{ colegio.nombre.0|upper }}
+                    </div>
+                    <div class="escuela-nombre-grande">{{ colegio.nombre }}</div>
+                    <div class="escuela-rbd">RBD: {{ colegio.rbd }}</div>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label">Tipo</span>
+                    <span class="info-value">
+                        <span class="badge badge-primary">{{ colegio.tipo_establecimiento.nombre }}</span>
+                    </span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label">Dependencia</span>
+                    <span class="info-value">
+                        <span class="badge badge-info">{{ colegio.dependencia.nombre }}</span>
+                    </span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label">RUT</span>
+                    <span class="info-value">{{ colegio.rut_establecimiento }}</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label">Comuna</span>
+                    <span class="info-value">{{ colegio.comuna.nombre }}</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label">Región</span>
+                    <span class="info-value">{{ colegio.comuna.region.nombre }}</span>
+                </div>
+
+                {% if colegio.fecha_fundacion %}
+                <div class="info-item">
+                    <span class="info-label">Fundación</span>
+                    <span class="info-value">{{ colegio.fecha_fundacion|date:"d/m/Y" }}</span>
+                </div>
+                {% endif %}
+
+                {% if colegio.capacidad_maxima %}
+                <div class="info-item">
+                    <span class="info-label">Capacidad</span>
+                    <span class="info-value">{{ colegio.capacidad_maxima }} estudiantes</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Infraestructura -->
+            {% if colegio.infraestructura.all %}
+            <div class="card mt-5">
+                <h2>🏗️ Infraestructura</h2>
+                <div class="infra-list">
+                    {% for infra in colegio.infraestructura.all %}
+                    <div class="infra-item">
+                        <span class="infra-name">{{ infra.tipo_infra.nombre }}</span>
+                        <span class="infra-cantidad">{{ infra.cantidad }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna derecha: Formulario de edición -->
+        <div>
+            <div class="card">
+                <h2>✏️ Editar Información</h2>
+                <form method="POST" action="{% url 'actualizar_escuela' %}">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Establecimiento *</label>
+                        <input type="text" id="nombre" name="nombre" 
+                               value="{{ colegio.nombre }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" name="direccion" 
+                               value="{{ colegio.direccion|default:'' }}" 
+                               placeholder="Calle, número, comuna">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="telefono">Teléfono</label>
+                            <input type="text" id="telefono" name="telefono" 
+                                   value="{{ colegio.telefono|default:'' }}" 
+                                   placeholder="+56 2 1234 5678">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="correo">Email</label>
+                            <input type="email" id="correo" name="correo" 
+                                   value="{{ colegio.correo|default:'' }}" 
+                                   placeholder="contacto@escuela.cl">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="web">Sitio Web</label>
+                        <input type="url" id="web" name="web" 
+                               value="{{ colegio.web|default:'' }}" 
+                               placeholder="https://www.escuela.cl">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="capacidad_maxima">Capacidad Máxima</label>
+                            <input type="number" id="capacidad_maxima" name="capacidad_maxima" 
+                                   value="{{ colegio.capacidad_maxima|default:'' }}" 
+                                   placeholder="Número de estudiantes" min="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fecha_fundacion">Fecha de Fundación</label>
+                            <input type="date" id="fecha_fundacion" name="fecha_fundacion" 
+                                   value="{{ colegio.fecha_fundacion|date:'Y-m-d'|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ecf0f1;">
+                        <button type="submit" class="btn btn-primary">
+                            💾 Guardar Cambios
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.reload();">
+                            ↶ Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="mensaje-box error">
+            <span class="icon-md">⚠️</span>
+            <span>No se encontró información de la escuela.</span>
+        </div>
+    </div>
+    {% endif %}
+</div>

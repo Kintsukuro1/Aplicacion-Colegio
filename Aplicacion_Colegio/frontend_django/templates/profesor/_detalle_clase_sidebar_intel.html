@@ -1,0 +1,61 @@
+{% if prof_intel and prof_metricas and es_profesor and not ver_como_alumno %}
+<div class="info-card dc-sidebar-card dc-sidebar-card--action">
+    <h3 class="info-card-title">Acción sugerida</h3>
+    <div class="dc-action-suggest">
+        <span class="dc-action-suggest__icon" aria-hidden="true">{{ prof_intel.accion_sugerida.icono }}</span>
+        <div>
+            <p class="dc-action-suggest__title">{{ prof_intel.accion_sugerida.titulo }}</p>
+            <p class="dc-action-suggest__detail">{{ prof_intel.accion_sugerida.detalle }}</p>
+        </div>
+    </div>
+    {% if prof_intel.accion_sugerida.tab == 'entregas' and entregas_pendientes %}
+    {% if detalle_clase_vista_previa %}
+    <button type="button" class="dc-action-suggest__btn" data-goto-tab="entregas">Ir a calificar</button>
+    {% else %}
+    <a href="{% url 'ver_entregas_tarea' entregas_pendientes.0.tarea.id_tarea %}" class="dc-action-suggest__btn">Ir a calificar</a>
+    {% endif %}
+    {% else %}
+    <button type="button" class="dc-action-suggest__btn" data-goto-tab="{{ prof_intel.accion_sugerida.tab }}">Ver en la clase</button>
+    {% endif %}
+</div>
+
+<div class="info-card dc-sidebar-card">
+    <h3 class="info-card-title">Resumen del curso</h3>
+    <dl class="dc-sidebar-stats">
+        <div class="dc-sidebar-stat">
+            <dt>Estudiantes inscritos</dt>
+            <dd>{{ prof_metricas.estudiantes }}</dd>
+        </div>
+        <div class="dc-sidebar-stat">
+            <dt>Materiales</dt>
+            <dd>{{ prof_metricas.materiales }}</dd>
+        </div>
+        <div class="dc-sidebar-stat">
+            <dt>Entregas pendientes</dt>
+            <dd>{{ prof_metricas.entregas_pendientes }}</dd>
+        </div>
+        {% if prof_intel.ultimo_material %}
+        <div class="dc-sidebar-stat dc-sidebar-stat--full">
+            <dt>Último material</dt>
+            <dd>{{ prof_intel.ultimo_material.titulo }}{% if prof_intel.ultimo_material.hace_dias == 0 %} (hoy){% elif prof_intel.ultimo_material.hace_dias == 1 %} (ayer){% else %} (hace {{ prof_intel.ultimo_material.hace_dias }} días){% endif %}</dd>
+        </div>
+        {% endif %}
+        {% if prof_intel.horario_resumen %}
+        <div class="dc-sidebar-stat dc-sidebar-stat--full">
+            <dt>Horario</dt>
+            <dd>{% for h in prof_intel.horario_resumen %}{{ h }}{% if not forloop.last %} · {% endif %}{% endfor %}</dd>
+        </div>
+        {% endif %}
+    </dl>
+</div>
+
+<div class="info-card dc-sidebar-card">
+    <h3 class="info-card-title">Accesos rápidos</h3>
+    <nav class="dc-quick-links" aria-label="Accesos rápidos">
+        <a href="{% url 'registro_asistencia_clase' clase.id %}" class="dc-quick-link">Registrar asistencia</a>
+        <a href="{% url 'gestionar_tareas_profesor' clase.id %}" class="dc-quick-link">Gestionar actividades</a>
+        <a href="{% url 'reporte_asistencia_clase' clase.id %}" class="dc-quick-link">Reportes de asistencia</a>
+        <button type="button" class="dc-quick-link dc-quick-link--btn" onclick="openParticipantsModal()">Ver participantes</button>
+    </nav>
+</div>
+{% endif %}

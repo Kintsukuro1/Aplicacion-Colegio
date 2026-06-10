@@ -1,0 +1,315 @@
+{% extends 'frontend/templates/common/base_app.html' %}
+{% load static %}
+
+{% block page_title %}Panel Administrativo - {{ institucion.nombre }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'academico/css/admin/inicio.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<!-- Sin breadcrumbs en la página de inicio -->
+{% endblock %}
+
+{% block page_header %}
+<div class="welcome-banner">
+    <div class="welcome-content">
+        <h1 class="welcome-title">
+            {% if user.rol == 'admin' %}
+            🔧 Panel de Administrador General
+            {% else %}
+            🏫 Panel de Administración Escolar
+            {% endif %}
+        </h1>
+        <p class="welcome-subtitle">
+            Bienvenido/a, {{ user.get_full_name }}
+        </p>
+    </div>
+    <div class="welcome-date">
+        <i class="fas fa-calendar-alt"></i>
+        <span>{{ fecha_actual|date:"l, d \d\e F \d\e Y" }}</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    
+    {% if user.rol == 'admin' %}
+    <!-- DASHBOARD ADMINISTRADOR GENERAL -->
+    
+    <!-- Tarjetas de Estadísticas Globales -->
+    <div class="stats-grid">
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-school' label='Escuelas Activas' value=total_escuelas|default:'0' sublabel='instituciones' color='primary' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-users' label='Total Usuarios' value=total_usuarios|default:'0' sublabel='en el sistema' color='info' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-credit-card' label='Suscripciones Activas' value=suscripciones_activas|default:'0' sublabel='planes activos' color='success' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-exclamation-triangle' label='Suscripciones Vencidas' value=suscripciones_vencidas|default:'0' sublabel='requieren atención' color='danger' %}
+    </div>
+    
+    <!-- Sección: Gestión de Escuelas -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="section-icon">
+                    <i class="fas fa-school"></i>
+                </span>
+                Gestión de Escuelas
+            </h2>
+            <a href="{% url 'seleccionar_escuela' %}" class="section-link">
+                Ver todas <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="escuelas-grid">
+            {% if escuelas_recientes %}
+            {% for escuela in escuelas_recientes %}
+            <div class="escuela-card card">
+                <div class="escuela-header">
+                    <h3 class="escuela-nombre">{{ escuela.nombre }}</h3>
+                    <span class="badge badge-{{ escuela.estado|lower }}">
+                        {{ escuela.get_estado_display }}
+                    </span>
+                </div>
+                <div class="escuela-details">
+                    <p class="escuela-rbd">RBD: {{ escuela.rbd }}</p>
+                    <p class="escuela-tipo">{{ escuela.tipo_establecimiento.nombre }}</p>
+                </div>
+                <div class="escuela-stats-mini">
+                    <span class="stat-mini">
+                        <i class="fas fa-users"></i>
+                        {{ escuela.total_usuarios|default:'0' }} usuarios
+                    </span>
+                    <span class="stat-mini">
+                        <i class="fas fa-graduation-cap"></i>
+                        {{ escuela.total_estudiantes|default:'0' }} estudiantes
+                    </span>
+                </div>
+                <a href="{% url 'admin_escolar:dashboard' escuela.rbd %}" class="btn-card-action">
+                    Administrar <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% endfor %}
+            {% else %}
+            {% include 'frontend/templates/common/components/empty_state.html' with icon='fas fa-school' title='No hay escuelas registradas' message='Crea tu primera escuela para comenzar.' %}
+            {% endif %}
+        </div>
+    </section>
+    
+    <!-- Sección: Accesos Rápidos Admin General -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="section-icon">
+                    <i class="fas fa-bolt"></i>
+                </span>
+                Accesos Rápidos
+            </h2>
+        </div>
+        
+        <div class="quick-actions-grid">
+            <a href="{% url 'seleccionar_escuela' %}" class="quick-action-card card">
+                <div class="action-icon primary">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Nueva Escuela</h3>
+                    <p class="action-description">Registrar nueva institución</p>
+                </div>
+            </a>
+            
+            <a href="{% url 'subscriptions:lista_planes' %}" class="quick-action-card card">
+                <div class="action-icon success">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Planes</h3>
+                    <p class="action-description">Gestionar planes de suscripción</p>
+                </div>
+            </a>
+            
+            <a href="{% url 'subscriptions:lista_suscripciones' %}" class="quick-action-card card">
+                <div class="action-icon info">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Suscripciones</h3>
+                    <p class="action-description">Ver suscripciones activas</p>
+                </div>
+            </a>
+            
+            <a href="{% url 'dashboard_graficos' %}" class="quick-action-card card">
+                <div class="action-icon warning">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Estadísticas</h3>
+                    <p class="action-description">Dashboard de métricas</p>
+                </div>
+            </a>
+            
+            <a href="/admin/" class="quick-action-card card">
+                <div class="action-icon secondary">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Django Admin</h3>
+                    <p class="action-description">Panel de administración</p>
+                </div>
+            </a>
+            
+            {% url 'mensajeria:bandeja_mensajes' as mensajes_url %}
+            <a href="{% if mensajes_url %}{{ mensajes_url }}{% else %}{% url 'dashboard' %}{% endif %}" class="quick-action-card card">
+                <div class="action-icon primary">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Mensajes</h3>
+                    <p class="action-description">Sistema de mensajería</p>
+                </div>
+            </a>
+        </div>
+    </section>
+    
+    {% else %}
+    <!-- DASHBOARD ADMINISTRADOR ESCOLAR -->
+    
+    <!-- Tarjetas de Estadísticas Escolares -->
+    <div class="stats-grid">
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-graduation-cap' label='Estudiantes' value=total_estudiantes|default:'0' sublabel='activos' color='primary' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-chalkboard-teacher' label='Profesores' value=total_profesores|default:'0' sublabel='activos' color='info' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-users' label='Apoderados' value=total_apoderados|default:'0' sublabel='registrados' color='success' %}
+        {% include 'frontend/templates/common/components/stat_card.html' with icon='fas fa-book' label='Cursos' value=total_cursos|default:'0' sublabel='activos' color='warning' %}
+    </div>
+    
+    <!-- Sección: Gestión Escolar -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="section-icon">
+                    <i class="fas fa-tasks"></i>
+                </span>
+                Gestión Escolar
+            </h2>
+        </div>
+        
+        <div class="quick-actions-grid">
+            <a href="{% url 'admin_escolar:gestionar_estudiantes' %}" class="quick-action-card card">
+                <div class="action-icon primary">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Estudiantes</h3>
+                    <p class="action-description">Gestionar estudiantes</p>
+                </div>
+            </a>
+            
+            <a href="{% url 'admin_escolar:gestionar_profesores' %}" class="quick-action-card card">
+                <div class="action-icon success">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Profesores</h3>
+                    <p class="action-description">Gestionar docentes</p>
+                </div>
+            </a>
+            
+            <a href="{% url 'admin_escolar:gestionar_cursos' %}" class="quick-action-card card">
+                <div class="action-icon warning">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Cursos</h3>
+                    <p class="action-description">Administrar cursos</p>
+                </div>
+            </a>
+            
+            <a href="{% url 'admin_escolar:gestionar_asignaturas' %}" class="quick-action-card card">
+                <div class="action-icon info">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Asignaturas</h3>
+                    <p class="action-description">Gestionar asignaturas</p>
+                </div>
+            </a>
+            
+            <a href="{% url 'admin_escolar:importar_datos' %}" class="quick-action-card card">
+                <div class="action-icon secondary">
+                    <i class="fas fa-file-import"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Importar Datos</h3>
+                    <p class="action-description">Carga masiva CSV</p>
+                </div>
+            </a>
+            
+            <a href="{% url 'admin_escolar:generar_informe' %}" class="quick-action-card card">
+                <div class="action-icon primary">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Informes</h3>
+                    <p class="action-description">Generar reportes</p>
+                </div>
+            </a>
+        </div>
+    </section>
+    
+    <!-- Sección: Mi Escuela -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="section-icon">
+                    <i class="fas fa-school"></i>
+                </span>
+                Mi Escuela
+            </h2>
+            <a href="{% url 'admin_escolar:mi_escuela' %}" class="section-link">
+                Ver detalles <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        {% if escuela %}
+        <div class="escuela-info-card card">
+            <div class="escuela-info-header">
+                <div class="escuela-logo">
+                    <i class="fas fa-school"></i>
+                </div>
+                <div class="escuela-info-data">
+                    <h3 class="escuela-info-nombre">{{ escuela.nombre }}</h3>
+                    <p class="escuela-info-rbd">RBD: {{ escuela.rbd }}</p>
+                    <p class="escuela-info-tipo">{{ escuela.tipo_establecimiento.nombre }}</p>
+                </div>
+                <div class="escuela-info-badge">
+                    <span class="badge badge-{{ escuela.estado|lower }}">
+                        {{ escuela.get_estado_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="escuela-info-details">
+                <div class="info-detail-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>{{ escuela.direccion|default:"Sin dirección" }}</span>
+                </div>
+                <div class="info-detail-item">
+                    <i class="fas fa-phone"></i>
+                    <span>{{ escuela.telefono|default:"Sin teléfono" }}</span>
+                </div>
+                <div class="info-detail-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>{{ escuela.email|default:"Sin email" }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+    
+    {% endif %}
+    
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'academico/js/admin/inicio.js' %}"></script>
+{% endblock %}

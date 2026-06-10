@@ -152,6 +152,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 evaluacion: '/dashboard/?pagina=notas',
                 tarea_entregada: '/dashboard/?pagina=tareas_consolidado',
                 tarea_nueva: '/dashboard/?pagina=notas',
+                tarea_calificada: '/dashboard/?pagina=tareas_consolidado',
+                comunicado_nuevo: '/comunicados/',
+                comunicado: '/comunicados/',
+                mensaje_nuevo: '/mensajeria/bandeja/',
+                mensaje: '/mensajeria/bandeja/',
+                alerta: '/dashboard/?pagina=inicio',
                 sistema: '/dashboard/?pagina=inicio',
                 default: '/dashboard/?pagina=inicio',
             },
@@ -163,41 +169,49 @@ document.addEventListener('DOMContentLoaded', () => {
         return roleMap[tipo] || roleMap.default;
     }
 
-    function normalizeEstudianteClaseDashboardLink(link) {
-        if (!link.startsWith('/dashboard/?pagina=clase')) return link;
+    function canonicalizeNotificationHref(link) {
+        const raw = String(link || '').trim();
+        if (!raw) return '';
         try {
-            const search = link.split('?')[1] || '';
-            const params = new URLSearchParams(search);
-            const claseId = params.get('id');
+            if (/^https?:\/\//i.test(raw)) {
+                const parsed = new URL(raw);
+                return parsed.pathname + (parsed.search || '');
+            }
+        } catch (_error) {
+            /* ignore */
+        }
+        if (/^dashboard(?:\/|\?|$)/i.test(raw)) {
+            return '/' + raw.replace(/^\/+/, '');
+        }
+        return raw;
+    }
+
+    function isClaseDashboardLink(link) {
+        const href = canonicalizeNotificationHref(link);
+        if (!href || href.indexOf('/dashboard') !== 0) return false;
+        try {
+            const pagina = (new URL(href, window.location.origin).searchParams.get('pagina') || '').toLowerCase();
+            return pagina === 'clase';
+        } catch (_error) {
+            return /[?&]pagina=clase(?:&|$)/i.test(href);
+        }
+    }
+
+    function normalizeClaseDashboardLink(link) {
+        if (!isClaseDashboardLink(link)) return link;
+        const href = canonicalizeNotificationHref(link);
+        try {
+            const params = new URL(href, window.location.origin).searchParams;
+            const claseId = params.get('id') || params.get('clase_id');
             if (!claseId) return '/dashboard/?pagina=mis_clases';
             params.delete('pagina');
             params.delete('id');
+            params.delete('clase_id');
             const rest = params.toString();
             return rest ? `/estudiante/clase/${claseId}/?${rest}` : `/estudiante/clase/${claseId}/`;
         } catch (_error) {
             return '/dashboard/?pagina=mis_clases';
         }
-    }
-
-    function normalizeEstudianteClasePathForProfesor(link) {
-        const withQuery = link.match(/^\/estudiante\/clase\/(\d+)\/?\?(.*)$/);
-        if (withQuery) {
-            const [, claseId, query] = withQuery;
-            return `/dashboard/?pagina=clase&id=${claseId}&${query}`;
-        }
-        const plain = link.match(/^\/estudiante\/clase\/(\d+)\/?$/);
-        if (plain) {
-            return `/dashboard/?pagina=clase&id=${plain[1]}`;
-        }
-        const ampQuery = link.match(/^\/estudiante\/clase\/(\d+)\/(.*)$/);
-        if (ampQuery) {
-            const [, claseId, suffix] = ampQuery;
-            const query = suffix.startsWith('?') ? suffix.slice(1) : suffix.startsWith('&') ? suffix.slice(1) : suffix;
-            return query
-                ? `/dashboard/?pagina=clase&id=${claseId}&${query}`
-                : `/dashboard/?pagina=clase&id=${claseId}`;
-        }
-        return link;
     }
 
     function isMensajeriaDashboardLink(href) {
@@ -254,11 +268,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function normalizeNotificationLink(rawLink, notification) {
         const tipo = (notification && notification.tipo) || '';
-        let link = String(rawLink || '').trim();
+        let link = canonicalizeNotificationHref(rawLink);
         const role = getPortalRole();
 
         if (!link) {
             return resolveDefaultNotificationLink(tipo);
+        }
+
+        if (isClaseDashboardLink(link)) {
+            return normalizeClaseDashboardLink(link);
         }
 
         link = normalizeMensajeriaNotificationLink(link, tipo);
@@ -288,16 +306,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return '/dashboard/?pagina=inicio';
         }
 
-        if (link.startsWith('/estudiante/clase/') && role === 'profesor') {
-            return normalizeEstudianteClasePathForProfesor(link);
+        if (/^\/estudiante\/inicio\/?$/i.test(link)) {
+            const t = (tipo || '').toLowerCase();
+            if (t === 'tarea_nueva' || t === 'tarea_calificada' || t === 'tarea_entregada') {
+                return '/dashboard/?pagina=mis_tareas';
+            }
+            return '/dashboard/?pagina=inicio';
         }
 
-        if (link.startsWith('/dashboard/?pagina=clase') && role === 'estudiante') {
-            return normalizeEstudianteClaseDashboardLink(link);
-        }
-
-        if (link.startsWith('/dashboard/?pagina=clase') && role !== 'estudiante') {
-            return link;
+        const apoderadoInicio = link.match(/^\/apoderado\/inicio\/?(\?.*)?$/i);
+        if (apoderadoInicio) {
+            const qs = apoderadoInicio[1] || '';
+            return '/dashboard/?pagina=inicio' + (qs ? (qs.startsWith('?') ? qs.replace('?', '&') : '&' + qs.replace(/^\?/, '')) : '');
         }
 
         return link;
@@ -614,6 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('[Notificaciones] Error al marcar todas:', error);
         }
     }
+
+    window.portalMarkAllNotificationsRead = markAllRead;
 
     const isOpen = () => !dropdown.classList.contains('d-none');
 

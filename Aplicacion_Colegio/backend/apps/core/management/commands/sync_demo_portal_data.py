@@ -263,7 +263,7 @@ class Command(BaseCommand):
         from backend.apps.notificaciones.models import Notificacion
 
         actualizadas = 0
-        qs = Notificacion.objects.filter(destinatario=estudiante, tipo='mensaje_nuevo')
+        qs = Notificacion.objects.filter(destinatario=estudiante)
         for notif in qs:
             nuevo = normalize_notification_enlace(notif.enlace, notif.tipo)
             if nuevo != (notif.enlace or ''):

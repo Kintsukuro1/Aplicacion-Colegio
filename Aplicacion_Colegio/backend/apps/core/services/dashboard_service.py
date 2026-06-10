@@ -494,9 +494,16 @@ class DashboardService:
         elif pagina_solicitada == 'usuarios':
             # Usuarios del sistema - gestión de usuarios global
             from backend.apps.accounts.models import User, Role
-            usuarios = User.objects.all().select_related('role').order_by('email')
+            from backend.apps.institucion.models import Colegio
+            usuarios = list(User.objects.all().select_related('role').order_by('email'))
             roles = Role.objects.all().order_by('nombre')
             colegios = Colegio.objects.all().order_by('nombre')
+            
+            # Pre-cache colegios to avoid N+1 queries when accessing usuario.colegio in templates
+            colegios_map = {col.rbd: col for col in colegios}
+            for u in usuarios:
+                u._colegio_cache = colegios_map.get(u.rbd_colegio) if u.rbd_colegio else None
+
             context['usuarios'] = usuarios
             context['roles'] = roles
             context['colegios'] = colegios

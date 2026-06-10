@@ -1,0 +1,228 @@
+{% extends 'estudiante/base_estudiante.html' %}
+{% load static %}
+
+{% block title %}Mis Notas{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container-xl mt-md">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Mis Notas</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-xl gap-md">
+    <div>
+        <h1 class="text-4xl font-bold mb-sm">📊 Mis Notas</h1>
+        <p class="text-lg text-secondary">Consulta tus calificaciones por asignatura</p>
+    </div>
+    <button class="btn btn-outline" onclick="window.print()">
+        <i class="fas fa-print"></i> Imprimir
+    </button>
+</div>
+
+<!-- Resumen Académico -->
+<div class="card mb-xl gradient-header">
+    <div class="card-body py-xl">
+        <h2 class="text-2xl font-bold mb-lg">📈 Resumen Académico</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-lg">
+            <div class="text-center">
+                <p class="text-sm mb-sm opacity-90">Promedio General</p>
+                <p class="text-5xl font-bold" style="color: #fbbf24;">{{ promedio_general|default:"0.0"|floatformat:1 }}</p>
+                <div class="progress mt-md" style="background-color: rgba(255,255,255,0.2);">
+                    <div class="progress-bar" style="width: {{ promedio_general|default:0|floatformat:0 }}0%; background-color: #fbbf24;"></div>
+                </div>
+            </div>
+            <div class="text-center">
+                <p class="text-sm mb-sm opacity-90">Total Evaluaciones</p>
+                <p class="text-5xl font-bold">{{ total_notas|default:"0" }}</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm mb-sm opacity-90">Curso Actual</p>
+                <p class="text-2xl font-bold">{{ curso_actual.nombre|default:"No asignado" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notas por Asignatura -->
+<div class="mb-xl">
+    <h2 class="text-2xl font-bold mb-lg flex items-center gap-sm">
+        <i class="fas fa-book"></i> Notas por Asignatura
+    </h2>
+    
+    {% if notas_por_asignatura %}
+        <div class="d-flex flex-col gap-lg">
+            {% for item in notas_por_asignatura %}
+            <div class="card {% if item.promedio < 4.0 %}border-error{% endif %} transition hover:shadow-lg">
+                <div class="card-header" style="background-color: {% if item.promedio >= 4.0 %}rgba(72, 187, 120, 0.1){% else %}rgba(239, 68, 68, 0.1){% endif %};">
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold mb-xs">{{ item.asignatura }}</h3>
+                            <p class="text-sm text-secondary">
+                                <i class="fas fa-chalkboard-teacher"></i> {{ item.profesor }}
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-md">
+                            <div class="text-center">
+                                <p class="text-sm text-secondary mb-xs">Promedio</p>
+                                <div style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-2xl); font-weight: var(--font-bold); background-color: {% if item.promedio >= 4.0 %}var(--color-success){% else %}var(--color-error){% endif %}; color: var(--color-white);">
+                                    {{ item.promedio|floatformat:1 }}
+                                </div>
+                            </div>
+                            <span class="badge {% if item.estado == 'Aprobado' %}badge-success{% else %}badge-error{% endif %} badge-lg">
+                                {% if item.estado == 'Aprobado' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-exclamation-circle"></i>
+                                {% endif %}
+                                {{ item.estado }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if item.evaluaciones %}
+                        <div class="table-container">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Evaluación</th>
+                                        <th class="text-center">Ponderación</th>
+                                        <th class="text-center">Nota</th>
+                                        <th class="text-center">Fecha</th>
+                                        <th class="text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for evaluacion in item.evaluaciones %}
+                                    <tr>
+                                        <td data-label="Evaluación">
+                                            <div class="font-medium">{{ evaluacion.nombre }}</div>
+                                        </td>
+                                        <td data-label="Ponderación" class="text-center">
+                                            <span class="badge badge-info">{{ evaluacion.ponderacion }}%</span>
+                                        </td>
+                                        <td data-label="Nota" class="text-center">
+                                            <span class="font-bold text-lg {% if evaluacion.nota >= 4.0 %}text-success{% else %}text-error{% endif %}">
+                                                {{ evaluacion.nota|floatformat:1 }}
+                                            </span>
+                                        </td>
+                                        <td data-label="Fecha" class="text-center">
+                                            <span class="text-sm text-secondary">
+                                                <i class="fas fa-calendar"></i> {{ evaluacion.fecha|date:"d/m/Y" }}
+                                            </span>
+                                        </td>
+                                        <td data-label="Estado" class="text-center">
+                                            {% if evaluacion.nota >= 4.0 %}
+                                                <span class="badge badge-success badge-dot">Aprobado</span>
+                                            {% else %}
+                                                <span class="badge badge-error badge-dot">Reprobado</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-lg text-secondary">
+                            <i class="fas fa-inbox text-4xl mb-md"></i>
+                            <p>No hay evaluaciones registradas</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-secondary">
+                            <i class="fas fa-clipboard-list"></i> Total evaluaciones: {{ item.total_evaluaciones }}
+                        </span>
+                        <div class="progress w-200">
+                            <div class="progress-bar {% if item.promedio >= 4.0 %}progress-bar-success{% else %}progress-bar-error{% endif %}" 
+                                 style="width: {{ item.promedio|default:0|floatformat:0 }}0%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-body py-3xl text-center">
+                <div class="icon-circle-lg">
+                    <i class="fas fa-clipboard-list text-secondary"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-sm">No tienes calificaciones registradas</h3>
+                <p class="text-secondary">Las notas aparecerán aquí cuando tus profesores las ingresen al sistema.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Estadísticas Adicionales -->
+{% if notas_por_asignatura %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+    <div class="card">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-md">🏆</div>
+            <h4 class="font-semibold mb-xs">Mejor Promedio</h4>
+            <p class="text-2xl font-bold text-success">
+                {% if notas_por_asignatura %}
+                    {{ notas_por_asignatura|first.promedio|floatformat:1 }}
+                {% else %}
+                    -
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-md">📚</div>
+            <h4 class="font-semibold mb-xs">Asignaturas</h4>
+            <p class="text-2xl font-bold text-primary">{{ notas_por_asignatura|length }}</p>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-md">✅</div>
+            <h4 class="font-semibold mb-xs">Aprobadas</h4>
+            <p class="text-2xl font-bold text-success">
+                {% widthratio notas_por_asignatura|length 1 notas_por_asignatura|length %} / {{ notas_por_asignatura|length }}
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animación de entrada para las cards
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.4s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 50);
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}

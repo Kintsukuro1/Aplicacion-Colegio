@@ -28,7 +28,7 @@ describe('ActiveSessionsPage', () => {
 
       if (path === '/api/v1/seguridad/dashboard/') {
         return Promise.resolve({
-          colegio: 'Colegio Santa Maria',
+          colegio: 'Raccademy',
           intentos_fallidos_24h: 2,
           ips_bloqueadas: 1,
           sesiones_activas: 1,

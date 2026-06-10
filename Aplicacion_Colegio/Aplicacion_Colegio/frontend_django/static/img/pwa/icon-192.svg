@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-label="Sistema Escolar">
+  <rect width="192" height="192" rx="36" fill="#1f5aa6"/>
+  <circle cx="96" cy="76" r="34" fill="#ffffff" opacity="0.95"/>
+  <path d="M50 132h92v14H50z" fill="#ffffff"/>
+  <path d="M96 42v60M66 74l30 28 30-28" stroke="#1f5aa6" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

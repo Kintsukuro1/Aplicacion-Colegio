@@ -3,11 +3,6 @@
 <link rel="stylesheet" href="{% static 'css/profesor/perfil.css' %}">
 
 <div class="perfil-container">
-    <!-- Header -->
-    <div class="page-header">
-        <h1>Mi Perfil</h1>
-        <p>Administra tu informacion personal y configuracion de cuenta</p>
-    </div>
 
     <!-- Mensajes -->
     {% if messages %}
@@ -19,8 +14,8 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Estadisticas -->
-    <div class="stats-grid">
+    <!-- Estadísticas del año -->
+    <div class="stats-grid" aria-label="Mis estadísticas del año">
         <div class="stat-card">
             <div class="stat-icon" aria-hidden="true">&#128218;</div>
             <div class="stat-value">{{ estadisticas.total_asignaturas|default:0 }}</div>
@@ -57,7 +52,7 @@
 
             <!-- Informacion no editable -->
             <div class="card">
-                <h2>Informacion Personal</h2>
+                <h2>Información personal</h2>
                 
                 <div class="info-item">
                     <span class="info-label">RUT</span>

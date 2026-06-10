@@ -1,0 +1,586 @@
+.content-wrapper {
+    padding: 2rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.page-header .subtitle {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+.filtros-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filtros-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.filtro-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.filtro-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filtro-item label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.filtro-item select,
+.filtro-item input[type="date"] {
+    padding: 0.6rem 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: white;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.stat-value.aprobado {
+    color: #27ae60;
+}
+
+.stat-value.reprobado {
+    color: #e74c3c;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin-top: 0.3rem;
+}
+
+.stat-total {
+    border-left: 4px solid #3498db;
+}
+
+.stat-presente {
+    border-left: 4px solid #27ae60;
+}
+
+.stat-ausente {
+    border-left: 4px solid #e74c3c;
+}
+
+.stat-tardanza {
+    border-left: 4px solid var(--color-primary);
+}
+
+.stat-estudiantes {
+    border-left: 4px solid #9b59b6;
+}
+
+.stat-evaluaciones {
+    border-left: 4px solid #3498db;
+}
+
+.stat-promedio {
+    border-left: 4px solid #1abc9c;
+}
+
+.stat-aprobacion {
+    border-left: 4px solid #27ae60;
+}
+
+.chart-section,
+.tabla-section,
+.evolucion-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-section h2,
+.tabla-section h2,
+.evolucion-section h2 {
+    font-size: 1.3rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+}
+
+.bar-chart {
+    display: flex;
+    gap: 2rem;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 300px;
+    padding: 1rem;
+}
+
+.bar-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    height: 100%;
+    max-width: 150px;
+}
+
+.bar-fill {
+    width: 80px;
+    height: var(--porcentaje);
+    min-height: 15px;
+    max-height: 100%;
+    border-radius: 8px 8px 0 0;
+    transition: height 0.5s ease;
+    position: relative;
+}
+
+.bar-presente {
+    background: linear-gradient(180deg, #27ae60, #2ecc71);
+}
+
+.bar-ausente {
+    background: linear-gradient(180deg, #e74c3c, #e67e73);
+}
+
+.bar-tardanza {
+    background: var(--color-primary);
+}
+
+.bar-label {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.distribution-chart {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 250px;
+    padding: 1rem;
+}
+
+.dist-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dist-bar {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.dist-fill {
+    width: 100%;
+    height: calc(var(--altura) * 10px);
+    min-height: 20px;
+    border-radius: 8px 8px 0 0;
+    transition: height 0.5s ease;
+}
+
+.dist-reprobado {
+    background: linear-gradient(180deg, #e74c3c, #e67e73);
+}
+
+.dist-suficiente {
+    background: var(--color-primary);
+}
+
+.dist-bueno {
+    background: linear-gradient(180deg, #3498db, #5dade2);
+}
+
+.dist-excelente {
+    background: linear-gradient(180deg, #27ae60, #2ecc71);
+}
+
+.dist-label {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #2c3e50;
+}
+
+.timeline-chart {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+}
+
+.timeline-item {
+    flex: 0 0 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.timeline-fecha {
+    font-size: 0.75rem;
+    color: #7f8c8d;
+}
+
+.timeline-bar {
+    width: 40px;
+    height: 100px;
+    background: #ecf0f1;
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+.timeline-fill {
+    width: 100%;
+    background: linear-gradient(180deg, #3498db, #5dade2);
+    transition: height 0.3s ease;
+}
+
+.timeline-valor {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.tabla-scroll {
+    overflow-x: auto;
+}
+
+.tabla-reporte {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.tabla-reporte thead {
+    background: #f8f9fa;
+}
+
+.tabla-reporte th {
+    padding: 1rem;
+    text-align: left;
+    color: #2c3e50;
+    font-weight: 600;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.tabla-reporte td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.tabla-reporte tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.col-estudiante {
+    font-weight: 600;
+}
+
+.col-presente {
+    color: #27ae60;
+    font-weight: 600;
+}
+
+.col-ausente {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.col-tardanza {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.badge-porcentaje {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+.badge-porcentaje.normal {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-porcentaje.advertencia {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-porcentaje.critico {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-normal {
+    background: #27ae60;
+    color: white;
+}
+
+.badge-advertencia {
+    background: var(--color-primary);
+    color: white;
+}
+
+.badge-critico {
+    background: #e74c3c;
+    color: white;
+}
+
+.badge-aprobado {
+    background: #27ae60;
+    color: white;
+}
+
+.badge-reprobado {
+    background: #e74c3c;
+    color: white;
+}
+
+.badge-nivel-excelente {
+    background: #27ae60;
+    color: white;
+}
+
+.badge-nivel-bueno {
+    background: #3498db;
+    color: white;
+}
+
+.badge-nivel-suficiente {
+    background: var(--color-primary);
+    color: white;
+}
+
+.badge-nivel-insuficiente {
+    background: #e74c3c;
+    color: white;
+}
+
+.col-posicion {
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.col-promedio .nota {
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+.nota.aprobado {
+    background: #d4edda;
+    color: #155724;
+}
+
+.nota.reprobado {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.acciones-reporte {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.btn-exportar {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #6366f1;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-exportar:hover {
+    background: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-pdf {
+    background: #e74c3c;
+}
+
+.btn-pdf:hover {
+    background: #c0392b;
+}
+
+.btn-excel {
+    background: #27ae60;
+}
+
+.btn-excel:hover {
+    background: #229954;
+}
+
+.mensaje-inicial {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6c757d;
+}
+
+.mensaje-inicial .icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.mensaje-inicial p {
+    font-size: 1.1rem;
+}
+
+@media print {
+
+    .filtros-section,
+    .acciones-reporte {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filtro-row {
+        grid-template-columns: 1fr;
+    }
+
+    .acciones-reporte {
+        flex-direction: column;
+    }
+
+    .btn-exportar {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Premium customized styling for selectors */
+.filtros-section select,
+.filtro-item select,
+.filtro-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2.5' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+    padding-right: 2.75rem !important;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.filtros-section select:hover,
+.filtro-item select:hover,
+.filtro-group select:hover {
+    border-color: #94a3b8;
+}
+
+.filtros-section select:focus,
+.filtro-item select:focus,
+.filtro-group select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.filtro-item select optgroup,
+.filtro-group select optgroup {
+    font-weight: 700;
+    color: #1e293b;
+    background-color: #f8fafc;
+    padding: 0.5rem;
+}
+
+.filtro-item select option,
+.filtro-group select option {
+    font-weight: 500;
+    color: #475569;
+    background-color: #ffffff;
+    padding: 0.5rem;
+}

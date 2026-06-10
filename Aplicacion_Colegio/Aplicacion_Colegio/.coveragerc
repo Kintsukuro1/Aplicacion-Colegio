@@ -1,0 +1,22 @@
+[run]
+branch = True
+source =
+    backend/apps
+omit =
+    */migrations/*
+    */tests/*
+    */__pycache__/*
+    manage.py
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 2
+fail_under = 80
+include =
+    backend/apps/*/services/*.py
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    pass

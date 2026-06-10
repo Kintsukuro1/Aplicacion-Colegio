@@ -2,8 +2,10 @@
 
 .disponibilidad-container {
     padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 .page-header {
@@ -12,12 +14,12 @@
 
 .page-header h1 {
     font-size: 2rem;
-    color: #2c3e50;
+    color: #4c1d95;
     margin: 0 0 0.5rem 0;
 }
 
 .page-header p {
-    color: #7f8c8d;
+    color: #6d28d9;
     font-size: 1rem;
     margin: 0;
 }
@@ -86,7 +88,7 @@
 .stat-value {
     font-size: 2rem;
     font-weight: bold;
-    color: #2c3e50;
+    color: #4c1d95;
     margin-bottom: 0.3rem;
 }
 
@@ -99,8 +101,8 @@
 
 /* Instrucciones */
 .instrucciones-card {
-    background: #e8f4f8;
-    border-left: 4px solid #3498db;
+    background: #faf5ff;
+    border-left: 4px solid #8b7cc8;
     padding: 1.5rem;
     border-radius: 8px;
     margin-bottom: 2rem;
@@ -108,7 +110,7 @@
 
 .instrucciones-card h3 {
     margin: 0 0 1rem 0;
-    color: #2c3e50;
+    color: #4c1d95;
     font-size: 1.2rem;
 }
 
@@ -126,7 +128,7 @@
 
 .instrucciones-card li::before {
     content: '•';
-    color: #3498db;
+    color: #6a5ab8;
     font-weight: bold;
     display: inline-block;
     width: 1em;
@@ -146,15 +148,16 @@
 }
 
 .status-assigned {
-    color: #3498db;
+    color: #6a5ab8;
 }
 
 /* Formulario */
 .disponibilidad-form {
     background: white;
     padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 16px;
+    border: 1px solid #ddd6fe;
+    box-shadow: 0 8px 28px rgba(76, 29, 149, 0.07);
     margin-bottom: 2rem;
 }
 
@@ -170,7 +173,7 @@
 }
 
 .horario-table thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #6a5ab8;
     color: white;
 }
 
@@ -330,24 +333,25 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #6a5ab8;
     color: white;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    background: #5b4aa8;
+    box-shadow: 0 4px 12px rgba(106, 90, 184, 0.35);
 }
 
 .btn-secondary {
-    background: white;
-    color: #667eea;
-    border: 2px solid #667eea;
+    background: #faf5ff;
+    color: #6d28d9;
+    border: 2px solid #ddd6fe;
 }
 
 .btn-secondary:hover {
-    background: #667eea;
-    color: white;
+    background: #f3e8ff;
+    color: #4c1d95;
 }
 
 /* Clases Asignadas */

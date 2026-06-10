@@ -1,0 +1,196 @@
+{% load static %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/estudiante/comunicados.css' %}?v=20260602-wide">
+
+<div class="mc-page" id="mcPage">
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Comunicados" hero_subtitle=hero_subtitle_comunicados|default:"Información oficial, circulares y avisos del colegio" hero_aria="Comunicados" metrics_aria="Resumen de comunicados" m1_value=sin_leer_count m1_label="Sin leer" m1_mod="tareas" m2_value=leidos_count m2_label="Leídos" m2_mod="clases" m3_value=urgentes_count m3_label="Urgentes" m3_mod="tareas" m4_value=total_comunicados m4_label="Total" m4_mod="asistencia" %}
+
+    {% if sin_leer_count %}
+    <p class="mc-notice mc-notice--info">Tienes <strong>{{ sin_leer_count }}</strong> comunicado{{ sin_leer_count|pluralize:"s" }} por revisar.</p>
+    {% elif todo_leido and tiene_comunicados %}
+    <p class="mc-notice mc-notice--ok">Estás al día: leíste todos los comunicados de tu curso.</p>
+    {% endif %}
+
+    <nav class="mc-chips" aria-label="Accesos rápidos">
+        <a href="{% url 'comunicados:lista' %}" class="mc-chips__chip{% if not estado_filtro and not tipo_filtro %} mc-chips__chip--active{% endif %}">Todos ({{ total_comunicados }})</a>
+        <a href="{% url 'comunicados:lista' %}?estado=sin_leer" class="mc-chips__chip{% if estado_filtro == 'sin_leer' %} mc-chips__chip--active{% endif %}">Sin leer ({{ sin_leer_count }})</a>
+        {% if urgentes_count %}
+        <a href="{% url 'comunicados:lista' %}?tipo=urgente" class="mc-chips__chip{% if tipo_filtro == 'urgente' %} mc-chips__chip--active{% endif %}">Urgentes ({{ urgentes_count }})</a>
+        {% endif %}
+        {% if leidos_count %}
+        <a href="{% url 'comunicados:lista' %}?estado=leidos" class="mc-chips__chip{% if estado_filtro == 'leidos' %} mc-chips__chip--active{% endif %}">Leídos ({{ leidos_count }})</a>
+        {% endif %}
+    </nav>
+
+    <section class="mc-refine" aria-label="Filtrar comunicados">
+        <div class="mc-refine__head">
+            <h2 class="mc-refine__title">Refinar vista</h2>
+            {% if filtros_activos %}
+            <a href="{% url 'comunicados:lista' %}" class="mc-refine__clear">Limpiar filtros</a>
+            {% endif %}
+        </div>
+        <form method="get" class="mc-refine__grid" id="mcFilterForm">
+            <div class="mc-refine__field">
+                <label class="mc-refine__label" for="mcTipoFilter">Tipo</label>
+                <select class="mc-refine__control" id="mcTipoFilter" name="tipo">
+                    <option value="">Todos los tipos</option>
+                    {% for value, label in tipos %}
+                    <option value="{{ value }}" {% if tipo_filtro == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mc-refine__field">
+                <label class="mc-refine__label" for="mcEstadoFilter">Estado</label>
+                <select class="mc-refine__control" id="mcEstadoFilter" name="estado">
+                    <option value="">Todos</option>
+                    <option value="sin_leer" {% if estado_filtro == 'sin_leer' %}selected{% endif %}>Sin leer</option>
+                    <option value="leidos" {% if estado_filtro == 'leidos' %}selected{% endif %}>Leídos</option>
+                </select>
+            </div>
+            <div class="mc-refine__field mc-refine__field--grow">
+                <label class="mc-refine__label" for="mcSearch">Buscar</label>
+                <input type="search" class="mc-refine__control" id="mcSearch" name="q" value="{{ busqueda }}" placeholder="Título o contenido..." autocomplete="off">
+            </div>
+            <div class="mc-refine__actions">
+                <button type="submit" class="mc-btn mc-btn--primary">Aplicar</button>
+            </div>
+        </form>
+        {% if filtros_activos %}
+        <p class="mc-refine__hint">Mostrando resultados con filtros activos.</p>
+        {% endif %}
+    </section>
+
+    <div class="mc-layout mc-layout--comunicados-wide">
+        <div class="mc-main">
+            {% if not tiene_comunicados %}
+            <section class="alumno-section-card mc-empty" aria-label="Sin comunicados">
+                <div class="mc-empty__icon" aria-hidden="true">📭</div>
+                <h2 class="mc-empty__title">Aún no hay comunicados para ti</h2>
+                <p class="mc-empty__text">Cuando el colegio publique avisos para tu curso o para todos los estudiantes, aparecerán aquí.</p>
+            </section>
+            {% elif estado_filtro == 'sin_leer' and not hay_resultados %}
+            <section class="alumno-section-card mc-empty mc-empty--ok" aria-label="Sin pendientes">
+                <div class="mc-empty__icon" aria-hidden="true">✅</div>
+                <h2 class="mc-empty__title">Sin comunicados pendientes</h2>
+                <p class="mc-empty__text">No tienes avisos por leer. <a href="{% url 'comunicados:lista' %}">Ver todos ({{ total_comunicados }})</a></p>
+            </section>
+            {% elif not hay_resultados %}
+            <section class="alumno-section-card mc-empty" aria-label="Sin resultados">
+                <div class="mc-empty__icon" aria-hidden="true">🔍</div>
+                <h2 class="mc-empty__title">Sin resultados</h2>
+                <p class="mc-empty__text">No hay comunicados que coincidan con los filtros. Prueba otro tipo o <a href="{% url 'comunicados:lista' %}">limpia los filtros</a>.</p>
+            </section>
+            {% elif usar_secciones %}
+                {% if comunicados_prioritarios %}
+                <section class="alumno-section-card mc-section" aria-label="Urgentes y prioritarios">
+                    <header class="mc-section__head">
+                        <h2 class="alumno-section-title">
+                            <span class="alumno-section-title__icon" aria-hidden="true">🚨</span>
+                            Urgentes y prioritarios
+                        </h2>
+                        <span class="mc-count">{{ comunicados_prioritarios|length }}</span>
+                    </header>
+                    <div class="mc-list">
+                        {% for item in comunicados_prioritarios %}
+                        {% include 'comunicados/_comunicado_alumno_item.html' %}
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if comunicados_sin_leer %}
+                <section class="alumno-section-card mc-section" aria-label="Sin leer">
+                    <header class="mc-section__head">
+                        <h2 class="alumno-section-title">
+                            <span class="alumno-section-title__icon" aria-hidden="true">📬</span>
+                            Sin leer
+                        </h2>
+                        <span class="mc-count">{{ comunicados_sin_leer|length }}</span>
+                    </header>
+                    <div class="mc-list">
+                        {% for item in comunicados_sin_leer %}
+                        {% include 'comunicados/_comunicado_alumno_item.html' %}
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if comunicados_leidos %}
+                <section class="alumno-section-card mc-section" aria-label="Leídos">
+                    <header class="mc-section__head">
+                        <h2 class="alumno-section-title">
+                            <span class="alumno-section-title__icon" aria-hidden="true">✓</span>
+                            Leídos
+                        </h2>
+                        <span class="mc-count">{{ comunicados_leidos|length }}</span>
+                    </header>
+                    <div class="mc-list">
+                        {% for item in comunicados_leidos %}
+                        {% include 'comunicados/_comunicado_alumno_item.html' %}
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+            {% else %}
+            <section class="alumno-section-card mc-section" aria-label="Comunicados filtrados">
+                <header class="mc-section__head">
+                    <h2 class="alumno-section-title">
+                        <span class="alumno-section-title__icon" aria-hidden="true">📋</span>
+                        Resultados
+                    </h2>
+                    <span class="mc-count">{{ comunicados_filtrados|length }}</span>
+                </header>
+                <div class="mc-list">
+                    {% for item in comunicados_filtrados %}
+                    {% include 'comunicados/_comunicado_alumno_item.html' %}
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </div>
+
+        <aside class="mc-aside" aria-label="Resumen">
+            <section class="alumno-section-card mc-aside-card">
+                <h3 class="mc-aside-card__title">Tu resumen</h3>
+                {% if total_comunicados %}
+                <ul class="mc-aside-stats">
+                    <li><span class="mc-aside-stats__dot mc-aside-stats__dot--new"></span> Sin leer <strong>{{ sin_leer_count }}</strong></li>
+                    <li><span class="mc-aside-stats__dot mc-aside-stats__dot--read"></span> Leídos <strong>{{ leidos_count }}</strong></li>
+                    <li><span class="mc-aside-stats__dot mc-aside-stats__dot--urgent"></span> Urgentes <strong>{{ urgentes_count }}</strong></li>
+                </ul>
+                <p class="mc-aside-tip">Al abrir un comunicado se marca como leído automáticamente.</p>
+                {% else %}
+                <p class="mc-aside-empty">Sin comunicados publicados para tu perfil.</p>
+                {% endif %}
+            </section>
+
+            {% if eventos_proximos %}
+            <section class="alumno-section-card mc-aside-card">
+                <h3 class="mc-aside-card__title">Próximos eventos</h3>
+                <ul class="mc-events">
+                    {% for item in eventos_proximos %}
+                    {% with c=item.comunicado %}
+                    <li class="mc-events__item">
+                        <strong>{{ c.titulo|truncatewords:8 }}</strong>
+                        <span>{{ c.fecha_evento|date:"d/m/Y H:i" }}{% if c.lugar_evento %} · {{ c.lugar_evento }}{% endif %}</span>
+                    </li>
+                    {% endwith %}
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endif %}
+        </aside>
+    </div>
+</div>
+
+<script>
+(function () {
+    var form = document.getElementById('mcFilterForm');
+    var tipo = document.getElementById('mcTipoFilter');
+    var estado = document.getElementById('mcEstadoFilter');
+    if (tipo) tipo.addEventListener('change', function () { if (form) form.submit(); });
+    if (estado) estado.addEventListener('change', function () { if (form) form.submit(); });
+})();
+</script>
+
+{% include 'estudiante/_alumno_wrap_end.html' %}

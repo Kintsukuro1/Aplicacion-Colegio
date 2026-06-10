@@ -1,0 +1,321 @@
+{% load static %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/estudiante/tareas.css' %}?v=20260602">
+
+<div class="tk-page">
+    <section class="alumno-hero tk-hero" aria-label="Mis Tareas">
+        <div class="tk-hero__top">
+            <a href="{% url 'dashboard' %}?pagina=inicio" class="tk-hero__back">← Volver a Inicio</a>
+        </div>
+        <header class="alumno-hero__head">
+            <div class="alumno-hero__content">
+                <h1 class="alumno-hero__title">Mis Tareas</h1>
+                <p class="alumno-hero__meta">Tareas asignadas en tus clases · gestiona tus entregas</p>
+            </div>
+            {% include 'estudiante/_alumno_hero_notif.html' %}
+        </header>
+        <div class="alumno-hero__metrics" aria-label="Resumen de tareas">
+            <article class="alumno-hero-metric alumno-hero-metric--clases">
+                <p class="alumno-hero-metric__value">{{ total_tareas }}</p>
+                <p class="alumno-hero-metric__label">Tareas totales</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--tareas">
+                <p class="alumno-hero-metric__value" id="tkMetricPendientes">0</p>
+                <p class="alumno-hero-metric__label">Pendientes</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--promedio">
+                <p class="alumno-hero-metric__value" id="tkMetricAtrasadas">0</p>
+                <p class="alumno-hero-metric__label">Atrasadas</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+            <article class="alumno-hero-metric alumno-hero-metric--asistencia">
+                <p class="alumno-hero-metric__value" id="tkMetricEntregadas">0</p>
+                <p class="alumno-hero-metric__label">Entregadas / calificadas</p>
+                <div class="alumno-hero-metric__foot" aria-hidden="true"></div>
+            </article>
+        </div>
+    </section>
+
+    <div class="tk-toolbar" role="toolbar" aria-label="Filtrar tareas">
+        <button type="button" class="filter-pill filter-pill--active" data-filter="all">Todas</button>
+        <button type="button" class="filter-pill" data-filter="pending">Pendientes</button>
+        <button type="button" class="filter-pill" data-filter="overdue">Atrasadas</button>
+        <button type="button" class="filter-pill" data-filter="completed">Entregadas / calificadas</button>
+    </div>
+
+    {% if tareas %}
+    <div class="tk-task-list" id="tkTaskList">
+        {% for item in tareas %}
+        <article class="tk-task-card
+            {% if item.estado_tiempo == 'urgente' %}urgente{% elif item.estado_tiempo == 'vencida' %}vencida{% endif %}
+            {% if item.estado == 'corregida' %} tk-task-card--graded status-graded
+            {% elif item.estado == 'atrasada' %} tk-task-card--overdue status-overdue
+            {% elif item.estado == 'entregada' %} tk-task-card--submitted status-submitted
+            {% else %} tk-task-card--pending status-pending{% endif %}"
+            data-filter-group="{% if item.estado == 'corregida' %}graded{% elif item.estado == 'atrasada' %}overdue{% elif item.estado == 'entregada' %}submitted{% else %}pending{% endif %}"
+            data-subject="{{ item.tarea.clase.asignatura.nombre|lower }}">
+
+            <div class="tk-task-card__body">
+                <div class="tk-task-card__row">
+                    <div class="tk-task-card__info">
+                        <h3 class="tk-task-card__title">{{ item.tarea.titulo }}</h3>
+                        <div class="tk-task-card__meta">
+                            <span class="tk-meta-item">{{ item.tarea.clase.asignatura.nombre }}</span>
+                            <span class="tk-meta-sep" aria-hidden="true">·</span>
+                            <span class="tk-meta-item">{{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <div class="tk-task-card__status">
+                        {% if item.estado == 'corregida' %}
+                        <span class="tk-badge tk-badge--graded">{{ item.icono_estado }} {{ item.texto_estado }}</span>
+                        {% if item.entrega.calificacion %}
+                        <span class="tk-grade-pill">{{ item.entrega.calificacion }}</span>
+                        {% endif %}
+                        {% elif item.estado == 'entregada' %}
+                        <span class="tk-badge tk-badge--submitted">{{ item.icono_estado }} {{ item.texto_estado }}</span>
+                        {% elif item.estado == 'atrasada' %}
+                        <span class="tk-badge tk-badge--overdue">{{ item.icono_estado }} {{ item.texto_estado }}</span>
+                        {% else %}
+                        <span class="tk-badge tk-badge--pending">{{ item.icono_estado }} {{ item.texto_estado }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <p class="tk-task-card__excerpt">{{ item.tarea.instrucciones|truncatewords:18 }}</p>
+
+                <div class="tk-task-card__footer">
+                    <span class="tk-task-card__time">
+                        {% if item.estado_tiempo != 'vencida' %}
+                        {{ item.dias_restantes }} día{{ item.dias_restantes|pluralize }} restante{{ item.dias_restantes|pluralize }}
+                        {% else %}
+                        Fecha de entrega vencida
+                        {% endif %}
+                    </span>
+
+                    <div class="tk-task-card__actions">
+                        {% if item.entrega %}
+                        <button type="button" class="tk-btn-toggle" aria-expanded="false" data-target="tk-detail-{{ item.tarea.id_tarea }}">
+                            Ver detalles de entrega <span class="tk-btn-toggle__chev" aria-hidden="true">▾</span>
+                        </button>
+                        {% else %}
+                        <button type="button" class="tk-btn-primary" onclick="mostrarModalEntregar({{ item.tarea.id_tarea }}, '{{ item.tarea.titulo|escapejs }}', false)">
+                            Entregar tarea
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if item.tarea.archivo_instrucciones %}
+                <p class="tk-task-card__file">
+                    <a href="{{ item.tarea.archivo_instrucciones.url }}" download>Descargar instrucciones</a>
+                </p>
+                {% endif %}
+            </div>
+
+            {% if item.entrega %}
+            <div class="tk-task-detail" id="tk-detail-{{ item.tarea.id_tarea }}" hidden>
+                <div class="tk-task-detail__inner">
+                    <div class="tk-task-detail__head">
+                        <h4 class="tk-task-detail__title">Tu entrega</h4>
+                        {% if item.entrega.calificacion %}
+                        <span class="tk-task-detail__grade">{{ item.entrega.calificacion }}</span>
+                        {% endif %}
+                    </div>
+                    <dl class="entrega-detalles tk-data-list">
+                        <div class="tk-data-row">
+                            <dt class="tk-data-label">Fecha de entrega</dt>
+                            <dd class="tk-data-value">{{ item.entrega.fecha_entrega|date:"d/m/Y H:i" }}</dd>
+                        </div>
+                        {% if item.entrega.archivo %}
+                        <div class="tk-data-row">
+                            <dt class="tk-data-label">Archivo</dt>
+                            <dd class="tk-data-value">
+                                <a href="{{ item.entrega.archivo.url }}" download>Descargar mi entrega</a>
+                            </dd>
+                        </div>
+                        {% endif %}
+                        {% if item.entrega.comentario_estudiante %}
+                        <div class="tk-data-row tk-data-row--full">
+                            <dt class="tk-data-label">Tu comentario</dt>
+                            <dd class="tk-data-value">{{ item.entrega.comentario_estudiante }}</dd>
+                        </div>
+                        {% endif %}
+                        {% if item.entrega.calificacion %}
+                        <div class="tk-data-row tk-data-row--calificacion calificacion-recibida">
+                            <dt class="tk-data-label">Calificación</dt>
+                            <dd class="tk-data-value"><span class="nota-valor">{{ item.entrega.calificacion }}</span></dd>
+                        </div>
+                        {% endif %}
+                    </dl>
+                        {% if item.entrega.retroalimentacion %}
+                        <div class="retroalimentacion-box">
+                            <div class="retroalimentacion-box__head">
+                                <span class="retroalimentacion-box__icon" aria-hidden="true">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                                <strong class="retroalimentacion-box__title">Retroalimentación del profesor</strong>
+                            </div>
+                            <p class="retroalimentacion-box__text">{{ item.entrega.retroalimentacion }}</p>
+                        </div>
+                        {% endif %}
+                    {% if not item.tarea.esta_vencida %}
+                    <button type="button" class="tk-btn-secondary-small" onclick="mostrarModalEntregar({{ item.tarea.id_tarea }}, '{{ item.tarea.titulo|escapejs }}', true)">
+                        Reemplazar entrega
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="tk-empty-state">
+        <span class="tk-empty-state__icon" aria-hidden="true">📋</span>
+        <h3>No hay tareas asignadas</h3>
+        <p>Cuando tus profesores asignen tareas, aparecerán aquí</p>
+    </div>
+    {% endif %}
+</div>
+
+<div id="modalEntregarTarea" class="modal tk-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-titulo">Entregar Tarea</h2>
+            <span class="close" onclick="cerrarModalEntregar()">&times;</span>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="entregar_tarea">
+            <input type="hidden" id="tarea_id" name="tarea_id">
+
+            <div class="form-group">
+                <label>Tarea</label>
+                <p id="tarea_nombre" class="font-semibold"></p>
+            </div>
+
+            <div class="form-group">
+                <label for="archivo">Archivo de entrega *</label>
+                <input type="file" id="archivo" name="archivo" required
+                       accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.zip,.rar,.7z,.odt,.csv,.mp4,.py,.java,.js,.html,.css">
+                <small class="file-info">
+                    <strong>Tamaño máximo: 50 MB</strong><br>
+                    <strong>Formatos permitidos:</strong> Documentos (PDF, Word, Excel, PowerPoint, TXT),
+                    Imágenes (JPG, PNG), Archivos comprimidos (ZIP, RAR, 7Z), Código fuente (PY, JAVA, JS, HTML, CSS), Videos (MP4)
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="comentario">Comentario (opcional)</label>
+                <textarea id="comentario" name="comentario" rows="4"
+                          placeholder="Agrega algún comentario sobre tu entrega..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="cerrarModalEntregar()">Cancelar</button>
+                <button type="submit" class="btn-primary">Entregar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function mostrarModalEntregar(tareaId, tareaNombre, esReemplazo) {
+    document.getElementById('tarea_id').value = tareaId;
+    document.getElementById('tarea_nombre').textContent = tareaNombre;
+    document.getElementById('modal-titulo').textContent = esReemplazo ? 'Reemplazar entrega' : 'Entregar tarea';
+    document.getElementById('modalEntregarTarea').style.display = 'block';
+}
+
+function cerrarModalEntregar() {
+    document.getElementById('modalEntregarTarea').style.display = 'none';
+}
+
+window.onclick = function (event) {
+    var modal = document.getElementById('modalEntregarTarea');
+    if (event.target == modal) {
+        cerrarModalEntregar();
+    }
+};
+
+(function () {
+    function resolveAccent(name) {
+        var s = (name || '').toLowerCase();
+        if (s.indexOf('matem') !== -1) return { accent: '#3B82F6', bg: '#E6F1FB' };
+        if (s.indexOf('lengua') !== -1 || s.indexOf('comunic') !== -1 || s.indexOf('castellano') !== -1) return { accent: '#EF4444', bg: '#FCEBEB' };
+        if (s.indexOf('cienc') !== -1 || s.indexOf('natur') !== -1) return { accent: '#10B981', bg: '#E1F5EE' };
+        if (s.indexOf('histor') !== -1 || s.indexOf('geograf') !== -1) return { accent: '#8B5CF6', bg: '#EEEDFE' };
+        if (s.indexOf('ingl') !== -1) return { accent: '#F59E0B', bg: '#FAEEDA' };
+        if (s.indexOf('educ') !== -1 || s.indexOf('f\u00edsica') !== -1 || s.indexOf('edfis') !== -1) return { accent: '#06B6D4', bg: '#E0F7FA' };
+        if (s.indexOf('arte') !== -1 || s.indexOf('visual') !== -1) return { accent: '#EC4899', bg: '#FBEAF0' };
+        if (s.indexOf('m\u00fasic') !== -1 || s.indexOf('music') !== -1) return { accent: '#F97316', bg: '#FFEDD5' };
+        if (s.indexOf('tecno') !== -1 || s.indexOf('comput') !== -1) return { accent: '#6B7280', bg: '#F1EFE8' };
+        return { accent: '#94A3B8', bg: '#F8FAFC' };
+    }
+
+    var cards = document.querySelectorAll('.tk-task-card');
+    var counts = { pending: 0, overdue: 0, submitted: 0, graded: 0 };
+
+    cards.forEach(function (card) {
+        var g = card.getAttribute('data-filter-group');
+        if (g === 'pending') counts.pending += 1;
+        if (g === 'overdue') counts.overdue += 1;
+        if (g === 'submitted') counts.submitted += 1;
+        if (g === 'graded') counts.graded += 1;
+
+        var c = resolveAccent(card.getAttribute('data-subject') || '');
+        card.style.setProperty('--tk-accent', c.accent);
+        card.style.setProperty('--tk-accent-bg', c.bg);
+    });
+
+    var elP = document.getElementById('tkMetricPendientes');
+    var elA = document.getElementById('tkMetricAtrasadas');
+    var elE = document.getElementById('tkMetricEntregadas');
+    if (elP) elP.textContent = String(counts.pending);
+    if (elA) elA.textContent = String(counts.overdue);
+    if (elE) elE.textContent = String(counts.submitted + counts.graded);
+
+    function matchesFilter(filter, group) {
+        if (filter === 'all') return true;
+        if (filter === 'pending') return group === 'pending';
+        if (filter === 'overdue') return group === 'overdue';
+        if (filter === 'completed') return group === 'submitted' || group === 'graded';
+        return false;
+    }
+
+    document.querySelectorAll('.filter-pill').forEach(function (pill) {
+        pill.addEventListener('click', function () {
+            var filter = pill.getAttribute('data-filter');
+            document.querySelectorAll('.filter-pill').forEach(function (p) {
+                p.classList.remove('filter-pill--active');
+            });
+            pill.classList.add('filter-pill--active');
+
+            cards.forEach(function (card) {
+                var group = card.getAttribute('data-filter-group');
+                card.style.display = matchesFilter(filter, group) ? '' : 'none';
+            });
+        });
+    });
+
+    document.querySelectorAll('.tk-btn-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var targetId = btn.getAttribute('data-target');
+            var panel = document.getElementById(targetId);
+            if (!panel) return;
+            var open = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+            panel.hidden = open;
+            var chev = btn.querySelector('.tk-btn-toggle__chev');
+            if (chev) chev.textContent = open ? '▾' : '▴';
+            btn.classList.toggle('tk-btn-toggle--open', !open);
+        });
+    });
+})();
+</script>
+
+{% include 'estudiante/_alumno_wrap_end.html' %}

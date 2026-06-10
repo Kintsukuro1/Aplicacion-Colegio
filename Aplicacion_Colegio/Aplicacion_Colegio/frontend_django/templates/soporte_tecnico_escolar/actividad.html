@@ -1,0 +1,109 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/soporte_tecnico_escolar/actividad.css' %}">
+
+<!-- ACTIVIDAD DEL SISTEMA - SOPORTE TÉCNICO ESCOLAR -->
+
+<div class="soporte-dashboard">
+    <div class="section-header">
+        <h2><span class="section-icon">📊</span> Actividad del Sistema</h2>
+    </div>
+
+    <!-- Actividad por Rol (última semana) -->
+    <div class="module-card mb-4">
+        <div class="module-card-header">
+            <h3>Usuarios Activos por Rol (últimos 7 días)</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Rol</th>
+                        <th>Usuarios Activos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in actividad_por_rol %}
+                    <tr>
+                        <td>{{ item.role__nombre|default:"Sin rol" }}</td>
+                        <td><strong>{{ item.activos_semana }}</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2">Sin actividad registrada esta semana</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Últimos Logins -->
+    <div class="module-card mb-4">
+        <div class="module-card-header">
+            <h3>🔑 Últimos Inicios de Sesión</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Último Login</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usr in logins_recientes %}
+                    <tr>
+                        <td>{{ usr.get_full_name|default:usr.email }}</td>
+                        <td>{{ usr.role.nombre|default:"—" }}</td>
+                        <td>{{ usr.last_login|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">Sin registros de login</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Usuarios Inactivos -->
+    <div class="module-card">
+        <div class="module-card-header">
+            <h3>⚠️ Usuarios sin Actividad (&gt;30 días)</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Último Login</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usr in usuarios_inactivos %}
+                    <tr>
+                        <td>{{ usr.get_full_name|default:usr.email }}</td>
+                        <td>{{ usr.role.nombre|default:"—" }}</td>
+                        <td>{{ usr.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
+                        <td>
+                            {% if usr.is_active %}
+                            <span class="badge badge-warning">Activo sin uso</span>
+                            {% else %}
+                            <span class="badge badge-danger">Desactivado</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">Todos los usuarios han iniciado sesión recientemente</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

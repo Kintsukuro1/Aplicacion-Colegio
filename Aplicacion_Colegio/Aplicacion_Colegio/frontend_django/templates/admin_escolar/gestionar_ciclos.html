@@ -1,0 +1,314 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_ciclos.css' %}">
+
+<div class="ciclos-container">
+    <!-- Encabezado y Estadísticas -->
+    <div class="header-section">
+        <div class="titulo-modulo">
+            <i class="fas fa-calendar-alt"></i>
+            <h2>Gestión de Ciclos Académicos</h2>
+        </div>
+
+        <div class="estadisticas-grid">
+            <div class="stat-card blue">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_ciclos|default:0 }}</span>
+                    <span class="stat-label">Total Ciclos</span>
+                </div>
+            </div>
+
+            <div class="stat-card green">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ ciclos_activos|default:0 }}</span>
+                    <span class="stat-label">Ciclos Activos</span>
+                </div>
+            </div>
+
+            <div class="stat-card gray">
+                <div class="stat-icon">
+                    <i class="fas fa-pause-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ ciclos_inactivos|default:0 }}</span>
+                    <span class="stat-label">Ciclos Inactivos</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Ciclos -->
+    <div class="ciclos-section">
+        <div class="ciclos-grid">
+            {% for ciclo in ciclos %}
+            <div class="ciclo-card {% if ciclo.estado == 'ACTIVO' %}activo{% endif %}">
+                <div class="ciclo-header">
+                    <h3>{{ ciclo.nombre }}</h3>
+                    <span class="ciclo-estado estado-{{ ciclo.estado|lower }}">
+                        {% if ciclo.estado == 'ACTIVO' %}
+                            <i class="fas fa-check-circle"></i> Activo
+                        {% elif ciclo.estado == 'INACTIVO' %}
+                            <i class="fas fa-pause-circle"></i> Inactivo
+                        {% elif ciclo.estado == 'PLANIFICACION' %}
+                            <i class="fas fa-clock"></i> En Planificación
+                        {% elif ciclo.estado == 'EVALUACION' %}
+                            <i class="fas fa-chart-line"></i> En Evaluación
+                        {% elif ciclo.estado == 'FINALIZADO' %}
+                            <i class="fas fa-check"></i> Finalizado
+                        {% elif ciclo.estado == 'CERRADO' %}
+                            <i class="fas fa-lock"></i> Cerrado
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="ciclo-info">
+                    <div class="info-item">
+                        <i class="fas fa-calendar-start"></i>
+                        <span><strong>Inicio:</strong> {{ ciclo.fecha_inicio|date:"d/m/Y" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-calendar-end"></i>
+                        <span><strong>Fin:</strong> {{ ciclo.fecha_fin|date:"d/m/Y" }}</span>
+                    </div>
+                    {% if ciclo.descripcion %}
+                    <div class="info-item">
+                        <i class="fas fa-info-circle"></i>
+                        <span><strong>Descripción:</strong> {{ ciclo.descripcion }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="ciclo-actions">
+                    {% if ciclo.estado == 'INACTIVO' %}
+                    <form method="POST" action="{% url 'gestionar_ciclos' %}" class="d-inline-block">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="activar">
+                        <input type="hidden" name="ciclo_id" value="{{ ciclo.id }}">
+                        <button type="submit" class="btn-activar">
+                            <i class="fas fa-play"></i> Activar
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <button onclick="abrirModalEditar({{ ciclo.id }})" class="btn-editar">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+
+                    {% if ciclo.estado != 'ACTIVO' %}
+                    <button onclick="confirmarEliminar({{ ciclo.id }}, '{{ ciclo.nombre }}')" class="btn-eliminar">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-ciclos">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No hay ciclos académicos registrados</h3>
+                <p>Crea tu primer ciclo académico para comenzar a organizar el año escolar.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Botón Nuevo Ciclo -->
+    <div class="acciones-section">
+        <button onclick="abrirModalCrear()" class="btn-nuevo-ciclo">
+            <i class="fas fa-plus"></i> Nuevo Ciclo Académico
+        </button>
+    </div>
+</div>
+
+<!-- Modal Crear Ciclo -->
+<div id="modalCrearCiclo" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> Crear Nuevo Ciclo Académico</h3>
+            <span class="modal-close" onclick="cerrarModal()">&times;</span>
+        </div>
+
+        <form method="POST" action="{% url 'gestionar_ciclos' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="crear">
+
+            <div class="form-group">
+                <label for="nombre">Nombre del Ciclo *</label>
+                <input type="text" id="nombre" name="nombre" required
+                       placeholder="Ej: 2025-2026">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="fecha_inicio">Fecha de Inicio *</label>
+                    <input type="date" id="fecha_inicio" name="fecha_inicio" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="fecha_fin">Fecha de Fin *</label>
+                    <input type="date" id="fecha_fin" name="fecha_fin" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" name="descripcion" rows="3"
+                          placeholder="Descripción opcional del ciclo académico"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" onclick="cerrarModal()" class="btn-cancelar">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-crear">
+                    <i class="fas fa-save"></i> Crear Ciclo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Ciclo -->
+<div id="modalEditarCiclo" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Editar Ciclo Académico</h3>
+            <span class="modal-close" onclick="cerrarModal()">&times;</span>
+        </div>
+
+        <form method="POST" action="{% url 'gestionar_ciclos' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="editar">
+            <input type="hidden" id="edit_ciclo_id" name="ciclo_id" value="">
+
+            <div class="form-group">
+                <label for="edit_nombre">Nombre del Ciclo *</label>
+                <input type="text" id="edit_nombre" name="nombre" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="edit_fecha_inicio">Fecha de Inicio *</label>
+                    <input type="date" id="edit_fecha_inicio" name="fecha_inicio" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_fecha_fin">Fecha de Fin *</label>
+                    <input type="date" id="edit_fecha_fin" name="fecha_fin" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="edit_descripcion">Descripción</label>
+                <textarea id="edit_descripcion" name="descripcion" rows="3"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" onclick="cerrarModal()" class="btn-cancelar">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-guardar">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Confirmar Eliminación -->
+<div id="modalEliminarCiclo" class="modal">
+    <div class="modal-content small">
+        <div class="modal-header">
+            <h3><i class="fas fa-trash"></i> Confirmar Eliminación</h3>
+            <span class="modal-close" onclick="cerrarModal()">&times;</span>
+        </div>
+
+        <div class="modal-body">
+            <p>¿Estás seguro de que deseas eliminar el ciclo académico <strong id="cicloEliminarNombre"></strong>?</p>
+            <p class="warning-text">Esta acción no se puede deshacer.</p>
+        </div>
+
+        <form id="formEliminarCiclo" method="POST" action="{% url 'gestionar_ciclos' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="eliminar">
+            <input type="hidden" id="eliminar_ciclo_id" name="ciclo_id" value="">
+
+            <div class="modal-actions">
+                <button type="button" onclick="cerrarModal()" class="btn-cancelar">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-eliminar-confirmar">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{ ciclos_data|json_script:"ciclosData" }}
+
+<script>
+// Variables globales
+let ciclosData = JSON.parse(document.getElementById('ciclosData').textContent);
+
+// Funciones del modal
+function abrirModalCrear() {
+    document.getElementById('modalCrearCiclo').style.display = 'block';
+}
+
+function abrirModalEditar(cicloId) {
+    const ciclo = ciclosData.find(c => c.id === cicloId);
+    if (!ciclo) return;
+
+    document.getElementById('edit_ciclo_id').value = ciclo.id;
+    document.getElementById('edit_nombre').value = ciclo.nombre;
+    document.getElementById('edit_fecha_inicio').value = ciclo.fecha_inicio;
+    document.getElementById('edit_fecha_fin').value = ciclo.fecha_fin;
+    document.getElementById('edit_descripcion').value = ciclo.descripcion || '';
+
+    document.getElementById('modalEditarCiclo').style.display = 'block';
+}
+
+function confirmarEliminar(cicloId, nombre) {
+    document.getElementById('eliminar_ciclo_id').value = cicloId;
+    document.getElementById('cicloEliminarNombre').textContent = nombre;
+    document.getElementById('modalEliminarCiclo').style.display = 'block';
+}
+
+function cerrarModal() {
+    document.getElementById('modalCrearCiclo').style.display = 'none';
+    document.getElementById('modalEditarCiclo').style.display = 'none';
+    document.getElementById('modalEliminarCiclo').style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modals = document.getElementsByClassName('modal');
+    for (let modal of modals) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+}
+
+// Validación de fechas
+document.getElementById('fecha_inicio').addEventListener('change', validarFechas);
+document.getElementById('fecha_fin').addEventListener('change', validarFechas);
+document.getElementById('edit_fecha_inicio').addEventListener('change', validarFechas);
+document.getElementById('edit_fecha_fin').addEventListener('change', validarFechas);
+
+function validarFechas() {
+    const inicio = new Date(this.form.fecha_inicio.value);
+    const fin = new Date(this.form.fecha_fin.value);
+
+    if (inicio && fin && inicio >= fin) {
+        alert('La fecha de inicio debe ser anterior a la fecha de fin.');
+        this.form.fecha_fin.value = '';
+    }
+}
+</script>

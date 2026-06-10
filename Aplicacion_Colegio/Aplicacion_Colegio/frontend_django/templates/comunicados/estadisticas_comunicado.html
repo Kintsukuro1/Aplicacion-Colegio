@@ -1,0 +1,119 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block title %}Estadísticas - {{ comunicado.titulo }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/comunicados/estadisticas_comunicado.css' %}">
+
+<div class="stats-container">
+    <a href="{% url 'comunicados:detalle' comunicado.id_comunicado %}" class="back-link">
+        ← Volver al comunicado
+    </a>
+
+    <div class="stats-header">
+        <h1>📊 Estadísticas: {{ comunicado.titulo }}</h1>
+        <p class="stats-subtitle">
+            Tipo: {{ comunicado.get_tipo_display }} | Publicado: {{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}
+        </p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">📤 Total Destinatarios</div>
+        </div>
+
+        <div class="stat-card leidos">
+            <div class="stat-value">{{ stats.leidos }}</div>
+            <div class="stat-label">👁️ Leídos</div>
+        </div>
+
+        {% if comunicado.requiere_confirmacion %}
+        <div class="stat-card confirmados">
+            <div class="stat-value">{{ stats.confirmados }}</div>
+            <div class="stat-label">✅ Confirmados</div>
+        </div>
+        {% endif %}
+
+        <div class="stat-card pendientes">
+            <div class="stat-value">{{ stats.pendientes }}</div>
+            <div class="stat-label">⏳ Pendientes</div>
+        </div>
+    </div>
+
+    {% if stats.total > 0 %}
+    <div class="progress-bar-container">
+        <div class="progress-bar" style="width: {% widthratio stats.leidos stats.total 100 %}%;">
+            {% widthratio stats.leidos stats.total 100 %}% Leído
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="table-container">
+        <h2>📋 Detalle de Confirmaciones</h2>
+
+        {% if confirmaciones %}
+        <table class="confirmaciones-table">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Rol</th>
+                    <th>Estado Lectura</th>
+                    <th>Fecha Lectura</th>
+                    {% if comunicado.requiere_confirmacion %}
+                    <th>Confirmado</th>
+                    <th>Fecha Confirmación</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for conf in confirmaciones %}
+                <tr>
+                    <td>
+                        <strong>{{ conf.usuario.get_full_name }}</strong><br>
+                        <small class="text-subtle">{{ conf.usuario.email }}</small>
+                    </td>
+                    <td>{{ conf.usuario.get_role_display }}</td>
+                    <td>
+                        {% if conf.leido %}
+                        <span class="status-badge leido">✓ Leído</span>
+                        {% else %}
+                        <span class="status-badge no-leido">✗ No leído</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if conf.fecha_lectura %}
+                        {{ conf.fecha_lectura|date:"d/m/Y H:i" }}
+                        {% else %}
+                        <span class="text-lighter">-</span>
+                        {% endif %}
+                    </td>
+                    {% if comunicado.requiere_confirmacion %}
+                    <td>
+                        {% if conf.confirmado %}
+                        <span class="status-badge confirmado">✓ Sí</span>
+                        {% else %}
+                        <span class="status-badge no-leido">✗ No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if conf.fecha_confirmacion %}
+                        {{ conf.fecha_confirmacion|date:"d/m/Y H:i" }}
+                        {% else %}
+                        <span class="text-lighter">-</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>No hay confirmaciones registradas aún.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

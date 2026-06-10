@@ -1,0 +1,495 @@
+/* Firmas pendientes — portal apoderado */
+
+.af-page {
+    min-width: 0;
+    padding: 0 0 1.5rem;
+}
+
+.af-panel {
+    padding: 1.25rem 1.35rem 1.5rem;
+}
+
+.af-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.af-kpi-card {
+    padding: 1rem 1.05rem;
+    background: #fafcfb;
+    border: 1px solid #e5f0ea;
+    border-radius: 12px;
+    min-width: 0;
+}
+
+.af-kpi-card__label {
+    margin: 0 0 0.2rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.af-kpi-card__value {
+    margin: 0.15rem 0 0;
+    font-size: 1.65rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #334155;
+}
+
+.af-kpi-card__value--pending {
+    color: #9a7340;
+}
+
+.af-kpi-card__value--ok {
+    color: #4a7c62;
+}
+
+.af-kpi-card__value--muted {
+    color: #9b5c5c;
+}
+
+.af-kpi-card__hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.74rem;
+    color: #94a3b8;
+}
+
+.af-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.15rem;
+    font-size: 0.86rem;
+    line-height: 1.45;
+}
+
+.af-status--ok {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.af-status--pending {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.af-status__icon {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    line-height: 1.2;
+}
+
+.af-status__text {
+    margin: 0;
+    flex: 1;
+}
+
+.af-section {
+    margin-bottom: 1.25rem;
+}
+
+.af-section__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+}
+
+.af-section__title {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.af-section__link {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #166534;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+
+.af-section__link:hover {
+    border-bottom-color: #86efac;
+}
+
+.af-section__meta {
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+.af-pending-list,
+.af-signatures {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.af-pending-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 3px solid #f59e0b;
+    border-radius: 10px;
+}
+
+.af-pending-card__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 1rem;
+}
+
+.af-pending-card__title {
+    margin: 0 0 0.15rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.af-pending-card__meta {
+    margin: 0;
+    font-size: 0.74rem;
+    color: #64748b;
+}
+
+.af-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+
+.af-btn--primary {
+    background: #16a34a;
+    color: #fff;
+}
+
+.af-btn--primary:hover {
+    background: #15803d;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+}
+
+.af-refine {
+    margin-bottom: 0.85rem;
+    padding: 0.85rem 0.95rem;
+    background: #fff;
+    border: 1px solid #e8f0ec;
+    border-radius: 10px;
+}
+
+.af-refine__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+}
+
+.af-refine__title {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.af-refine__clear {
+    border: none;
+    background: transparent;
+    color: #166534;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.af-refine__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(9rem, 11rem) minmax(0, 1.2fr);
+    gap: 0.65rem;
+    align-items: end;
+}
+
+.af-refine__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.af-refine__label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.af-refine__control {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #dcefe4;
+    border-radius: 8px;
+    font-size: 0.86rem;
+    color: #0f172a;
+    background: #f8fcfa;
+    box-sizing: border-box;
+}
+
+.af-refine__control:focus {
+    outline: none;
+    border-color: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+    background: #fff;
+}
+
+.af-refine__hint {
+    margin: 0.55rem 0 0;
+    font-size: 0.76rem;
+    color: #64748b;
+}
+
+.af-signature-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 0.7rem 0.85rem;
+    background: #fafcfb;
+    border: 1px solid #e8f0ec;
+    border-radius: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.af-signature-card:hover {
+    border-color: #cfe9dc;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.af-signature-card--invalid {
+    opacity: 0.72;
+    background: #faf8f8;
+}
+
+.af-signature-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.af-signature-card__badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.18rem 0.45rem;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.af-signature-card__title {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.af-signature-card__meta {
+    margin: 0.1rem 0 0;
+    font-size: 0.74rem;
+    color: #64748b;
+}
+
+.af-signature-card__side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+    flex-shrink: 0;
+}
+
+.af-signature-card__date {
+    font-size: 0.74rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.af-signature-card__state {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.18rem 0.45rem;
+    border-radius: 999px;
+}
+
+.af-signature-card__state--valid {
+    color: #3d5c4a;
+    background: #f0f7f2;
+    border: 1px solid #cfe5d6;
+}
+
+.af-signature-card__state--invalid {
+    color: #7a4f4f;
+    background: #faf0f0;
+    border: 1px solid #e8d4d4;
+}
+
+.af-hidden {
+    display: none !important;
+}
+
+.af-notice--demo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 0.85rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #854d0e;
+}
+
+.af-notice__dismiss {
+    border: none;
+    background: transparent;
+    color: #854d0e;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.af-pending-card--demo,
+.af-signature-card--demo {
+    border-style: dashed;
+    opacity: 0.94;
+}
+
+.af-btn--disabled {
+    pointer-events: none;
+    opacity: 0.55;
+    cursor: default;
+}
+
+.af-empty {
+    text-align: center;
+    padding: 2rem 1.25rem;
+}
+
+.af-empty--compact {
+    padding: 1.25rem 1rem;
+}
+
+.af-empty__icon {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.af-empty__title {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #14532d;
+}
+
+.af-empty__text {
+    margin: 0 auto;
+    font-size: 0.88rem;
+    color: #64748b;
+    max-width: 28rem;
+    line-height: 1.45;
+}
+
+.af-help-card {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    background: #f8fcfa;
+    border: 1px dashed #cfe9dc;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+.af-help-card a {
+    color: #166534;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .af-panel {
+        padding: 1rem;
+    }
+
+    .af-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .af-refine__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .af-pending-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .af-pending-card .af-btn {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .af-signature-card {
+        grid-template-columns: 1fr;
+    }
+
+    .af-signature-card__side {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+    }
+}

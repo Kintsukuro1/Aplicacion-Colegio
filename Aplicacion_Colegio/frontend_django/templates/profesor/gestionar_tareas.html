@@ -1,0 +1,335 @@
+{% load static %}
+{% include 'profesor/_personal_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/profesor/gestionar_tareas.css' %}?v=20260604-demo">
+
+<div class="gt-page">
+    <nav class="gt-breadcrumb" aria-label="Ruta de navegación">
+        <a href="{% url 'dashboard' %}?pagina=mis_clases">← Mis Clases</a>
+        <span aria-hidden="true">/</span>
+        <a href="{% url 'ver_detalle_clase' clase.id %}">{{ clase.asignatura.nombre }}</a>
+        <span aria-hidden="true">/</span>
+        <span>Actividades</span>
+    </nav>
+
+    {% with hero_sub_clase=clase.curso.nombre|add:" · "|add:clase.asignatura.nombre %}
+    {% endwith %}
+
+    <div class="gt-toolbar">
+        <div class="gt-hero__actions">
+            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="gt-back-mis-clases" title="Volver al listado de clases">
+                <span class="gt-back-mis-clases__icon" aria-hidden="true">←</span>
+                <span>Mis Clases</span>
+            </a>
+            <a href="{% url 'ver_detalle_clase' clase.id %}" class="gt-btn gt-btn--outline">Ver esta clase</a>
+            <button type="button" onclick="mostrarModalCrear()" class="gt-btn gt-btn--primary">➕ Crear actividad híbrida</button>
+        </div>
+    </div>
+
+    {% if gt_vista_previa %}
+    <div class="gt-demo-banner" role="status">
+        <strong>Datos de prueba</strong> — actividades de ejemplo para revisar el diseño. Crear o eliminar reales sigue disponible; las de ejemplo no se guardan.
+        <a href="{% url 'gestionar_tareas_profesor' clase.id %}?datos_reales=1" class="gt-demo-banner__link">Ver sin datos de prueba</a>
+    </div>
+    {% endif %}
+
+    {% if messages %}
+    <div class="gt-flash-wrap" role="status">
+        {% for message in messages %}
+        <div class="gt-flash gt-flash--{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="gt-layout">
+        <div class="gt-main">
+            {% if tareas %}
+            <div class="gt-tarea-list">
+                {% for item in tareas %}
+                <article class="gt-tarea-card{% if item.requiere_atencion %} gt-tarea-card--attention{% endif %}{% if item.tarea.esta_vencida %} gt-tarea-card--expired{% endif %}" id="tarea-{{ item.tarea.id_tarea }}">
+                    <div class="gt-tarea-card__accent" aria-hidden="true"></div>
+                    <div class="gt-tarea-card__body">
+                        <div class="gt-tarea-card__head">
+                            <div class="gt-tarea-card__info">
+                                <h3 class="gt-tarea-card__title">{{ item.tarea.titulo }}</h3>
+                                <div class="gt-tarea-meta">
+                                    <span>📅 {{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}</span>
+                                    {% if item.tarea.esta_vencida %}
+                                    <span class="gt-badge gt-badge--warning">Vencida</span>
+                                    {% else %}
+                                    <span class="gt-badge gt-badge--success">Activa</span>
+                                    {% endif %}
+                                    {% if item.actividad_resoluble %}
+                                    <span class="gt-badge gt-badge--info">{{ item.actividad_resoluble.get_modalidad_display }}</span>
+                                    {% else %}
+                                    <span class="gt-badge gt-badge--neutral">Solo legacy</span>
+                                    {% endif %}
+                                    {% if item.entregas_pendientes %}
+                                    <span class="gt-badge gt-badge--warn-soft">{{ item.entregas_pendientes }} por revisar</span>
+                                    {% endif %}
+                                </div>
+                                <p class="gt-tarea-card__desc">{{ item.tarea.instrucciones|truncatewords:28 }}</p>
+                            </div>
+                            <div class="gt-tarea-card__metrics">
+                                <div class="gt-tarea-metric">
+                                    <span class="gt-tarea-metric__value">{{ item.total_entregas }}/{{ gt_total_estudiantes|default:0 }}</span>
+                                    <span class="gt-tarea-metric__label">Entregas</span>
+                                </div>
+                                <div class="gt-tarea-metric">
+                                    <span class="gt-tarea-metric__value">{{ item.porcentaje_entrega|default:0 }}%</span>
+                                    <span class="gt-tarea-metric__label">Cobertura</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if gt_total_estudiantes %}
+                        <div class="gt-progress-block">
+                            <div class="gt-progress-row">
+                                <span class="gt-progress-label">Entregas recibidas</span>
+                                <span class="gt-progress-value">{{ item.porcentaje_entrega|default:0 }}%</span>
+                            </div>
+                            <div class="gt-progress-bar" role="progressbar" aria-valuenow="{{ item.porcentaje_entrega|default:0 }}" aria-valuemin="0" aria-valuemax="100">
+                                <span class="gt-progress-bar__fill gt-progress-bar__fill--entrega" style="width: {{ item.porcentaje_entrega|default:0 }}%"></span>
+                            </div>
+                            {% if item.alumnos_sin_entrega %}
+                            <p class="gt-progress-hint">{{ item.alumnos_sin_entrega }} alumno(s) aún no entregan.</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if item.total_entregas %}
+                        <div class="gt-progress-block">
+                            <div class="gt-progress-row">
+                                <span class="gt-progress-label">Revisión docente</span>
+                                <span class="gt-progress-value">{{ item.entregas_revisadas }}/{{ item.total_entregas }}</span>
+                            </div>
+                            <div class="gt-progress-bar" role="progressbar" aria-valuenow="{{ item.entregas_revisadas }}" aria-valuemin="0" aria-valuemax="{{ item.total_entregas }}">
+                                <span class="gt-progress-bar__fill gt-progress-bar__fill--revision" style="width: {% widthratio item.entregas_revisadas item.total_entregas 100 %}%"></span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="gt-check-row gt-tarea-card__tags">
+                            <span class="gt-badge gt-badge--neutral">Revisadas: {{ item.entregas_revisadas }}</span>
+                            <span class="gt-badge gt-badge--neutral">Pendientes: {{ item.entregas_pendientes }}</span>
+                            {% if item.actividad_resoluble %}
+                            <span class="gt-badge gt-badge--info">Preguntas: {{ item.actividad_resoluble.preguntas.count }}</span>
+                            {% endif %}
+                            {% if item.tarea.archivo_instrucciones %}
+                            <a href="{{ item.tarea.archivo_instrucciones.url }}" class="gt-badge gt-badge--link" download>📎 Adjunto</a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="gt-tarea-actions">
+                        {% if gt_vista_previa %}
+                        <span class="gt-btn gt-btn--primary gt-btn--sm gt-btn--disabled" title="Solo ejemplo">Ver entregas</span>
+                        <span class="gt-btn gt-btn--danger gt-btn--sm gt-btn--disabled" title="Solo ejemplo">Eliminar</span>
+                        {% else %}
+                        <a href="{% url 'ver_entregas_tarea' item.tarea.id_tarea %}" class="gt-btn gt-btn--primary gt-btn--sm">Ver entregas</a>
+                        <form method="post" style="margin:0" onsubmit="return confirm('¿Eliminar esta tarea? Se eliminarán sus entregas y actividad híbrida asociada.');">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="eliminar_tarea">
+                            <input type="hidden" name="tarea_id" value="{{ item.tarea.id_tarea }}">
+                            <button type="submit" class="gt-btn gt-btn--danger gt-btn--sm">Eliminar</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <section class="gt-empty">
+                <div class="gt-empty__icon" aria-hidden="true">📝</div>
+                <h3>Sin actividades reales en esta clase</h3>
+                <p>En desarrollo verás datos de prueba al recargar, o crea la primera actividad híbrida.</p>
+                <button type="button" class="gt-btn gt-btn--primary gt-btn--lg" onclick="mostrarModalCrear()">➕ Crear actividad híbrida</button>
+            </section>
+            {% endif %}
+        </div>
+
+        {% include 'profesor/_gt_intel_panel.html' %}
+    </div>
+</div>
+
+{% include 'profesor/_personal_wrap_end.html' %}
+
+<div id="modalCrearTarea" class="gt-modal-root" aria-hidden="true">
+    <div class="gt-modal-root__scrim" aria-hidden="true"></div>
+    <div class="gt-modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalCrearTitulo">
+        <div class="gt-modal-header">
+            <div class="gt-modal-header__brand">
+                <span class="gt-modal-header__icon" aria-hidden="true">✦</span>
+                <div>
+                    <p class="gt-modal-header__eyebrow">Nueva actividad</p>
+                    <h2 id="modalCrearTitulo">Actividad híbrida</h2>
+                    <p class="gt-modal-header__hint">PDF, online o mixta en una sola publicación para la clase.</p>
+                </div>
+            </div>
+            <button type="button" class="gt-modal-close" onclick="cerrarModalCrear()" aria-label="Cerrar">×</button>
+        </div>
+
+        <form id="formCrearTarea" class="gt-modal-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="crear_actividad_hibrida">
+
+            <div class="gt-modal-body">
+                <section class="gt-form-block">
+                    <h3 class="gt-form-block__title">1. Datos generales</h3>
+                <div class="gt-field-grid">
+                    <div class="gt-form-field">
+                        <label for="titulo">Título</label>
+                        <input type="text" id="titulo" name="titulo" maxlength="150" required placeholder="Ej: Prueba de fracciones">
+                    </div>
+                    <div class="gt-form-field">
+                        <label for="fecha_entrega">Fecha y hora de entrega</label>
+                        <input type="datetime-local" id="fecha_entrega" name="fecha_entrega" required>
+                    </div>
+                </div>
+
+                <div class="gt-form-field gt-mt-3">
+                    <label for="instrucciones">Instrucciones</label>
+                    <textarea id="instrucciones" name="instrucciones" rows="3" required placeholder="Describe aquí las instrucciones de la actividad..."></textarea>
+                </div>
+
+                <div class="gt-field-grid gt-mt-3">
+                    <div class="gt-form-field">
+                        <label for="modalidad">Modalidad</label>
+                        <select id="modalidad" name="modalidad" data-modalidad-select>
+                            <option value="PDF">PDF</option>
+                            <option value="ONLINE">Online</option>
+                            <option value="MIXTA" selected>Mixta</option>
+                        </select>
+                    </div>
+                    <div class="gt-form-field">
+                        <label for="archivo_instrucciones">PDF o adjunto base</label>
+                        <input type="file" id="archivo_instrucciones" name="archivo_instrucciones" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.jpg,.jpeg,.png,.mp4">
+                        <span class="gt-form-help">Opcional, pero recomendado para modalidad PDF o Mixta.</span>
+                    </div>
+                </div>
+
+                <div class="gt-check-row gt-modal-options">
+                    <label class="gt-check-pill"><input type="checkbox" name="es_publica" value="1" checked> Visible para estudiantes</label>
+                    <label class="gt-check-pill"><input type="checkbox" name="requiere_aprobacion_docente" value="1" checked> Requiere aprobación docente</label>
+                    <label class="gt-check-pill"><input type="checkbox" name="auto_correccion_activa" value="1" checked> Auto-corrección activa</label>
+                </div>
+                </section>
+
+                <section class="gt-modal-section gt-form-block" data-online-section>
+                    <h3 class="gt-form-block__title">2. Preguntas online</h3>
+                    <p class="gt-modal-section__hint">Opcional en PDF; obligatorio en modalidad Online o Mixta.</p>
+
+                    <div class="gt-question-card">
+                        <h4 class="gt-question-card__title"><span class="gt-question-card__num">1</span> Pregunta principal</h4>
+                        <div class="gt-field-grid">
+                            <div class="gt-form-field">
+                                <label for="pregunta_1_tipo">Tipo</label>
+                                <select id="pregunta_1_tipo" name="pregunta_1_tipo">
+                                    <option value="opcion_multiple">Opción múltiple</option>
+                                    <option value="respuesta_corta">Respuesta corta</option>
+                                    <option value="abierta">Abierta</option>
+                                </select>
+                            </div>
+                            <div class="gt-form-field">
+                                <label for="pregunta_1_puntaje">Puntaje máximo</label>
+                                <input type="number" id="pregunta_1_puntaje" name="pregunta_1_puntaje" min="0.1" step="0.1" value="1.0">
+                            </div>
+                        </div>
+                        <div class="gt-form-field gt-mt-3">
+                            <label for="pregunta_1_enunciado">Enunciado</label>
+                            <textarea id="pregunta_1_enunciado" name="pregunta_1_enunciado" rows="3" placeholder="Escribe la pregunta..."></textarea>
+                        </div>
+                        <div class="gt-form-field gt-mt-3">
+                            <label for="pregunta_1_respuesta_texto">Respuesta de referencia</label>
+                            <input type="text" id="pregunta_1_respuesta_texto" name="pregunta_1_respuesta_texto" placeholder="Clave corta o respuesta esperada">
+                        </div>
+                        <label class="gt-check-pill gt-mt-3"><input type="checkbox" name="pregunta_1_requiere_revision_docente" value="1"> Requiere revisión docente</label>
+
+                        <div class="gt-question-options gt-mt-3">
+                            <div class="gt-form-field">
+                                <label for="pregunta_1_opcion_1_texto">Opción 1</label>
+                                <input type="text" id="pregunta_1_opcion_1_texto" name="pregunta_1_opcion_1_texto" placeholder="Alternativa A">
+                                <label class="gt-check-pill" style="margin-top:.5rem"><input type="checkbox" name="pregunta_1_opcion_1_correcta" value="1"> Correcta</label>
+                            </div>
+                            <div class="gt-form-field">
+                                <label for="pregunta_1_opcion_2_texto">Opción 2</label>
+                                <input type="text" id="pregunta_1_opcion_2_texto" name="pregunta_1_opcion_2_texto" placeholder="Alternativa B">
+                                <label class="gt-check-pill" style="margin-top:.5rem"><input type="checkbox" name="pregunta_1_opcion_2_correcta" value="1"> Correcta</label>
+                            </div>
+                            <div class="gt-form-field">
+                                <label for="pregunta_1_opcion_3_texto">Opción 3</label>
+                                <input type="text" id="pregunta_1_opcion_3_texto" name="pregunta_1_opcion_3_texto" placeholder="Alternativa C">
+                                <label class="gt-check-pill" style="margin-top:.5rem"><input type="checkbox" name="pregunta_1_opcion_3_correcta" value="1"> Correcta</label>
+                            </div>
+                            <div class="gt-form-field">
+                                <label for="pregunta_1_opcion_4_texto">Opción 4</label>
+                                <input type="text" id="pregunta_1_opcion_4_texto" name="pregunta_1_opcion_4_texto" placeholder="Alternativa D">
+                                <label class="gt-check-pill" style="margin-top:.5rem"><input type="checkbox" name="pregunta_1_opcion_4_correcta" value="1"> Correcta</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="gt-question-card">
+                        <h4 class="gt-question-card__title"><span class="gt-question-card__num gt-question-card__num--muted">2</span> Segunda pregunta <span class="gt-question-card__optional">opcional</span></h4>
+                        <div class="gt-field-grid">
+                            <div class="gt-form-field">
+                                <label for="pregunta_2_tipo">Tipo</label>
+                                <select id="pregunta_2_tipo" name="pregunta_2_tipo">
+                                    <option value="opcion_multiple">Opción múltiple</option>
+                                    <option value="respuesta_corta">Respuesta corta</option>
+                                    <option value="abierta">Abierta</option>
+                                </select>
+                            </div>
+                            <div class="gt-form-field">
+                                <label for="pregunta_2_puntaje">Puntaje máximo</label>
+                                <input type="number" id="pregunta_2_puntaje" name="pregunta_2_puntaje" min="0.1" step="0.1" value="1.0">
+                            </div>
+                        </div>
+                        <div class="gt-form-field gt-mt-3">
+                            <label for="pregunta_2_enunciado">Enunciado</label>
+                            <textarea id="pregunta_2_enunciado" name="pregunta_2_enunciado" rows="3" placeholder="Pregunta opcional..."></textarea>
+                        </div>
+                        <div class="gt-form-field gt-mt-3">
+                            <label for="pregunta_2_respuesta_texto">Respuesta de referencia</label>
+                            <input type="text" id="pregunta_2_respuesta_texto" name="pregunta_2_respuesta_texto" placeholder="Clave corta o respuesta esperada">
+                        </div>
+                        <label class="gt-check-pill gt-mt-3"><input type="checkbox" name="pregunta_2_requiere_revision_docente" value="1"> Requiere revisión docente</label>
+
+                        <div class="gt-question-options gt-mt-3">
+                            <div class="gt-form-field">
+                                <label for="pregunta_2_opcion_1_texto">Opción 1</label>
+                                <input type="text" id="pregunta_2_opcion_1_texto" name="pregunta_2_opcion_1_texto" placeholder="Alternativa A">
+                                <label class="gt-check-pill" style="margin-top:.5rem"><input type="checkbox" name="pregunta_2_opcion_1_correcta" value="1"> Correcta</label>
+                            </div>
+                            <div class="gt-form-field">
+                                <label for="pregunta_2_opcion_2_texto">Opción 2</label>
+                                <input type="text" id="pregunta_2_opcion_2_texto" name="pregunta_2_opcion_2_texto" placeholder="Alternativa B">
+                                <label class="gt-check-pill" style="margin-top:.5rem"><input type="checkbox" name="pregunta_2_opcion_2_correcta" value="1"> Correcta</label>
+                            </div>
+                            <div class="gt-form-field">
+                                <label for="pregunta_2_opcion_3_texto">Opción 3</label>
+                                <input type="text" id="pregunta_2_opcion_3_texto" name="pregunta_2_opcion_3_texto" placeholder="Alternativa C">
+                                <label class="gt-check-pill" style="margin-top:.5rem"><input type="checkbox" name="pregunta_2_opcion_3_correcta" value="1"> Correcta</label>
+                            </div>
+                            <div class="gt-form-field">
+                                <label for="pregunta_2_opcion_4_texto">Opción 4</label>
+                                <input type="text" id="pregunta_2_opcion_4_texto" name="pregunta_2_opcion_4_texto" placeholder="Alternativa D">
+                                <label class="gt-check-pill" style="margin-top:.5rem"><input type="checkbox" name="pregunta_2_opcion_4_correcta" value="1"> Correcta</label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <div class="gt-modal-footer">
+                <p class="gt-modal-footer__hint">Los estudiantes verán la actividad según la fecha de entrega.</p>
+                <div class="gt-modal-footer__actions">
+                    <button type="button" class="gt-btn gt-btn--outline" onclick="cerrarModalCrear()">Cancelar</button>
+                    <button type="submit" class="gt-btn gt-btn--primary gt-btn--lg">Publicar actividad</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'academico/js/profesor/gestionar_tareas.js' %}?v=20260529-premium"></script>

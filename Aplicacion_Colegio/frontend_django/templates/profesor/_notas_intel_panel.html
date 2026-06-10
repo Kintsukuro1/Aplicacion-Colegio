@@ -1,0 +1,39 @@
+{% if notas_intel_alertas or notas_intel_sugerencias %}
+<section class="notas-intel" aria-label="Inteligencia académica">
+    {% if notas_intel_alertas %}
+    <div class="notas-intel__alertas">
+        {% for alerta in notas_intel_alertas %}
+        <article class="notas-intel-card notas-intel-card--{{ alerta.tipo|default:'info' }}">
+            <span class="notas-intel-card__icon" aria-hidden="true">{{ alerta.icono }}</span>
+            <div>
+                <h3 class="notas-intel-card__title">{{ alerta.titulo }}</h3>
+                <p class="notas-intel-card__text">{{ alerta.texto }}</p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if notas_intel_sugerencias %}
+    <div class="notas-intel__proximas">
+        <h3 class="notas-intel__heading">Próximas y seguimiento</h3>
+        <ul class="notas-intel-list">
+            {% for item in notas_intel_sugerencias %}
+            <li class="notas-intel-list__item">
+                <span aria-hidden="true">{{ item.icono }}</span>
+                {% if item.accion == 'evaluacion' and clase_seleccionada and item.evaluacion_id %}
+                <a href="{% url 'dashboard' %}?pagina=notas&modo=calificar&clase_id={{ clase_seleccionada.id }}&evaluacion_id={{ item.evaluacion_id }}">
+                    {{ item.texto }}
+                </a>
+                {% elif item.accion == 'crear_evaluacion' and clase_seleccionada %}
+                <button type="button" class="notas-intel-link" onclick="abrirModalCrearEvaluacion()">{{ item.texto }}</button>
+                {% else %}
+                <span>{{ item.texto }}</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</section>
+{% endif %}

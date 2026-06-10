@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: colegio_db
+          POSTGRES_USER: colegio_user
+          POSTGRES_PASSWORD: colegio_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U colegio_user -d colegio_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      SECRET_KEY: test-secret-key
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DB_ENGINE: postgresql
+      DB_NAME: colegio_db
+      DB_USER: colegio_user
+      DB_PASSWORD: colegio_password
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      REDIS_URL: redis://127.0.0.1:6379/0
+      LANGUAGE_CODE: es-cl
+      TIME_ZONE: America/Santiago
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Run mandatory critical operations regression tests
+        run: pytest tests/regression/test_critical_operations_minimum.py -q
+
+      - name: Run tests with coverage threshold
+        run: pytest --cov --cov-config=.coveragerc --cov-report=term-missing

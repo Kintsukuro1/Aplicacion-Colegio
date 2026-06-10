@@ -1,0 +1,303 @@
+﻿.stats-container {
+    padding: 2rem;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    text-decoration: none;
+}
+
+.stats-header {
+    margin-bottom: 1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #3b82f6;
+}
+
+.stat-card.leidos {
+    border-left-color: #16a34a;
+}
+
+.stat-card.confirmados {
+    border-left-color: #0ea5e9;
+}
+
+.stat-card.pendientes {
+    border-left-color: var(--color-primary);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.stat-label {
+    color: #6b7280;
+}
+
+.progress-bar-container {
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 1rem 0 1.5rem;
+}
+
+.progress-bar {
+    background: #2563eb;
+    color: white;
+    padding: 0.4rem 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.confirmaciones-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.75rem;
+}
+
+.confirmaciones-table th,
+.confirmaciones-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.status-badge.leido {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.no-leido {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.confirmado {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+@media (max-width: 768px) {
+    .stats-container {
+        padding: 1rem;
+    }
+
+    .confirmaciones-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+.stats-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    color: #4f46e5;
+    transform: translateX(-4px);
+}
+
+.stats-header {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.stats-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.stats-subtitle {
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+}
+
+.stat-value {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.stat-card.total::before {
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.stat-card.leidos::before {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.stat-card.confirmados::before {
+    background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+}
+
+.stat-card.pendientes::before {
+    background: var(--color-primary);
+}
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.table-container h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+}
+
+.confirmaciones-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.confirmaciones-table thead {
+    background: #f9fafb;
+}
+
+.confirmaciones-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.confirmaciones-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    color: #4b5563;
+}
+
+.confirmaciones-table tr:hover {
+    background: #f9fafb;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.status-badge.leido {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.no-leido {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.confirmado {
+    background: #ddd6fe;
+    color: #5b21b6;
+}
+
+.progress-bar-container {
+    background: #e5e7eb;
+    border-radius: 10px;
+    height: 30px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    transition: width 0.5s ease;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}

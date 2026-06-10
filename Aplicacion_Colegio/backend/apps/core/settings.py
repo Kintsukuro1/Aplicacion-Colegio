@@ -211,18 +211,22 @@ else:
 DATABASE_URL = config('DATABASE_URL', default=None)
 DB_ENGINE = config('DB_ENGINE', default='postgresql')
 
+# En desarrollo, cerrar conexión tras cada request evita saturar PostgreSQL
+# (runserver + recargas dejan muchas conexiones abiertas con CONN_MAX_AGE alto).
+_DB_CONN_MAX_AGE = 0 if DEBUG else 600
+
 if DATABASE_URL:
     # Producción: Usar DATABASE_URL (formato: postgresql://user:pass@host:port/dbname)
     import dj_database_url
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
+            conn_max_age=_DB_CONN_MAX_AGE,
             conn_health_checks=True,
         )
     }
 elif DB_ENGINE == 'postgresql':
-    # Producción: PostgreSQL con variables individuales
+    # PostgreSQL con variables individuales
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -231,7 +235,7 @@ elif DB_ENGINE == 'postgresql':
             'PASSWORD': config('DB_PASSWORD', default=''),
             'HOST': config('DB_HOST', default='localhost'),
             'PORT': config('DB_PORT', default='5432'),
-            'CONN_MAX_AGE': 600,
+            'CONN_MAX_AGE': _DB_CONN_MAX_AGE,
             'CONN_HEALTH_CHECKS': True,
         }
     }
@@ -537,7 +541,7 @@ CACHE_TIMEOUT_MEDIUM = 300
 CACHE_TIMEOUT_LONG = 1800
 CACHE_TIMEOUT_VERY_LONG = 3600
 
-CONN_MAX_AGE = 600  # 10 minutos
+CONN_MAX_AGE = _DB_CONN_MAX_AGE
 
 
 # Configuración de Logging

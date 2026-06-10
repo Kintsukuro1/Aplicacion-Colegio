@@ -1,0 +1,491 @@
+{% load static %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/estudiante/asistencia.css' %}?v=20260615">
+
+<div class="ma-page" id="maPage">
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Mi Asistencia" hero_subtitle="Revisa tu registro de asistencia y puntualidad" hero_aria="Mi Asistencia" metrics_aria="Resumen del período" m1_value=promedio_display m1_label="Asistencia" m1_mod="asistencia" m1_progress=asistencia_progress|default:"0" m2_value=presentes|default:"0" m2_label="Reg. presente" m2_mod="clases" m3_value=ausentes|default:"0" m3_label="Reg. ausente" m3_mod="tareas" m4_value=tardanzas|default:"0" m4_label="Reg. atraso" m4_mod="promedio" %}
+
+    <p class="ma-period" id="maPeriod">
+        Período: <strong>{{ periodo_label }}</strong> ·
+        <strong id="maPeriodDays">{{ total_dias_periodo }}</strong> día<span id="maPeriodDaysSuffix">{{ total_dias_periodo|pluralize:"s" }}</span> con registro ·
+        <strong id="maPeriodRegs">{{ total_registros_periodo }}</strong> registro<span id="maPeriodRegsSuffix">{{ total_registros_periodo|pluralize:"s" }}</span>
+        <span id="maPeriodNote"> (una por materia y día)</span>
+    </p>
+    {% if mes_auto_ajustado %}
+    <p class="ma-notice">El mes que elegiste no tenía registros. Mostramos <strong>{{ periodo_label }}</strong> (último mes con datos).</p>
+    {% endif %}
+    {% if meses_disponibles %}
+    <nav class="ma-months" aria-label="Meses con registros">
+        {% for mes in meses_disponibles %}
+        <a href="?pagina=asistencia&amp;mes={{ mes.value }}" class="ma-months__chip{% if mes.value == mes_filtro %} ma-months__chip--active{% endif %}">{{ mes.label }} ({{ mes.total }})</a>
+        {% endfor %}
+    </nav>
+    {% endif %}
+
+    <section class="ma-refine" aria-label="Filtrar asistencia">
+        <div class="ma-refine__head">
+            <h2 class="ma-refine__title">Refinar vista</h2>
+            <button type="button" class="ma-refine__clear" id="maClearFilters" hidden>Limpiar filtros</button>
+        </div>
+        <div class="ma-refine__grid">
+            <div class="ma-refine__field">
+                <label class="ma-refine__label" for="maMonthFilter">Mes</label>
+                <form method="get" class="ma-refine__form" id="maMonthForm">
+                    <input type="hidden" name="pagina" value="asistencia">
+                    <input type="month" class="ma-refine__control" id="maMonthFilter" name="mes" value="{{ mes_filtro }}">
+                </form>
+            </div>
+            <div class="ma-refine__field">
+                <label class="ma-refine__label" for="maSubjectFilter">Asignatura</label>
+                <select class="ma-refine__control" id="maSubjectFilter">
+                    <option value="">Todas las materias</option>
+                    {% for asig in asignaturas_periodo %}
+                    <option value="{{ asig.key }}">{{ asig.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ma-refine__field">
+                <label class="ma-refine__label" for="maStatusFilter">Estado</label>
+                <select class="ma-refine__control" id="maStatusFilter">
+                    <option value="">Todos</option>
+                    <option value="p">Presente</option>
+                    <option value="a">Ausente</option>
+                    <option value="t">Atraso</option>
+                    <option value="j">Justificado</option>
+                </select>
+            </div>
+        </div>
+        <p class="ma-refine__hint" id="maFilterHint" hidden></p>
+        <p class="ma-refine__note">Una fila por materia en cada día. Usa asignatura para ver solo Lenguaje, Matemática, etc.</p>
+    </section>
+
+    <div class="ma-layout">
+        <section class="alumno-section-card ma-section" aria-label="Registros de asistencia">
+            <div class="ma-section__head">
+                <h2 class="alumno-section-title">
+                    <span class="alumno-section-title__icon" aria-hidden="true">📋</span>
+                    Registros por día
+                </h2>
+            </div>
+
+            {% if dias_asistencia %}
+            <div class="ma-days" id="maDaysList">
+                {% for dia in dias_asistencia %}
+                <article class="ma-day" data-ma-day data-materias-total="{{ dia.total_materias }}">
+                    <header class="ma-day__head">
+                        <div class="ma-day__date">
+                            <span class="ma-day__num">{{ dia.dia }}</span>
+                            <span class="ma-day__mon">{{ dia.mes_corto }}</span>
+                        </div>
+                        <div class="ma-day__meta">
+                            <span class="ma-day__week">{{ dia.dia_semana }}</span>
+                            <span class="ma-day__full">{{ dia.fecha_display }}</span>
+                        </div>
+                        <span class="ma-day__count" data-ma-count>{{ dia.total_materias }} materia{{ dia.total_materias|pluralize:"s" }}</span>
+                    </header>
+                    <ul class="ma-day__list" role="list">
+                        {% for registro in dia.registros %}
+                        <li class="ma-row ma-row--{{ registro.estado|lower }}"
+                            role="listitem"
+                            data-ma-status="{{ registro.estado|lower }}"
+                            data-subject="{{ registro.asignatura_key }}">
+                            <span class="ma-row__bar" aria-hidden="true"></span>
+                            <div class="ma-row__body">
+                                <span class="ma-row__subject">{{ registro.asignatura }}</span>
+                                {% if registro.observaciones %}
+                                <span class="ma-row__obs">{{ registro.observaciones }}</span>
+                                {% endif %}
+                            </div>
+                            <span class="ma-status ma-status--{{ registro.estado|lower }}">{{ registro.estado_texto }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </article>
+                {% endfor %}
+            </div>
+            <p class="ma-filter-empty" id="maFilterEmpty" hidden>No hay registros con los filtros seleccionados en este mes.</p>
+            <div class="ma-more-wrap" id="maMoreWrap" hidden>
+                <button type="button" class="ma-btn-more" id="maMoreBtn">Ver más días</button>
+            </div>
+            {% else %}
+            <div class="ma-empty">
+                {% if sin_datos_asistencia %}
+                <p class="ma-empty__title">Sin registros en el sistema</p>
+                <p class="ma-empty__text">Aún no hay asistencia cargada. Consulta con tu profesor o administración.</p>
+                {% else %}
+                <p class="ma-empty__title">Sin registros en este mes</p>
+                <p class="ma-empty__text">
+                    {% if meses_disponibles %}
+                    Tus datos están en otro período. Usa los accesos rápidos de arriba
+                    {% if ultima_fecha_asistencia %} (último registro: {{ ultima_fecha_asistencia|date:"d/m/Y" }}){% endif %}.
+                    {% else %}
+                    Prueba otro mes en el filtro.
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <aside class="ma-aside" aria-label="Resumen del período" id="maAside">
+            <section class="alumno-section-card ma-aside-card" id="maDistCard">
+                <h3 class="ma-aside-card__title" id="maDistTitle">Distribución del mes</h3>
+                <p class="ma-aside-note" id="maDistNote">Un registro por materia y día</p>
+                {% if total_registros_periodo %}
+                <div class="ma-bar" id="maDistBar" aria-hidden="true">
+                    <span class="ma-bar__seg ma-bar__seg--p" data-ma-seg="p" style="width: {% widthratio presentes total_registros_periodo 100 %}%"></span>
+                    <span class="ma-bar__seg ma-bar__seg--a" data-ma-seg="a" style="width: {% widthratio ausentes total_registros_periodo 100 %}%"></span>
+                    <span class="ma-bar__seg ma-bar__seg--t" data-ma-seg="t" style="width: {% widthratio tardanzas total_registros_periodo 100 %}%"></span>
+                    <span class="ma-bar__seg ma-bar__seg--j" data-ma-seg="j" style="width: {% widthratio justificados total_registros_periodo 100 %}%"{% if not justificados %} hidden{% endif %}></span>
+                </div>
+                <ul class="ma-legend" id="maDistLegend">
+                    <li><span class="ma-legend__dot ma-legend__dot--p"></span> Reg. presente <strong id="maCountP">{{ presentes }}</strong></li>
+                    <li><span class="ma-legend__dot ma-legend__dot--a"></span> Reg. ausente <strong id="maCountA">{{ ausentes }}</strong></li>
+                    <li><span class="ma-legend__dot ma-legend__dot--t"></span> Reg. atraso <strong id="maCountT">{{ tardanzas }}</strong></li>
+                    <li id="maLegendJ"{% if not justificados %} hidden{% endif %}><span class="ma-legend__dot ma-legend__dot--j"></span> Reg. justificado <strong id="maCountJ">{{ justificados }}</strong></li>
+                </ul>
+                {% else %}
+                <p class="ma-aside-empty" id="maDistEmpty">Sin datos para graficar este mes.</p>
+                {% endif %}
+            </section>
+
+            <section class="alumno-section-card ma-aside-card">
+                <h3 class="ma-aside-card__title">Meta de asistencia</h3>
+                <p class="ma-goal" id="maGoal">
+                    {% if porcentaje_asistencia >= 85 %}
+                    Vas muy bien: <strong>{{ porcentaje_asistencia }}%</strong> de registros presentes en el mes.
+                    {% elif porcentaje_asistencia >= 75 %}
+                    Buen nivel: <strong>{{ porcentaje_asistencia }}%</strong>. Evita más ausencias.
+                    {% elif total_registros_periodo %}
+                    Atención: <strong>{{ porcentaje_asistencia }}%</strong>. Revisa tus faltas con apoderado.
+                    {% else %}
+                    Selecciona un mes con registros para ver tu avance.
+                    {% endif %}
+                </p>
+            </section>
+        </aside>
+    </div>
+</div>
+
+{{ presentes|default:0|json_script:"maStatPresentes" }}
+{{ ausentes|default:0|json_script:"maStatAusentes" }}
+{{ tardanzas|default:0|json_script:"maStatTardanzas" }}
+{{ justificados|default:0|json_script:"maStatJustificados" }}
+{{ total_registros_periodo|default:0|json_script:"maStatTotal" }}
+{{ total_dias_periodo|default:0|json_script:"maStatDias" }}
+{{ porcentaje_asistencia|default:0|json_script:"maStatPct" }}
+{{ asistencia_progress|default:0|json_script:"maStatProgress" }}
+
+<script>
+(function () {
+    var SUBJECT_COLORS = {
+        matem: '#3B82F6', lengua: '#EF4444', comunic: '#EF4444', cienc: '#10B981',
+        histor: '#8B5CF6', ingl: '#F59E0B', educ: '#06B6D4', arte: '#EC4899', tecno: '#6B7280'
+    };
+    function accent(key) {
+        var s = (key || '').toLowerCase(), k;
+        for (k in SUBJECT_COLORS) { if (s.indexOf(k) !== -1) return SUBJECT_COLORS[k]; }
+        return '#94A3B8';
+    }
+    document.querySelectorAll('.ma-row[data-subject]').forEach(function (row) {
+        row.style.setProperty('--ma-accent', accent(row.getAttribute('data-subject')));
+    });
+
+    var monthFilter = document.getElementById('maMonthFilter');
+    if (monthFilter) {
+        monthFilter.addEventListener('change', function () {
+            document.getElementById('maMonthForm').submit();
+        });
+    }
+
+    var DAY_BATCH = 12;
+    var dayShowLimit = DAY_BATCH;
+    var moreWrap = document.getElementById('maMoreWrap');
+    var moreBtn = document.getElementById('maMoreBtn');
+
+    function getDays() {
+        return Array.prototype.slice.call(document.querySelectorAll('[data-ma-day]'));
+    }
+
+    function getVisibleDays() {
+        return getDays().filter(function (day) { return !day.hidden; });
+    }
+
+    function applyDayPagination() {
+        var visible = getVisibleDays();
+        visible.forEach(function (day, index) {
+            day.classList.toggle('ma-day--hidden-page', index >= dayShowLimit);
+        });
+        if (!moreWrap || !moreBtn) return;
+        var remaining = Math.max(0, visible.length - dayShowLimit);
+        if (remaining > 0) {
+            moreWrap.hidden = false;
+            moreBtn.textContent = 'Ver más días (' + Math.min(DAY_BATCH, remaining) + ' más)';
+        } else {
+            moreWrap.hidden = true;
+        }
+    }
+
+    function readJsonScript(id) {
+        var el = document.getElementById(id);
+        if (!el) return 0;
+        try { return JSON.parse(el.textContent); } catch (e) { return 0; }
+    }
+
+    var MONTH_STATS = {
+        presentes: readJsonScript('maStatPresentes'),
+        ausentes: readJsonScript('maStatAusentes'),
+        tardanzas: readJsonScript('maStatTardanzas'),
+        justificados: readJsonScript('maStatJustificados'),
+        total: readJsonScript('maStatTotal'),
+        dias: readJsonScript('maStatDias'),
+        pct: readJsonScript('maStatPct'),
+        progress: readJsonScript('maStatProgress')
+    };
+
+    var heroMetrics = document.querySelectorAll('#maPage .alumno-hero-metric');
+    var heroPct = heroMetrics[0] ? heroMetrics[0].querySelector('.alumno-hero-metric__value') : null;
+    var heroProgress = heroMetrics[0] ? heroMetrics[0].querySelector('.alumno-hero-metric__progress-bar') : null;
+    var heroPresentes = heroMetrics[1] ? heroMetrics[1].querySelector('.alumno-hero-metric__value') : null;
+    var heroAusentes = heroMetrics[2] ? heroMetrics[2].querySelector('.alumno-hero-metric__value') : null;
+    var heroTardanzas = heroMetrics[3] ? heroMetrics[3].querySelector('.alumno-hero-metric__value') : null;
+    var heroMetricsWrap = document.querySelector('#maPage .alumno-hero__metrics');
+
+    var periodDays = document.getElementById('maPeriodDays');
+    var periodDaysSuffix = document.getElementById('maPeriodDaysSuffix');
+    var periodRegs = document.getElementById('maPeriodRegs');
+    var periodRegsSuffix = document.getElementById('maPeriodRegsSuffix');
+    var periodNote = document.getElementById('maPeriodNote');
+
+    var distTitle = document.getElementById('maDistTitle');
+    var distNote = document.getElementById('maDistNote');
+    var distBar = document.getElementById('maDistBar');
+    var countP = document.getElementById('maCountP');
+    var countA = document.getElementById('maCountA');
+    var countT = document.getElementById('maCountT');
+    var countJ = document.getElementById('maCountJ');
+    var legendJ = document.getElementById('maLegendJ');
+    var goalEl = document.getElementById('maGoal');
+    var goalHtmlDefault = goalEl ? goalEl.innerHTML : '';
+
+    var statusFilter = document.getElementById('maStatusFilter');
+    var subjectFilter = document.getElementById('maSubjectFilter');
+    var clearBtn = document.getElementById('maClearFilters');
+    var filterHint = document.getElementById('maFilterHint');
+    var filterEmpty = document.getElementById('maFilterEmpty');
+
+    function pluralSuffix(n, singular, plural) {
+        return n === 1 ? singular : plural;
+    }
+
+    function hasClientFilters() {
+        return (statusFilter && statusFilter.value) || (subjectFilter && subjectFilter.value);
+    }
+
+    function filterLabel() {
+        var parts = [];
+        if (subjectFilter && subjectFilter.value) {
+            var opt = subjectFilter.options[subjectFilter.selectedIndex];
+            if (opt) parts.push(opt.textContent);
+        }
+        if (statusFilter && statusFilter.value) {
+            var sopt = statusFilter.options[statusFilter.selectedIndex];
+            if (sopt) parts.push(sopt.textContent);
+        }
+        return parts.join(' · ');
+    }
+
+    function computePct(presentes, total) {
+        if (!total) return 0;
+        return Math.round((presentes / total) * 1000) / 10;
+    }
+
+    function buildGoalHtml(pct, total, filtered) {
+        var scope = filtered ? ' con los filtros aplicados' : ' en el mes';
+        if (!total) {
+            return filtered
+                ? 'No hay registros que coincidan con los filtros seleccionados.'
+                : 'Selecciona un mes con registros para ver tu avance.';
+        }
+        if (pct >= 85) {
+            return 'Vas muy bien: <strong>' + pct + '%</strong> de registros presentes' + scope + '.';
+        }
+        if (pct >= 75) {
+            return 'Buen nivel: <strong>' + pct + '%</strong>. Evita más ausencias' + (filtered ? ' en esta vista.' : '.');
+        }
+        return 'Atención: <strong>' + pct + '%</strong>. Revisa tus faltas con apoderado.';
+    }
+
+    function updateBar(counts, total) {
+        if (!distBar) return;
+        ['p', 'a', 't', 'j'].forEach(function (key) {
+            var seg = distBar.querySelector('[data-ma-seg="' + key + '"]');
+            if (!seg) return;
+            var n = counts[key] || 0;
+            if (key === 'j') {
+                seg.hidden = n === 0;
+                if (legendJ) legendJ.hidden = n === 0;
+            }
+            seg.style.width = total ? ((n / total) * 100) + '%' : '0%';
+        });
+    }
+
+    function applySummary(stats, filtered) {
+        var pct = computePct(stats.presentes, stats.total);
+        var progress = stats.total ? Math.min(100, Math.max(0, Math.round(pct))) : 0;
+
+        if (heroPct) heroPct.textContent = pct + '%';
+        if (heroProgress) heroProgress.style.width = progress + '%';
+        if (heroPresentes) heroPresentes.textContent = String(stats.presentes);
+        if (heroAusentes) heroAusentes.textContent = String(stats.ausentes);
+        if (heroTardanzas) heroTardanzas.textContent = String(stats.tardanzas);
+        if (heroMetricsWrap) {
+            heroMetricsWrap.setAttribute(
+                'aria-label',
+                filtered ? 'Resumen según filtros' : 'Resumen del período'
+            );
+        }
+
+        if (periodDays) periodDays.textContent = String(stats.dias);
+        if (periodDaysSuffix) periodDaysSuffix.textContent = pluralSuffix(stats.dias, '', 's');
+        if (periodRegs) periodRegs.textContent = String(stats.total);
+        if (periodRegsSuffix) periodRegsSuffix.textContent = pluralSuffix(stats.total, '', 's');
+        if (periodNote) {
+            periodNote.textContent = filtered
+                ? ' (filtro: ' + filterLabel() + ')'
+                : ' (una por materia y día)';
+        }
+
+        if (distTitle) distTitle.textContent = filtered ? 'Distribución filtrada' : 'Distribución del mes';
+        if (distNote) {
+            distNote.textContent = filtered
+                ? 'Según asignatura y estado seleccionados'
+                : 'Un registro por materia y día';
+        }
+        if (countP) countP.textContent = String(stats.presentes);
+        if (countA) countA.textContent = String(stats.ausentes);
+        if (countT) countT.textContent = String(stats.tardanzas);
+        if (countJ) countJ.textContent = String(stats.justificados);
+        updateBar({
+            p: stats.presentes,
+            a: stats.ausentes,
+            t: stats.tardanzas,
+            j: stats.justificados
+        }, stats.total);
+        if (goalEl) goalEl.innerHTML = filtered ? buildGoalHtml(pct, stats.total, true) : goalHtmlDefault;
+    }
+
+    function updateDayCount(day, visible) {
+        var countEl = day.querySelector('[data-ma-count]');
+        if (!countEl) return;
+        var total = parseInt(day.getAttribute('data-materias-total'), 10) || 0;
+        if (hasClientFilters()) {
+            countEl.textContent = visible + (visible === 1 ? ' registro' : ' registros');
+        } else {
+            countEl.textContent = total + (total === 1 ? ' materia' : ' materias');
+        }
+    }
+
+    function collectFilteredStats() {
+        var counts = { p: 0, a: 0, t: 0, j: 0 };
+        var total = 0;
+        var dias = 0;
+        getDays().forEach(function (day) {
+            if (day.hidden) return;
+            dias++;
+            day.querySelectorAll('.ma-row').forEach(function (row) {
+                if (row.hidden) return;
+                total++;
+                var st = row.getAttribute('data-ma-status');
+                if (st === 'p') counts.p++;
+                else if (st === 'a') counts.a++;
+                else if (st === 't') counts.t++;
+                else if (st === 'j') counts.j++;
+            });
+        });
+        return {
+            presentes: counts.p,
+            ausentes: counts.a,
+            tardanzas: counts.t,
+            justificados: counts.j,
+            total: total,
+            dias: dias
+        };
+    }
+
+    function applyFilters() {
+        var statusVal = statusFilter ? statusFilter.value : '';
+        var subjectVal = subjectFilter ? subjectFilter.value : '';
+        var visibleDays = 0;
+
+        getDays().forEach(function (day) {
+            var rows = day.querySelectorAll('.ma-row');
+            var visibleRows = 0;
+            rows.forEach(function (row) {
+                var matchStatus = !statusVal || row.getAttribute('data-ma-status') === statusVal;
+                var matchSubject = !subjectVal || row.getAttribute('data-subject') === subjectVal;
+                var show = matchStatus && matchSubject;
+                row.hidden = !show;
+                if (show) visibleRows++;
+            });
+            day.hidden = visibleRows === 0;
+            if (!day.hidden) visibleDays++;
+            updateDayCount(day, visibleRows);
+        });
+
+        var filtered = hasClientFilters();
+        if (filtered) {
+            applySummary(collectFilteredStats(), true);
+        } else {
+            applySummary({
+                presentes: MONTH_STATS.presentes,
+                ausentes: MONTH_STATS.ausentes,
+                tardanzas: MONTH_STATS.tardanzas,
+                justificados: MONTH_STATS.justificados,
+                total: MONTH_STATS.total,
+                dias: MONTH_STATS.dias
+            }, false);
+        }
+
+        if (clearBtn) clearBtn.hidden = !filtered;
+        if (filterHint) {
+            if (filtered) {
+                filterHint.hidden = false;
+                filterHint.textContent = visibleDays
+                    ? visibleDays + ' día(s) con registros que coinciden.'
+                    : 'Ningún día coincide con los filtros.';
+            } else {
+                filterHint.hidden = true;
+            }
+        }
+        if (filterEmpty) {
+            filterEmpty.hidden = visibleDays > 0 || !getDays().length;
+        }
+
+        dayShowLimit = DAY_BATCH;
+        applyDayPagination();
+    }
+
+    if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+    if (subjectFilter) subjectFilter.addEventListener('change', applyFilters);
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            if (statusFilter) statusFilter.value = '';
+            if (subjectFilter) subjectFilter.value = '';
+            applyFilters();
+        });
+    }
+    if (moreBtn) {
+        moreBtn.addEventListener('click', function () {
+            dayShowLimit += DAY_BATCH;
+            applyDayPagination();
+        });
+    }
+
+    if (getDays().length) {
+        applyDayPagination();
+    }
+})();
+</script>
+
+{% include 'estudiante/_alumno_wrap_end.html' %}

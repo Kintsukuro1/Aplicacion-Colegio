@@ -1,0 +1,143 @@
+.sr-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.sr-header {
+    margin-bottom: 0.5rem;
+}
+
+.sr-feedback {
+    margin-bottom: 0.75rem;
+}
+
+.sr-feedback--success {
+    border: 1px solid #b8d8bf;
+    background: #edf8f0;
+    color: #1e5f2f;
+}
+
+.sr-feedback--error {
+    border: 1px solid #d7acb5;
+    background: #f7ebee;
+    color: #8f1d2c;
+}
+
+.sr-card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+}
+
+.sr-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.sr-grid label {
+    display: grid;
+    gap: 0.35rem;
+    color: #253246;
+    font-weight: 600;
+    font-size: 0.94rem;
+}
+
+.sr-grid input,
+.sr-grid select,
+.sr-grid textarea {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid #cfd6df;
+    border-radius: 10px;
+    padding: 0.45rem 0.65rem;
+    background: #fff;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.sr-grid input:focus,
+.sr-grid select:focus,
+.sr-grid textarea:focus {
+    outline: none;
+    border-color: #1f8f58;
+    box-shadow: 0 0 0 3px rgba(31, 143, 88, 0.15);
+}
+
+.sr-grid--filters {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.sr-grid--create {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.sr-field-full {
+    grid-column: 1 / -1;
+}
+
+.sr-helper {
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border: 1px dashed #cfd6df;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 500;
+}
+
+.sr-actions-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.sr-actions-row--align-end {
+    align-items: end;
+}
+
+.sr-card--table {
+    overflow: auto;
+}
+
+.sr-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sr-table th,
+.sr-table td {
+    text-align: left;
+    padding: 0.65rem;
+    border-bottom: 1px solid #ececec;
+    vertical-align: top;
+}
+
+.sr-table-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.sr-action-btn {
+    min-width: 96px;
+}
+
+@media (max-width: 768px) {
+    .sr-card {
+        padding: 0.85rem;
+    }
+
+    .sr-grid--filters {
+        grid-template-columns: 1fr;
+    }
+
+    .sr-grid--create {
+        grid-template-columns: 1fr;
+    }
+
+    .sr-table th,
+    .sr-table td {
+        padding: 0.55rem;
+    }
+}

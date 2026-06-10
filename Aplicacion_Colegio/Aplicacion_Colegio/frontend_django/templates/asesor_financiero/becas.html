@@ -1,0 +1,508 @@
+{% load static %}
+
+<!-- BECAS - ASESOR FINANCIERO -->
+
+<link rel="stylesheet" href="{% static 'css/asesor_financiero/becas.css' %}">
+
+<div class="asesor-financiero-page">
+    <div class="page-header">
+        <div>
+            <h1>🎓 Gestión de Becas y Descuentos</h1>
+            <p class="text-muted">Aprobar solicitudes y administrar beneficios</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalNuevaBeca()">
+            <i class="fas fa-plus"></i> Nueva Beca
+        </button>
+    </div>
+
+    <!-- Estadísticas de becas -->
+    <div class="becas-stats-grid">
+        <div class="stat-card pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-content">
+                <h4>Solicitudes Pendientes</h4>
+                <p class="stat-value" id="stat-pendientes">0</p>
+            </div>
+        </div>
+        <div class="stat-card active">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+                <h4>Becas Activas</h4>
+                <p class="stat-value" id="stat-activas">0</p>
+            </div>
+        </div>
+        <div class="stat-card rejected">
+            <div class="stat-icon">❌</div>
+            <div class="stat-content">
+                <h4>Rechazadas</h4>
+                <p class="stat-value" id="stat-rechazadas">0</p>
+            </div>
+        </div>
+        <div class="stat-card amount">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+                <h4>Monto Total Becas</h4>
+                <p class="stat-value" id="stat-monto">$0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs de solicitudes -->
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab active" data-estado="pendientes">Pendientes de Revisión</button>
+            <button class="tab" data-estado="activas">Activas</button>
+            <button class="tab" data-estado="historial">Historial</button>
+        </div>
+        <div class="tab-content" id="becas-content">
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+                <p>Cargando becas...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Beca -->
+<div id="modalNuevaBeca" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📋 Nueva Beca</h2>
+            <span class="close" onclick="cerrarModalNuevaBeca()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formNuevaBeca">
+                <!-- Buscar Estudiante -->
+                <div class="form-group">
+                    <label>Buscar Estudiante *</label>
+                    <input type="text" id="buscarEstudiante" class="form-control" 
+                           placeholder="Buscar por nombre o RUT..." 
+                           autocomplete="off">
+                    <div id="resultadosBusqueda" class="search-results"></div>
+                    <input type="hidden" id="matricula_id" name="matricula_id">
+                    <div id="estudianteSeleccionado" class="estudiante-selected"></div>
+                </div>
+
+                <!-- Tipo de Beca -->
+                <div class="form-group">
+                    <label>Tipo de Beca *</label>
+                    <select id="tipo_beca" name="tipo_beca" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                        <option value="SOCIOECONOMICA">Socioeconómica</option>
+                        <option value="RENDIMIENTO">Rendimiento Académico</option>
+                        <option value="DEPORTIVA">Deportiva</option>
+                        <option value="ARTISTICA">Artística</option>
+                        <option value="HERMANOS">Descuento por Hermanos</option>
+                        <option value="OTRO">Otro</option>
+                    </select>
+                </div>
+
+                <!-- Porcentaje -->
+                <div class="form-group">
+                    <label>Porcentaje de Descuento * (0-100)</label>
+                    <input type="number" id="porcentaje_descuento" name="porcentaje_descuento" 
+                           class="form-control" min="0" max="100" step="0.01" required>
+                </div>
+
+                <!-- Fechas -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fecha Inicio *</label>
+                        <input type="date" id="fecha_inicio" name="fecha_inicio" 
+                               class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha Fin *</label>
+                        <input type="date" id="fecha_fin" name="fecha_fin" 
+                               class="form-control" required>
+                    </div>
+                </div>
+
+                <!-- Aplicabilidad -->
+                <div class="form-group">
+                    <label>Aplica a:</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="aplica_matricula" checked> Matrícula
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="aplica_mensualidad" checked> Mensualidad
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="aplica_otros_aranceles"> Otros aranceles
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Motivo -->
+                <div class="form-group">
+                    <label>Motivo de la Solicitud *</label>
+                    <textarea id="motivo_solicitud" name="motivo_solicitud" 
+                              class="form-control" rows="4" required 
+                              placeholder="Describa el motivo de la beca..."></textarea>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="observaciones" name="observaciones" 
+                              class="form-control" rows="2" 
+                              placeholder="Observaciones adicionales..."></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalNuevaBeca()">
+                Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" onclick="guardarBeca()">
+                <i class="fas fa-save"></i> Guardar Beca
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+// Variables globales
+let estadoActual = 'pendientes';
+
+// Cargar estadísticas al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    cargarEstadisticas();
+    cargarBecas(estadoActual);
+    
+    // Event listeners para los tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remover clase active de todos los tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            // Agregar clase active al tab clickeado
+            this.classList.add('active');
+            // Cargar becas del estado seleccionado
+            estadoActual = this.dataset.estado;
+            cargarBecas(estadoActual);
+        });
+    });
+    
+    // Event listener para búsqueda de estudiantes
+    const inputBusqueda = document.getElementById('buscarEstudiante');
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('input', function() {
+            clearTimeout(busquedaTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 3) {
+                document.getElementById('resultadosBusqueda').style.display = 'none';
+                return;
+            }
+            
+            busquedaTimeout = setTimeout(() => {
+                buscarEstudiantes(query);
+            }, 300);
+        });
+    }
+    
+    // Autocompletar porcentaje según tipo de beca
+    const selectTipo = document.getElementById('tipo_beca');
+    if (selectTipo) {
+        selectTipo.addEventListener('change', function() {
+            const porcentajeInput = document.getElementById('porcentaje_descuento');
+            // Set default based on type
+            switch(this.value) {
+                case 'SOCIOECONOMICA':
+                case 'RENDIMIENTO':
+                case 'DEPORTIVA':
+                case 'ARTISTICA':
+                    porcentajeInput.value = '50';
+                    break;
+                case 'HERMANOS':
+                    porcentajeInput.value = '20';
+                    break;
+                default:
+                    porcentajeInput.value = '';
+            }
+        });
+    }
+});
+
+// ============ FUNCIONES PRINCIPALES ============
+
+// Cargar estadísticas
+function cargarEstadisticas() {
+    fetch('/api/asesor-financiero/becas/estadisticas/', {
+        credentials: 'same-origin'
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('stat-pendientes').textContent = data.pendientes;
+                document.getElementById('stat-activas').textContent = data.activas;
+                document.getElementById('stat-rechazadas').textContent = data.rechazadas;
+                document.getElementById('stat-monto').textContent = 
+                    '$' + new Intl.NumberFormat('es-CL').format(data.monto_total);
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar estadísticas:', error);
+        });
+}
+
+// Cargar becas según estado
+function cargarBecas(estado) {
+    const content = document.getElementById('becas-content');
+    content.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin fa-3x text-muted mb-3"></i><p>Cargando becas...</p></div>';
+    
+    fetch('/api/asesor-financiero/becas/?estado=' + estado, {
+        credentials: 'same-origin'
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.becas.length === 0) {
+                    mostrarEstadoVacio(estado);
+                } else {
+                    mostrarTablaBecas(data.becas, estado);
+                }
+            } else {
+                content.innerHTML = '<div class="empty-state"><p class="text-danger">Error: ' + data.error + '</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar becas:', error);
+            content.innerHTML = '<div class="empty-state"><p class="text-danger">Error al cargar datos.</p></div>';
+        });
+}
+
+// Mostrar estado vacío
+function mostrarEstadoVacio(estado) {
+    const content = document.getElementById('becas-content');
+    let mensaje = '';
+    
+    if (estado === 'pendientes') {
+        mensaje = 'No hay solicitudes pendientes. Las solicitudes de becas aparecerán aquí para su revisión';
+    } else if (estado === 'activas') {
+        mensaje = 'No hay becas activas. Las becas aprobadas y vigentes aparecerán aquí';
+    } else {
+        mensaje = 'No hay registros en el historial. Las becas rechazadas, vencidas o canceladas aparecerán aquí';
+    }
+    
+    const iconoHTML = '<i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>';
+    const mensajeHTML = '<h3>' + mensaje.split('.')[0] + '</h3><p class="text-muted">' + mensaje.split('.')[1] + '</p>';
+    content.innerHTML = '<div class="empty-state">' + iconoHTML + mensajeHTML + '</div>';
+}
+
+// Mostrar tabla de becas
+function mostrarTablaBecas(becas, estado) {
+    const content = document.getElementById('becas-content');
+    
+    let html = '<table class="becas-table"><thead><tr>';
+    html += '<th>Estudiante</th>';
+    html += '<th>Tipo de Beca</th>';
+    html += '<th>Descuento</th>';
+    html += '<th>Estado</th>';
+    html += '<th>Vigencia</th>';
+    html += '<th>Solicitada por</th>';
+    
+    if (estado === 'pendientes') {
+        html += '<th>Acciones</th>';
+    }
+    
+    html += '</tr></thead><tbody>';
+    
+    becas.forEach(function(beca) {
+        html += '<tr>';
+        html += '<td><strong>' + beca.estudiante_nombre + '</strong><br><small>' + beca.estudiante_rut + '</small></td>';
+        html += '<td>' + beca.tipo_beca + '</td>';
+        html += '<td><strong>' + beca.porcentaje + '%</strong></td>';
+        html += '<td>' + obtenerBadgeEstado(beca.estado) + '</td>';
+        html += '<td>' + beca.fecha_inicio + ' - ' + beca.fecha_fin + '</td>';
+        html += '<td>' + beca.solicitada_por + '<br><small>' + beca.fecha_solicitud + '</small></td>';
+        
+        if (estado === 'pendientes') {
+            html += '<td>';
+            html += '<button class="btn-sm btn-success" onclick="aprobarBeca(' + beca.id + ')" title="Aprobar">';
+            html += '<i class="fas fa-check"></i>';
+            html += '</button>';
+            html += '<button class="btn-sm btn-danger" onclick="rechazarBeca(' + beca.id + ')" title="Rechazar">';
+            html += '<i class="fas fa-times"></i>';
+            html += '</button>';
+            html += '<button class="btn-sm btn-info" onclick="verDetalle(' + beca.id + ')" title="Ver Detalle">';
+            html += '<i class="fas fa-eye"></i>';
+            html += '</button>';
+            html += '</td>';
+        }
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    content.innerHTML = html;
+}
+
+// Obtener badge según estado
+function obtenerBadgeEstado(estado) {
+    const badges = {
+        'Solicitada': '<span class="badge badge-warning">Solicitada</span>',
+        'En Revisión': '<span class="badge badge-info">En Revisión</span>',
+        'Aprobada': '<span class="badge badge-success">Aprobada</span>',
+        'Vigente': '<span class="badge badge-success">Vigente</span>',
+        'Rechazada': '<span class="badge badge-danger">Rechazada</span>',
+        'Vencida': '<span class="badge badge-secondary">Vencida</span>',
+        'Cancelada': '<span class="badge badge-secondary">Cancelada</span>'
+    };
+    return badges[estado] || estado;
+}
+
+// Funciones para acciones (placeholders)
+function aprobarBeca(id) {
+    if (confirm('¿Está seguro de aprobar esta beca?')) {
+        alert('Funcionalidad de aprobación en desarrollo');
+        // Aquí iría la llamada AJAX para aprobar
+    }
+}
+
+function rechazarBeca(id) {
+    if (confirm('¿Está seguro de rechazar esta beca?')) {
+        alert('Funcionalidad de rechazo en desarrollo');
+        // Aquí iría la llamada AJAX para rechazar
+    }
+}
+
+function verDetalle(id) {
+    alert('Funcionalidad de detalle en desarrollo');
+    // Aquí iría la llamada para mostrar modal con detalles
+}
+
+// ============ FUNCIONALIDAD NUEVA BECA ============
+
+// Abrir modal
+function abrirModalNuevaBeca() {
+    document.getElementById('modalNuevaBeca').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Establecer fecha por defecto
+    const hoy = new Date().toISOString().split('T')[0];
+    const finAnio = new Date().getFullYear() + '-12-31';
+    document.getElementById('fecha_inicio').value = hoy;
+    document.getElementById('fecha_fin').value = finAnio;
+}
+
+// Cerrar modal
+function cerrarModalNuevaBeca() {
+    document.getElementById('modalNuevaBeca').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('formNuevaBeca').reset();
+    document.getElementById('matricula_id').value = '';
+    document.getElementById('estudianteSeleccionado').classList.remove('show');
+    document.getElementById('resultadosBusqueda').style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('modalNuevaBeca');
+    if (event.target == modal) {
+        cerrarModalNuevaBeca();
+    }
+}
+
+// Buscar estudiantes
+let busquedaTimeout;
+
+function buscarEstudiantes(query) {
+    fetch('/api/asesor-financiero/becas/buscar-estudiantes/?q=' + encodeURIComponent(query))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.estudiantes.length > 0) {
+                mostrarResultadosBusqueda(data.estudiantes);
+            } else {
+                document.getElementById('resultadosBusqueda').innerHTML = 
+                    '<div class="search-result-item" style="color: #718096;">No se encontraron estudiantes</div>';
+                document.getElementById('resultadosBusqueda').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error al buscar estudiantes:', error);
+        });
+}
+
+function mostrarResultadosBusqueda(estudiantes) {
+    const resultadosDiv = document.getElementById('resultadosBusqueda');
+    resultadosDiv.innerHTML = '';
+    
+    estudiantes.forEach(function(est) {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.innerHTML = '<strong>' + est.nombre + '</strong><br>' +
+                        '<small>RUT: ' + est.rut + ' | Curso: ' + est.curso + '</small>';
+        item.onclick = function() { seleccionarEstudiante(est); };
+        resultadosDiv.appendChild(item);
+    });
+    
+    resultadosDiv.style.display = 'block';
+}
+
+function seleccionarEstudiante(estudiante) {
+    document.getElementById('matricula_id').value = estudiante.matricula_id;
+    document.getElementById('buscarEstudiante').value = '';
+    document.getElementById('resultadosBusqueda').style.display = 'none';
+    
+    const seleccionado = document.getElementById('estudianteSeleccionado');
+    seleccionado.innerHTML = '<strong>✓ Estudiante seleccionado:</strong><br>' +
+                            estudiante.nombre + '<br>' +
+                            '<small>RUT: ' + estudiante.rut + ' | Curso: ' + estudiante.curso + '</small>';
+    seleccionado.classList.add('show');
+}
+
+function guardarBeca() {
+    const form = document.getElementById('formNuevaBeca');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    
+    fetch('/api/asesor-financiero/becas/crear/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data),
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Beca creada exitosamente');
+            cerrarModalNuevaBeca();
+            cargarEstadisticas();
+            cargarBecas(estadoActual);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error al crear beca:', error);
+        alert('Error al crear la beca. Por favor, intente nuevamente.');
+    });
+}
+
+// Función auxiliar para obtener CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}</script>

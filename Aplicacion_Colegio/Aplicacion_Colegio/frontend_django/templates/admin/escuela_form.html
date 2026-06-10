@@ -1,0 +1,276 @@
+{% load static %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-{% if modo == 'agregar' %}plus{% else %}edit{% endif %}"></i>
+                        {% if modo == 'agregar' %}Agregar Nueva Escuela{% else %}Editar Escuela{% endif %}
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'admin_general_escuelas' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="escuelaForm">
+                        {% csrf_token %}
+
+                        <!-- Información Básica -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-info-circle"></i> Información Básica</h5>
+                                <hr>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="rbd">RBD <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="rbd" name="rbd"
+                                           value="{{ escuela.rbd|default:'' }}"
+                                           {% if modo == 'editar' %}readonly{% endif %} required>
+                                    <small class="form-text text-muted">
+                                        {% if modo == 'editar' %}No se puede modificar el RBD{% else %}Identificador único del establecimiento{% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="rut_establecimiento">RUT Establecimiento <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="rut_establecimiento" name="rut_establecimiento"
+                                           value="{{ escuela.rut_establecimiento|default:'' }}" required>
+                                    <small class="form-text text-muted">Formato: 12345678-9</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="nombre">Nombre del Establecimiento <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre"
+                                           value="{{ escuela.nombre|default:'' }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ubicación -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-map-marker-alt"></i> Ubicación</h5>
+                                <hr>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="region">Región <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="region" name="region" required>
+                                        <option value="">Seleccione una región</option>
+                                        {% for region in regiones %}
+                                        <option value="{{ region.id_region }}"
+                                                {% if escuela.comuna.region.id_region == region.id_region %}selected{% endif %}>
+                                            {{ region.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="comuna">Comuna <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="comuna" name="comuna" required
+                                            {% if not escuela %}disabled{% endif %}>
+                                        <option value="">Primero seleccione una región</option>
+                                        {% if escuela %}
+                                        <option value="{{ escuela.comuna.id_comuna }}" selected>
+                                            {{ escuela.comuna.nombre }}
+                                        </option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="direccion">Dirección</label>
+                                    <input type="text" class="form-control" id="direccion" name="direccion"
+                                           value="{{ escuela.direccion|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contacto -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-phone"></i> Información de Contacto</h5>
+                                <hr>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="telefono">Teléfono</label>
+                                    <input type="tel" class="form-control" id="telefono" name="telefono"
+                                           value="{{ escuela.telefono|default:'' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="correo">Correo Electrónico</label>
+                                    <input type="email" class="form-control" id="correo" name="correo"
+                                           value="{{ escuela.correo|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="web">Sitio Web</label>
+                                    <input type="url" class="form-control" id="web" name="web"
+                                           value="{{ escuela.web|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Características -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-cogs"></i> Características</h5>
+                                <hr>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="tipo_establecimiento">Tipo de Establecimiento <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="tipo_establecimiento" name="tipo_establecimiento" required>
+                                        <option value="">Seleccione un tipo</option>
+                                        {% for tipo in tipos_establecimiento %}
+                                        <option value="{{ tipo.id_tipo_establecimiento }}"
+                                                {% if escuela.tipo_establecimiento.id_tipo_establecimiento == tipo.id_tipo_establecimiento %}selected{% endif %}>
+                                            {{ tipo.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="dependencia">Dependencia Administrativa <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="dependencia" name="dependencia" required>
+                                        <option value="">Seleccione una dependencia</option>
+                                        {% for dep in dependencias %}
+                                        <option value="{{ dep.id_dependencia }}"
+                                                {% if escuela.dependencia.id_dependencia == dep.id_dependencia %}selected{% endif %}>
+                                            {{ dep.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="capacidad_maxima">Capacidad Máxima</label>
+                                    <input type="number" class="form-control" id="capacidad_maxima" name="capacidad_maxima"
+                                           value="{{ escuela.capacidad_maxima|default:'' }}" min="1">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="fecha_fundacion">Fecha de Fundación</label>
+                                    <input type="date" class="form-control" id="fecha_fundacion" name="fecha_fundacion"
+                                           value="{{ escuela.fecha_fundacion|date:'Y-m-d'|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'admin_general:escuelas' %}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i>
+                                        {% if modo == 'agregar' %}Crear Escuela{% else %}Guardar Cambios{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cargar comunas cuando se selecciona una región
+document.getElementById('region').addEventListener('change', function() {
+    const regionId = this.value;
+    const comunaSelect = document.getElementById('comuna');
+
+    if (regionId) {
+        // Mostrar loading
+        comunaSelect.innerHTML = '<option value="">Cargando...</option>';
+        comunaSelect.disabled = true;
+
+        // Cargar comunas via AJAX
+        fetch(`/admin-general/comunas-por-region/${regionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                comunaSelect.innerHTML = '<option value="">Seleccione una comuna</option>';
+                data.comunas.forEach(comuna => {
+                    const option = document.createElement('option');
+                    option.value = comuna.id;
+                    option.textContent = comuna.nombre;
+                    comunaSelect.appendChild(option);
+                });
+                comunaSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error cargando comunas:', error);
+                comunaSelect.innerHTML = '<option value="">Error al cargar comunas</option>';
+            });
+    } else {
+        comunaSelect.innerHTML = '<option value="">Primero seleccione una región</option>';
+        comunaSelect.disabled = true;
+    }
+});
+
+// Validación del formulario
+document.getElementById('escuelaForm').addEventListener('submit', function(e) {
+    const rbd = document.getElementById('rbd').value;
+    const rut = document.getElementById('rut_establecimiento').value;
+    const nombre = document.getElementById('nombre').value;
+
+    if (!rbd || !rut || !nombre) {
+        e.preventDefault();
+        alert('Por favor complete todos los campos obligatorios.');
+        return false;
+    }
+
+    // Validación básica de RUT
+    if (!/^\d{7,8}-[\dkK]$/.test(rut)) {
+        e.preventDefault();
+        alert('El RUT debe tener el formato correcto (ej: 12345678-9).');
+        return false;
+    }
+});
+</script>

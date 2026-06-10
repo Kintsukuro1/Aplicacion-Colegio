@@ -1,26 +1,29 @@
 {% load static %}
 {% load custom_filters %}
 {% include 'profesor/_personal_wrap_start.html' %}
-<link rel="stylesheet" href="{% static 'css/profesor/reportes.css' %}">
+<link rel="stylesheet" href="{% static 'css/profesor/reportes.css' %}?v=20260528-premium">
 
-<div class="content-wrapper">
-    <div class="page-header">
-        <h1>📊 Reportes y Estadísticas</h1>
-        <p class="subtitle">Análisis de asistencia y rendimiento académico</p>
-    </div>
-
-    <div class="reportes-container">
+<div class="reportes-container rep-page">
         
-        {# Filtros #}
-        <div class="filtros-section">
-            <form method="GET" class="filtros-form" id="formFiltros">
+        <section class="rep-toolbar filtros-section filtros-section--prominent" aria-label="Filtros de reporte">
+            <div class="rep-toolbar__head">
+                <h2 class="rep-toolbar__title">Generar reporte</h2>
+                <p class="rep-toolbar__hint">
+                    {% if clase_seleccionada %}
+                    {{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}
+                    {% else %}
+                    Elige clase, período y tipo; luego pulsa Generar reporte.
+                    {% endif %}
+                </p>
+            </div>
+            <form method="GET" action="{% url 'dashboard' %}" class="filtros-form" id="formFiltros">
                 <input type="hidden" name="pagina" value="reportes">
                 <div class="filtro-row">
                     <div class="filtro-item">
-                        <label for="tipo">Tipo de Reporte:</label>
-                        <select name="tipo" id="tipo" onchange="this.form.submit()">
+                        <label for="tipo">Tipo de reporte</label>
+                        <select name="tipo" id="tipo">
                             <option value="asistencia" {% if tipo_reporte == 'asistencia' %}selected{% endif %}>📅 Asistencia</option>
-                            <option value="academico" {% if tipo_reporte == 'academico' %}selected{% endif %}>📝 Rendimiento Académico</option>
+                            <option value="academico" {% if tipo_reporte == 'academico' %}selected{% endif %}>📝 Rendimiento académico</option>
                         </select>
                     </div>
                     
@@ -38,38 +41,79 @@
                     {% endif %}
                     
                     <div class="filtro-item">
-                        <label for="clase_id">Clase:</label>
-                        <select name="clase_id" id="clase_id" onchange="this.form.submit()">
-                            <option value="">-- Seleccione una clase --</option>
-                            {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
-                            {% for grupo in clases_por_curso %}
-                                <optgroup label="{{ grupo.grouper }}">
-                                    {% for clase in grupo.list %}
-                                        <option value="{{ clase.id }}" {% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %}selected{% endif %}>
-                                            {{ clase.asignatura.nombre }}
-                                        </option>
-                                    {% endfor %}
-                                </optgroup>
-                            {% endfor %}
+                        <label for="clase_id">Clase</label>
+                        <select name="clase_id" id="clase_id" required>
+                            <option value="">— Seleccione una clase —</option>
+                            {% include 'profesor/_clase_select_options.html' with filtro_clase_id=filtro_clase_id %}
                         </select>
                     </div>
                 </div>
                 
                 <div class="filtro-row">
                     <div class="filtro-item">
-                        <label for="fecha_inicio">Desde:</label>
-                        <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ fecha_inicio }}" onchange="this.form.submit()">
+                        <label for="fecha_inicio">Desde</label>
+                        <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ fecha_inicio }}">
                     </div>
-                    
                     <div class="filtro-item">
-                        <label for="fecha_fin">Hasta:</label>
-                        <input type="date" name="fecha_fin" id="fecha_fin" value="{{ fecha_fin }}" onchange="this.form.submit()">
+                        <label for="fecha_fin">Hasta</label>
+                        <input type="date" name="fecha_fin" id="fecha_fin" value="{{ fecha_fin }}">
                     </div>
                 </div>
+                <div class="filtro-actions rep-filtro-actions">
+                    <button type="submit" class="btn-generar-reporte">Generar reporte</button>
+                </div>
             </form>
-        </div>
+        </section>
 
-        {% if clase_seleccionada and reporte_data %}
+        {% if not clase_seleccionada %}
+        <section class="rep-guide" aria-label="Guía de reportes">
+            <h3>Reportes por clase</h3>
+            <p>Selecciona una clase y el rango de fechas. Si aún no hay datos, verás una vista de ejemplo del reporte final.</p>
+            <div class="reporte-guia">
+                <div class="guia-grid">
+                    <div class="guia-item">
+                        <span class="guia-icon">📅</span>
+                        <div>
+                            <strong>Asistencia</strong>
+                            <p>Distribución presente / ausente / tardanza y detalle por estudiante. Exportable a PDF.</p>
+                        </div>
+                    </div>
+                    <div class="guia-item">
+                        <span class="guia-icon">📊</span>
+                        <div>
+                            <strong>Rendimiento académico</strong>
+                            <p>Ranking, promedios y distribución de notas. Exportable a Excel/CSV.</p>
+                        </div>
+                    </div>
+                    <div class="guia-item guia-tip">
+                        <span class="guia-icon">💡</span>
+                        <div>
+                            <strong>Consejo</strong>
+                            <p>Revisa asistencia cada semana; el reporte académico conviene tras cada evaluación sumativa.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% if clases %}
+        <section class="rep-quickpick" aria-label="Acceso rápido">
+            <p class="rep-quickpick__label">Acceso rápido</p>
+            {% for clase in clases|slice:":8" %}
+            <a class="rep-quickpick__chip" href="{% url 'dashboard' %}?pagina=reportes&amp;tipo={{ tipo_reporte|default:'asistencia' }}&amp;clase_id={{ clase.id }}">{% if clase.curso.nombre == clase.asignatura.nombre %}{{ clase.curso.nombre }}{% else %}{{ clase.curso.nombre }} · {{ clase.asignatura.nombre|truncatechars:16 }}{% endif %}</a>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {% elif clase_seleccionada and not reporte_data %}
+        {% include 'profesor/_reportes_demo.html' %}
+
+        {% elif clase_seleccionada and tipo_reporte == 'asistencia' and reporte_data.estadisticas_generales.total_registros == 0 %}
+        {% include 'profesor/_reportes_demo.html' %}
+
+        {% elif clase_seleccionada and tipo_reporte == 'academico' and reporte_data.total_evaluaciones == 0 %}
+        {% include 'profesor/_reportes_demo.html' %}
+
+        {% elif clase_seleccionada and reporte_data %}
         
         {% if tipo_reporte == 'asistencia' %}
         {# REPORTE DE ASISTENCIA #}
@@ -108,6 +152,18 @@
                 </div>
             </div>
         </div>
+
+        {% if reporte_data.estadisticas_generales.porcentaje_asistencia < 85 %}
+        <section class="rep-intel-demo rep-intel-demo--live" aria-label="Alerta de asistencia">
+            <h3 class="rep-intel-demo__title">Información inteligente</h3>
+            <ul class="rep-intel-demo__list">
+                <li><span aria-hidden="true">⚠️</span> La asistencia del período es {{ reporte_data.estadisticas_generales.porcentaje_asistencia }}% — revisa estudiantes en estado crítico o advertencia en la tabla.</li>
+                {% if reporte_data.estadisticas_generales.porcentaje_ausencias > 10 %}
+                <li><span aria-hidden="true">📉</span> Las ausencias representan {{ reporte_data.estadisticas_generales.porcentaje_ausencias }}% del total registrado.</li>
+                {% endif %}
+            </ul>
+        </section>
+        {% endif %}
 
         {# Gráfico de Distribución #}
         <div class="chart-section">
@@ -150,7 +206,7 @@
                         {% for item in reporte_data.asistencia_por_estudiante %}
                         <tr>
                             <td class="col-estudiante">{{ item.estudiante.get_full_name }}</td>
-                            <td>{{ item.total }}</td>
+                            <td>{{ item.total_clases|default:item.total|default:0 }}</td>
                             <td class="col-presente">{{ item.presentes }}</td>
                             <td class="col-ausente">{{ item.ausentes }}</td>
                             <td class="col-tardanza">{{ item.tardanzas }}</td>
@@ -160,9 +216,19 @@
                                 </span>
                             </td>
                             <td>
+                                {% if item.estado %}
                                 <span class="badge badge-{{ item.estado|lower }}">{{ item.estado }}</span>
+                                {% elif item.porcentaje >= 85 %}
+                                <span class="badge badge-normal">Normal</span>
+                                {% elif item.porcentaje >= 70 %}
+                                <span class="badge badge-advertencia">Advertencia</span>
+                                {% else %}
+                                <span class="badge badge-critico">Crítico</span>
+                                {% endif %}
                             </td>
                         </tr>
+                        {% empty %}
+                        <tr><td colspan="7">Sin estudiantes matriculados en esta clase.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -226,6 +292,18 @@
                 </div>
             </div>
         </div>
+
+        {% if reporte_data.promedio_curso < 4.0 or reporte_data.porcentaje_aprobacion < 75 %}
+        <section class="rep-intel-demo rep-intel-demo--live" aria-label="Alerta académica">
+            <h3 class="rep-intel-demo__title">Información inteligente</h3>
+            <ul class="rep-intel-demo__list">
+                <li><span aria-hidden="true">📊</span> Promedio del curso: <strong>{{ reporte_data.promedio_curso }}</strong> · Aprobación: {{ reporte_data.porcentaje_aprobacion }}%.</li>
+                {% if reporte_data.reprobados %}
+                <li><span aria-hidden="true">⚠️</span> {{ reporte_data.reprobados }} estudiante{{ reporte_data.reprobados|pluralize }} en seguimiento (&lt; 4.0).</li>
+                {% endif %}
+            </ul>
+        </section>
+        {% endif %}
 
         {# Distribución de Notas #}
         <div class="chart-section">
@@ -342,123 +420,143 @@
 
         {% endif %}
 
-        {# Botones de Exportación #}
-        <div class="acciones-reporte">
+        <div class="acciones-reporte" id="repAccionesExport">
             <button type="button" class="btn-exportar" onclick="window.print()">
-                <span class="icon">🖨️</span>
-                Imprimir
+                <span class="icon">🖨️</span> Imprimir
             </button>
             <button type="button" class="btn-exportar btn-pdf" onclick="exportarPDF()">
-                <span class="icon">📄</span>
-                Exportar PDF
+                <span class="icon">📄</span> Exportar PDF
             </button>
             <button type="button" class="btn-exportar btn-excel" onclick="exportarExcel()">
-                <span class="icon">📊</span>
-                Exportar Excel
+                <span class="icon">📊</span> Exportar Excel
             </button>
-        </div>
-        
-        <script>
-        function exportarPDF() {
-            const params = new URLSearchParams(window.location.search);
-            const tipo = params.get('tipo') || 'asistencia';
-            const claseId = params.get('clase_id') || '';
-            const fechaInicio = params.get('fecha_inicio') || '';
-            const fechaFin = params.get('fecha_fin') || '';
-            
-            if (!claseId) {
-                alert('Debe seleccionar una clase primero');
-                return;
-            }
-            
-            const url = `/reportes/exportar-pdf/?tipo=${tipo}&clase_id=${claseId}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            window.open(url, '_blank');
-        }
-        
-        function exportarExcel() {
-            const params = new URLSearchParams(window.location.search);
-            const tipo = params.get('tipo') || 'asistencia';
-            const claseId = params.get('clase_id') || '';
-            const fechaInicio = params.get('fecha_inicio') || '';
-            const fechaFin = params.get('fecha_fin') || '';
-            
-            if (!claseId) {
-                alert('Debe seleccionar una clase primero');
-                return;
-            }
-            
-            const url = `/reportes/exportar-excel/?tipo=${tipo}&clase_id=${claseId}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-            window.location.href = url;
-        }
-        </script>
-
-        {% else %}
-        <div class="mensaje-inicial">
-            <span class="icon">📊</span>
-            <p>Selecciona una clase y configura los filtros para generar el reporte.</p>
         </div>
         {% endif %}
 
     </div>
-</div>
+
+<script>
+(function() {
+    const pdfBase = "{% url 'exportar_reporte_pdf' %}";
+    const excelBase = "{% url 'exportar_reporte_excel' %}";
+
+    function repQueryParams() {
+        const p = new URLSearchParams(window.location.search);
+        return {
+            tipo: p.get('tipo') || 'asistencia',
+            claseId: p.get('clase_id') || '',
+            fechaInicio: p.get('fecha_inicio') || document.getElementById('fecha_inicio')?.value || '',
+            fechaFin: p.get('fecha_fin') || document.getElementById('fecha_fin')?.value || ''
+        };
+    }
+
+    function repBuildExportUrl(base) {
+        const q = repQueryParams();
+        if (!q.claseId) return null;
+        const u = new URL(base, window.location.origin);
+        u.searchParams.set('tipo', q.tipo);
+        u.searchParams.set('clase_id', q.claseId);
+        if (q.fechaInicio) u.searchParams.set('fecha_inicio', q.fechaInicio);
+        if (q.fechaFin) u.searchParams.set('fecha_fin', q.fechaFin);
+        return u.toString();
+    }
+
+    function repDefaultDates() {
+        const ini = document.getElementById('fecha_inicio');
+        const fin = document.getElementById('fecha_fin');
+        if (!ini || !fin) return;
+        const today = new Date();
+        const pad = function(n) { return String(n).padStart(2, '0'); };
+        const fmt = function(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+        if (!fin.value) fin.value = fmt(today);
+        if (!ini.value) {
+            const d30 = new Date(today);
+            d30.setDate(d30.getDate() - 30);
+            ini.value = fmt(d30);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', repDefaultDates);
+
+    const form = document.getElementById('formFiltros');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const clase = document.getElementById('clase_id');
+            if (clase && !clase.value) {
+                e.preventDefault();
+                alert('Selecciona una clase antes de generar el reporte.');
+                clase.focus();
+            }
+        });
+    }
+
+    window.exportarPDF = async function() {
+        const url = repBuildExportUrl(pdfBase);
+        if (!url) { alert('Selecciona una clase primero.'); return; }
+        try {
+            const resp = await fetch(url, { credentials: 'same-origin' });
+            const ct = (resp.headers.get('content-type') || '').toLowerCase();
+            if (ct.includes('application/json')) {
+                const data = await resp.json();
+                if (data.requires_approval) {
+                    alert('La exportación PDF requiere aprobación de otro usuario.\nSolicitud #' + data.request_id + (data.message ? '\n' + data.message : ''));
+                    return;
+                }
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+            }
+            if (!resp.ok) {
+                alert('No se pudo exportar el PDF (código ' + resp.status + ').');
+                return;
+            }
+            const blob = await resp.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'reporte.pdf';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (err) {
+            alert('Error al exportar PDF. Intenta de nuevo.');
+        }
+    };
+
+    window.exportarExcel = async function() {
+        const url = repBuildExportUrl(excelBase);
+        if (!url) { alert('Selecciona una clase primero.'); return; }
+        try {
+            const resp = await fetch(url, { credentials: 'same-origin' });
+            const ct = (resp.headers.get('content-type') || '').toLowerCase();
+            if (ct.includes('application/json')) {
+                const data = await resp.json();
+                if (data.requires_approval) {
+                    alert('La exportación Excel requiere aprobación de otro usuario.\nSolicitud #' + data.request_id);
+                    return;
+                }
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+            }
+            if (!resp.ok) {
+                alert('No se pudo exportar (código ' + resp.status + ').');
+                return;
+            }
+            const blob = await resp.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'reporte.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (err) {
+            window.location.href = url;
+        }
+    };
+})();
+</script>
 
 {% if rol == 'admin_escolar' %}
-<script>
-function filtrarClasesPorCurso(cursoNombre) {
-    const claseSelect = document.getElementById('clase_id');
-    if (!claseSelect) return;
-    
-    const optgroups = claseSelect.querySelectorAll('optgroup');
-    
-    // Si cursoNombre es vacío, mostramos todos los optgroups
-    if (!cursoNombre) {
-        optgroups.forEach(group => group.style.display = '');
-        return;
-    }
-    
-    // Ocultar todos los optgroups excepto el seleccionado
-    optgroups.forEach(group => {
-        if (group.getAttribute('label') === cursoNombre) {
-            group.style.display = '';
-        } else {
-            group.style.display = 'none';
-        }
-    });
-    
-    // Auto-seleccionar la primera opción visible si la opción seleccionada actualmente está oculta
-    const currentSelected = claseSelect.options[claseSelect.selectedIndex];
-    if (currentSelected && currentSelected.value !== "") {
-        const parentGroup = currentSelected.parentNode;
-        if (parentGroup && parentGroup.tagName === 'OPTGROUP' && parentGroup.style.display === 'none') {
-            const targetGroup = Array.from(optgroups).find(g => g.getAttribute('label') === cursoNombre);
-            if (targetGroup) {
-                const firstOption = targetGroup.querySelector('option');
-                if (firstOption) {
-                    claseSelect.value = firstOption.value;
-                    claseSelect.dispatchEvent(new Event('change'));
-                }
-            }
-        }
-    }
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    const cursoFiltro = document.getElementById('filtro_curso_nombre');
-    if (cursoFiltro) {
-        const claseSelect = document.getElementById('clase_id');
-        if (claseSelect) {
-            const selectedOption = claseSelect.options[claseSelect.selectedIndex];
-            if (selectedOption && selectedOption.value !== "") {
-                const parentGroup = selectedOption.parentNode;
-                if (parentGroup && parentGroup.tagName === 'OPTGROUP') {
-                    const cursoNombre = parentGroup.getAttribute('label');
-                    cursoFiltro.value = cursoNombre;
-                    filtrarClasesPorCurso(cursoNombre);
-                }
-            }
-        }
-    }
-});
-</script>
+{% include 'profesor/_filtrar_clases_por_curso_script.html' %}
 {% endif %}
 {% include 'profesor/_personal_wrap_end.html' %}

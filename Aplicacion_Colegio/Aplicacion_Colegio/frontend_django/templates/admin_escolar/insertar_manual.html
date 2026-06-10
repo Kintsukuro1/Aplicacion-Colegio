@@ -1,0 +1,374 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insertar {{ tipo_usuario }} - {{ colegio.nombre }}</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_escolar/insertar_manual.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
+</head>
+<body>
+    <div class="dashboard-container">
+        {% include 'sidebars/sidebar_admin_escuela.html' %}
+        
+        <main class="main-content">
+            {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="form-container">
+                <div class="page-header">
+                    <h1>✏️ Insertar {{ tipo_usuario }}</h1>
+                    <a href="{% url 'importar_datos' %}" class="back-button">
+                        ← Volver
+                    </a>
+                </div>
+                
+                <div class="form-card">
+                    <form method="post" id="insertForm">
+                        {% csrf_token %}
+                        
+                        <!-- Datos Básicos -->
+                        <div class="form-section">
+                            <h3>Información Personal</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.nombre.id_for_label }}" class="required">Nombre</label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                        <span class="error-message">{{ form.nombre.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.apellido_paterno.id_for_label }}" class="required">Apellido Paterno</label>
+                                    {{ form.apellido_paterno }}
+                                    {% if form.apellido_paterno.errors %}
+                                        <span class="error-message">{{ form.apellido_paterno.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.apellido_materno.id_for_label }}" class="required">Apellido Materno</label>
+                                    {{ form.apellido_materno }}
+                                    {% if form.apellido_materno.errors %}
+                                        <span class="error-message">{{ form.apellido_materno.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.rut.id_for_label }}" class="required">RUT</label>
+                                    {{ form.rut }}
+                                    <span class="help-text">Formato: 12.345.678-9</span>
+                                    {% if form.rut.errors %}
+                                        <span class="error-message">{{ form.rut.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.email.id_for_label }}" class="required">Email</label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <span class="error-message">{{ form.email.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.password.id_for_label }}" class="required">Contraseña</label>
+                                    {{ form.password }}
+                                    <span class="help-text">Mínimo 12 caracteres</span>
+                                    {% if form.password.errors %}
+                                        <span class="error-message">{{ form.password.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Datos de Contacto -->
+                        <div class="form-section">
+                            <h3>Datos de Contacto</h3>
+                            <div class="form-row">
+                                {% if form.fecha_nacimiento %}
+                                <div class="form-group">
+                                    <label for="{{ form.fecha_nacimiento.id_for_label }}" {% if tipo_usuario == 'Estudiante' %}class="required"{% endif %}>Fecha de Nacimiento</label>
+                                    {{ form.fecha_nacimiento }}
+                                    {% if form.fecha_nacimiento.errors %}
+                                        <span class="error-message">{{ form.fecha_nacimiento.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.direccion.id_for_label }}" {% if tipo_usuario == 'Estudiante' or tipo_usuario == 'Apoderado' %}class="required"{% endif %}>Dirección</label>
+                                    {{ form.direccion }}
+                                    {% if form.direccion.errors %}
+                                        <span class="error-message">{{ form.direccion.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
+                                    {{ form.telefono }}
+                                    {% if form.telefono.errors %}
+                                        <span class="error-message">{{ form.telefono.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if form.telefono_movil %}
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.telefono_movil.id_for_label }}" class="required">Teléfono Móvil</label>
+                                    {{ form.telefono_movil }}
+                                    {% if form.telefono_movil.errors %}
+                                        <span class="error-message">{{ form.telefono_movil.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Campos específicos según tipo de usuario -->
+                        {% if tipo_usuario == 'Estudiante' %}
+                        <div class="form-section">
+                            <h3>Información Académica</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.curso.id_for_label }}" class="required">Curso</label>
+                                    {{ form.curso }}
+                                    {% if form.curso.help_text %}
+                                        <span class="help-text" style="color: #e67e22; font-weight: 600;">{{ form.curso.help_text }}</span>
+                                    {% endif %}
+                                    {% if form.curso.errors %}
+                                        <span class="error-message">{{ form.curso.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.grupo_sanguineo.id_for_label }}">Grupo Sanguíneo</label>
+                                    {{ form.grupo_sanguineo }}
+                                    {% if form.grupo_sanguineo.errors %}
+                                        <span class="error-message">{{ form.grupo_sanguineo.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.alergias.id_for_label }}">Alergias</label>
+                                    {{ form.alergias }}
+                                    {% if form.alergias.errors %}
+                                        <span class="error-message">{{ form.alergias.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Necesidades Educativas Especiales (NEE)</h3>
+                            <div class="checkbox-group">
+                                {{ form.tiene_nee }}
+                                <label for="{{ form.tiene_nee.id_for_label }}">{{ form.tiene_nee.label }}</label>
+                            </div>
+                            
+                            <div id="neeFields" class="nee-fields">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="{{ form.tipo_nee.id_for_label }}">Tipo de NEE</label>
+                                        {{ form.tipo_nee }}
+                                        {% if form.tipo_nee.errors %}
+                                            <span class="error-message">{{ form.tipo_nee.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="{{ form.descripcion_nee.id_for_label }}">Descripción de NEE</label>
+                                        {{ form.descripcion_nee }}
+                                        {% if form.descripcion_nee.errors %}
+                                            <span class="error-message">{{ form.descripcion_nee.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="checkbox-group">
+                                    {{ form.requiere_pie }}
+                                    <label for="{{ form.requiere_pie.id_for_label }}">{{ form.requiere_pie.label }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if tipo_usuario == 'Profesor' %}
+                        <div class="form-section">
+                            <h3>Información Profesional</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.titulo_profesional.id_for_label }}">Título Profesional</label>
+                                    {{ form.titulo_profesional }}
+                                    {% if form.titulo_profesional.errors %}
+                                        <span class="error-message">{{ form.titulo_profesional.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.especialidad.id_for_label }}">Especialidad</label>
+                                    {{ form.especialidad }}
+                                    {% if form.especialidad.errors %}
+                                        <span class="error-message">{{ form.especialidad.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.anios_experiencia.id_for_label }}">Años de Experiencia</label>
+                                    {{ form.anios_experiencia }}
+                                    {% if form.anios_experiencia.errors %}
+                                        <span class="error-message">{{ form.anios_experiencia.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.estado_laboral.id_for_label }}" class="required">Estado Laboral</label>
+                                    {{ form.estado_laboral }}
+                                    {% if form.estado_laboral.errors %}
+                                        <span class="error-message">{{ form.estado_laboral.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.horas_semanales_contrato.id_for_label }}" class="required">Horas Semanales</label>
+                                    {{ form.horas_semanales_contrato }}
+                                    {% if form.horas_semanales_contrato.errors %}
+                                        <span class="error-message">{{ form.horas_semanales_contrato.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.horas_no_lectivas.id_for_label }}" class="required">Horas No Lectivas</label>
+                                    {{ form.horas_no_lectivas }}
+                                    {% if form.horas_no_lectivas.errors %}
+                                        <span class="error-message">{{ form.horas_no_lectivas.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.fecha_ingreso.id_for_label }}" class="required">Fecha de Ingreso</label>
+                                    {{ form.fecha_ingreso }}
+                                    {% if form.fecha_ingreso.errors %}
+                                        <span class="error-message">{{ form.fecha_ingreso.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if tipo_usuario == 'Apoderado' %}
+                        <div class="form-section">
+                            <h3>Información Laboral</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.ocupacion.id_for_label }}">Ocupación</label>
+                                    {{ form.ocupacion }}
+                                    {% if form.ocupacion.errors %}
+                                        <span class="error-message">{{ form.ocupacion.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.lugar_trabajo.id_for_label }}">Lugar de Trabajo</label>
+                                    {{ form.lugar_trabajo }}
+                                    {% if form.lugar_trabajo.errors %}
+                                        <span class="error-message">{{ form.lugar_trabajo.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.telefono_trabajo.id_for_label }}">Teléfono de Trabajo</label>
+                                    {{ form.telefono_trabajo }}
+                                    {% if form.telefono_trabajo.errors %}
+                                        <span class="error-message">{{ form.telefono_trabajo.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Relación con Estudiante (Opcional)</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.estudiante.id_for_label }}">Estudiante</label>
+                                    {{ form.estudiante }}
+                                    <span class="help-text">Puedes vincular un estudiante ahora o después</span>
+                                    {% if form.estudiante.errors %}
+                                        <span class="error-message">{{ form.estudiante.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.tipo_apoderado.id_for_label }}">Tipo de Apoderado</label>
+                                    {{ form.tipo_apoderado }}
+                                    {% if form.tipo_apoderado.errors %}
+                                        <span class="error-message">{{ form.tipo_apoderado.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="{{ form.parentesco.id_for_label }}">Parentesco</label>
+                                    {{ form.parentesco }}
+                                    {% if form.parentesco.errors %}
+                                        <span class="error-message">{{ form.parentesco.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Botones -->
+                        <div class="submit-section">
+                            <a href="{% url 'importar_datos' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar {{ tipo_usuario }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Toggle NEE fields
+        const tieneNeeCheckbox = document.getElementById('{{ form.tiene_nee.id_for_label }}');
+        const neeFields = document.getElementById('neeFields');
+        
+        if (tieneNeeCheckbox) {
+            tieneNeeCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    neeFields.classList.add('active');
+                } else {
+                    neeFields.classList.remove('active');
+                }
+            });
+            
+            // Inicializar estado
+            if (tieneNeeCheckbox.checked) {
+                neeFields.classList.add('active');
+            }
+        }
+    </script>
+    <script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>

@@ -23,7 +23,7 @@ class Command(BaseCommand):
             if not profesor:
                 continue
 
-            enlace = f'/dashboard/?pagina=clase&id={tarea.clase_id}&tarea={tarea.id_tarea}'
+            enlace = f'/estudiante/clase/{tarea.clase_id}/?tarea={tarea.id_tarea}'
             titulo = f'Hoy vence tarea: {tarea.titulo}'
             existe = Notificacion.objects.filter(
                 destinatario=profesor,
@@ -57,8 +57,8 @@ class Command(BaseCommand):
                 continue
 
             enlace = (
-                f'/dashboard/?pagina=clase&id={evaluacion.clase_id}'
-                f'&evaluacion={evaluacion.id_evaluacion}'
+                f'/estudiante/clase/{evaluacion.clase_id}/'
+                f'?evaluacion={evaluacion.id_evaluacion}'
             )
             titulo = f'Hoy se realiza evaluacion: {evaluacion.nombre}'
             existe = Notificacion.objects.filter(

@@ -1,0 +1,32 @@
+{% extends 'dashboard.html' %}
+{% load static %}
+
+{% block title %}Comunicados - Panel de Control{% endblock %}
+
+{% block content %}
+{% if rol == 'apoderado' %}
+{% include 'apoderado/_apoderado_portal_styles.html' %}
+<link rel="stylesheet" href="{% static 'css/apoderado/comunicados.css' %}?v=20260615">
+
+<div class="aco-page">
+    {% include 'apoderado/_apoderado_hero.html' with hero_title="Comunicados y Circulares" hero_subtitle="Información oficial y avisos importantes del colegio." hero_aria="Comunicados" %}
+    {% include 'comunicados/lista_comunicados_apoderado.html' %}
+</div>
+
+{% else %}
+<link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados.css' %}">
+
+<div class="comunicados-container">
+    <div class="header-comunicados">
+        <h1>📢 Comunicados y Circulares</h1>
+        {% if can_create_comunicado %}
+        <a href="{% url 'comunicados:crear' %}" class="btn-crear">
+            ➕ Nuevo Comunicado
+        </a>
+        {% endif %}
+    </div>
+
+    {% include 'comunicados/_lista_comunicados_contenido.html' %}
+</div>
+{% endif %}
+{% endblock %}

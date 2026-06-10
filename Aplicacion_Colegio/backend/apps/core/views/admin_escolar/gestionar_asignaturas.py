@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.urls import reverse
 
 from backend.apps.core.services.asignaturas_view_service import AsignaturasViewService
 from backend.common.services import PermissionService
@@ -22,5 +23,8 @@ def gestionar_asignaturas(request):
         return render(request, 'compartido/acceso_denegado.html', {
             'mensaje': 'No tiene permisos para gestionar asignaturas.'
         })
+
+    if request.method == 'GET' and not request.GET.get('json'):
+        return redirect(f"{reverse('dashboard')}?pagina=gestionar_asignaturas")
 
     return AsignaturasViewService.handle(request)

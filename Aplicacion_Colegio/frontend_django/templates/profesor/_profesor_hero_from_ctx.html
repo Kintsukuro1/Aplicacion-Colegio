@@ -1,0 +1,4 @@
+{# Hero desde prof_hero (ProfesorHeroService) #}
+{% if prof_hero %}
+{% include 'profesor/_profesor_hero.html' with hero_eyebrow=prof_hero.eyebrow hero_title=prof_hero.title hero_subtitle=prof_hero.subtitle hero_hint=prof_hero.hint hero_aria=prof_hero.aria metrics_aria=prof_hero.metrics_aria hero_greeting=prof_hero.greeting hero_hide_metrics=prof_hero.hide_metrics hero_show_date="0" m1_value=prof_hero.m1_value m1_label=prof_hero.m1_label m1_mod=prof_hero.m1_mod m1_alert=prof_hero.m1_alert m2_value=prof_hero.m2_value m2_label=prof_hero.m2_label m2_mod=prof_hero.m2_mod m2_alert=prof_hero.m2_alert m3_value=prof_hero.m3_value m3_label=prof_hero.m3_label m3_mod=prof_hero.m3_mod m3_alert=prof_hero.m3_alert m4_value=prof_hero.m4_value m4_label=prof_hero.m4_label m4_mod=prof_hero.m4_mod m4_alert=prof_hero.m4_alert %}
+{% endif %}

@@ -1,0 +1,168 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block page_title %}Mis Notas{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'academico/css/estudiante/mis_notas.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+{% include 'common/components/breadcrumb_nav.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block page_header %}
+<div style="display: flex; flex-direction: column; gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--spacing-md);">
+        <div>
+            <h1 class="text-4xl font-bold mb-sm">
+                <i class="fas fa-chart-bar"></i> Mis Notas
+            </h1>
+            <p class="text-lg text-secondary">Consulta tus calificaciones por asignatura</p>
+        </div>
+        <button class="btn btn-outline" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Resumen Académico -->
+<div class="card academic-summary mb-xl">
+    <div class="card-body py-xl">
+        <h2 class="text-2xl font-bold mb-lg"><i class="fas fa-chart-line"></i> Resumen Académico</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-lg">
+            {% include 'common/components/stat_card.html' with 
+                icon='trophy' 
+                title='Promedio General' 
+                value=promedio_general|default:"0.0"|floatformat:1
+                color='warning'
+                hoverable=True %}
+            
+            {% include 'common/components/stat_card.html' with 
+                icon='clipboard-list' 
+                title='Total Evaluaciones' 
+                value=total_notas|default:"0"
+                color='primary'
+                hoverable=True %}
+            
+            {% include 'common/components/stat_card.html' with 
+                icon='school' 
+                title='Curso Actual' 
+                value=curso_actual.nombre|default:"No asignado"
+                color='info'
+                hoverable=True %}
+        </div>
+    </div>
+</div>
+
+<!-- Notas por Asignatura -->
+<div class="mb-xl">
+    <h2 class="text-2xl font-bold mb-lg">
+        <i class="fas fa-book"></i> Notas por Asignatura
+    </h2>
+    
+    {% if notas_por_asignatura %}
+        <div class="d-flex flex-col gap-lg">
+            {% for item in notas_por_asignatura %}
+            <div class="card subject-card {% if item.promedio < 4.0 %}border-error{% endif %}">
+                <div class="card-header subject-header {% if item.promedio >= 4.0 %}header-approved{% else %}header-failed{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-md);">
+                        <div style="flex: 1; min-width: 200px;">
+                            <h3 class="text-xl font-bold" style="margin-bottom: var(--spacing-xs);">{{ item.asignatura }}</h3>
+                            <p class="text-sm text-secondary">
+                                <i class="fas fa-chalkboard-teacher"></i> {{ item.profesor }}
+                            </p>
+                        </div>
+                        <div class="d-flex align-center gap-md">
+                            <div class="grade-circle {% if item.promedio >= 4.0 %}grade-approved{% else %}grade-failed{% endif %}">
+                                <div class="text-xs text-secondary" style="margin-bottom: 2px;">Promedio</div>
+                                <div class="text-2xl font-bold">{{ item.promedio|floatformat:1 }}</div>
+                            </div>
+                            <span class="badge {% if item.estado == 'Aprobado' %}badge-success{% else %}badge-error{% endif %} badge-lg">
+                                <i class="fas fa-{% if item.estado == 'Aprobado' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                                {{ item.estado }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if item.evaluaciones %}
+                        <div class="table-container">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Evaluación</th>
+                                        <th class="text-center">Ponderación</th>
+                                        <th class="text-center">Nota</th>
+                                        <th class="text-center">Fecha</th>
+                                        <th class="text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for evaluacion in item.evaluaciones %}
+                                    <tr>
+                                        <td data-label="Evaluación">
+                                            <div class="font-medium">{{ evaluacion.nombre }}</div>
+                                        </td>
+                                        <td data-label="Ponderación" class="text-center">
+                                            <span class="badge badge-info">{{ evaluacion.ponderacion }}%</span>
+                                        </td>
+                                        <td data-label="Nota" class="text-center">
+                                            <span class="font-bold text-lg {% if evaluacion.nota >= 4.0 %}text-success{% else %}text-error{% endif %}">
+                                                {{ evaluacion.nota|floatformat:1 }}
+                                            </span>
+                                        </td>
+                                        <td data-label="Fecha" class="text-center">
+                                            <span class="text-sm text-secondary">
+                                                <i class="fas fa-calendar"></i> {{ evaluacion.fecha|date:"d/m/Y" }}
+                                            </span>
+                                        </td>
+                                        <td data-label="Estado" class="text-center">
+                                            <span class="badge {% if evaluacion.nota >= 4.0 %}badge-success{% else %}badge-error{% endif %} badge-dot">
+                                                {% if evaluacion.nota >= 4.0 %}Aprobado{% else %}Reprobado{% endif %}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        {% include 'common/components/empty_state.html' with 
+                            icon='inbox' 
+                            title='Sin evaluaciones' 
+                            message='No hay evaluaciones registradas para esta asignatura' %}
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer">
+                    <div class="d-flex justify-between align-center">
+                        <span class="text-sm text-secondary">
+                            <i class="fas fa-clipboard-list"></i> Total evaluaciones: {{ item.total_evaluaciones }}
+                        </span>
+                        <div class="progress w-200">
+                            <div class="progress-bar {% if item.promedio >= 4.0 %}progress-bar-success{% else %}progress-bar-error{% endif %}" 
+                                 style="width: {{ item.promedio|default:0 }}0%;min-width: 10%;">
+                                {{ item.promedio|floatformat:1 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        {% include 'common/components/empty_state.html' with 
+            icon='book-open' 
+            title='Sin calificaciones' 
+            message='Aún no tienes calificaciones registradas. Cuando se publiquen tus notas aparecerán aquí.' %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'academico/js/estudiante/mis_notas.js' %}"></script>
+{% endblock %}

@@ -365,13 +365,39 @@ class AttendanceService:
         """
         from backend.apps.academico.models import Asistencia
         from backend.apps.accounts.models import User
+        from backend.apps.cursos.models import ClaseEstudiante
 
-        estudiantes = User.objects.filter(
-            rbd_colegio=colegio.rbd,
-            perfil_estudiante__isnull=False,
-            is_active=True,
-            perfil_estudiante__ciclo_actual=clase.curso.ciclo_academico
-        ).select_related('perfil_estudiante').order_by('apellido_paterno', 'nombre')
+        inscripciones = ClaseEstudiante._base_manager.filter(
+            clase=clase,
+            activo=True,
+        ).select_related('estudiante').order_by(
+            'estudiante__apellido_paterno',
+            'estudiante__nombre',
+        )
+
+        if inscripciones.exists():
+            estudiantes = [rel.estudiante for rel in inscripciones if rel.estudiante.is_active]
+        else:
+            estudiantes = list(
+                User.objects.filter(
+                    rbd_colegio=colegio.rbd,
+                    perfil_estudiante__isnull=False,
+                    is_active=True,
+                    perfil_estudiante__ciclo_actual=clase.curso.ciclo_academico,
+                ).select_related('perfil_estudiante').order_by('apellido_paterno', 'nombre')
+            )
+            if not estudiantes:
+                # Clases con historial de asistencia pero sin filas en clase_estudiante (p. ej. tras restore)
+                estudiante_ids = (
+                    Asistencia.objects.filter(clase=clase)
+                    .values_list('estudiante_id', flat=True)
+                    .distinct()
+                )
+                estudiantes = list(
+                    User.objects.filter(id__in=estudiante_ids, is_active=True).order_by(
+                        'apellido_paterno', 'nombre'
+                    )
+                )
 
         asistencias_dict = {}
         asistencias = Asistencia.objects.filter(
@@ -388,7 +414,8 @@ class AttendanceService:
             estudiantes_con_asistencia.append({
                 'estudiante': estudiante,
                 'asistencia': asistencia,
-                'estado': asistencia.estado if asistencia else 'P'
+                'estado': asistencia.estado if asistencia else 'P',
+                'observaciones': (asistencia.observaciones or '') if asistencia else '',
             })
 
         return estudiantes_con_asistencia
@@ -407,12 +434,32 @@ class AttendanceService:
         """
         from backend.apps.academico.models import Asistencia
 
-        fecha_inicio = date.today() - timedelta(days=days)
+        fecha_fin = date.today()
+        fecha_inicio = fecha_fin - timedelta(days=days)
+        periodo_ancorado = False
 
         asistencias_mes = Asistencia.objects.filter(
             clase=clase,
-            fecha__gte=fecha_inicio
+            fecha__gte=fecha_inicio,
+            fecha__lte=fecha_fin,
         )
+
+        if not asistencias_mes.exists():
+            ultima_fecha = (
+                Asistencia.objects.filter(clase=clase)
+                .order_by('-fecha')
+                .values_list('fecha', flat=True)
+                .first()
+            )
+            if ultima_fecha:
+                fecha_fin = ultima_fecha
+                fecha_inicio = fecha_fin - timedelta(days=days)
+                periodo_ancorado = True
+                asistencias_mes = Asistencia.objects.filter(
+                    clase=clase,
+                    fecha__gte=fecha_inicio,
+                    fecha__lte=fecha_fin,
+                )
 
         total_registros = asistencias_mes.count()
         presentes = asistencias_mes.filter(estado='P').count()
@@ -428,7 +475,10 @@ class AttendanceService:
             'ausentes': ausentes,
             'tardanzas': tardanzas,
             'justificadas': justificadas,
-            'porcentaje_asistencia': porcentaje
+            'porcentaje_asistencia': porcentaje,
+            'periodo_desde': fecha_inicio,
+            'periodo_hasta': fecha_fin,
+            'periodo_ancorado': periodo_ancorado,
         }
 
     @staticmethod
@@ -765,12 +815,82 @@ class AttendanceService:
         return datetime.strptime(fecha_str, '%Y-%m-%d').date()
 
     @staticmethod
-    def get_attendance_report(user, clase, mes: int, anio: int):
-        """
-        Obtiene reporte de asistencia para una clase en mes/año específico.
-        """
-        # Implementation would go here
-        return {}
+    def get_attendance_report(user, clase, mes: int, anio: int) -> Dict:
+        """Reporte de asistencia por clase en un mes/año (totales + detalle por estudiante)."""
+        from backend.apps.academico.models import Asistencia
+        from backend.apps.cursos.models import ClaseEstudiante
+
+        is_valid, _ = CommonValidations.validate_class_ownership(user, clase)
+        if not is_valid:
+            empty_stats = {
+                'porcentaje': 0,
+                'presentes': 0,
+                'tardanzas': 0,
+                'ausentes': 0,
+                'justificadas': 0,
+                'total_registros': 0,
+                'dias_con_registro': 0,
+            }
+            return {'estudiantes_stats': [], 'stats_generales': empty_stats}
+
+        asistencias_mes = Asistencia.objects.filter(
+            clase=clase,
+            fecha__month=mes,
+            fecha__year=anio,
+        )
+        total_registros = asistencias_mes.count()
+        presentes_g = asistencias_mes.filter(estado='P').count()
+        ausentes_g = asistencias_mes.filter(estado='A').count()
+        tardanzas_g = asistencias_mes.filter(estado='T').count()
+        justificadas_g = asistencias_mes.filter(estado='J').count()
+        dias_con_registro = asistencias_mes.values('fecha').distinct().count()
+        porcentaje_g = (
+            round((presentes_g / total_registros) * 100, 1) if total_registros > 0 else 0
+        )
+
+        estudiantes_stats = []
+        inscripciones = ClaseEstudiante._base_manager.filter(
+            clase=clase,
+            activo=True,
+        ).select_related('estudiante').order_by(
+            'estudiante__apellido_paterno',
+            'estudiante__apellido_materno',
+            'estudiante__nombre',
+        )
+
+        for rel in inscripciones:
+            estudiante = rel.estudiante
+            if not estudiante.is_active:
+                continue
+            qs = asistencias_mes.filter(estudiante=estudiante)
+            total = qs.count()
+            presentes = qs.filter(estado='P').count()
+            ausentes = qs.filter(estado='A').count()
+            tardanzas = qs.filter(estado='T').count()
+            justificadas = qs.filter(estado='J').count()
+            porcentaje = round((presentes / total) * 100, 1) if total > 0 else 0
+            estudiantes_stats.append({
+                'estudiante': estudiante,
+                'total': total,
+                'presentes': presentes,
+                'ausentes': ausentes,
+                'tardanzas': tardanzas,
+                'justificadas': justificadas,
+                'porcentaje': porcentaje,
+            })
+
+        return {
+            'estudiantes_stats': estudiantes_stats,
+            'stats_generales': {
+                'porcentaje': porcentaje_g,
+                'presentes': presentes_g,
+                'tardanzas': tardanzas_g,
+                'ausentes': ausentes_g,
+                'justificadas': justificadas_g,
+                'total_registros': total_registros,
+                'dias_con_registro': dias_con_registro,
+            },
+        }
 
     @staticmethod
     def get_months_list():

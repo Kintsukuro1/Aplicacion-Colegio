@@ -1,0 +1,12 @@
+{% load static %}
+{% include 'estudiante/_alumno_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/notificaciones_page.css' %}?v=20260603b">
+
+<div class="content-wrapper nh-page-alumno">
+    {% with resumen=notificaciones_resumen %}
+    {% include 'estudiante/_alumno_hero.html' with hero_title="Notificaciones" hero_subtitle="Historial y avisos de tu portal académico" hero_aria="Centro de notificaciones" metrics_aria="Resumen de notificaciones" m1_value=notificaciones_total|default:"0" m1_label="Total" m1_mod="clases" m2_value=notificaciones_no_leidas|default:"0" m2_label="Sin leer" m2_mod="tareas" m3_value=resumen.urgentes|default:"0" m3_label="Prioritarias" m3_mod="promedio" m4_value=resumen.leidas|default:"0" m4_label="Leídas" m4_mod="asistencia" %}
+    {% include 'compartido/_notificaciones_hub.html' with hub_layout='embedded' hub_theme='alumno' %}
+    {% endwith %}
+</div>
+
+{% include 'estudiante/_alumno_wrap_end.html' %}

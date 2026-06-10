@@ -129,3 +129,12 @@ def test_notifications_sse_endpoint_requires_auth():
     client = APIClient()
     response = client.get('/api/v1/notificaciones/stream/')
     assert response.status_code == 401
+
+
+def test_notifications_sse_endpoint_authenticated():
+    user = _mk_user('notif-stream-auth@test.cl', 'Profesor', 1206, '88888888-2')
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.get('/api/v1/notificaciones/stream/', HTTP_ACCEPT='text/event-stream')
+    assert response.status_code == 200
+

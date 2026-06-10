@@ -1,0 +1,173 @@
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h2>🎓 Portal Académico</h2>
+        <p class="user-role">Admin General</p>
+    </div>
+
+    <nav class="sidebar-nav sidebar-nav--tree">
+        <ul class="nav-tree">
+            {% if 'inicio' in paginas_habilitadas %}
+            <li class="nav-tree__item {% if pagina_actual == 'inicio' %}active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio" class="nav-tree__link">
+                    <span class="icon">🏠</span>
+                    <span>Inicio</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {# ── SISTEMA ── #}
+            <li class="nav-tree__group" data-group="admin-sistema">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Sistema</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    <li class="nav-tree__item">
+                        <a href="{% url 'seleccionar_escuela' %}" class="nav-tree__link">
+                            <span class="icon">🔄</span>
+                            <span>Cambiar Colegio</span>
+                        </a>
+                    </li>
+                    {% if 'escuelas' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'escuelas' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=escuelas" class="nav-tree__link">
+                            <span class="icon">🏫</span>
+                            <span>Gestionar Escuelas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'usuarios' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'usuarios' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=usuarios" class="nav-tree__link">
+                            <span class="icon">👥</span>
+                            <span>Usuarios del Sistema</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'planes' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'planes' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=planes" class="nav-tree__link">
+                            <span class="icon">💼</span>
+                            <span>Planes y Suscripciones</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-tree__item {% if pagina_actual == 'importar_datos' %}active{% endif %}">
+                        <a href="{% url 'importar_datos' %}" class="nav-tree__link">
+                            <span class="icon">📥</span>
+                            <span>Importar/Exportar Datos</span>
+                        </a>
+                    </li>
+                    {% if 'calendario_eventos' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'calendario_eventos' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=calendario_eventos" class="nav-tree__link">
+                            <span class="icon">🗓️</span>
+                            <span>Calendario Escolar</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'solicitud_reuniones' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'solicitud_reuniones' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=solicitud_reuniones" class="nav-tree__link">
+                            <span class="icon">🤝</span>
+                            <span>Solicitud Reuniones</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+
+            {# ── REPORTES GLOBALES ── #}
+            <li class="nav-tree__group" data-group="admin-reportes">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Reportes Globales</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'estadisticas_globales' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'estadisticas_globales' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=estadisticas_globales" class="nav-tree__link">
+                            <span class="icon">📊</span>
+                            <span>Estadísticas Globales</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'reportes_financieros' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'reportes_financieros' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=reportes_financieros" class="nav-tree__link">
+                            <span class="icon">💰</span>
+                            <span>Reportes Financieros</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+
+            {# ── CONFIGURACIÓN ── #}
+            <li class="nav-tree__group" data-group="admin-config">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Configuración</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'configuracion' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'configuracion' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=configuracion" class="nav-tree__link">
+                            <span class="icon">⚙️</span>
+                            <span>Configuración Sistema</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'auditoria' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'auditoria' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=auditoria" class="nav-tree__link">
+                            <span class="icon">📋</span>
+                            <span>Logs de Auditoría</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+
+            {# ── SEGURIDAD ── #}
+            <li class="nav-tree__group" data-group="admin-seguridad">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Seguridad</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if menu_access.monitoreo_seguridad %}
+                    <li class="nav-tree__item">
+                        <a href="{% url 'monitoreo_seguridad' %}" class="nav-tree__link">
+                            <span class="icon">🔐</span>
+                            <span>Monitoreo de Seguridad</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'active_sessions' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'active_sessions' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=active_sessions" class="nav-tree__link">
+                            <span class="icon">🧭</span>
+                            <span>Sesiones Activas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'password_history' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'password_history' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=password_history" class="nav-tree__link">
+                            <span class="icon">🛡️</span>
+                            <span>Password History</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+        </ul>
+    </nav>
+</aside>
+
+{% include 'includes/_sidebar_tree_js.html' %}

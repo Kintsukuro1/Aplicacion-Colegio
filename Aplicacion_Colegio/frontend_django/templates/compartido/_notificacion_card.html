@@ -1,0 +1,23 @@
+<a href="{{ n.url|default:n.enlace|default:'#' }}"
+   class="nh-card {% if not n.leido %}is-unread{% endif %} {% if n.es_urgente %}is-urgent{% endif %}"
+   data-notif-id="{{ n.id }}"
+   data-notif-tipo="{{ n.tipo }}">
+    <div class="nh-card__icon nh-card__icon--{{ n.mod|default:'default' }}" aria-hidden="true">{{ n.icono }}</div>
+    <div class="nh-card__body">
+        <div class="nh-card__row">
+            <h3 class="nh-card__title">{{ n.titulo }}</h3>
+            <span class="nh-badge">{{ n.categoria }}</span>
+            {% if not n.leido %}<span class="nh-badge nh-badge--unread">Nueva</span>{% endif %}
+            {% if n.es_urgente %}<span class="nh-badge nh-badge--urgent">{{ n.prioridad_label }}</span>{% endif %}
+        </div>
+        {% if n.contexto %}
+        <p class="nh-card__context">{{ n.contexto }}</p>
+        {% endif %}
+        <p class="nh-card__message">{{ n.mensaje }}</p>
+        <div class="nh-card__meta">
+            <span title="{{ n.fecha_exacta }}">{{ n.fecha_humana|default:n.fecha_creacion|date:"d/m/Y H:i" }}</span>
+            <span>{{ n.tipo_label }}</span>
+        </div>
+    </div>
+    <span class="nh-card__cta">{{ n.accion_label }} →</span>
+</a>

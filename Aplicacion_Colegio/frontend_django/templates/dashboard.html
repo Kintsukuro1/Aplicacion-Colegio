@@ -19,7 +19,11 @@
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     <!-- Dashboard CSS -->
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=20260405-notif-ui">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=20260607-sidebar-notif">
+    <link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260604-prof-notif">
+    {% if rol == 'profesor' or rol == 'Profesor' %}
+    <link rel="stylesheet" href="{% static 'css/profesor/profesor_hero.css' %}?v=20260605-hero">
+    {% endif %}
     <!-- Page-specific CSS -->
     {% if pagina_actual == 'gestionar_ciclos' %}
     <link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_ciclos.css' %}">
@@ -36,6 +40,18 @@
     <link rel="stylesheet" href="{% static 'css/profesor/solicitud_reuniones.css' %}">
     {% elif rol == 'admin_escolar' or rol == 'admin_general' or rol == 'Administrador escolar' or rol == 'Administrador general' %}
     <link rel="stylesheet" href="{% static 'css/admin_escolar/solicitud_reuniones.css' %}">
+    {% endif %}
+    {% endif %}
+    {% if pagina_actual == 'disponibilidad' %}
+    {% if rol == 'profesor' or rol == 'Profesor' %}
+    <link rel="stylesheet" href="{% static 'css/profesor/disponibilidad.css' %}?v=20260602-lavanda">
+    {% endif %}
+    {% endif %}
+    {% if pagina_actual == 'mensajes' %}
+    {% if rol == 'profesor' or rol == 'Profesor' %}
+    <link rel="stylesheet" href="{% static 'css/profesor/mis_clases.css' %}?v=20260604-mm-hero-notif">
+    <link rel="stylesheet" href="{% static 'css/profesor/mensajeria-base.css' %}?v=20260529-lavanda">
+    <link rel="stylesheet" href="{% static 'css/profesor/mensajeria.css' %}?v=20260529-lavanda">
     {% endif %}
     {% endif %}
     {% if pagina_actual == 'importar_datos' %}
@@ -74,13 +90,11 @@
                     </div>
                 </div>
                 <div class="user-info">
-                    {# Portales con layout propio: campana en banner o wrap (no duplicar en inicio) #}
-                    {% if rol|lower != 'apoderado' and rol|lower != 'estudiante' and rol|lower != 'alumno' %}
-                        {% if rol|lower != 'profesor' or pagina_actual != 'inicio' %}
+                    {# El inicio docente ya renderiza su campana en el banner propio. #}
+                    {% if rol|lower != 'profesor' or pagina_actual != 'inicio' %}
                     <div class="portal-notif portal-notif--profesor">
                         {% include 'includes/_portal_notifications.html' %}
                     </div>
-                        {% endif %}
                     {% endif %}
 
                     <span>{{ nombre_usuario }}</span>

@@ -1,0 +1,126 @@
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1>Sesiones Activas</h1>
+        <p class="subtitle">Monitoreo de sesiones activas y revocacion remota.</p>
+    </div>
+
+    <div id="sessions-feedback" class="alert d-none"></div>
+
+    <div class="card">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="text-left">ID</th>
+                    <th class="text-left">Usuario</th>
+                    <th class="text-left">Rol</th>
+                    <th class="text-left">RBD</th>
+                    <th class="text-left">IP</th>
+                    <th class="text-left">Dispositivo</th>
+                    <th class="text-left">Ultima actividad</th>
+                    <th class="text-left">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="sessions-rows">
+                <tr><td colspan="8">Cargando sesiones...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+    const rowsEl = document.getElementById('sessions-rows');
+    const feedback = document.getElementById('sessions-feedback');
+
+    function notify(message, isError) {
+        feedback.style.display = 'block';
+        feedback.textContent = message;
+        feedback.style.padding = '0.6rem';
+        feedback.style.marginBottom = '0.75rem';
+        feedback.style.borderRadius = '8px';
+        feedback.style.border = isError ? '1px solid #d7acb5' : '1px solid #b8d8bf';
+        feedback.style.background = isError ? '#f7ebee' : '#edf8f0';
+        feedback.style.color = isError ? '#8f1d2c' : '#1e5f2f';
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+            return parts.pop().split(';').shift();
+        }
+        return '';
+    }
+
+    async function loadSessions() {
+        rowsEl.innerHTML = '<tr><td colspan="8">Cargando sesiones...</td></tr>';
+        try {
+            const response = await fetch('/api/v1/seguridad/sesiones-activas/', {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin',
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                notify(payload?.detail || 'No se pudieron cargar sesiones activas.', true);
+                rowsEl.innerHTML = '<tr><td colspan="8">Sin acceso a sesiones activas.</td></tr>';
+                return;
+            }
+
+            const sessions = Array.isArray(payload?.sesiones) ? payload.sesiones : [];
+            if (!sessions.length) {
+                rowsEl.innerHTML = '<tr><td colspan="8">No hay sesiones activas para mostrar.</td></tr>';
+                return;
+            }
+
+            rowsEl.innerHTML = '';
+            sessions.forEach((session) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${session.id}</td>
+                    <td>${session.user_email || '-'}</td>
+                    <td>${session.user_rol || '-'}</td>
+                    <td>${session.colegio_rbd || '-'}</td>
+                    <td>${session.ip || '-'}</td>
+                    <td>${session.dispositivo || '-'}</td>
+                    <td>${session.ultima_actividad || '-'}</td>
+                    <td><button type="button" data-action="revoke">Revocar</button></td>
+                `;
+                tr.querySelector('[data-action="revoke"]').addEventListener('click', () => revokeSession(session));
+                rowsEl.appendChild(tr);
+            });
+        } catch (_) {
+            notify('No se pudieron cargar sesiones activas.', true);
+            rowsEl.innerHTML = '<tr><td colspan="8">No se pudieron cargar sesiones activas.</td></tr>';
+        }
+    }
+
+    async function revokeSession(session) {
+        if (!window.confirm(`Revocar sesion #${session.id} de ${session.user_email || 'usuario'}?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/seguridad/sesiones/${session.id}/revocar/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({}),
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                notify(payload?.detail || JSON.stringify(payload || {}), true);
+                return;
+            }
+            notify('Sesion revocada correctamente.', false);
+            loadSessions();
+        } catch (_) {
+            notify('No se pudo revocar la sesion.', true);
+        }
+    }
+
+    loadSessions();
+})();
+</script>

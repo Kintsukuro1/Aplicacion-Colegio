@@ -403,11 +403,11 @@ function calcularArea(formId) {
         const previewId = formId === 'formCrear' ? 'areaPreviewCrear' : 'areaPreviewEditar';
         const valueId = formId === 'formCrear' ? 'areaValueCrear' : 'areaValueEditar';
         
-        document.getElementById(previewId).style.display = 'block';
+        document.getElementById(previewId).classList.remove('d-none');
         document.getElementById(valueId).textContent = area.toFixed(2);
     } else {
         const previewId = formId === 'formCrear' ? 'areaPreviewCrear' : 'areaPreviewEditar';
-        document.getElementById(previewId).style.display = 'none';
+        document.getElementById(previewId).classList.add('d-none');
     }
 }
 

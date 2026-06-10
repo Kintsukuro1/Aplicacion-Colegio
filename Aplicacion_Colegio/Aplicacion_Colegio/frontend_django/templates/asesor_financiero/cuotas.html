@@ -1,0 +1,154 @@
+{% load static %}
+
+<!-- CUOTAS - ASESOR FINANCIERO -->
+
+<link rel="stylesheet" href="{% static 'css/asesor_financiero/cuotas.css' %}">
+
+<div class="asesor-financiero-page">
+    <div class="page-header">
+        <h1>🗓️ Gestión de Cuotas</h1>
+        <p class="text-muted">Calendario de vencimientos y seguimiento de cuotas</p>
+    </div>
+
+    <!-- Resumen de cuotas -->
+    <div class="cuotas-summary-grid">
+        <div class="cuota-summary-card success">
+            <h4>Cuotas Pagadas</h4>
+            <p class="value" id="cuotas-pagadas-valor">0</p>
+            <span class="percentage" id="cuotas-pagadas-porcentaje">0% del total</span>
+        </div>
+        <div class="cuota-summary-card warning">
+            <h4>Cuotas Pendientes</h4>
+            <p class="value" id="cuotas-pendientes-valor">0</p>
+            <span class="percentage" id="cuotas-pendientes-porcentaje">0% del total</span>
+        </div>
+        <div class="cuota-summary-card danger">
+            <h4>Cuotas Vencidas</h4>
+            <p class="value" id="cuotas-vencidas-valor">0</p>
+            <span class="percentage" id="cuotas-vencidas-porcentaje">0% del total</span>
+        </div>
+        <div class="cuota-summary-card info">
+            <h4>Monto Total Pendiente</h4>
+            <p class="value" id="monto-total-pendiente">$0</p>
+            <span class="percentage">Por cobrar</span>
+        </div>
+    </div>
+
+    <!-- Calendario de vencimientos -->
+    <div class="content-card">
+        <h3>📅 Próximos Vencimientos</h3>
+        <div id="vencimientos-content">
+            <div class="empty-state">
+                <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                <h4>No hay cuotas próximas a vencer</h4>
+                <p class="text-muted">El calendario de vencimientos aparecerá aquí</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    cargarEstadisticasCuotas();
+    cargarCuotasProximas();
+});
+
+function cargarEstadisticasCuotas() {
+    fetch('/api/asesor-financiero/cuotas/estadisticas/')
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                document.getElementById('cuotas-pagadas-valor').textContent = data.cuotas_pagadas;
+                document.getElementById('cuotas-pagadas-porcentaje').textContent = data.porcentaje_pagadas + '% del total';
+                
+                document.getElementById('cuotas-pendientes-valor').textContent = data.cuotas_pendientes;
+                document.getElementById('cuotas-pendientes-porcentaje').textContent = data.porcentaje_pendientes + '% del total';
+                
+                document.getElementById('cuotas-vencidas-valor').textContent = data.cuotas_vencidas;
+                document.getElementById('cuotas-vencidas-porcentaje').textContent = data.porcentaje_vencidas + '% del total';
+                
+                document.getElementById('monto-total-pendiente').textContent = '$' + formatearMonto(data.monto_total_pendiente);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error al cargar estadísticas de cuotas:', error);
+        });
+}
+
+function cargarCuotasProximas() {
+    fetch('/api/asesor-financiero/cuotas/proximas/')
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                mostrarCuotasProximas(data.cuotas);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error al cargar cuotas próximas:', error);
+        });
+}
+
+function mostrarCuotasProximas(cuotas) {
+    var container = document.getElementById('vencimientos-content');
+    
+    if (cuotas.length === 0) {
+        container.innerHTML = '<div class="empty-state">' +
+            '<i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>' +
+            '<h4>No hay cuotas próximas a vencer</h4>' +
+            '<p class="text-muted">El calendario de vencimientos aparecerá aquí</p>' +
+            '</div>';
+        return;
+    }
+    
+    var html = '<table class="cuotas-table">' +
+        '<thead>' +
+        '<tr>' +
+        '<th>Estudiante</th>' +
+        '<th>Curso</th>' +
+        '<th>Cuota</th>' +
+        '<th>Monto</th>' +
+        '<th>Fecha Vencimiento</th>' +
+        '<th>Urgencia</th>' +
+        '</tr>' +
+        '</thead>' +
+        '<tbody>';
+    
+    cuotas.forEach(function(cuota) {
+        html += '<tr>' +
+            '<td>' +
+            '<strong>' + cuota.estudiante.nombre + '</strong><br>' +
+            '<small class="text-muted">' + cuota.estudiante.rut + '</small>' +
+            '</td>' +
+            '<td>' + cuota.curso.nombre + '</td>' +
+            '<td>Cuota #' + cuota.numero_cuota + '<br>' +
+            '<small class="text-muted">' + cuota.mes + ' ' + cuota.anio + '</small>' +
+            '</td>' +
+            '<td><strong>$' + formatearMonto(cuota.monto_final) + '</strong></td>' +
+            '<td>' + cuota.fecha_vencimiento_formatted + '</td>' +
+            '<td>' +
+            '<span class="urgencia-badge urgencia-' + cuota.urgencia + '">' +
+            cuota.urgencia_label +
+            '</span><br>' +
+            '<small class="text-muted">' + cuota.dias_para_vencer + ' días</small>' +
+            '</td>' +
+            '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function formatearMonto(monto) {
+    return Math.round(monto).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+</script>

@@ -1,0 +1,580 @@
+/* CREAR EVALUACION ONLINE - PROFESOR */
+
+:root {
+    --eo-primary: #914c00;
+    --eo-primary-ink: #6f3900;
+    --eo-primary-soft: #ff8a00;
+    --eo-surface-soft: #fff8f5;
+    --eo-border: #ddc1ae;
+    --eo-text-muted: #564334;
+    --eo-accent: #f3dfd1;
+    --eo-surface: #ffffff;
+    --eo-shadow-soft: 0 4px 12px rgba(44, 62, 80, 0.08);
+    --eo-shadow-hover: 0 10px 24px rgba(255, 138, 0, 0.18);
+}
+
+.eo-page {
+    background: linear-gradient(180deg, var(--eo-surface-soft) 0%, #fff1e9 18%, var(--eo-surface) 40%);
+    border-radius: 18px;
+    padding: 1rem;
+}
+
+.eo-page-header {
+    position: relative;
+}
+
+.eo-hero-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-lg);
+    align-items: center;
+    border: 1px solid rgba(221, 193, 174, 0.55);
+    background: #fff;
+    box-shadow: var(--eo-shadow-soft);
+}
+
+.eo-hero-copy {
+    min-width: 0;
+}
+
+.eo-hero-title {
+    color: #241912;
+    font-size: clamp(1.6rem, 2vw, 2rem);
+    line-height: 1.2;
+    margin-bottom: 0.35rem;
+}
+
+.eo-hero-description {
+    color: var(--eo-text-muted);
+    max-width: 60ch;
+    margin-bottom: 0;
+}
+
+.eo-page-actions {
+    justify-content: flex-end;
+}
+
+.eo-page-actions .btn-primary {
+    background: linear-gradient(90deg, #ff8a00, #914c00);
+    border: none;
+    box-shadow: 0 10px 20px rgba(255, 138, 0, 0.24);
+}
+
+.eo-btn-outline,
+.eo-btn-primary {
+    padding: 0.65rem 1.2rem;
+    border-radius: 0.8rem;
+    font-weight: 700;
+}
+
+.eo-btn-outline {
+    border: 2px solid var(--eo-primary-soft);
+    color: var(--eo-primary-soft);
+    background: #fff;
+}
+
+.eo-btn-primary {
+    color: #fff;
+    border: none;
+}
+
+.eo-page-actions .btn-primary:hover {
+    filter: brightness(1.04);
+}
+
+.eo-page-actions .btn-outline {
+    border: 2px solid var(--eo-primary-soft);
+    color: var(--eo-primary-soft);
+    background: #fff;
+}
+
+.eo-page-actions .btn-outline:hover {
+    background: rgba(255, 138, 0, 0.08);
+}
+
+.eo-status-chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--eo-border);
+    background: #fff;
+    color: var(--eo-text-muted);
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.eo-top-stats {
+    margin-top: 0.35rem;
+}
+
+.eo-stat-card {
+    border: 1px solid var(--eo-border);
+    box-shadow: var(--eo-shadow-soft);
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.eo-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 138, 0, 0.45);
+    box-shadow: var(--eo-shadow-hover);
+}
+
+.eo-main-column {
+    min-width: 0;
+}
+
+#form-evaluacion-online {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-xl);
+}
+
+#form-evaluacion-online > .eo-main-column,
+#form-evaluacion-online > .eo-sidebar-column {
+    grid-column: 1;
+}
+
+.eo-form-card {
+    border: 1px solid var(--eo-border);
+    box-shadow: var(--eo-shadow-soft);
+    transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.eo-form-card > .card-body {
+    padding: 1.2rem 1.25rem;
+}
+
+.eo-form-card > .card-header {
+    background: #fff;
+}
+
+.eo-form-card:hover {
+    border-color: rgba(255, 138, 0, 0.42);
+    box-shadow: var(--eo-shadow-hover);
+}
+
+.eo-question-card {
+    border-color: rgba(221, 193, 174, 0.45);
+    border-left: 4px solid rgba(145, 76, 0, 0.24);
+    box-shadow: var(--eo-shadow-soft);
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.eo-question-card:hover {
+    border-left-color: var(--eo-primary-soft);
+    border-color: rgba(255, 138, 0, 0.45);
+    box-shadow: var(--eo-shadow-hover);
+}
+
+.eo-question-label-wrap {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.eo-question-label {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+}
+
+.eo-question-card textarea[id$="_enunciado"] {
+    background: #f8f2ee;
+    border: none;
+    border-radius: 0.65rem;
+    font-size: clamp(1.2rem, 1.6vw, 1.9rem);
+    font-weight: 700;
+    line-height: 1.25;
+    color: #1f2f46;
+    min-height: 110px;
+}
+
+.eo-question-card textarea[id$="_enunciado"]:focus {
+    box-shadow: inset 0 0 0 2px rgba(255, 138, 0, 0.26);
+    outline: none;
+}
+
+.eo-section-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.eo-section-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--eo-primary-soft);
+    background: rgba(255, 138, 0, 0.12);
+    flex-shrink: 0;
+}
+
+.eo-checkbox-line {
+    padding-top: 0.2rem;
+}
+
+.eo-add-question {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: transparent;
+    border: none;
+    color: var(--eo-primary);
+    font-weight: 700;
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.45rem;
+    cursor: pointer;
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+.eo-add-question:hover {
+    background: rgba(255, 138, 0, 0.12);
+}
+
+.eo-sidebar-column {
+    align-self: start;
+}
+
+.eo-checklist-card,
+.eo-primary-action-card {
+    border: 1px solid var(--eo-border);
+    box-shadow: 0 8px 22px rgba(18, 27, 44, 0.08);
+}
+
+.eo-checklist-card {
+    position: sticky;
+    top: 1rem;
+    overflow: hidden;
+}
+
+.eo-checklist-header {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+}
+
+.eo-checklist-top {
+    background: var(--eo-primary-soft);
+    color: #ffffff;
+    padding: 1rem 1.25rem;
+}
+
+.eo-progress-label {
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+}
+
+.eo-progress-value {
+    font-weight: 700;
+    color: var(--eo-primary-soft);
+}
+
+.eo-checklist-top .card-title {
+    margin-bottom: 0.25rem;
+}
+
+.eo-checklist-top .text-sm {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.eo-progress {
+    width: 100%;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: #ffe1cb;
+    overflow: hidden;
+    margin: 0.6rem 0 1rem;
+}
+
+.eo-progress > span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--eo-primary-soft), var(--eo-primary));
+}
+
+.eo-checklist-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.eo-check-item {
+    display: block;
+    color: var(--eo-text-muted);
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 0.5rem 0.65rem;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition: transform var(--transition-fast), background-color var(--transition-base), border-color var(--transition-base), color var(--transition-base);
+}
+
+.eo-check-item:hover {
+    color: var(--eo-primary-ink);
+    background: rgba(255, 138, 0, 0.1);
+    border-color: rgba(255, 138, 0, 0.24);
+    transform: translateX(2px);
+}
+
+.eo-check-item.active {
+    color: var(--eo-primary-ink);
+    background: rgba(255, 138, 0, 0.16);
+    border-color: rgba(145, 76, 0, 0.22);
+    font-weight: 600;
+}
+
+.eo-checklist-tips {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.3rem;
+}
+
+.eo-summary-metrics {
+    border-top: 1px solid rgba(221, 193, 174, 0.6);
+    margin-top: 1rem;
+    padding-top: 1rem;
+    display: grid;
+    gap: 0.55rem;
+}
+
+.eo-metric-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    font-size: var(--text-sm);
+    color: var(--eo-text-muted);
+}
+
+.eo-metric-row strong {
+    color: #241912;
+}
+
+.eo-primary-action-card {
+    border-left: 4px solid var(--eo-primary-soft);
+}
+
+.eo-primary-action-card .btn-primary {
+    background: linear-gradient(90deg, #ff8a00, #e46f00);
+    border: none;
+    color: #fff;
+}
+
+.eo-mentor-card {
+    background: linear-gradient(135deg, #1f2f46 0%, #203655 100%);
+    color: #fff;
+    border: none;
+    overflow: hidden;
+}
+
+.eo-mentor-card .card-body {
+    padding: 1rem 1.1rem;
+}
+
+.eo-mentor-icon {
+    color: #ffad33;
+    margin-bottom: 0.35rem;
+}
+
+.eo-mentor-card h4 {
+    margin: 0 0 0.4rem;
+    font-size: var(--text-sm);
+}
+
+.eo-mentor-card p {
+    margin: 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.45;
+}
+
+.breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.breadcrumb-item {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: '/';
+    margin: 0 0.4rem 0 0.2rem;
+    color: var(--text-muted);
+}
+
+.breadcrumb-item a {
+    color: var(--eo-primary);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+#form-evaluacion-online .card {
+    border: 1px solid var(--eo-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#form-evaluacion-online .card:focus-within {
+    box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.18), 0 12px 24px rgba(18, 27, 44, 0.08);
+}
+
+#form-evaluacion-online .card-header {
+    border-bottom: 1px solid var(--eo-border);
+}
+
+#form-evaluacion-online .card-title {
+    font-weight: 600;
+}
+
+#form-evaluacion-online .form-control {
+    width: 100%;
+    border: 1px solid rgba(221, 193, 174, 0.9);
+    border-radius: 10px;
+    background: #fff8f5;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#form-evaluacion-online select.form-control,
+#form-evaluacion-online input.form-control {
+    min-height: 44px;
+}
+
+#form-evaluacion-online .form-control:focus {
+    border-color: var(--eo-primary-soft);
+    box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.2);
+}
+
+#form-evaluacion-online .form-control:hover {
+    border-color: var(--color-border-hover);
+}
+
+#form-evaluacion-online .btn {
+    white-space: nowrap;
+    transition: transform var(--transition-base), box-shadow var(--transition-base), filter var(--transition-base);
+}
+
+#form-evaluacion-online .btn:hover {
+    transform: translateY(-1px);
+}
+
+#form-evaluacion-online .btn:active {
+    transform: translateY(0);
+}
+
+#form-evaluacion-online textarea.form-control {
+    resize: vertical;
+}
+
+#form-evaluacion-online [data-question-card] {
+    background: var(--eo-surface);
+}
+
+#form-evaluacion-online [hidden] {
+    display: none !important;
+}
+
+.eo-primary-action-card {
+    background: linear-gradient(180deg, rgba(255, 138, 0, 0.1), rgba(255, 255, 255, 1));
+}
+
+@media (max-width: 768px) {
+    .eo-page {
+        padding: 0.6rem;
+        border-radius: 12px;
+    }
+
+    .eo-hero-panel {
+        padding: 1rem;
+    }
+
+    .eo-hero-actions,
+    .eo-page-actions {
+        justify-content: flex-start;
+    }
+
+    .eo-page-actions {
+        justify-content: flex-start;
+    }
+
+    .eo-status-chip {
+        order: -1;
+    }
+
+    #form-evaluacion-online .card-body {
+        padding: var(--spacing-md);
+    }
+
+    .eo-checklist-card {
+        position: static;
+    }
+
+    .eo-question-card textarea[id$="_enunciado"] {
+        font-size: 1rem;
+        min-height: 88px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .eo-stat-card,
+    .eo-form-card,
+    .eo-question-card,
+    .eo-check-item,
+    #form-evaluacion-online .btn {
+        transition: none;
+    }
+
+    .eo-stat-card:hover,
+    .eo-form-card:hover,
+    .eo-question-card:hover,
+    .eo-check-item:hover,
+    #form-evaluacion-online .btn:hover {
+        transform: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    .eo-hero-panel {
+        grid-template-columns: minmax(0, 1.4fr) auto;
+    }
+
+    #form-evaluacion-online {
+        grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.85fr);
+        align-items: start;
+    }
+
+    #form-evaluacion-online > .eo-main-column {
+        grid-column: 1;
+    }
+
+    #form-evaluacion-online > .eo-sidebar-column {
+        grid-column: 2;
+    }
+}

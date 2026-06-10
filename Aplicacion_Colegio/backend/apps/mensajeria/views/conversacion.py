@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from backend.apps.mensajeria.services import MensajeriaService
 from backend.apps.mensajeria.views.bandeja import (
     _apply_mensajeria_shell,
+    _finalize_profesor_mensajeria_context,
     _get_clases_for_user,
     _mensajeria_content_template,
     enrich_apoderado_mensajeria_context,
@@ -64,10 +65,22 @@ def ver_conversacion(request, id_conversacion: int):
     _apply_mensajeria_shell(context, request.user)
 
     otro = conversacion.get_otro_participante(request.user)
-    uses_mm_bandeja = context['rol'] in {'estudiante', 'apoderado', 'profesor'}
+    mensajeria_rol = context['rol']
+    uses_mm_bandeja = mensajeria_rol in {'estudiante', 'apoderado', 'profesor'}
     clases = list(_get_clases_for_user(request.user))
 
-    if uses_mm_bandeja:
+    if mensajeria_rol == 'profesor':
+        context.update(
+            MensajeriaService.get_profesor_bandeja_context(
+                request.user,
+                request.GET,
+                conversacion_activa_id=conversacion.id_conversacion,
+                clases=clases,
+                notificaciones_count=context.get('notificaciones_count'),
+            ),
+        )
+        _finalize_profesor_mensajeria_context(context, request.user)
+    elif uses_mm_bandeja:
         context.update(
             MensajeriaService.get_alumno_bandeja_context(
                 request.user,

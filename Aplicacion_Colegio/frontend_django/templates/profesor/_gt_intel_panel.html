@@ -1,0 +1,84 @@
+<aside class="gt-aside" aria-label="Resumen inteligente de actividades">
+    <section class="gt-aside-card gt-aside-card--summary">
+        <h2 class="gt-aside-card__title">Estado del curso</h2>
+        <p class="gt-aside-card__text">{{ gt_intel_resumen }}</p>
+        <dl class="gt-aside-kpis">
+            <div class="gt-aside-kpi">
+                <dt>Estudiantes</dt>
+                <dd>{{ gt_total_estudiantes|default:0 }}</dd>
+            </div>
+            <div class="gt-aside-kpi">
+                <dt>Activas</dt>
+                <dd>{{ gt_tareas_activas|default:0 }}</dd>
+            </div>
+            <div class="gt-aside-kpi">
+                <dt>Vencidas</dt>
+                <dd class="{% if gt_tareas_vencidas %}gt-aside-kpi__warn{% endif %}">{{ gt_tareas_vencidas|default:0 }}</dd>
+            </div>
+            <div class="gt-aside-kpi">
+                <dt>Revisión</dt>
+                <dd>{{ gt_tasa_revision|default:0 }}%</dd>
+            </div>
+        </dl>
+    </section>
+
+    {% if gt_intel_alertas %}
+    <section class="gt-aside-card">
+        <h2 class="gt-aside-card__title">Atención requerida</h2>
+        <div class="gt-intel-alertas">
+            {% for alerta in gt_intel_alertas %}
+            <article class="gt-intel-card gt-intel-card--{{ alerta.tipo|default:'info' }}">
+                <span class="gt-intel-card__icon" aria-hidden="true">{{ alerta.icono|default:"ℹ️" }}</span>
+                <div>
+                    <h3 class="gt-intel-card__title">{{ alerta.titulo }}</h3>
+                    <p class="gt-intel-card__text">{{ alerta.texto }}</p>
+                    {% if alerta.tarea_id %}
+                    <a href="{% url 'ver_entregas_tarea' alerta.tarea_id %}" class="gt-intel-link">Ver entregas →</a>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if gt_intel_sugerencias %}
+    <section class="gt-aside-card gt-aside-card--tips">
+        <h2 class="gt-aside-card__title">Seguimiento</h2>
+        <ul class="gt-intel-list">
+            {% for item in gt_intel_sugerencias %}
+            <li class="gt-intel-list__item">
+                <span aria-hidden="true">{{ item.icono }}</span>
+                {% if item.tarea_id %}
+                <a href="{% url 'ver_entregas_tarea' item.tarea_id %}">{{ item.texto }}</a>
+                {% else %}
+                <span>{{ item.texto }}</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <section class="gt-aside-card gt-aside-card--stats" aria-label="Métricas rápidas">
+        <h2 class="gt-aside-card__title">Métricas</h2>
+        <div class="gt-aside-stat-grid">
+            <article class="gt-aside-stat gt-aside-stat--primary">
+                <span class="gt-aside-stat__value">{{ total_tareas|default:0 }}</span>
+                <span class="gt-aside-stat__label">Tareas</span>
+            </article>
+            <article class="gt-aside-stat">
+                <span class="gt-aside-stat__value">{{ total_entregas|default:0 }}</span>
+                <span class="gt-aside-stat__label">Entregas</span>
+            </article>
+            <article class="gt-aside-stat gt-aside-stat--warn">
+                <span class="gt-aside-stat__value">{{ total_pendientes|default:0 }}</span>
+                <span class="gt-aside-stat__label">Pendientes</span>
+            </article>
+            <article class="gt-aside-stat gt-aside-stat--ok">
+                <span class="gt-aside-stat__value">{{ total_revisadas|default:0 }}</span>
+                <span class="gt-aside-stat__label">Revisadas</span>
+            </article>
+        </div>
+    </section>
+</aside>

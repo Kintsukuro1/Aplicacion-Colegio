@@ -1,0 +1,490 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_estudiantes.css' %}">
+
+<div class="estudiantes-container">
+    <!-- Encabezado y Estadísticas -->
+    <div class="header-section">
+        <div class="titulo-modulo">
+            <i class="fas fa-user-friends"></i>
+            <h2>Gestión de Apoderados</h2>
+        </div>
+        
+        <div class="estadisticas-grid">
+            <div class="stat-card blue">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_apoderados|default:0 }}</span>
+                    <span class="stat-label">Total Apoderados</span>
+                </div>
+            </div>
+            
+            <div class="stat-card green">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ apoderados_activos|default:0 }}</span>
+                    <span class="stat-label">Activos</span>
+                </div>
+            </div>
+            
+            <div class="stat-card orange">
+                <div class="stat-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ total_estudiantes_relacionados|default:0 }}</span>
+                    <span class="stat-label">Estudiantes Vinculados</span>
+                </div>
+            </div>
+            
+            <div class="stat-card purple">
+                <div class="stat-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ apoderados_con_email|default:0 }}</span>
+                    <span class="stat-label">Con Email Activo</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="filtros-section">
+        <form method="GET" action="{% url 'dashboard' %}" class="filtros-form">
+            <input type="hidden" name="pagina" value="gestionar_apoderados">
+            
+            <div class="filtro-group">
+                <label for="busqueda">
+                    <i class="fas fa-search"></i> Buscar
+                </label>
+                <input 
+                    type="text" 
+                    id="busqueda" 
+                    name="busqueda" 
+                    placeholder="Nombre, RUT, Email..."
+                    value="{{ filtro_busqueda }}"
+                >
+            </div>
+            
+            <div class="filtro-group">
+                <label for="estado">
+                    <i class="fas fa-flag"></i> Estado
+                </label>
+                <select id="estado" name="estado">
+                    <option value="">Todos los estados</option>
+                    <option value="Activo" {% if filtro_estado == 'Activo' %}selected{% endif %}>Activo</option>
+                    <option value="Inactivo" {% if filtro_estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                </select>
+            </div>
+            
+            <div class="filtro-actions">
+                <button type="submit" class="btn-filtrar">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <a href="{% url 'dashboard' %}?pagina=gestionar_apoderados" class="btn-limpiar">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </div>
+        </form>
+        
+        <button onclick="abrirModalCrear()" class="btn-nuevo-estudiante">
+            <i class="fas fa-user-plus"></i> Nuevo Apoderado
+        </button>
+    </div>
+
+    <!-- Tabla de Apoderados -->
+    <div class="tabla-container">
+        {% if apoderados %}
+        <table class="tabla-estudiantes">
+            <thead>
+                <tr>
+                    <th>RUT</th>
+                    <th>Nombre Completo</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Ocupación</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for apoderado in apoderados %}
+                <tr>
+                    <td>{{ apoderado.rut|default:"—" }}</td>
+                    <td>
+                        <div class="estudiante-nombre">
+                            <div class="avatar-small">
+                                {{ apoderado.nombre.0 }}{{ apoderado.apellido_paterno.0 }}
+                            </div>
+                            <span>{{ apoderado.get_full_name }}</span>
+                        </div>
+                    </td>
+                    <td>{{ apoderado.email }}</td>
+                    <td>{{ apoderado.perfil_apoderado.telefono_movil|default:apoderado.perfil_apoderado.telefono|default:"—" }}</td>
+                    <td>{{ apoderado.perfil_apoderado.ocupacion|default:"—" }}</td>
+                    <td>
+                        {% if apoderado.is_active and apoderado.perfil_apoderado.activo %}
+                            <span class="badge-estado estado-activo">Activo</span>
+                        {% else %}
+                            <span class="badge-estado estado-inactivo">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="acciones-grupo">
+                            <button 
+                                class="btn-icono btn-editar" 
+                                title="Editar"
+                                onclick="abrirModalEditar(this)"
+                                data-id="{{ apoderado.id }}"
+                                data-rut="{{ apoderado.rut|default:'' }}"
+                                data-nombre="{{ apoderado.nombre }}"
+                                data-apellido-paterno="{{ apoderado.apellido_paterno }}"
+                                data-apellido-materno="{{ apoderado.apellido_materno|default:'' }}"
+                                data-email="{{ apoderado.email }}"
+                                data-fecha-nacimiento="{{ apoderado.perfil_apoderado.fecha_nacimiento|date:'Y-m-d'|default:'' }}"
+                                data-direccion="{{ apoderado.perfil_apoderado.direccion|default:'' }}"
+                                data-telefono="{{ apoderado.perfil_apoderado.telefono|default:'' }}"
+                                data-telefono-movil="{{ apoderado.perfil_apoderado.telefono_movil|default:'' }}"
+                                data-ocupacion="{{ apoderado.perfil_apoderado.ocupacion|default:'' }}"
+                                data-lugar-trabajo="{{ apoderado.perfil_apoderado.lugar_trabajo|default:'' }}"
+                                data-telefono-trabajo="{{ apoderado.perfil_apoderado.telefono_trabajo|default:'' }}"
+                                data-puede-ver-notas="{{ apoderado.perfil_apoderado.puede_ver_notas|yesno:'true,false' }}"
+                                data-puede-ver-asistencia="{{ apoderado.perfil_apoderado.puede_ver_asistencia|yesno:'true,false' }}"
+                                data-puede-recibir-comunicados="{{ apoderado.perfil_apoderado.puede_recibir_comunicados|yesno:'true,false' }}"
+                                data-puede-firmar-citaciones="{{ apoderado.perfil_apoderado.puede_firmar_citaciones|yesno:'true,false' }}"
+                                data-puede-autorizar-salidas="{{ apoderado.perfil_apoderado.puede_autorizar_salidas|yesno:'true,false' }}"
+                                data-puede-ver-tareas="{{ apoderado.perfil_apoderado.puede_ver_tareas|yesno:'true,false' }}"
+                                data-puede-ver-materiales="{{ apoderado.perfil_apoderado.puede_ver_materiales|yesno:'true,false' }}"
+                                data-observaciones="{{ apoderado.perfil_apoderado.observaciones|default:'' }}"
+                            >
+                                ✏️
+                            </button>
+                            <button 
+                                class="btn-icono btn-password" 
+                                title="Resetear Contraseña"
+                                onclick="resetearPassword(this)"
+                                data-apoderado-id="{{ apoderado.id }}"
+                                data-apoderado-nombre="{{ apoderado.get_full_name }}"
+                            >
+                                🔑
+                            </button>
+                            <button 
+                                class="btn-icono btn-eliminar" 
+                                title="Desactivar"
+                                onclick="confirmarEliminar(this)"
+                                data-apoderado-id="{{ apoderado.id }}"
+                                data-apoderado-nombre="{{ apoderado.get_full_name }}"
+                            >
+                                🚫
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>No se encontraron apoderados</p>
+            <button onclick="abrirModalCrear()" class="btn-nuevo-estudiante">
+                <i class="fas fa-user-plus"></i> Crear Primer Apoderado
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Apoderado -->
+<div id="modalApoderado" class="modal-overlay d-none">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Nuevo Apoderado</h3>
+            <button class="btn-close-modal" onclick="cerrarModal('modalApoderado')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{% url 'gestionar_apoderados' %}" class="form-estudiante">
+            {% csrf_token %}
+            <input type="hidden" name="accion" id="accionForm" value="crear">
+            <input type="hidden" name="id" id="apoderadoId">
+            
+            <div class="form-section">
+                <h4><i class="fas fa-user"></i> Datos Personales</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="rut">RUT</label>
+                        <input type="text" id="rut" name="rut" placeholder="12.345.678-9">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email <span class="required">*</span></label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nombre">Nombre <span class="required">*</span></label>
+                        <input type="text" id="nombre" name="nombre" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apellido_paterno">Apellido Paterno <span class="required">*</span></label>
+                        <input type="text" id="apellido_paterno" name="apellido_paterno" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apellido_materno">Apellido Materno</label>
+                        <input type="text" id="apellido_materno" name="apellido_materno">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="telefono">Teléfono Fijo</label>
+                        <input type="tel" id="telefono" name="telefono" placeholder="+56 2 2234 5678">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="telefono_movil">Teléfono Móvil</label>
+                        <input type="tel" id="telefono_movil" name="telefono_movil" placeholder="+56 9 1234 5678">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="direccion">Dirección</label>
+                        <input type="text" id="direccion" name="direccion">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4><i class="fas fa-briefcase"></i> Información Laboral</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="ocupacion">Ocupación</label>
+                        <input type="text" id="ocupacion" name="ocupacion" placeholder="Ingeniero, Contador, etc.">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lugar_trabajo">Lugar de Trabajo</label>
+                        <input type="text" id="lugar_trabajo" name="lugar_trabajo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="telefono_trabajo">Teléfono Trabajo</label>
+                        <input type="tel" id="telefono_trabajo" name="telefono_trabajo">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4><i class="fas fa-shield-alt"></i> Permisos y Accesos</h4>
+                <div class="form-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="puede_ver_notas" name="puede_ver_notas" value="true" checked>
+                            <span>Puede ver notas</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="puede_ver_asistencia" name="puede_ver_asistencia" value="true" checked>
+                            <span>Puede ver asistencia</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="puede_recibir_comunicados" name="puede_recibir_comunicados" value="true" checked>
+                            <span>Puede recibir comunicados</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="puede_firmar_citaciones" name="puede_firmar_citaciones" value="true" checked>
+                            <span>Puede firmar citaciones</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="puede_autorizar_salidas" name="puede_autorizar_salidas" value="true">
+                            <span>Puede autorizar salidas</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="puede_ver_tareas" name="puede_ver_tareas" value="true" checked>
+                            <span>Puede ver tareas</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="puede_ver_materiales" name="puede_ver_materiales" value="true" checked>
+                            <span>Puede ver materiales</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section d-none" id="observacionesSection">
+                <h4><i class="fas fa-comment-alt"></i> Observaciones</h4>
+                <div class="form-group full-width">
+                    <textarea id="observaciones" name="observaciones" rows="3" placeholder="Información adicional..."></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalApoderado')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-guardar">
+                    <i class="fas fa-save"></i> Guardar Apoderado
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Formularios ocultos para acciones -->
+<form method="POST" action="{% url 'gestionar_apoderados' %}" id="formEliminar" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="eliminar">
+    <input type="hidden" name="id" id="eliminarId">
+</form>
+
+<form method="POST" action="{% url 'gestionar_apoderados' %}" id="formResetPassword" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="resetear_password">
+    <input type="hidden" name="id" id="resetPasswordId">
+</form>
+
+<script>
+// Funciones para manejo de modales
+function abrirModalCrear() {
+    document.getElementById('modalTitulo').textContent = 'Nuevo Apoderado';
+    document.getElementById('accionForm').value = 'crear';
+    document.getElementById('apoderadoId').value = '';
+    
+    // Limpiar formulario
+    document.querySelector('.form-estudiante').reset();
+    
+    // Restablecer checkboxes al valor por defecto
+    document.getElementById('puede_ver_notas').checked = true;
+    document.getElementById('puede_ver_asistencia').checked = true;
+    document.getElementById('puede_recibir_comunicados').checked = true;
+    document.getElementById('puede_firmar_citaciones').checked = true;
+    document.getElementById('puede_autorizar_salidas').checked = false;
+    document.getElementById('puede_ver_tareas').checked = true;
+    document.getElementById('puede_ver_materiales').checked = true;
+    
+    // Ocultar sección de observaciones en crear
+    document.getElementById('observacionesSection').style.display = 'none';
+    
+    // Mostrar modal
+    document.getElementById('modalApoderado').style.display = 'flex';
+}
+
+function abrirModalEditar(button) {
+    const data = button.dataset;
+    
+    document.getElementById('modalTitulo').textContent = 'Editar Apoderado';
+    document.getElementById('accionForm').value = 'editar';
+    document.getElementById('apoderadoId').value = data.id;
+    
+    // Llenar campos
+    document.getElementById('rut').value = data.rut;
+    document.getElementById('email').value = data.email;
+    document.getElementById('nombre').value = data.nombre;
+    document.getElementById('apellido_paterno').value = data.apellidoPaterno;
+    document.getElementById('apellido_materno').value = data.apellidoMaterno;
+    document.getElementById('fecha_nacimiento').value = data.fechaNacimiento;
+    document.getElementById('direccion').value = data.direccion;
+    document.getElementById('telefono').value = data.telefono;
+    document.getElementById('telefono_movil').value = data.telefonoMovil;
+    document.getElementById('ocupacion').value = data.ocupacion;
+    document.getElementById('lugar_trabajo').value = data.lugarTrabajo;
+    document.getElementById('telefono_trabajo').value = data.telefonoTrabajo;
+    
+    // Permisos
+    document.getElementById('puede_ver_notas').checked = data.puedeVerNotas === 'true';
+    document.getElementById('puede_ver_asistencia').checked = data.puedeVerAsistencia === 'true';
+    document.getElementById('puede_recibir_comunicados').checked = data.puedeRecibirComunicados === 'true';
+    document.getElementById('puede_firmar_citaciones').checked = data.puedeFirmarCitaciones === 'true';
+    document.getElementById('puede_autorizar_salidas').checked = data.puedeAutorizarSalidas === 'true';
+    document.getElementById('puede_ver_tareas').checked = data.puedeVerTareas === 'true';
+    document.getElementById('puede_ver_materiales').checked = data.puedeVerMateriales === 'true';
+    
+    document.getElementById('observaciones').value = data.observaciones;
+    
+    // Mostrar sección de observaciones
+    document.getElementById('observacionesSection').style.display = 'block';
+    
+    // Mostrar modal
+    document.getElementById('modalApoderado').style.display = 'flex';
+}
+
+function cerrarModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function confirmarEliminar(button) {
+    const data = button.dataset;
+    
+    if (confirm(`¿Está seguro que desea desactivar al apoderado ${data.apoderadoNombre}?\n\nEsta acción cambiará su estado a inactivo.`)) {
+        document.getElementById('eliminarId').value = data.apoderadoId;
+        document.getElementById('formEliminar').submit();
+    }
+}
+
+function resetearPassword(button) {
+    const data = button.dataset;
+    
+    if (confirm(`¿Resetear la contraseña de ${data.apoderadoNombre}?\n\nSe generará una contraseña temporal basada en su RUT.`)) {
+        document.getElementById('resetPasswordId').value = data.apoderadoId;
+        document.getElementById('formResetPassword').submit();
+    }
+}
+
+// Cerrar modal al hacer clic fuera
+document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+});
+
+// Cerrar modal con tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.style.display = 'none';
+        });
+    }
+});
+
+// Abrir modal automáticamente si viene del botón de inserción manual
+window.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const abrirModal = urlParams.get('abrir_modal');
+    
+    if (abrirModal === 'crear') {
+        setTimeout(() => {
+            abrirModalCrear();
+        }, 100);
+    }
+});
+</script>

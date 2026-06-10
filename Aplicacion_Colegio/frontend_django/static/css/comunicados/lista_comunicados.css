@@ -1,5 +1,45 @@
 ﻿.comunicados-container {
     padding: 2rem;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.comunicados-header-banner {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1.25rem 1.35rem;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    border: 1px solid #e0e7ff;
+    border-radius: 18px;
+}
+
+.comunicados-header-banner .banner-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.comunicados-header-banner h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #3730a3;
+}
+
+.comunicados-header-banner p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.comunicados-container .empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: #f5f3ff;
+    border: 1px dashed #e0e7ff;
+    border-radius: 18px;
 }
 
 .header-comunicados {
@@ -9,6 +49,16 @@
     flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 1.5rem;
+}
+
+.comunicados-hero-action {
+    display: flex;
+    justify-content: flex-end;
+    margin: -8px 0 1.25rem;
+}
+
+.comunicados-hero-action .btn-crear {
+    margin: 0;
 }
 
 .btn-crear {

@@ -1,0 +1,254 @@
+{% load static %}
+<div class="data-management-container">
+                <div class="page-header">
+                    <h1>📥 Gestión de Datos</h1>
+                    <p>Importa o inserta datos de estudiantes, profesores y apoderados de forma manual o masiva</p>
+                </div>
+                
+                <!-- Estadísticas -->
+                <div class="stats-cards">
+                    <div class="stat-card students">
+                        <h3>Estudiantes</h3>
+                        <p class="number">{{ total_estudiantes }}</p>
+                    </div>
+                    
+                    <div class="stat-card teachers">
+                        <h3>Profesores</h3>
+                        <p class="number">{{ total_profesores }}</p>
+                    </div>
+                    
+                    <div class="stat-card parents">
+                        <h3>Apoderados</h3>
+                        <p class="number">{{ total_apoderados }}</p>
+                    </div>
+                </div>
+                
+                <!-- Secciones de Acción -->
+                <div class="action-sections">
+                    <!-- Estudiantes -->
+                    <div class="action-section">
+                        <h2><span class="icon">👨‍🎓</span> Estudiantes</h2>
+                        <div class="action-buttons">
+                            <a href="{% url 'insertar_estudiante_manual' %}" class="action-button">
+                                <span class="icon">✏️</span>
+                                <div class="content">
+                                    <h3>Insertar Manualmente</h3>
+                                    <p>Agregar un estudiante con formulario</p>
+                                </div>
+                            </a>
+                            
+                            <a href="{% url 'importar_estudiantes_csv' %}" class="action-button">
+                                <span class="icon">📄</span>
+                                <div class="content">
+                                    <h3>Importar desde CSV</h3>
+                                    <p>Carga masiva de estudiantes</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Profesores -->
+                    <div class="action-section">
+                        <h2><span class="icon">👨‍🏫</span> Profesores</h2>
+                        <div class="action-buttons">
+                            <a href="{% url 'insertar_profesor_manual' %}" class="action-button">
+                                <span class="icon">✏️</span>
+                                <div class="content">
+                                    <h3>Insertar Manualmente</h3>
+                                    <p>Agregar un profesor con formulario</p>
+                                </div>
+                            </a>
+                            
+                            <a href="{% url 'importar_profesores_csv' %}" class="action-button">
+                                <span class="icon">📄</span>
+                                <div class="content">
+                                    <h3>Importar desde CSV</h3>
+                                    <p>Carga masiva de profesores</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Apoderados -->
+                    <div class="action-section">
+                        <h2><span class="icon">👨‍👩‍👧‍👦</span> Apoderados</h2>
+                        <div class="action-buttons">
+                            <a href="{% url 'insertar_apoderado_manual' %}" class="action-button">
+                                <span class="icon">✏️</span>
+                                <div class="content">
+                                    <h3>Insertar Manualmente</h3>
+                                    <p>Agregar un apoderado con formulario</p>
+                                </div>
+                            </a>
+                            
+                            <a href="{% url 'importar_apoderados_csv' %}" class="action-button">
+                                <span class="icon">📄</span>
+                                <div class="content">
+                                    <h3>Importar desde CSV</h3>
+                                    <p>Carga masiva de apoderados</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tablas de Datos Existentes -->
+                <div class="data-tables-section">
+                    <!-- Tabla de Estudiantes -->
+                    <div class="data-table-container">
+                        <h2><span class="icon">👨‍🎓</span> Estudiantes Registrados</h2>
+                        {% if estudiantes %}
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>RUT</th>
+                                        <th>Curso</th>
+                                        <th>NEE</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for estudiante in estudiantes %}
+                                        <tr>
+                                            <td>{{ estudiante.nombre }} {{ estudiante.apellido_paterno }}</td>
+                                            <td>{{ estudiante.email }}</td>
+                                            <td>{{ estudiante.rut }}</td>
+                                            <td>
+                                                {% if estudiante.perfil_estudiante.curso %}
+                                                    {{ estudiante.perfil_estudiante.curso.nombre }}
+                                                {% else %}
+                                                    <span class="text-tertiary">Sin asignar</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if estudiante.perfil_estudiante.tiene_nee %}
+                                                    <span class="badge badge-warning">Sí</span>
+                                                {% else %}
+                                                    <span class="badge badge-success">No</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'editar_estudiante' estudiante.id %}" class="btn-action btn-edit">✏️ Editar</a>
+                                                <a href="{% url 'eliminar_usuario' estudiante.id %}" class="btn-action btn-delete">🗑️ Eliminar</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% if total_estudiantes > 50 %}
+                                <p class="text-italic-muted">
+                                    Mostrando los primeros 50 de {{ total_estudiantes }} estudiantes totales
+                                </p>
+                            {% endif %}
+                        {% else %}
+                            <div class="no-data">No hay estudiantes registrados aún</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Tabla de Profesores -->
+                    <div class="data-table-container">
+                        <h2><span class="icon">👨‍🏫</span> Profesores Registrados</h2>
+                        {% if profesores %}
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>RUT</th>
+                                        <th>Especialidad</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for profesor in profesores %}
+                                        <tr>
+                                            <td>{{ profesor.nombre }} {{ profesor.apellido_paterno }}</td>
+                                            <td>{{ profesor.email }}</td>
+                                            <td>{{ profesor.rut }}</td>
+                                            <td>
+                                                {% if profesor.perfil_profesor.especialidad %}
+                                                    {{ profesor.perfil_profesor.especialidad }}
+                                                {% else %}
+                                                    <span class="text-tertiary">No especificada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'editar_profesor' profesor.id %}" class="btn-action btn-edit">✏️ Editar</a>
+                                                <a href="{% url 'eliminar_usuario' profesor.id %}" class="btn-action btn-delete">🗑️ Eliminar</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% if total_profesores > 50 %}
+                                <p class="text-italic-muted">
+                                    Mostrando los primeros 50 de {{ total_profesores }} profesores totales
+                                </p>
+                            {% endif %}
+                        {% else %}
+                            <div class="no-data">No hay profesores registrados aún</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Tabla de Apoderados -->
+                    <div class="data-table-container">
+                        <h2><span class="icon">👨‍👩‍👧‍👦</span> Apoderados Registrados</h2>
+                        {% if apoderados %}
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>RUT</th>
+                                        <th>Teléfono</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for apoderado in apoderados %}
+                                        <tr>
+                                            <td>{{ apoderado.nombre }} {{ apoderado.apellido_paterno }}</td>
+                                            <td>{{ apoderado.email }}</td>
+                                            <td>{{ apoderado.rut }}</td>
+                                            <td>
+                                                {% if apoderado.perfil_apoderado.telefono %}
+                                                    {{ apoderado.perfil_apoderado.telefono }}
+                                                {% else %}
+                                                    <span class="text-tertiary">No especificado</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'editar_apoderado' apoderado.id %}" class="btn-action btn-edit">✏️ Editar</a>
+                                                <a href="{% url 'eliminar_usuario' apoderado.id %}" class="btn-action btn-delete">🗑️ Eliminar</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% if total_apoderados > 50 %}
+                                <p class="text-italic-muted">
+                                    Mostrando los primeros 50 de {{ total_apoderados }} apoderados totales
+                                </p>
+                            {% endif %}
+                        {% else %}
+                            <div class="no-data">No hay apoderados registrados aún</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Información -->
+                <div class="info-box">
+                    <h3>💡 Información sobre Importación CSV</h3>
+                    <ul>
+                        <li>Los archivos CSV deben estar en formato UTF-8</li>
+                        <li>La primera fila debe contener los nombres de las columnas</li>
+                        <li>Descarga la plantilla de ejemplo antes de importar</li>
+                        <li>Las contraseñas deben tener mínimo 12 caracteres</li>
+                        <li>Los RUTs y emails deben ser únicos en el sistema</li>
+                        <li>Las fechas deben estar en formato YYYY-MM-DD (ej: 2010-05-15)</li>
+                    </ul>
+                </div>
+            </div>
+<!-- Fin de data-management-container -->

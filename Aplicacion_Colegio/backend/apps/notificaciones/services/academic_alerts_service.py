@@ -18,7 +18,6 @@ class AcademicAlertsService:
     """
 
     @staticmethod
-    @staticmethod
     def evaluate_student_alerts(
         student,
         curso_actual=None,
@@ -108,7 +107,7 @@ class AcademicAlertsService:
                 tipo='alerta',
                 titulo=title_riesgo_student,
                 mensaje=msg_student,
-                enlace='/estudiante/inicio',
+                enlace='/dashboard/?pagina=inicio',
                 prioridad='alta',
                 unread_notifications=unread_notifications
             )
@@ -121,7 +120,7 @@ class AcademicAlertsService:
                         tipo='alerta',
                         titulo=title_riesgo_parent,
                         mensaje=msg_parent,
-                        enlace=f"/apoderado/inicio?estudiante_id={student.id}",
+                        enlace=f"/dashboard/?pagina=inicio&estudiante_id={student.id}",
                         prioridad='alta',
                         unread_notifications=unread_notifications
                     )
@@ -158,7 +157,7 @@ class AcademicAlertsService:
                 tipo='tarea_nueva',
                 titulo=title_tareas,
                 mensaje=msg_tareas,
-                enlace='/estudiante/inicio',
+                enlace='/dashboard/?pagina=mis_tareas',
                 prioridad='normal',
                 unread_notifications=unread_notifications
             )
@@ -192,7 +191,7 @@ class AcademicAlertsService:
                             tipo='asistencia',
                             titulo=title_ausencias,
                             mensaje=msg_ausencias,
-                            enlace=f"/apoderado/inicio?estudiante_id={student.id}",
+                            enlace=f"/dashboard/?pagina=inicio&estudiante_id={student.id}",
                             prioridad='alta',
                             unread_notifications=unread_notifications
                         )

@@ -1,0 +1,269 @@
+{% load static %}
+{% include 'apoderado/_apoderado_wrap_start.html' %}
+{% include 'apoderado/_apoderado_hero.html' with hero_title="Certificados" hero_subtitle="Descarga certificados de tus pupilos." hero_aria="Certificados" metrics_aria="Resumen" m1_value=apod_resumen_pupilos m1_label="Mis pupilos" m1_mod="pupilos" m2_value=apod_resumen_comunicados m2_label="Comunicados nuevos" m2_mod="comunicados" m3_value=apod_resumen_firmas m3_label="Pendientes de firma" m3_mod="firmas" m4_value=apod_resumen_cuotas m4_label="Cuotas pendientes" m4_mod="cuotas" %}
+<div class="certificates-container">
+    <div class="certificates-header">
+        <div class="header-content">
+            <a href="{% url 'dashboard' %}" class="back-link">
+                <span class="back-icon">←</span> Volver al Dashboard
+            </a>
+            <h1 class="page-title">🎓 Certificados</h1>
+            <p class="page-subtitle">Descarga certificados oficiales de tus pupilos</p>
+        </div>
+    </div>
+
+    {% if pupilos %}
+    <div class="pupilos-grid">
+        {% for pupilo in pupilos %}
+        <div class="pupilo-card">
+            <div class="pupilo-header">
+                <div class="pupilo-avatar">{{ pupilo.first_name|first }}{{ pupilo.last_name|first }}</div>
+                <div class="pupilo-info">
+                    <h3 class="pupilo-name">{{ pupilo.get_full_name }}</h3>
+                    <span class="pupilo-curso">
+                        {% if pupilo.perfil_estudiante.curso_actual %}
+                        {{ pupilo.perfil_estudiante.curso_actual.nombre }}
+                        {% else %}
+                        Sin curso asignado
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="cert-actions">
+                <a href="{% url 'descargar_certificado_matricula' pupilo.id %}" class="cert-btn cert-matricula"
+                    title="Certificado de matrícula">
+                    <span class="cert-icon">📋</span>
+                    <span class="cert-label">Certificado de Matrícula</span>
+                    <span class="cert-desc">Alumno regular vigente</span>
+                </a>
+                <a href="{% url 'descargar_certificado_notas' pupilo.id %}" class="cert-btn cert-notas"
+                    title="Certificado de notas">
+                    <span class="cert-icon">📊</span>
+                    <span class="cert-label">Certificado de Notas</span>
+                    <span class="cert-desc">Concentración de calificaciones</span>
+                </a>
+                <a href="{% url 'descargar_informe_rendimiento' pupilo.id %}" class="cert-btn cert-informe"
+                    title="Informe de rendimiento">
+                    <span class="cert-icon">📈</span>
+                    <span class="cert-label">Informe de Rendimiento</span>
+                    <span class="cert-desc">Rendimiento académico detallado</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📄</div>
+        <h3 class="empty-title">No hay pupilos registrados</h3>
+        <p class="empty-text">No se encontraron pupilos vinculados a tu cuenta. Contacta con la administración del
+            colegio.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .certificates-container {
+        padding: 24px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .certificates-header {
+        margin-bottom: 24px;
+    }
+
+    .header-content {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .back-link {
+        color: #6b7280;
+        text-decoration: none;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover {
+        color: #3b82f6;
+    }
+
+    .page-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    .pupilos-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .pupilo-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    .pupilo-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #eff6ff, #dbeafe);
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .pupilo-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .pupilo-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .pupilo-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .pupilo-curso {
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    .cert-actions {
+        padding: 16px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .cert-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid #e5e7eb;
+    }
+
+    .cert-btn:hover {
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .cert-matricula {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+    }
+
+    .cert-matricula:hover {
+        background: #dcfce7;
+    }
+
+    .cert-notas {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+    }
+
+    .cert-notas:hover {
+        background: #dbeafe;
+    }
+
+    .cert-informe {
+        background: #fef3c7;
+        border-color: #fde68a;
+    }
+
+    .cert-informe:hover {
+        background: #fde68a;
+    }
+
+    .cert-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .cert-label {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+        display: block;
+    }
+
+    .cert-desc {
+        color: #64748b;
+        font-size: 0.8rem;
+        display: block;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 16px;
+    }
+
+    .empty-title {
+        font-size: 1.2rem;
+        color: #374151;
+        margin: 0 0 8px;
+    }
+
+    .empty-text {
+        color: #6b7280;
+        margin: 0;
+    }
+
+    @media (max-width: 640px) {
+        .certificates-container {
+            padding: 12px;
+        }
+
+        .page-title {
+            font-size: 1.4rem;
+        }
+
+        .cert-btn {
+            padding: 12px;
+        }
+    }
+</style>
+{% include 'apoderado/_apoderado_wrap_end.html' %}

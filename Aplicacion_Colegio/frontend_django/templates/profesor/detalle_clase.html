@@ -1,5 +1,9 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/profesor/detalle_clase.css' %}">
+{% if es_profesor and not ver_como_alumno %}
+{% include 'profesor/_personal_wrap_start.html' %}
+{% endif %}
+<link rel="stylesheet" href="{% static 'css/profesor/detalle_clase.css' %}?v=20260608-portal">
+<link rel="stylesheet" href="{% static 'css/profesor/detalle_clase_intel.css' %}?v=20260604-demo">
 {% csrf_token %}
 
 <style>
@@ -23,55 +27,57 @@
 }
 </style>
 
-<div class="content-wrapper">
-    {# Breadcrumb #}
-    <div class="breadcrumb">
-        <a href="{% url 'dashboard' %}?pagina=mis_clases">← Volver a Mis Clases</a>
-        <div class="d-flex gap-sm breadcrumb-actions">
-            {% if es_profesor %}
-                {% if not ver_como_alumno %}
-                <a href="{% url 'gestionar_tareas_profesor' clase.id %}" class="btn-ver-como-alumno">
-                    📋 Actividades
-                </a>
-                <a href="{% url 'ver_detalle_clase' clase.id %}?ver_como_alumno=1" class="btn-ver-como-alumno">
-                    👁️ Ver como alumno
-                </a>
-                {% else %}
-                <a href="{% url 'ver_detalle_clase' clase.id %}" class="btn-ver-como-alumno btn-volver-profesor">
-                    👨‍🏫 Volver a vista profesor
-                </a>
-                {% endif %}
-            {% endif %}
-        </div>
+<div class="content-wrapper dc-page">
+    {% if es_profesor and not ver_como_alumno %}
+    <nav class="dc-breadcrumb" aria-label="Ruta de navegación">
+        <a href="{% url 'dashboard' %}?pagina=inicio">Inicio</a>
+        <span class="dc-breadcrumb__sep">/</span>
+        <a href="{% url 'dashboard' %}?pagina=mis_clases">Mis Clases</a>
+        <span class="dc-breadcrumb__sep">/</span>
+        <span class="dc-breadcrumb__current">{{ clase.curso.nombre }} · {{ clase.asignatura.nombre }}</span>
+    </nav>
+
+    <div class="dc-topbar-actions">
+        <a href="{% url 'registro_asistencia_clase' clase.id %}" class="dc-topbar-btn dc-topbar-btn--primary">Registrar asistencia</a>
+        <a href="{% url 'gestionar_tareas_profesor' clase.id %}" class="dc-topbar-btn dc-topbar-btn--outline">Agregar tarea</a>
+        <a href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase.id }}" class="dc-topbar-btn dc-topbar-btn--outline">Ver notas</a>
+        {% if mensajes_bandeja_url %}
+        <a href="{{ mensajes_bandeja_url }}" class="dc-topbar-btn dc-topbar-btn--outline">Mensajes{% if mensajes_clase_no_leidos %} ({{ mensajes_clase_no_leidos }}){% endif %}</a>
+        {% endif %}
+        <a href="{% url 'ver_detalle_clase' clase.id %}?ver_como_alumno=1" class="dc-topbar-btn dc-topbar-btn--ghost">Vista alumno</a>
     </div>
 
-    {# Header de la Clase #}
-    <div class="clase-header-banner" style="border-left: 5px solid {{ asignatura.color }}">
+    {% if detalle_clase_vista_previa %}
+    <div class="dc-demo-banner" role="status">
+        <strong>Datos de prueba</strong> — las pestañas muestran ejemplos para ver el diseño. No se guardan en la base de datos.
+        <a href="{{ detalle_clase_salir_demo_url }}" class="dc-demo-banner__link">Ver datos reales (vacío)</a>
+    </div>
+    {% endif %}
+
+    {% include 'profesor/_detalle_clase_intel.html' %}
+    {% else %}
+    <div class="breadcrumb prof-topbar">
+        <a href="{% url 'dashboard' %}?pagina=mis_clases" class="prof-back-mis-clases" title="Volver al listado de clases">
+            <span class="prof-back-mis-clases__icon" aria-hidden="true">←</span>
+            <span class="prof-back-mis-clases__text">Mis Clases</span>
+        </a>
+        {% if ver_como_alumno %}
+        <a href="{% url 'ver_detalle_clase' clase.id %}" class="btn-ver-como-alumno btn-volver-profesor">Volver a vista profesor</a>
+        {% endif %}
+    </div>
+    <div class="clase-header-banner" style="border-left: 5px solid {{ asignatura.color|default:'#8b7cc8' }}">
         <div class="clase-header-content">
-            <div class="clase-icon-large" style="background-color: {{ asignatura.color }}20; color: {{ asignatura.color }}">
-                📖
-            </div>
+            <div class="clase-icon-large" style="background-color: {{ asignatura.color|default:'#8b7cc8' }}20; color: {{ asignatura.color|default:'#8b7cc8' }}">📖</div>
             <div class="clase-info">
                 <h1 class="clase-titulo">{{ asignatura.nombre }}</h1>
                 <div class="clase-meta">
-                    <span class="meta-item">
-                        <span class="icon">🎓</span>
-                        {{ curso.nombre }}
-                    </span>
-                    <span class="meta-item">
-                        <span class="icon">👨‍🏫</span>
-                        {{ profesor.get_full_name }}
-                    </span>
-                    {% if asignatura.codigo %}
-                    <span class="meta-item">
-                        <span class="icon">📋</span>
-                        {{ asignatura.codigo }}
-                    </span>
-                    {% endif %}
+                    <span class="meta-item"><span class="icon">🎓</span>{{ curso.nombre }}</span>
+                    <span class="meta-item"><span class="icon">👨‍🏫</span>{{ profesor.get_full_name }}</span>
                 </div>
             </div>
         </div>
     </div>
+    {% endif %}
 
     {# Tabs de Navegación #}
     <div class="tabs-navigation">
@@ -83,13 +89,13 @@
         <button class="tab-button" data-tab="tareas">
             <span class="icon">📝</span>
             Tareas
-            <span class="badge">{{ total_tareas }}</span>
+            <span class="badge{% if prof_intel.tareas_urgente %} badge--warn{% endif %}">{{ total_tareas }}</span>
         </button>
         {% if es_profesor and not ver_como_alumno %}
         <button class="tab-button" data-tab="entregas">
             <span class="icon">📤</span>
             Entregas
-            <span class="badge">{{ total_entregas_pendientes }}</span>
+            <span class="badge{% if prof_intel.entregas_urgente %} badge--urgent{% endif %}">{{ total_entregas_pendientes }}</span>
         </button>
         {% endif %}
         <button class="tab-button" data-tab="calendario">
@@ -115,6 +121,9 @@
         <button class="tab-button" data-tab="mensajes">
             <span class="icon">💬</span>
             Mensajes
+            {% if mensajes_clase_no_leidos %}
+            <span class="badge badge--urgent">{{ mensajes_clase_no_leidos }}</span>
+            {% endif %}
         </button>
         {% endif %}
     </div>
@@ -133,11 +142,32 @@
                     <button class="btn-primary" onclick="mostrarModalSubir()">➕ Subir Material</button>
                     {% endif %}
                 </div>
+
+                {% if es_profesor and not ver_como_alumno and prof_intel %}
+                <div class="dc-tab-hint" role="note">
+                    <p class="dc-tab-hint__text">
+                        {% if prof_intel.ultimo_material %}
+                        Último material: <strong>{{ prof_intel.ultimo_material.titulo }}</strong>
+                        {% if prof_intel.ultimo_material.hace_dias == 0 %} (hoy){% elif prof_intel.ultimo_material.hace_dias == 1 %} (ayer){% else %} (hace {{ prof_intel.ultimo_material.hace_dias }} días){% endif %}.
+                        {% endif %}
+                        {% if prof_metricas.entregas_pendientes %}
+                        Tienes <strong>{{ prof_metricas.entregas_pendientes }}</strong> entrega(s) por calificar.
+                        {% elif not materiales %}
+                        Sube el primer material para que el curso se vea activo para tus estudiantes.
+                        {% else %}
+                        {{ prof_metricas.estudiantes }} estudiantes inscritos · {{ prof_metricas.tareas_activas }} tarea(s) activa(s).
+                        {% endif %}
+                    </p>
+                    {% if prof_metricas.entregas_pendientes %}
+                    <button type="button" class="dc-tab-hint__btn" data-goto-tab="entregas">Ir a entregas</button>
+                    {% endif %}
+                </div>
+                {% endif %}
                 
                 {% if materiales %}
                 <div class="materiales-lista">
                     {% for material in materiales %}
-                    <div class="material-item {% if not material.es_publico %}material-privado{% endif %}">
+                    <div class="material-item material-card-inline {% if not material.es_publico %}material-privado{% endif %}">
                         <div class="material-icon">{{ material.get_icono }}</div>
                         <div class="material-info">
                             <div class="material-titulo">
@@ -156,7 +186,7 @@
                             </div>
                         </div>
                         <div class="material-acciones">
-                            {% if es_profesor and not ver_como_alumno %}
+                            {% if es_profesor and not ver_como_alumno and not detalle_clase_vista_previa %}
                             <div class="dropdown-menu-container">
                                 <button class="btn-icon dropdown-toggle" onclick="toggleDropdown(this)" title="Opciones">
                                     ⚙️
@@ -183,21 +213,24 @@
                                     </form>
                                 </div>
                             </div>
-                            {% else %}
+                            {% elif not detalle_clase_vista_previa %}
                             <a href="{{ material.archivo.url }}" class="btn-icon" download title="Descargar">
                                 ⬇️
                             </a>
+                            {% else %}
+                            <span class="btn-icon" title="Ejemplo" style="opacity:0.5">📄</span>
                             {% endif %}
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="empty-state-small">
-                    <span class="icon">📎</span>
-                    <p>No hay materiales disponibles</p>
+                <div class="dc-empty-premium">
+                    <span class="dc-empty-premium__icon" aria-hidden="true">📎</span>
+                    <h3 class="dc-empty-premium__title">Aún no hay materiales</h3>
+                    <p class="dc-empty-premium__text">Los estudiantes verán aquí guías, presentaciones y archivos de apoyo.</p>
                     {% if es_profesor and not ver_como_alumno %}
-                    <button class="btn-primary mt-3" onclick="mostrarModalSubir()">➕ Subir primer material</button>
+                    <button class="dc-empty-premium__btn" type="button" onclick="mostrarModalSubir()">Subir primer material</button>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -222,7 +255,11 @@
                                 <span>📅 {{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}</span>
                                 {% if es_profesor %}
                                 <span>•</span>
-                                <span>📤 {{ item.entregas_count }} entregas</span>
+                                <span>📤 {{ item.entregas_count }}/{{ total_estudiantes }} entregaron</span>
+                                {% if item.pendientes_corregir %}
+                                <span>•</span>
+                                <span>{{ item.pendientes_corregir }} por corregir</span>
+                                {% endif %}
                                 {% else %}
                                 <span>•</span>
                                 {% if item.estado == 'corregida' %}
@@ -242,12 +279,33 @@
                             <div class="tarea-instrucciones-short">
                                 {{ item.tarea.instrucciones|truncatewords:20 }}
                             </div>
+                            {% if es_profesor and not ver_como_alumno and total_estudiantes %}
+                            <div class="tarea-entrega-bar">
+                                <div class="tarea-entrega-bar__head">
+                                    <span>Progreso de entrega</span>
+                                    <span>{{ item.pct_entrega }}%</span>
+                                </div>
+                                <div class="tarea-entrega-bar__track">
+                                    <div class="tarea-entrega-bar__fill{% if item.pct_entrega < 50 %} tarea-entrega-bar__fill--low{% endif %}" style="width: {{ item.pct_entrega }}%"></div>
+                                </div>
+                                {% if item.vence_pronto %}
+                                <span class="tarea-pill tarea-pill--warn">Vence pronto</span>
+                                {% endif %}
+                                {% if item.tarea.esta_vencida %}
+                                <span class="tarea-pill tarea-pill--danger">Vencida</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="tarea-acciones">
                             {% if es_profesor and not ver_como_alumno %}
+                            {% if detalle_clase_vista_previa %}
+                            <span class="btn-secondary-small" style="opacity:0.55;cursor:default">Ver entregas</span>
+                            {% else %}
                             <a href="{% url 'ver_entregas_tarea' item.tarea.id_tarea %}" class="btn-secondary-small">
                                 Ver entregas
                             </a>
+                            {% endif %}
                             {% else %}
                             <a href="{% url 'ver_tareas_estudiante' %}" class="btn-secondary-small">
                                 Ver detalle
@@ -296,9 +354,13 @@
                                 ⬇️ Descargar
                             </a>
                             {% endif %}
+                            {% if detalle_clase_vista_previa %}
+                            <span class="btn-primary-small" style="opacity:0.55;cursor:default">Calificar</span>
+                            {% else %}
                             <a href="{% url 'ver_entregas_tarea' entrega.tarea.id_tarea %}" class="btn-primary-small">
                                 Calificar
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -319,16 +381,30 @@
                 <div class="section-header-with-action">
                     <h2 class="section-title">💬 Mensajes con Estudiantes</h2>
                 </div>
-                
-                <iframe src="{% url 'mensajes_clase' clase.id %}" 
-                        class="embed-frame">
-                </iframe>
+                {% include 'profesor/_detalle_clase_mensajes.html' %}
             </div>
             {% endif %}
 
             {# Tab: Calendario #}
             <div class="tab-content" id="tab-calendario">
                 <h2 class="section-title">Calendario de Clases</h2>
+                {% if prof_intel.proximas_fechas %}
+                <div class="dc-cal-agenda">
+                    <h3 class="dc-cal-agenda__title">Agenda próxima</h3>
+                    <ul class="dc-intel-timeline">
+                        {% for item in prof_intel.proximas_fechas %}
+                        <li class="dc-intel-timeline__item dc-intel-timeline__item--{{ item.tipo }}">
+                            <span class="dc-intel-timeline__date">{{ item.fecha|date:"d/m" }}</span>
+                            <div>
+                                <strong>{{ item.titulo }}</strong>
+                                <span class="dc-intel-timeline__sub">{{ item.subtipo }}</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <h3 class="section-title" style="font-size:1rem;margin-top:1rem;">Horario semanal</h3>
                 <div class="horario-semanal">
                     {% for dia, bloques in horarios_por_dia.items %}
                     <div class="dia-card">
@@ -414,7 +490,7 @@
                                 </a>
                             </div>
                             {% endif %}
-                            {% if es_profesor and not ver_como_alumno %}
+                            {% if es_profesor and not ver_como_alumno and not detalle_clase_vista_previa %}
                             <div class="anuncio-actions">
                                 <button onclick="editarAnuncio({{ anuncio.id_anuncio }})" class="anuncio-btn anuncio-btn-edit">✏️ Editar</button>
                                 {# Fix: POST a ver_detalle_clase; no existía la URL eliminar_anuncio #}
@@ -461,17 +537,6 @@
                 {% endif %}
             </div>
 
-            {# Tab: Mensajes #}
-            <div class="tab-content" id="tab-mensajes">
-                <div class="section-header-with-action">
-                    <h2 class="section-title">💬 Mensajes con Estudiantes</h2>
-                </div>
-                
-                <iframe src="{% url 'mensajes_clase' clase.id %}" 
-                        class="embed-frame">
-                </iframe>
-            </div>
-
             {# Tab: Grupos #}
             <div class="tab-content" id="tab-grupos">
                 <h2 class="section-title">Grupos</h2>
@@ -486,7 +551,8 @@
         {# Columna Lateral - Información #}
         <aside class="sidebar-column">
             
-            {# Profesor del Curso #}
+            {# Profesor del Curso (oculto en vista docente; usa panel intel lateral) #}
+            {% if not es_profesor or ver_como_alumno %}
             <div class="info-card">
                 <h3 class="info-card-title">Profesores del curso</h3>
                 <div class="profesor-info">
@@ -496,52 +562,32 @@
                     <div class="profesor-datos">
                         <div class="profesor-nombre">{{ profesor.get_full_name }}</div>
                         <div class="profesor-rol">PROFESOR</div>
+                        {% if es_profesor and not ver_como_alumno and mensajes_bandeja_url %}
+                        <a href="{{ mensajes_bandeja_url }}" class="profesor-contacto">
+                            <span class="icon">💬</span>
+                            Mensajes de la clase
+                        </a>
+                        {% else %}
                         <a href="mailto:{{ profesor.email }}" class="profesor-contacto">
                             <span class="icon">📧</span>
                             Enviar mensaje
                         </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+            {% endif %}
 
-            {# Detalles y Acciones #}
-            <div class="info-card">
-                <h3 class="info-card-title">Detalles y acciones</h3>
-                <div class="detalles-lista">
-                    <div class="detalle-item">
-                        <span class="detalle-icon">👥</span>
-                        <a href="javascript:void(0)" onclick="openParticipantsModal()" class="detalle-link">Ver a los participantes de su curso</a>
-                    </div>
-                    <div class="detalle-item">
-                        <span class="detalle-icon">📚</span>
-                        <a href="javascript:void(0)" onclick="openToolsModal()" class="detalle-link">Ver herramientas del curso y de la institución</a>
-                    </div>
-                    <div class="detalle-item">
-                        <span class="detalle-label">Lista</span>
-                        <div class="detalle-info">
-                            <div class="detalle-desc">Total de estudiantes: {{ total_estudiantes }}</div>
-                            <a href="javascript:void(0)" onclick="openParticipantsModal()" class="detalle-link-small">Ver a los participantes de su curso</a>
-                        </div>
-                    </div>
-                    <div class="detalle-item">
-                        <span class="detalle-label">Class Collaborate</span>
-                        <div class="detalle-info">
-                            <a href="javascript:void(0)" onclick="openCollaborateModal()" class="detalle-link-button">Unirse a la sesión</a>
-                        </div>
-                    </div>
-                    <div class="detalle-item">
-                        <span class="detalle-label">Libros y herramientas</span>
-                        <div class="detalle-info">
-                            <a href="javascript:void(0)" onclick="openToolsModal()" class="detalle-link-small">Ver herramientas del curso y de la institución</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {% include 'profesor/_detalle_clase_sidebar_intel.html' %}
 
         </aside>
 
     </div>
 </div>
+
+{% if es_profesor and not ver_como_alumno %}
+{% include 'profesor/_personal_wrap_end.html' %}
+{% endif %}
 
 <!-- ========================================== -->
 <!-- MODALES Y COMPONENTES PREMIUM DEL PROFESOR -->
@@ -2927,9 +2973,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Fix: notificaciones usan ?tab=entregas (y similares) en la URL de detalle de clase.
-    const tabFromUrl = new URLSearchParams(window.location.search).get('tab');
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get('tab');
     if (tabFromUrl) {
         const targetButton = document.querySelector(`.tab-button[data-tab="${tabFromUrl}"]`);
+        if (targetButton) {
+            targetButton.click();
+        }
+    } else if (urlParams.get('tarea') || urlParams.get('evaluacion')) {
+        const targetButton = document.querySelector('.tab-button[data-tab="tareas"]');
         if (targetButton) {
             targetButton.click();
         }
@@ -2944,6 +2996,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         mostrarModalSubir();
     }
+
+    document.querySelectorAll('[data-goto-tab]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var tab = this.getAttribute('data-goto-tab');
+            var targetButton = document.querySelector('.tab-button[data-tab="' + tab + '"]');
+            if (targetButton) {
+                targetButton.click();
+                targetButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        });
+    });
 });
 
 // Funciones para modal de subir material

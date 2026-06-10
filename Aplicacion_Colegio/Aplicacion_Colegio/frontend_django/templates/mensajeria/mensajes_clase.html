@@ -1,0 +1,18 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+
+<div class="p-3">
+  {% if sin_acceso %}
+    <div class="alert alert-danger m-0">
+      No tienes acceso a la mensajería de esta clase.
+    </div>
+  {% else %}
+    <div class="alert alert-info" style="margin:0 0 12px 0;">
+      Mensajería de clase: <strong>{{ clase.asignatura.nombre }}</strong> ({{ clase.curso.nombre }})
+    </div>
+    <a class="btn btn-primary" href="{{ bandeja_url }}" target="_top" rel="noopener">
+      Abrir en Bandeja de Mensajes
+    </a>
+  {% endif %}
+</div>

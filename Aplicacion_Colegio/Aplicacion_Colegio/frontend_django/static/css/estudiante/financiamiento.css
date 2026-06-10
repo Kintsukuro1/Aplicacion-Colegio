@@ -1,0 +1,289 @@
+﻿.content-wrapper {
+    padding: 2rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.page-header .subtitle {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+.cuenta-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.cuenta-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.cuenta-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.stat-value.pagado {
+    color: #2ecc71;
+}
+
+.stat-value.pendiente {
+    color: var(--color-primary);
+}
+
+.progreso-pago {
+    margin-top: 1rem;
+}
+
+.progreso-bar {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    height: 20px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progreso-fill {
+    background: #2ecc71;
+    height: 100%;
+    transition: width 0.3s;
+}
+
+.progreso-texto {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.cuotas-section,
+.metodos-pago-section,
+.historial-section {
+    margin-bottom: 2rem;
+}
+
+.cuotas-section h2,
+.metodos-pago-section h2,
+.historial-section h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.cuotas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.cuota-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #3498db;
+}
+
+.cuota-card.pagada {
+    border-left-color: #27ae60;
+}
+
+.cuota-card.pendiente {
+    border-left-color: var(--color-primary);
+}
+
+.cuota-card.vencida {
+    border-left-color: #e74c3c;
+}
+
+.cuota-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.cuota-mes {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.badge-estado {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-estado.pagada {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-estado.pendiente {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-estado.vencida {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.cuota-monto {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.cuota-detalles p {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-pagar {
+    display: block;
+    background: #3498db;
+    color: white;
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 1rem;
+    transition: background 0.2s;
+}
+
+.btn-pagar:hover {
+    background: #2980b9;
+}
+
+.btn-pagar.urgente {
+    background: #e74c3c;
+}
+
+.btn-pagar.urgente:hover {
+    background: #c0392b;
+}
+
+.metodos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.metodo-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.metodo-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.metodo-card h3 {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+}
+
+.metodo-card p {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-metodo {
+    display: inline-block;
+    background: #3498db;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-top: 1rem;
+    transition: background 0.2s;
+}
+
+.btn-metodo:hover {
+    background: #2980b9;
+}
+
+.tabla-historial {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tabla-historial thead {
+    background: #f8f9fa;
+}
+
+.tabla-historial th {
+    padding: 1rem;
+    text-align: left;
+    color: #2c3e50;
+    font-weight: 600;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.tabla-historial td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+}
+
+.tabla-historial tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.btn-descargar {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.btn-descargar:hover {
+    color: #2980b9;
+}

@@ -1,0 +1,186 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block page_title %}Mi Asistencia{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'academico/css/estudiante/mi_asistencia.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+{% include 'common/components/breadcrumb_nav.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block page_header %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+    <div>
+        <h1 class="text-4xl font-bold mb-sm">
+            <i class="fas fa-calendar-check"></i> Mi Asistencia
+        </h1>
+        <p class="text-lg text-secondary">Revisa tu historial de asistencia</p>
+    </div>
+    <button class="btn btn-outline" onclick="window.print()">
+        <i class="fas fa-print"></i> Imprimir Informe
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Estadísticas Principales -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-xl">
+    {% include 'common/components/stat_card.html' with 
+        icon='chart-pie' 
+        title='Asistencia Total' 
+        value=porcentaje_total|default:"100"|floatformat:0|add:'%'
+        color='primary'
+        hoverable=True %}
+    
+    {% include 'common/components/stat_card.html' with 
+        icon='check-circle' 
+        title='Días Presentes' 
+        value=dias_presentes|default:"0"
+        color='success'
+        hoverable=True %}
+    
+    {% include 'common/components/stat_card.html' with 
+        icon='times-circle' 
+        title='Días Ausentes' 
+        value=dias_ausentes|default:"0"
+        color='error'
+        hoverable=True %}
+    
+    {% include 'common/components/stat_card.html' with 
+        icon='clock' 
+        title='Atrasos' 
+        value=atrasos|default:"0"
+        color='warning'
+        hoverable=True %}
+</div>
+
+<!-- Alertas de Asistencia -->
+{% if porcentaje_total < 85 %}
+<div class="alert alert-warning mb-xl">
+    <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+    <div class="alert-content">
+        <div class="alert-title">Asistencia Baja</div>
+        <div class="alert-message">
+            Tu porcentaje de asistencia está por debajo del 85% requerido. Se recomienda mejorar tu asistencia para evitar problemas académicos.
+        </div>
+    </div>
+</div>
+{% elif porcentaje_total >= 95 %}
+<div class="alert alert-success mb-xl">
+    <div class="alert-icon"><i class="fas fa-trophy"></i></div>
+    <div class="alert-content">
+        <div class="alert-title">¡Excelente Asistencia!</div>
+        <div class="alert-message">Mantienes una asistencia sobresaliente. ¡Sigue así!</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Asistencia por Asignatura -->
+<div class="card mb-xl">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-book"></i> Asistencia por Asignatura</h2>
+    </div>
+    <div class="card-body">
+        {% if asistencia_por_asignatura %}
+            <div class="table-container">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Asignatura</th>
+                            <th class="text-center">Presentes</th>
+                            <th class="text-center">Ausentes</th>
+                            <th class="text-center">Atrasos</th>
+                            <th>Porcentaje</th>
+                            <th class="text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asignatura in asistencia_por_asignatura %}
+                        <tr>
+                            <td data-label="Asignatura">
+                                <div class="font-medium">{{ asignatura.nombre }}</div>
+                                <div class="text-sm text-secondary">{{ asignatura.profesor }}</div>
+                            </td>
+                            <td data-label="Presentes" class="text-center">
+                                <span class="badge badge-success">{{ asignatura.presentes }}</span>
+                            </td>
+                            <td data-label="Ausentes" class="text-center">
+                                <span class="badge badge-error">{{ asignatura.ausentes }}</span>
+                            </td>
+                            <td data-label="Atrasos" class="text-center">
+                                <span class="badge badge-warning">{{ asignatura.atrasos }}</span>
+                            </td>
+                            <td data-label="Porcentaje">
+                                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                    <div class="progress flex-1">
+                                        <div class="progress-bar {% if asignatura.porcentaje >= 85 %}progress-bar-success{% elif asignatura.porcentaje >= 75 %}progress-bar-warning{% else %}progress-bar-error{% endif %}" 
+                                             style="width: {{ asignatura.porcentaje }}%"></div>
+                                    </div>
+                                    <span class="text-sm font-semibold min-w-45">{{ asignatura.porcentaje|floatformat:0 }}%</span>
+                                </div>
+                            </td>
+                            <td data-label="Estado" class="text-center">
+                                <span class="badge {% if asignatura.porcentaje >= 85 %}badge-success{% elif asignatura.porcentaje >= 75 %}badge-warning{% else %}badge-error{% endif %} badge-dot">
+                                    {% if asignatura.porcentaje >= 85 %}Excelente{% elif asignatura.porcentaje >= 75 %}Regular{% else %}Crítico{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            {% include 'common/components/empty_state.html' with 
+                icon='calendar-alt' 
+                title='Sin registros' 
+                message='No hay registros de asistencia disponibles' %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Historial Reciente -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-history"></i> Historial Reciente</h2>
+    </div>
+    <div class="card-body">
+        {% if historial_reciente %}
+            <div class="attendance-history">
+                {% for registro in historial_reciente %}
+                <div class="history-item">
+                    <div class="history-icon {% if registro.estado == 'PRESENTE' %}icon-success{% elif registro.estado == 'AUSENTE' %}icon-error{% elif registro.estado == 'ATRASO' %}icon-warning{% else %}icon-info{% endif %}">
+                        <i class="fas fa-{% if registro.estado == 'PRESENTE' %}check-circle{% elif registro.estado == 'AUSENTE' %}times-circle{% elif registro.estado == 'ATRASO' %}clock{% else %}file-medical{% endif %}"></i>
+                    </div>
+                    <div class="history-content">
+                        <div class="font-semibold">{{ registro.asignatura }}</div>
+                        <div class="text-sm text-secondary">{{ registro.fecha|date:"l d \de F \de Y" }}</div>
+                    </div>
+                    <div class="history-status">
+                        <span class="badge {% if registro.estado == 'PRESENTE' %}badge-success{% elif registro.estado == 'AUSENTE' %}badge-error{% elif registro.estado == 'ATRASO' %}badge-warning{% else %}badge-info{% endif %}">
+                            {{ registro.estado }}
+                        </span>
+                        {% if registro.justificacion %}
+                        <div class="text-xs text-secondary" style="margin-top: var(--spacing-xs);">
+                            <i class="fas fa-file-alt"></i> Justificado
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            {% include 'common/components/empty_state.html' with 
+                icon='inbox' 
+                title='Sin historial' 
+                message='No hay registros recientes' %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'academico/js/estudiante/mi_asistencia.js' %}"></script>
+{% endblock %}

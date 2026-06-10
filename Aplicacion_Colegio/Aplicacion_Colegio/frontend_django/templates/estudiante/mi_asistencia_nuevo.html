@@ -1,0 +1,251 @@
+{% extends 'estudiante/base_estudiante.html' %}
+{% load static %}
+
+{% block title %}Mi Asistencia{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container-xl mt-md">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Mi Asistencia</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-xl gap-md">
+    <div>
+        <h1 class="text-4xl font-bold mb-sm">📅 Mi Asistencia</h1>
+        <p class="text-lg text-secondary">Revisa tu historial de asistencia</p>
+    </div>
+    <button class="btn btn-outline" onclick="window.print()">
+        <i class="fas fa-print"></i> Imprimir Informe
+    </button>
+</div>
+
+<!-- Estadísticas Principales -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-xl">
+    <!-- Porcentaje Total -->
+    <div class="card card-compact gradient-header">
+        <div class="card-body text-center">
+            <p class="text-sm mb-sm opacity-90">Asistencia Total</p>
+            <p class="text-5xl font-bold mb-md">{{ porcentaje_total|default:"100"|floatformat:0 }}%</p>
+            <div class="progress" style="background-color: rgba(255,255,255,0.3);">
+                <div class="progress-bar" style="width: {{ porcentaje_total|default:100 }}%; background-color: var(--color-white);"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Días Presentes -->
+    <div class="card card-compact">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-sm">✅</div>
+            <p class="text-3xl font-bold text-success">{{ dias_presentes|default:"0" }}</p>
+            <p class="text-sm text-secondary">Días Presentes</p>
+        </div>
+    </div>
+    
+    <!-- Días Ausentes -->
+    <div class="card card-compact">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-sm">❌</div>
+            <p class="text-3xl font-bold text-error">{{ dias_ausentes|default:"0" }}</p>
+            <p class="text-sm text-secondary">Días Ausentes</p>
+        </div>
+    </div>
+    
+    <!-- Atrasos -->
+    <div class="card card-compact">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-sm">⏰</div>
+            <p class="text-3xl font-bold text-warning">{{ atrasos|default:"0" }}</p>
+            <p class="text-sm text-secondary">Atrasos</p>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas de Asistencia -->
+{% if porcentaje_total < 85 %}
+<div class="alert alert-warning mb-xl">
+    <div class="alert-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div class="alert-content">
+        <div class="alert-title">Asistencia Baja</div>
+        <div class="alert-message">
+            Tu porcentaje de asistencia está por debajo del 85% requerido. Se recomienda mejorar tu asistencia para evitar problemas académicos.
+        </div>
+    </div>
+</div>
+{% elif porcentaje_total >= 95 %}
+<div class="alert alert-success mb-xl">
+    <div class="alert-icon">
+        <i class="fas fa-trophy"></i>
+    </div>
+    <div class="alert-content">
+        <div class="alert-title">¡Excelente Asistencia!</div>
+        <div class="alert-message">
+            Mantienes una asistencia sobresaliente. ¡Sigue así!
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Asistencia por Asignatura -->
+<div class="card mb-xl">
+    <div class="card-header">
+        <h2 class="card-title">📚 Asistencia por Asignatura</h2>
+    </div>
+    <div class="card-body">
+        {% if asistencia_por_asignatura %}
+            <div class="table-container">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Asignatura</th>
+                            <th class="text-center">Presentes</th>
+                            <th class="text-center">Ausentes</th>
+                            <th class="text-center">Atrasos</th>
+                            <th>Porcentaje</th>
+                            <th class="text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asignatura in asistencia_por_asignatura %}
+                        <tr>
+                            <td data-label="Asignatura">
+                                <div class="font-medium">{{ asignatura.nombre }}</div>
+                                <div class="text-sm text-secondary">{{ asignatura.profesor }}</div>
+                            </td>
+                            <td data-label="Presentes" class="text-center">
+                                <span class="badge badge-success">{{ asignatura.presentes }}</span>
+                            </td>
+                            <td data-label="Ausentes" class="text-center">
+                                <span class="badge badge-error">{{ asignatura.ausentes }}</span>
+                            </td>
+                            <td data-label="Atrasos" class="text-center">
+                                <span class="badge badge-warning">{{ asignatura.atrasos }}</span>
+                            </td>
+                            <td data-label="Porcentaje">
+                                <div class="flex items-center gap-sm">
+                                    <div class="progress flex-1">
+                                        <div class="progress-bar {% if asignatura.porcentaje >= 85 %}progress-bar-success{% elif asignatura.porcentaje >= 75 %}progress-bar-warning{% else %}progress-bar-error{% endif %}" 
+                                             style="width: {{ asignatura.porcentaje }}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-sm font-semibold min-w-45">{{ asignatura.porcentaje|floatformat:0 }}%</span>
+                                </div>
+                            </td>
+                            <td data-label="Estado" class="text-center">
+                                {% if asignatura.porcentaje >= 85 %}
+                                    <span class="badge badge-success badge-dot">Excelente</span>
+                                {% elif asignatura.porcentaje >= 75 %}
+                                    <span class="badge badge-warning badge-dot">Regular</span>
+                                {% else %}
+                                    <span class="badge badge-error badge-dot">Crítico</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-xl text-secondary">
+                <i class="fas fa-calendar-alt text-6xl mb-md"></i>
+                <p class="text-lg">No hay registros de asistencia disponibles</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Historial Reciente -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📋 Historial Reciente</h2>
+    </div>
+    <div class="card-body">
+        {% if historial_reciente %}
+            <div class="d-flex flex-col gap-md">
+                {% for registro in historial_reciente %}
+                <div class="flex items-center justify-between p-md border-b-sm" style="border-color: var(--border-color);">
+                    <div class="flex items-center gap-md">
+                        <div style="width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                                    {% if registro.estado == 'PRESENTE' %}background-color: rgba(72, 187, 120, 0.1); color: var(--color-success);
+                                    {% elif registro.estado == 'AUSENTE' %}background-color: rgba(239, 68, 68, 0.1); color: var(--color-error);
+                                    {% elif registro.estado == 'ATRASO' %}background-color: rgba(246, 173, 85, 0.1); color: var(--color-warning);
+                                    {% else %}background-color: rgba(66, 153, 225, 0.1); color: var(--color-info);{% endif %}">
+                            {% if registro.estado == 'PRESENTE' %}
+                                <i class="fas fa-check-circle text-xl"></i>
+                            {% elif registro.estado == 'AUSENTE' %}
+                                <i class="fas fa-times-circle text-xl"></i>
+                            {% elif registro.estado == 'ATRASO' %}
+                                <i class="fas fa-clock text-xl"></i>
+                            {% else %}
+                                <i class="fas fa-file-medical text-xl"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="font-semibold">{{ registro.asignatura }}</div>
+                            <div class="text-sm text-secondary">{{ registro.fecha|date:"l d \de F \de Y" }}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="badge {% if registro.estado == 'PRESENTE' %}badge-success{% elif registro.estado == 'AUSENTE' %}badge-error{% elif registro.estado == 'ATRASO' %}badge-warning{% else %}badge-info{% endif %}">
+                            {{ registro.estado }}
+                        </span>
+                        {% if registro.justificacion %}
+                        <div class="text-xs text-secondary mt-xs">
+                            <i class="fas fa-file-alt"></i> Justificado
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-xl text-secondary">
+                <i class="fas fa-inbox text-4xl mb-md"></i>
+                <p>No hay registros recientes</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animación de progress bars
+        const progressBars = document.querySelectorAll('.progress-bar');
+        progressBars.forEach((bar, index) => {
+            const width = bar.style.width;
+            bar.style.width = '0';
+            
+            setTimeout(() => {
+                bar.style.transition = 'width 1s ease';
+                bar.style.width = width;
+            }, index * 100);
+        });
+        
+        // Animación de entrada para las cards
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 50);
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}

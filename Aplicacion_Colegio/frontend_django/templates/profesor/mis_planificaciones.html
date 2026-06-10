@@ -1,153 +1,115 @@
 {% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/profesor/planificaciones.css' %}?v=20260528-clean">
 
-<!-- Toast Container para Notificaciones -->
 <div id="toast-container" style="position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 12px; max-width: 380px; pointer-events: none;"></div>
 
-<div class="content-wrapper" style="font-family: 'Outfit', 'Inter', sans-serif; color: #1e293b; padding: 1.5rem;">
-    <!-- Cabecera Principal -->
-    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1.5rem;">
-        <div>
-            <h1 style="margin: 0; font-weight: 800; font-size: 2.2rem; background: linear-gradient(135deg, #1e293b, #4f46e5); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">📅 Planificación Curricular</h1>
-            <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 1.05rem;">Diseña experiencias de aprendizaje y accede al banco de recursos compartidos</p>
-        </div>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <button onclick="openPlanningModal()" class="btn-action btn-add-plan" style="background: linear-gradient(135deg, #4f46e5, #4338ca); color: white; border: none; padding: 0.8rem 1.6rem; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4); transition: all 0.3s ease;">
-                <span style="font-size: 1.25rem; font-weight: bold;">+</span> Nueva Planificación
+<div class="content-wrapper pl-page">
+    <header class="pl-topbar">
+        <nav class="pl-tabs" aria-label="Secciones de planificación">
+            <button type="button" onclick="switchMainTab('mis-planificaciones-tab')" id="btn-tab-mis-planificaciones" class="main-tab-btn pl-tab active-tab">
+                Mis Planificaciones
             </button>
-        </div>
-    </div>
-
-    <!-- Pestañas de Navegación de Nivel Superior -->
-    <div style="display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 2rem; gap: 1.5rem;">
-        <button onclick="switchMainTab('mis-planificaciones-tab')" id="btn-tab-mis-planificaciones" class="main-tab-btn active-tab" style="background: none; border: none; padding: 1rem 0.5rem; font-size: 1.1rem; font-weight: 600; color: #4f46e5; cursor: pointer; border-bottom: 3px solid #4f46e5; transition: all 0.3s;">
-            📂 Mis Planificaciones
+            <button type="button" onclick="switchMainTab('banco-recursos-tab')" id="btn-tab-banco-recursos" class="main-tab-btn pl-tab">
+                Banco de Recursos
+            </button>
+        </nav>
+        <button type="button" onclick="openPlanningModal()" class="pl-btn-new">
+            <span aria-hidden="true">+</span> Nueva planificación
         </button>
-        <button onclick="switchMainTab('banco-recursos-tab')" id="btn-tab-banco-recursos" class="main-tab-btn" style="background: none; border: none; padding: 1rem 0.5rem; font-size: 1.1rem; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s;">
-            🏛️ Banco de Recursos
-        </button>
-    </div>
+    </header>
 
-    <!-- SECCIÓN 1: MIS PLANIFICACIONES -->
     <div id="mis-planificaciones-tab" class="main-tab-content">
-        <!-- Tarjetas de Estadísticas (KPIs) -->
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
-            <div class="stat-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; gap: 1.2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: all 0.3s;">
-                <div style="background: #f1f5f9; padding: 0.9rem; border-radius: 12px; font-size: 1.6rem; display: flex; align-items: center; justify-content: center;">📝</div>
-                <div>
-                    <span style="font-size: 1.85rem; font-weight: 800; color: #334155; line-height: 1;">{{ stats.BORRADOR|default:0 }}</span>
-                    <div style="color: #64748b; font-size: 0.9rem; font-weight: 500; margin-top: 0.2rem;">Borradores</div>
-                </div>
-            </div>
-            <div class="stat-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; gap: 1.2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: all 0.3s;">
-                <div style="background: #eff6ff; padding: 0.9rem; border-radius: 12px; font-size: 1.6rem; display: flex; align-items: center; justify-content: center;">📤</div>
-                <div>
-                    <span style="font-size: 1.85rem; font-weight: 800; color: #2563eb; line-height: 1;">{{ stats.ENVIADA|default:0 }}</span>
-                    <div style="color: #64748b; font-size: 0.9rem; font-weight: 500; margin-top: 0.2rem;">Enviadas</div>
-                </div>
-            </div>
-            <div class="stat-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; gap: 1.2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: all 0.3s;">
-                <div style="background: #ecfdf5; padding: 0.9rem; border-radius: 12px; font-size: 1.6rem; display: flex; align-items: center; justify-content: center;">✅</div>
-                <div>
-                    <span style="font-size: 1.85rem; font-weight: 800; color: #059669; line-height: 1;">{{ stats.APROBADA|default:0 }}</span>
-                    <div style="color: #64748b; font-size: 0.9rem; font-weight: 500; margin-top: 0.2rem;">Aprobadas</div>
-                </div>
-            </div>
-            <div class="stat-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); padding: 1.5rem; border-radius: 16px; display: flex; align-items: center; gap: 1.2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: all 0.3s;">
-                <div style="background: #fef2f2; padding: 0.9rem; border-radius: 12px; font-size: 1.6rem; display: flex; align-items: center; justify-content: center;">❌</div>
-                <div>
-                    <span style="font-size: 1.85rem; font-weight: 800; color: #dc2626; line-height: 1;">{{ stats.RECHAZADA|default:0 }}</span>
-                    <div style="color: #64748b; font-size: 0.9rem; font-weight: 500; margin-top: 0.2rem;">Rechazadas</div>
-                </div>
-            </div>
+        {% if stats.ENVIADA or stats.RECHAZADA or stats.BORRADOR %}
+        <div class="pl-alerts" aria-label="Avisos">
+            {% if stats.ENVIADA %}
+            <p class="pl-alerts__item pl-alerts__item--info" role="status">
+                <span aria-hidden="true">⏳</span>
+                {{ stats.ENVIADA }} planificación{{ stats.ENVIADA|pluralize:"es" }} en revisión por el UTP.
+            </p>
+            {% endif %}
+            {% if stats.RECHAZADA %}
+            <p class="pl-alerts__item pl-alerts__item--warn" role="status">
+                <span aria-hidden="true">⚠️</span>
+                {{ stats.RECHAZADA }} rechazada{{ stats.RECHAZADA|pluralize:"s" }}: revisa observaciones y reenvía.
+            </p>
+            {% endif %}
+            {% if stats.BORRADOR %}
+            <p class="pl-alerts__item" role="status">
+                <span aria-hidden="true">📝</span>
+                {{ stats.BORRADOR }} borrador{{ stats.BORRADOR|pluralize:"es" }} pendiente{{ stats.BORRADOR|pluralize:"s" }} de envío.
+            </p>
+            {% endif %}
         </div>
+        {% endif %}
 
-        <!-- Buscador e Info de Resultados -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;">
-            <div style="position: relative; max-width: 320px; width: 100%;">
-                <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;">🔍</span>
-                <input type="text" id="planning-search-input" onkeyup="filterPlannings()" placeholder="Buscar planificación por título o curso..." style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.95rem; transition: border-color 0.2s;" />
+        <section class="pl-panel" aria-label="Listado de planificaciones">
+            <div class="pl-panel__head">
+                <div class="pl-search">
+                    <span class="pl-search__icon" aria-hidden="true">🔍</span>
+                    <input type="search" id="planning-search-input" onkeyup="filterPlannings()" placeholder="Buscar por título o curso…" autocomplete="off" />
+                </div>
+                {% if planificaciones %}
+                <nav class="pl-filters" aria-label="Filtrar por estado">
+                    <button type="button" class="pl-filter pl-filter--active" data-pl-filter="todas">Todas</button>
+                    <button type="button" class="pl-filter" data-pl-filter="BORRADOR">Borradores <span class="pl-filter__n">{{ stats.BORRADOR|default:0 }}</span></button>
+                    <button type="button" class="pl-filter" data-pl-filter="ENVIADA">En revisión <span class="pl-filter__n">{{ stats.ENVIADA|default:0 }}</span></button>
+                    <button type="button" class="pl-filter" data-pl-filter="APROBADA">Aprobadas <span class="pl-filter__n">{{ stats.APROBADA|default:0 }}</span></button>
+                    <button type="button" class="pl-filter" data-pl-filter="RECHAZADA">Rechazadas <span class="pl-filter__n">{{ stats.RECHAZADA|default:0 }}</span></button>
+                </nav>
+                {% endif %}
+                <span class="pl-count"><span id="active-count">{{ planificaciones|length }}</span> resultado{{ planificaciones|length|pluralize:"s" }}</span>
             </div>
-            <span style="color: #64748b; font-size: 0.95rem; font-weight: 500;"><span id="active-count">{{ planificaciones|length }}</span> planificaciones registradas</span>
-        </div>
 
-        <!-- Lista de Planificaciones -->
-        <div class="planificaciones-lista" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="planificaciones-lista pl-list" id="plList">
             {% for plan in planificaciones %}
-            <div class="plan-card" data-titulo="{{ plan.titulo }}" data-clase="{{ plan.clase }}" style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.8rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.01); display: flex; flex-direction: column; position: relative; overflow: hidden; transition: all 0.3s ease;">
-                <!-- Línea de estado decorativa en la tarjeta -->
-                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px; 
-                    {% if plan.estado == 'APROBADA' %}background: #10b981;
-                    {% elif plan.estado == 'RECHAZADA' %}background: #ef4444;
-                    {% elif plan.estado == 'ENVIADA' %}background: #3b82f6;
-                    {% else %}background: #64748b;{% endif %}"></div>
-
-                <div class="plan-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.8rem; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
-                        <span class="plan-badge" style="background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: #4338ca; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.2px;">
-                            🏫 {{ plan.clase }}
-                        </span>
+            <article class="plan-card plan-card--{{ plan.estado|lower }}"
+                data-titulo="{{ plan.titulo }}"
+                data-clase="{{ plan.clase }}"
+                data-estado="{% if plan.estado == 'ACTIVA' or plan.estado == 'ACTIVO' or plan.estado == 'ENVIADO' %}ENVIADA{% else %}{{ plan.estado }}{% endif %}">
+                <div class="plan-card__stripe" aria-hidden="true"></div>
+                <div class="plan-card__body">
+                <header class="plan-header">
+                    <div class="plan-header__badges">
+                        <span class="plan-badge">🏫 {{ plan.clase }}</span>
                         {% if plan.rubrica_id %}
-                        <span style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
-                            📊 Con Rúbrica
-                        </span>
+                        <span class="plan-badge plan-badge--rubrica">📊 Con rúbrica</span>
                         {% endif %}
                     </div>
-                    <span class="badge-estado" style="padding: 0.45rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.3px;
-                        {% if plan.estado == 'APROBADA' %}background: #dcfce7; color: #16a34a;
-                        {% elif plan.estado == 'RECHAZADA' %}background: #fee2e2; color: #dc2626;
-                        {% elif plan.estado == 'ENVIADA' %}background: #dbeafe; color: #2563eb;
-                        {% else %}background: #f1f5f9; color: #475569;{% endif %}">
-                        {{ plan.estado_display }}
-                    </span>
+                    <span class="badge-estado badge-estado--{{ plan.estado|lower }}">{{ plan.estado_display }}</span>
+                </header>
+
+                <h3 class="plan-card__title">{{ plan.titulo }}</h3>
+
+                <div class="plan-meta">
+                    <span>🗓️ <strong>Inicio:</strong> {{ plan.fecha_inicio|default:"—" }}</span>
+                    <span>🏁 <strong>Término:</strong> {{ plan.fecha_fin|default:"—" }}</span>
+                    <span>🎯 <strong>OAs:</strong> {{ plan.objetivos_ids|length }}</span>
                 </div>
 
-                <h3 style="margin: 0 0 0.8rem 0; font-weight: 700; font-size: 1.35rem; color: #0f172a;">{{ plan.titulo }}</h3>
-
-                <!-- Meta Información -->
-                <div class="plan-meta" style="display: flex; flex-wrap: wrap; gap: 1.8rem; margin-bottom: 1.2rem; color: #64748b; font-size: 0.92rem;">
-                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="font-size: 1.1rem;">🗓️</span> <strong>Inicio:</strong> {{ plan.fecha_inicio }}</span>
-                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="font-size: 1.1rem;">🏁</span> <strong>Término:</strong> {{ plan.fecha_fin }}</span>
-                    <span style="display: flex; align-items: center; gap: 0.4rem;"><span style="font-size: 1.1rem;">🎯</span> <strong>OAs asociados:</strong> {{ plan.objetivos_ids|length }}</span>
-                </div>
-
-                <!-- Observaciones del Coordinador -->
                 {% if plan.observaciones %}
-                <div class="observaciones-box" style="background: #fffbfa; border: 1px solid #fecaca; border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.02);">
-                    <strong style="color: #dc2626; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; font-size: 0.95rem;">
-                        <span>💬</span> Observaciones de la Coordinación:
-                    </strong>
-                    <p style="margin: 0; color: #991b1b; font-size: 0.9rem; line-height: 1.5; font-style: italic;">"{{ plan.observaciones }}"</p>
+                <div class="observaciones-box">
+                    <strong><span aria-hidden="true">💬</span> Observaciones de la coordinación</strong>
+                    <p>"{{ plan.observaciones }}"</p>
                 </div>
                 {% endif %}
-
-                <!-- Acciones -->
-                <div class="plan-acciones" style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.2rem; border-top: 1px solid #f1f5f9; flex-wrap: wrap; gap: 1rem;">
-                    <div style="display: flex; gap: 0.8rem;">
-                        {# Fix: onclick recibe plan.id; el JSON vive en #plan-data-{{ plan.id }} #}
-                        <button onclick="previsualizarPlan({{ plan.id }})" class="btn-meta" style="padding: 0.6rem 1.2rem; border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                            👁️ Previsualizar
-                        </button>
-                        {% if plan.estado == 'BORRADOR' or plan.estado == 'RECHAZADA' %}
-                        <button onclick="editarPlanificacion({{ plan.id }})" class="btn-meta" style="padding: 0.6rem 1.2rem; border: 1px solid #bfdbfe; background: #f0f7ff; color: #1d4ed8; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                            ✏️ Editar
-                        </button>
-                        {% endif %}
-                    </div>
-                    
-                    <div style="display: flex; gap: 0.8rem;">
-                        {% if plan.estado == 'BORRADOR' or plan.estado == 'RECHAZADA' %}
-                        <button onclick="eliminarPlanificacion({{ plan.id }})" class="btn-meta-danger" style="padding: 0.6rem 1rem; border: 1px solid #fecaca; background: #fff; color: #dc2626; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;">
-                            🗑️ Eliminar
-                        </button>
-                        <button onclick="enviarPlanificacion({{ plan.id }})" class="btn-meta-primary" style="padding: 0.6rem 1.4rem; border: none; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); transition: all 0.2s;">
-                            🚀 Enviar a Revisión
-                        </button>
-                        {% endif %}
-                    </div>
                 </div>
 
-                <!-- Bloques ocultos que contienen la data limpia serializada -->
+                <footer class="plan-acciones">
+                    <div class="plan-acciones__group">
+                        <button type="button" onclick="previsualizarPlan({{ plan.id }})" class="btn-meta">👁️ Previsualizar</button>
+                        {% if plan.estado == 'BORRADOR' or plan.estado == 'RECHAZADA' %}
+                        <button type="button" onclick="editarPlanificacion({{ plan.id }})" class="btn-meta">✏️ Editar</button>
+                        {% endif %}
+                    </div>
+                    {% if plan.estado == 'BORRADOR' or plan.estado == 'RECHAZADA' %}
+                    <div class="plan-acciones__group">
+                        <button type="button" onclick="eliminarPlanificacion({{ plan.id }})" class="btn-meta-danger">🗑️ Eliminar</button>
+                        <button type="button" onclick="enviarPlanificacion({{ plan.id }})" class="btn-meta-primary">🚀 Enviar a revisión</button>
+                    </div>
+                    {% endif %}
+                </footer>
+
                 <script type="application/json" id="plan-data-{{ plan.id }}">
                     {
                         "id": {{ plan.id }},
@@ -165,13 +127,11 @@
                 </script>
             </div>
             {% empty %}
-            <div class="empty-state" style="background: rgba(248, 250, 252, 0.5); border: 2px dashed #cbd5e1; border-radius: 16px; padding: 4rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center;">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">📂</div>
-                <h4 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #334155;">Sin planificaciones registradas</h4>
-                <p style="margin: 0.5rem 0 1.5rem 0; color: #64748b; max-width: 320px; font-size: 0.95rem;">Comienza diseñando tu primera planificación para tu curso usando el botón superior.</p>
-            </div>
+            {% include 'profesor/_planificaciones_demo.html' %}
             {% endfor %}
         </div>
+        <p id="plFilterEmpty" class="pl-filter-empty" hidden>No hay planificaciones con este filtro.</p>
+        </section>
     </div>
 
     <!-- SECCIÓN 2: BANCO DE RECURSOS -->
@@ -463,17 +423,10 @@
     // --- NAVEGACIÓN ENTRE PESTAÑAS PRINCIPALES ---
     function switchMainTab(tabId) {
         document.querySelectorAll('.main-tab-content').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.main-tab-btn').forEach(btn => {
-            btn.classList.remove('active-tab');
-            btn.style.color = '#64748b';
-            btn.style.borderBottomColor = 'transparent';
-        });
-        
+        document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
         document.getElementById(tabId).style.display = 'block';
         const activeBtn = document.getElementById(tabId === 'mis-planificaciones-tab' ? 'btn-tab-mis-planificaciones' : 'btn-tab-banco-recursos');
-        activeBtn.classList.add('active-tab');
-        activeBtn.style.color = '#4f46e5';
-        activeBtn.style.borderBottomColor = '#4f46e5';
+        if (activeBtn) activeBtn.classList.add('active-tab');
     }
 
     // --- NAVEGACIÓN PESTAÑAS BANCO DE RECURSOS ---
@@ -493,24 +446,40 @@
     }
 
     // --- FILTRAR PLANIFICACIONES EN TIEMPO REAL ---
-    function filterPlannings() {
-        const val = document.getElementById('planning-search-input').value.toLowerCase();
-        const cards = document.querySelectorAll('.planificaciones-lista .plan-card');
-        let count = 0;
-        
-        cards.forEach(card => {
-            const title = card.getAttribute('data-titulo').toLowerCase();
-            const clase = card.getAttribute('data-clase').toLowerCase();
-            
-            if (title.includes(val) || clase.includes(val)) {
-                card.style.display = 'flex';
-                count++;
-            } else {
-                card.style.display = 'none';
-            }
+    let plEstadoFilter = 'todas';
+
+    document.querySelectorAll('[data-pl-filter]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('[data-pl-filter]').forEach(function (b) {
+                b.classList.remove('pl-filter--active');
+            });
+            btn.classList.add('pl-filter--active');
+            plEstadoFilter = btn.getAttribute('data-pl-filter');
+            filterPlannings();
         });
-        
-        document.getElementById('active-count').innerText = count;
+    });
+
+    function filterPlannings() {
+        const input = document.getElementById('planning-search-input');
+        const val = input ? input.value.toLowerCase() : '';
+        const cards = document.querySelectorAll('.planificaciones-lista .plan-card[data-estado]');
+        let count = 0;
+
+        cards.forEach(function (card) {
+            const title = (card.getAttribute('data-titulo') || '').toLowerCase();
+            const clase = (card.getAttribute('data-clase') || '').toLowerCase();
+            const estado = card.getAttribute('data-estado') || '';
+            const matchText = !val || title.includes(val) || clase.includes(val);
+            const matchEstado = plEstadoFilter === 'todas' || estado === plEstadoFilter;
+            const show = matchText && matchEstado;
+            card.hidden = !show;
+            if (show) count++;
+        });
+
+        const countEl = document.getElementById('active-count');
+        if (countEl) countEl.textContent = String(count);
+        const emptyMsg = document.getElementById('plFilterEmpty');
+        if (emptyMsg) emptyMsg.hidden = count > 0 || !cards.length;
     }
 
     // --- DYNAMIC OA RETRIEVAL & FILTERING ---

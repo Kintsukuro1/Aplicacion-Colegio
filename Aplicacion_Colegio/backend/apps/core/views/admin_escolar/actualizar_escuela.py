@@ -30,8 +30,8 @@ def actualizar_escuela(request):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ["admin", "admin_escolar"]:
-        messages.error(request, "No tienes permiso para actualizar la escuela")
+    if rol not in ["admin_general", "admin_escolar"]:
+        messages.error(request, "Acceso denegado")
         return redirect("dashboard")
 
     if not escuela_rbd:

@@ -1,0 +1,344 @@
+{% extends 'estudiante/base_estudiante.html' %}
+{% load static %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<!-- Banner de Bienvenida -->
+<div class="card mb-xl gradient-header">
+    <div class="card-body py-3xl">
+        <h1 class="text-4xl font-bold mb-sm">¡Bienvenido, {{ nombre_usuario }}! 👋</h1>
+        <p class="text-xl opacity-90">{{ year }} - Portal Académico</p>
+    </div>
+</div>
+
+<!-- Estadísticas Rápidas -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-xl">
+    <!-- Clases Hoy -->
+    <div class="card card-compact transition hover:scale-105">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <p class="text-sm text-secondary mb-xs">Clases Hoy</p>
+                    <h3 class="text-3xl font-bold">{{ clases_hoy|default:"0" }}</h3>
+                </div>
+                <div style="width: 3rem; height: 3rem; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; font-size: var(--text-xl); background-color: var(--color-primary); color: var(--color-white);">
+                    <i class="fas fa-book"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tareas Pendientes -->
+    <div class="card card-compact transition hover:scale-105">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <p class="text-sm text-secondary mb-xs">Tareas Pendientes</p>
+                    <h3 class="text-3xl font-bold">{{ tareas_pendientes|default:"0" }}</h3>
+                    {% if tareas_urgentes > 0 %}
+                    <p class="text-xs text-warning mt-xs">
+                        <i class="fas fa-exclamation-triangle"></i> {{ tareas_urgentes }} urgente{{ tareas_urgentes|pluralize }}
+                    </p>
+                    {% endif %}
+                </div>
+                <div style="width: 3rem; height: 3rem; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; font-size: var(--text-xl); background-color: var(--color-warning); color: var(--color-white);">
+                    <i class="fas fa-tasks"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Promedio General -->
+    <div class="card card-compact transition hover:scale-105">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <p class="text-sm text-secondary mb-xs">Promedio General</p>
+                    <h3 class="text-3xl font-bold">{{ promedio_general|default:"0.0"|floatformat:1 }}</h3>
+                    <div class="progress mt-sm progress-bar-sm">
+                        <div class="progress-bar progress-bar-success" style="width: {{ promedio_general|default:0|floatformat:0 }}0%"></div>
+                    </div>
+                </div>
+                <div style="width: 3rem; height: 3rem; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; font-size: var(--text-xl); background-color: var(--color-success); color: var(--color-white);">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Asistencia -->
+    <div class="card card-compact transition hover:scale-105">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <p class="text-sm text-secondary mb-xs">Asistencia</p>
+                    <h3 class="text-3xl font-bold">{{ porcentaje_asistencia|default:"100"|floatformat:0 }}%</h3>
+                    {% if porcentaje_asistencia >= 85 %}
+                    <p class="text-xs text-success mt-xs">
+                        <i class="fas fa-check-circle"></i> Excelente
+                    </p>
+                    {% elif porcentaje_asistencia >= 75 %}
+                    <p class="text-xs text-warning mt-xs">
+                        <i class="fas fa-exclamation-triangle"></i> Regular
+                    </p>
+                    {% else %}
+                    <p class="text-xs text-error mt-xs">
+                        <i class="fas fa-times-circle"></i> Baja
+                    </p>
+                    {% endif %}
+                </div>
+                <div style="width: 3rem; height: 3rem; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; font-size: var(--text-xl); background-color: var(--color-secondary); color: var(--color-white);">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECCIÓN ACADÉMICA -->
+<div class="mb-xl">
+    <div class="flex items-center gap-sm mb-md">
+        <div style="width: 2.5rem; height: 2.5rem; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; background-color: var(--color-primary); color: var(--color-white);">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <h2 class="text-2xl font-bold">Mis Estudios</h2>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
+        <!-- Mis Clases -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body text-center">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-3xl); background-color: rgba(102, 126, 234, 0.1); color: var(--color-primary); margin: 0 auto var(--spacing-md);">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-xs">Mis Clases</h3>
+                <p class="text-sm text-secondary mb-md">Ver horarios y materiales de clase</p>
+                <a href="{% url 'dashboard' %}?pagina=mis_clases" class="btn btn-primary btn-sm">
+                    Acceder <i class="fas fa-arrow-right ml-xs"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Tareas -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body text-center">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-3xl); background-color: rgba(246, 173, 85, 0.1); color: var(--color-warning); margin: 0 auto var(--spacing-md);">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-xs">Tareas</h3>
+                <p class="text-sm text-secondary mb-md">Ver tareas pendientes y entregas</p>
+                <a href="{% url 'ver_tareas_estudiante' %}" class="btn btn-primary btn-sm">
+                    Acceder <i class="fas fa-arrow-right ml-xs"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Calendario -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body text-center">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-3xl); background-color: rgba(72, 187, 120, 0.1); color: var(--color-success); margin: 0 auto var(--spacing-md);">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-xs">Calendario</h3>
+                <p class="text-sm text-secondary mb-md">Organiza tus evaluaciones y tareas</p>
+                <a href="{% url 'calendario_tareas_estudiante' %}" class="btn btn-primary btn-sm">
+                    Acceder <i class="fas fa-arrow-right ml-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RENDIMIENTO -->
+<div class="mb-xl">
+    <div class="flex items-center gap-sm mb-md">
+        <div style="width: 2.5rem; height: 2.5rem; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; background-color: var(--color-success); color: var(--color-white);">
+            <i class="fas fa-chart-bar"></i>
+        </div>
+        <h2 class="text-2xl font-bold">Mi Rendimiento</h2>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+        <!-- Evaluaciones -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body text-center">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-3xl); background-color: rgba(102, 126, 234, 0.1); color: var(--color-primary); margin: 0 auto var(--spacing-md);">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-xs">Evaluaciones</h3>
+                <p class="text-sm text-secondary mb-md">Consultar evaluaciones realizadas</p>
+                <a href="{% url 'dashboard' %}?pagina=mis_evaluaciones" class="btn btn-outline btn-sm">
+                    Ver <i class="fas fa-arrow-right ml-xs"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Calificaciones -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body text-center">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-3xl); background-color: rgba(72, 187, 120, 0.1); color: var(--color-success); margin: 0 auto var(--spacing-md);">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-xs">Calificaciones</h3>
+                <p class="text-sm text-secondary mb-md">Ver todas tus notas y promedios</p>
+                <a href="{% url 'dashboard' %}?pagina=mis_notas" class="btn btn-outline btn-sm">
+                    Ver <i class="fas fa-arrow-right ml-xs"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Asistencia -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body text-center">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-3xl); background-color: rgba(66, 153, 225, 0.1); color: var(--color-info); margin: 0 auto var(--spacing-md);">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-xs">Asistencia</h3>
+                <p class="text-sm text-secondary mb-md">Revisar tu registro de asistencia</p>
+                <a href="{% url 'mi_asistencia_estudiante' %}" class="btn btn-outline btn-sm">
+                    Ver <i class="fas fa-arrow-right ml-xs"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Estadísticas -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body text-center">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-3xl); background-color: rgba(139, 92, 246, 0.1); color: var(--color-secondary); margin: 0 auto var(--spacing-md);">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-xs">Estadísticas</h3>
+                <p class="text-sm text-secondary mb-md">Gráficos de tu progreso académico</p>
+                <a href="{% url 'dashboard_graficos' %}" class="btn btn-outline btn-sm">
+                    Ver <i class="fas fa-arrow-right ml-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- COMUNICACIÓN -->
+<div class="mb-xl">
+    <div class="flex items-center gap-sm mb-md">
+        <div style="width: 2.5rem; height: 2.5rem; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; background-color: var(--color-secondary); color: var(--color-white);">
+            <i class="fas fa-comments"></i>
+        </div>
+        <h2 class="text-2xl font-bold">Comunicación</h2>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+        <!-- Comunicados -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body">
+                <div class="flex items-center gap-md">
+                    <div style="width: 3.5rem; height: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-2xl); background-color: rgba(239, 68, 68, 0.1); color: var(--color-error); flex-shrink: 0;">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold mb-xs">Comunicados</h3>
+                        <p class="text-sm text-secondary mb-sm">Leer avisos y comunicados importantes</p>
+                        <a href="{% url 'comunicados:lista' %}" class="btn btn-primary btn-sm">
+                            Acceder <i class="fas fa-arrow-right ml-xs"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mensajes -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body">
+                <div class="flex items-center gap-md">
+                    <div style="width: 3.5rem; height: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-2xl); background-color: rgba(102, 126, 234, 0.1); color: var(--color-primary); flex-shrink: 0;">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold mb-xs">Mensajes</h3>
+                        <p class="text-sm text-secondary mb-sm">Comunicarte con profesores</p>
+                        {% url 'mensajeria:bandeja_mensajes' as mensajes_url %}
+                        <a href="{% if mensajes_url %}{{ mensajes_url }}{% else %}{% url 'dashboard' %}{% endif %}" class="btn btn-primary btn-sm">
+                            Acceder <i class="fas fa-arrow-right ml-xs"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MIS DOCUMENTOS -->
+<div class="mb-xl">
+    <div class="flex items-center gap-sm mb-md">
+        <div style="width: 2.5rem; height: 2.5rem; border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; background-color: var(--color-warning); color: var(--color-white);">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <h2 class="text-2xl font-bold">Mis Documentos</h2>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+        <!-- Certificados -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body">
+                <div class="flex items-center gap-md">
+                    <div style="width: 3.5rem; height: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-2xl); background-color: rgba(246, 173, 85, 0.1); color: var(--color-warning); flex-shrink: 0;">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold mb-xs">Certificados</h3>
+                        <p class="text-sm text-secondary mb-sm">Descargar certificados oficiales</p>
+                        <a href="{% url 'dashboard' %}?pagina=mis_certificados" class="btn btn-outline btn-sm">
+                            Acceder <i class="fas fa-arrow-right ml-xs"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mi Perfil -->
+        <div class="card transition hover:shadow-lg">
+            <div class="card-body">
+                <div class="flex items-center gap-md">
+                    <div style="width: 3.5rem; height: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-2xl); background-color: rgba(139, 92, 246, 0.1); color: var(--color-secondary); flex-shrink: 0;">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold mb-xs">Mi Perfil</h3>
+                        <p class="text-sm text-secondary mb-sm">Ver y editar tu información</p>
+                        <a href="{% url 'dashboard' %}?pagina=perfil" class="btn btn-outline btn-sm">
+                            Acceder <i class="fas fa-arrow-right ml-xs"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animación de entrada para las cards
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 50);
+            }, index * 30);
+        });
+        
+        // Mostrar toast de bienvenida
+        setTimeout(() => {
+            ToastManager.info('¡Bienvenido a tu portal estudiantil! 🎓', 4000);
+        }, 500);
+    });
+</script>
+{% endblock %}

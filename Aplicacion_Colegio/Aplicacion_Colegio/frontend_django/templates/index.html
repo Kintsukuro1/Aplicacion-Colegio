@@ -1,0 +1,358 @@
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6BADD6">
+    {% include 'includes/_portal_favicon.html' %}
+    <title>Portal Acad&eacute;mico - Sistema de Gesti&oacute;n Educativa</title>
+    <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/index.css' %}?v=20260604">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-logo">
+                {% include 'includes/_portal_brand_logo.html' with logo_alt='Colegio Santa María' extra_class='portal-brand-logo--nav' %}
+                <span class="logo-text">Colegio Santa María</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Caracter&iacute;sticas de la Plataforma</a></li>
+                <li><a href="#portal">Acceso al Portal</a></li>
+                <li><a href="#contact">Ayuda del Campus</a></li>
+            </ul>
+            <a href="{% url 'accounts:login' %}" class="btn-portal-nav">Ingresar al Portal</a>
+        </div>
+    </nav>
+
+    <div class="welcome-container">
+        <section class="hero-section">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <div class="hero-badge">
+                        <span class="badge-icon" aria-hidden="true">&#9733;</span> INSCRIPCIONES ABIERTAS
+                    </div>
+                    <h1 class="hero-title">
+                        Potenciando la<br>
+                        <span class="hero-title-highlight">Pr&oacute;xima Generaci&oacute;n.</span>
+                    </h1>
+                    <p class="hero-description">
+                        Un ecosistema completo para el aprendizaje moderno.
+                        Acceso a informaci&oacute;n en tiempo real, comunicaci&oacute;n directa y
+                        planificaci&oacute;n acad&eacute;mica inteligente en un portal unificado.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="{% url 'accounts:login' %}" class="btn-hero-primary">
+                            Ingresar al Portal &rarr;
+                        </a>
+                        <a href="#features" class="btn-hero-secondary">
+                            Ver Caracter&iacute;sticas
+                        </a>
+                    </div>
+                    <div class="hero-notice">
+                        <div class="notice-badge">
+                            <span class="notice-icon" aria-hidden="true">&#10003;</span>
+                            <span>ADMISIONES ABIERTAS</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="hero-carousel" id="heroCarousel" aria-label="Galer&iacute;a del campus">
+                        <div class="carousel-track" id="carouselTrack">
+                            <div class="carousel-slide">
+                                <img class="carousel-image" src="{% static 'img/pwa/escolares.avif' %}" alt="Estudiantes en el campus" loading="eager">
+                            </div>
+                            <div class="carousel-slide">
+                                <img class="carousel-image" src="{% static 'img/pwa/EscolarPortada.jpg' %}" alt="Portada escolar" loading="lazy">
+                            </div>
+                            <div class="carousel-slide">
+                                <img class="carousel-image" src="{% static 'img/pwa/grupo.avif' %}" alt="Grupo de estudiantes" loading="lazy">
+                            </div>
+                            <div class="carousel-slide">
+                                <img class="carousel-image" src="{% static 'img/pwa/niña.avif' %}" alt="Estudiante en el colegio" loading="lazy">
+                            </div>
+                            <div class="carousel-slide">
+                                <img class="carousel-image" src="{% static 'img/pwa/patio.jpg' %}" alt="Patio del colegio" loading="lazy">
+                            </div>
+                        </div>
+                        <button type="button" class="carousel-btn prev" id="carouselPrev" aria-label="Imagen anterior">&#8249;</button>
+                        <button type="button" class="carousel-btn next" id="carouselNext" aria-label="Imagen siguiente">&#8250;</button>
+                        <div class="carousel-dots" id="carouselDots"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section" id="stats" aria-label="Estad&iacute;sticas de la comunidad">
+            <div class="stats-container">
+                <div class="stats-grid">
+                    <article class="stat-card">
+                        <span class="stat-card__icon" aria-hidden="true">&#128104;&#8205;&#127891;</span>
+                        <p class="stat-card__value"><span class="stat-counter" data-target="475" data-suffix="+">0</span></p>
+                        <p class="stat-card__label">Estudiantes</p>
+                    </article>
+                    <article class="stat-card">
+                        <span class="stat-card__icon" aria-hidden="true">&#128105;&#8205;&#127979;</span>
+                        <p class="stat-card__value"><span class="stat-counter" data-target="29" data-suffix="+">0</span></p>
+                        <p class="stat-card__label">Docentes</p>
+                    </article>
+                    <article class="stat-card">
+                        <span class="stat-card__icon" aria-hidden="true">&#128218;</span>
+                        <p class="stat-card__value"><span class="stat-counter" data-target="12">0</span></p>
+                        <p class="stat-card__label">Cursos</p>
+                    </article>
+                    <article class="stat-card">
+                        <span class="stat-card__icon" aria-hidden="true">&#11088;</span>
+                        <p class="stat-card__value"><span class="stat-counter" data-target="97" data-suffix="%">0</span></p>
+                        <p class="stat-card__label">Satisfacci&oacute;n</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features-section">
+            <div class="features-container">
+                <h2 class="section-title">Construido para el &Eacute;xito Acad&eacute;mico</h2>
+                <p class="section-subtitle">Explora las herramientas que hacen de Eduhub el coraz&oacute;n de nuestra comunidad de aprendizaje.</p>
+
+                <div class="features-grid">
+                    <div class="feature-box">
+                        <div class="feature-icon salmon-icon">
+                            <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+                                <path d="M8 25 L8 12 L20 5 L32 12 L32 25" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <circle cx="20" cy="20" r="6" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <path d="M20 26 L20 32" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <h3>Calificaciones en Tiempo Real</h3>
+                        <p>Explora m&eacute;tricas de rendimiento semanales, retroalimentaci&oacute;n detallada de instructores e informes de progreso instant&aacute;neos.</p>
+                    </div>
+
+                    <div class="feature-box">
+                        <div class="feature-icon lilac-icon">
+                            <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+                                <rect x="8" y="12" width="24" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <path d="M8 15 L20 22 L32 15" stroke="currentColor" stroke-width="2" fill="none"/>
+                            </svg>
+                        </div>
+                        <h3>Mensajer&iacute;a Directa</h3>
+                        <p>Conversaciones entre estudiantes, padres y educadores con nuestro sistema de respuesta r&aacute;pida.</p>
+                    </div>
+
+                    <div class="feature-box">
+                        <div class="feature-icon mint-icon">
+                            <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+                                <rect x="8" y="8" width="24" height="24" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <path d="M8 15 L32 15 M17 8 L17 15 M23 8 L23 15" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <h3>Calendario de Eventos</h3>
+                        <p>Vista unificada de fechas l&iacute;mite, ex&aacute;menes y eventos escolares con sincronizaci&oacute;n a tu calendario personal.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="portal" class="portal-section">
+            <div class="portal-container">
+                <div class="portal-card-unified">
+                    <div class="portal-icon">
+                        {% include 'includes/_portal_brand_logo.html' with logo_alt='Colegio Santa María' extra_class='portal-brand-logo--portal-section' %}
+                    </div>
+                    <h2>Acceso al Portal EduHub</h2>
+                    <p>Un solo inicio de sesi&oacute;n para estudiantes, familias, docentes y personal. El sistema reconoce tu rol autom&aacute;ticamente.</p>
+                    <a href="{% url 'accounts:login' %}" class="btn-portal-main">Ingresar al Portal &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="announcements-section" id="contact">
+            <div class="announcements-container">
+                <div class="announcements-header">
+                    <span class="announcements-icon" aria-hidden="true">&#128226;</span>
+                    <h2>ANUNCIOS DE LA COMUNIDAD</h2>
+                    <a href="#" class="view-archives">Ver Archivo</a>
+                </div>
+
+                <div class="announcements-list">
+                    <div class="announcement-item">
+                        <span class="announcement-icon urgent" aria-hidden="true">&#9888;</span>
+                        <div class="announcement-content">
+                            <span class="announcement-badge">URGENTE</span>
+                            <h4>Nuevo Equipamiento de Laboratorio STEM Disponible para Reserva</h4>
+                            <p>Estamos emocionados de presentar los nuevos dispositivos IoT disponibles para estudiantes para proyectos del pr&oacute;ximo semestre.</p>
+                        </div>
+                    </div>
+
+                    <div class="announcement-item">
+                        <span class="announcement-icon update" aria-hidden="true">&#128203;</span>
+                        <div class="announcement-content">
+                            <span class="announcement-badge">ACTUALIZACI&Oacute;N</span>
+                            <h4>Cafeter&iacute;a: Lanzamiento de Men&uacute; Completo de Temporada</h4>
+                            <p>A partir del lunes, nuestra cafeter&iacute;a abre con un men&uacute; completo de temporada.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-links-grid">
+                <a href="#" class="quick-link-card">
+                    <span class="quick-link-icon" aria-hidden="true">&#127869;</span>
+                    <span>CAFETER&Iacute;A</span>
+                </a>
+                <a href="#" class="quick-link-card">
+                    <span class="quick-link-icon" aria-hidden="true">&#128196;</span>
+                    <span>CERTIFICADOS</span>
+                </a>
+                <a href="#" class="quick-link-card spirit-shop">
+                    <h3>Tienda Escolar</h3>
+                    <p>Productos para representar tu campus. Muestra tu orgullo escolar.</p>
+                    <button type="button" class="btn-shop">Comprar Ahora</button>
+                </a>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-container">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        {% include 'includes/_portal_brand_logo.html' with logo_alt='Colegio Santa María' extra_class='portal-brand-logo--footer' %}
+                        <span>Colegio Santa María</span>
+                    </div>
+                    <p>&copy; 2026 Eduhub &bull; Sistema de Gesti&oacute;n Educativa</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#">T&eacute;rminos de Servicio</a>
+                    <a href="#">Pol&iacute;tica de Privacidad</a>
+                    <a href="#">Soporte</a>
+                    <a href="#">Documentaci&oacute;n</a>
+                </div>
+            </div>
+        </footer>
+
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register("/service-worker.js?v=20260306").catch(function() {
+                        return null;
+                    });
+                });
+            }
+        </script>
+    </div>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+            anchor.addEventListener('click', function (e) {
+                var href = this.getAttribute('href');
+                if (href !== '#') {
+                    e.preventDefault();
+                    var target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            });
+        });
+
+        (function initCarousel() {
+            var carousel = document.getElementById('heroCarousel');
+            var track = document.getElementById('carouselTrack');
+            var dotsContainer = document.getElementById('carouselDots');
+            if (!carousel || !track || !dotsContainer) return;
+
+            var slides = track.querySelectorAll('.carousel-slide');
+            var total = slides.length;
+            var current = 0;
+            var autoplayTimer;
+
+            slides.forEach(function(_, i) {
+                var dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+                dot.setAttribute('aria-label', 'Ir a imagen ' + (i + 1));
+                dot.addEventListener('click', function() { goTo(i); });
+                dotsContainer.appendChild(dot);
+            });
+
+            var dots = dotsContainer.querySelectorAll('.carousel-dot');
+
+            function slideOffset() {
+                return carousel.getBoundingClientRect().width;
+            }
+
+            function goTo(index) {
+                current = (index + total) % total;
+                track.style.transform = 'translateX(-' + (current * slideOffset()) + 'px)';
+                dots.forEach(function(d, i) { d.classList.toggle('active', i === current); });
+            }
+
+            function next() { goTo(current + 1); }
+            function prev() { goTo(current - 1); }
+
+            document.getElementById('carouselPrev').addEventListener('click', prev);
+            document.getElementById('carouselNext').addEventListener('click', next);
+
+            function startAutoplay() {
+                clearInterval(autoplayTimer);
+                autoplayTimer = setInterval(next, 5000);
+            }
+            function stopAutoplay() {
+                clearInterval(autoplayTimer);
+            }
+
+            window.addEventListener('resize', function() { goTo(current); });
+
+            carousel.addEventListener('mouseenter', stopAutoplay);
+            carousel.addEventListener('mouseleave', startAutoplay);
+            goTo(0);
+            startAutoplay();
+        })();
+
+        (function initStatsCounters() {
+            var section = document.querySelector('.stats-section');
+            if (!section) return;
+
+            var counters = section.querySelectorAll('.stat-counter');
+            var hasAnimated = false;
+
+            function animateCounter(el) {
+                var target = parseInt(el.getAttribute('data-target'), 10);
+                var suffix = el.getAttribute('data-suffix') || '';
+                var duration = 2000;
+                var startTime = null;
+
+                function step(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    var progress = Math.min((timestamp - startTime) / duration, 1);
+                    var eased = 1 - Math.pow(1 - progress, 3);
+                    var value = Math.round(eased * target);
+                    el.textContent = value + suffix;
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        el.textContent = target + suffix;
+                    }
+                }
+
+                requestAnimationFrame(step);
+            }
+
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting && !hasAnimated) {
+                        hasAnimated = true;
+                        counters.forEach(animateCounter);
+                        observer.disconnect();
+                    }
+                });
+            }, { threshold: 0.35, rootMargin: '0px 0px -40px 0px' });
+
+            observer.observe(section);
+        })();
+    </script>
+</body>
+</html>

@@ -258,7 +258,7 @@ let ciclosData = JSON.parse(document.getElementById('ciclosData').textContent);
 
 // Funciones del modal
 function abrirModalCrear() {
-    document.getElementById('modalCrearCiclo').style.display = 'block';
+    document.getElementById('modalCrearCiclo').classList.remove('d-none');
 }
 
 function abrirModalEditar(cicloId) {
@@ -271,28 +271,25 @@ function abrirModalEditar(cicloId) {
     document.getElementById('edit_fecha_fin').value = ciclo.fecha_fin;
     document.getElementById('edit_descripcion').value = ciclo.descripcion || '';
 
-    document.getElementById('modalEditarCiclo').style.display = 'block';
+    document.getElementById('modalEditarCiclo').classList.remove('d-none');
 }
 
 function confirmarEliminar(cicloId, nombre) {
     document.getElementById('eliminar_ciclo_id').value = cicloId;
     document.getElementById('cicloEliminarNombre').textContent = nombre;
-    document.getElementById('modalEliminarCiclo').style.display = 'block';
+    document.getElementById('modalEliminarCiclo').classList.remove('d-none');
 }
 
 function cerrarModal() {
-    document.getElementById('modalCrearCiclo').style.display = 'none';
-    document.getElementById('modalEditarCiclo').style.display = 'none';
-    document.getElementById('modalEliminarCiclo').style.display = 'none';
+    document.getElementById('modalCrearCiclo').classList.add('d-none');
+    document.getElementById('modalEditarCiclo').classList.add('d-none');
+    document.getElementById('modalEliminarCiclo').classList.add('d-none');
 }
 
 // Cerrar modal al hacer clic fuera
 window.onclick = function(event) {
-    const modals = document.getElementsByClassName('modal');
-    for (let modal of modals) {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.add('d-none');
     }
 }
 

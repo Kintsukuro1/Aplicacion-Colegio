@@ -111,3 +111,18 @@ class TestGetPaginasPorRol:
                 assert isinstance(ruta, str), f"Ruta de {nombre_pagina} no es string"
                 assert ruta.endswith('.html'), f"Ruta de {nombre_pagina} no termina en .html"
                 assert '/' in ruta, f"Ruta de {nombre_pagina} no tiene carpeta"
+
+    def test_paginas_admin_general(self):
+        """Test: Retorna páginas correctas para admin_general incluyendo las de admin_escolar"""
+        paginas = get_paginas_por_rol('admin_general')
+        
+        assert isinstance(paginas, dict)
+        assert 'inicio' in paginas
+        assert 'escuelas' in paginas
+        # Páginas de admin_escolar heredadas
+        assert 'mi_escuela' in paginas
+        assert 'gestionar_estudiantes' in paginas
+        assert 'gestionar_cursos' in paginas
+        assert paginas['mi_escuela'] == 'admin_escolar/mi_escuela.html'
+        assert paginas['gestionar_estudiantes'] == 'admin_escolar/gestionar_estudiantes.html'
+

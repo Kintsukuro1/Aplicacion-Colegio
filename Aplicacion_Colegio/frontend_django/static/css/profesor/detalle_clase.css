@@ -13,7 +13,8 @@
 /* Contenedor Principal */
 .content-wrapper {
     padding: 20px;
-    max-width: 1600px;
+    max-width: none;
+    width: 100%;
     margin: 0 auto;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
@@ -21,40 +22,83 @@
 }
 
 /* ===========================
-   BREADCRUMB
+   BARRA SUPERIOR (VOLVER + ACCIONES)
    =========================== */
 .breadcrumb {
     margin-bottom: 20px;
 }
 
-.breadcrumb a {
-    color: #4f46e5;
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    display: inline-flex;
+.prof-topbar {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-    letter-spacing: -0.01em;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-.breadcrumb a:hover {
-    color: #6366f1;
-    text-decoration: underline;
+.prof-back-mis-clases {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #6a5ab8;
+    background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+    border: 1px solid #ddd6fe;
+    box-shadow: 0 4px 14px rgba(106, 90, 184, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.prof-back-mis-clases__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    font-size: 1rem;
+    line-height: 1;
+    color: #fff;
+    background: linear-gradient(135deg, #8b7cc8 0%, #6a5ab8 100%);
+    box-shadow: 0 2px 8px rgba(106, 90, 184, 0.35);
+    transition: transform 0.2s ease;
+}
+
+.prof-back-mis-clases__text {
+    white-space: nowrap;
+}
+
+.prof-back-mis-clases:hover {
+    color: #5b21b6;
+    text-decoration: none;
+    border-color: #c4b5fd;
+    box-shadow: 0 8px 22px rgba(106, 90, 184, 0.2);
+    transform: translateY(-1px);
+}
+
+.prof-back-mis-clases:hover .prof-back-mis-clases__icon {
     transform: translateX(-2px);
+}
+
+.prof-topbar .breadcrumb-actions {
+    margin-left: auto;
 }
 
 /* ===========================
    HEADER BANNER
    =========================== */
 .clase-header-banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
+    background: #faf5ff;
+    border: 1px solid #e9e5ff;
+    border-radius: 16px;
     padding: 30px;
     margin-bottom: 25px;
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
-    color: white;
+    box-shadow: 0 8px 24px rgba(106, 90, 184, 0.08);
+    color: #312e81;
 }
 
 .clase-header-content {
@@ -72,8 +116,8 @@
     justify-content: center;
     font-size: 2.5rem;
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
+    background: #ede9fe;
+    border: 1px solid #e9e5ff;
 }
 
 .clase-info {
@@ -83,17 +127,17 @@
 .clase-titulo {
     margin: 0 0 15px 0;
     font-size: 2rem;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1.2;
     letter-spacing: -0.02em;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: #312e81;
 }
 
 .clase-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    opacity: 0.95;
+    color: #64748b;
 }
 
 .meta-item {
@@ -115,10 +159,11 @@
 .tabs-navigation {
     display: flex;
     gap: 10px;
-    background: white;
+    background: #faf5ff;
     padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9e5ff;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(49, 46, 129, 0.06);
     margin-bottom: 25px;
     overflow-x: auto;
 }
@@ -127,10 +172,10 @@
     background: transparent;
     border: none;
     padding: 12px 20px;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 700;
     color: #64748b;
     display: flex;
     align-items: center;
@@ -141,13 +186,14 @@
 }
 
 .tab-button:hover {
-    background: #f1f5f9;
-    color: #1e293b;
+    background: rgba(255, 255, 255, 0.9);
+    color: #312e81;
 }
 
 .tab-button.active {
-    background: #e0e7ff;
-    color: #4f46e5;
+    background: #ffffff;
+    color: #6a5ab8;
+    box-shadow: 0 2px 8px rgba(106, 90, 184, 0.12);
 }
 
 .tab-button .icon {
@@ -155,8 +201,9 @@
 }
 
 .tab-button .badge {
-    background: #ef4444;
-    color: white;
+    background: #ffffff;
+    color: #6a5ab8;
+    border: 1px solid #e9e5ff;
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.75rem;
@@ -166,7 +213,9 @@
 }
 
 .tab-button.active .badge {
-    background: #4f46e5;
+    background: #6a5ab8;
+    color: #fff;
+    border-color: #6a5ab8;
 }
 
 /* ===========================
@@ -419,7 +468,8 @@
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #faf5ff;
+    border: 2px solid #e9e5ff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -454,7 +504,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: #4f46e5;
+    color: #6a5ab8;
     text-decoration: none;
     font-size: 0.85rem;
     font-weight: 600;

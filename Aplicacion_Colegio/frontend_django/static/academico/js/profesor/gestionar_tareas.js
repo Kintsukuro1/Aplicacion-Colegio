@@ -1,11 +1,26 @@
 /** GESTIONAR TAREAS - PROFESOR */
 
-function mostrarModalCrear() {
+function _getModalCrear() {
     const modal = document.getElementById('modalCrearTarea');
-    modal.style.display = 'flex';
+    if (!modal) {
+        return null;
+    }
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+    return modal;
+}
+
+function _abrirModalCrear() {
+    const modal = _getModalCrear();
+    if (!modal) {
+        return;
+    }
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('gt-modal-open');
     actualizarSeccionOnline();
 
-    // Establecer fecha mínima como ahora
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     const campoFecha = document.getElementById('fecha_entrega');
@@ -14,12 +29,18 @@ function mostrarModalCrear() {
     }
 }
 
+function mostrarModalCrear() {
+    _abrirModalCrear();
+}
+
 function cerrarModalCrear() {
     const modal = document.getElementById('modalCrearTarea');
     const form = document.getElementById('formCrearTarea');
     if (modal) {
-        modal.style.display = 'none';
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
     }
+    document.body.classList.remove('gt-modal-open');
     if (form) {
         form.reset();
     }
@@ -44,7 +65,7 @@ function actualizarSeccionOnline() {
 
     const modalidad = selectorModalidad.value;
     const mostrar = modalidad === 'ONLINE' || modalidad === 'MIXTA';
-    seccionOnline.classList.toggle('hidden', !mostrar);
+    seccionOnline.classList.toggle('gt-hidden', !mostrar);
 }
 
 document.addEventListener('change', function (event) {
@@ -54,12 +75,26 @@ document.addEventListener('change', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
+    const modal = _getModalCrear();
     actualizarSeccionOnline();
 
-    // Auto-abrir modal si la URL contiene ?crear=1 (Reducir clics)
+    if (modal) {
+        const scrim = modal.querySelector('.gt-modal-root__scrim');
+        if (scrim) {
+            scrim.addEventListener('click', cerrarModalCrear);
+        }
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('crear') === '1') {
-        mostrarModalCrear();
+        _abrirModalCrear();
+    }
+});
+
+document.addEventListener('keydown', function (event) {
+    const modal = document.getElementById('modalCrearTarea');
+    if (event.key === 'Escape' && modal && modal.classList.contains('is-open')) {
+        cerrarModalCrear();
     }
 });
 

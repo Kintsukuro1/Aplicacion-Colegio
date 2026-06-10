@@ -35,9 +35,9 @@ def generar_informe_academico(request, estudiante_id: int):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ['admin', 'admin_escolar']:
-        messages.error(request, 'No tienes permiso para generar informes')
-        return redirect('dashboard')
+    if rol not in ['admin_general', 'admin_escolar']:
+        messages.error(request, "Acceso denegado para generar informes")
+        return redirect("dashboard")
 
     if not escuela_rbd:
         messages.error(request, 'No hay escuela asignada')

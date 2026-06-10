@@ -1,0 +1,1 @@
+# Módulo de vistas para Administrador General

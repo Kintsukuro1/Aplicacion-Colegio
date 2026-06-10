@@ -523,8 +523,10 @@ class DashboardAdminService:
         estudiantes_sin_curso = User.objects.filter(
             rbd_colegio=escuela_rbd,
             perfil_estudiante__isnull=False,
-            is_active=True,
-            perfil_estudiante__ciclo_actual__isnull=True
+            is_active=True
+        ).exclude(
+            matriculas__estado='ACTIVA',
+            matriculas__ciclo_academico=ciclo_activo
         ).select_related('perfil_estudiante').order_by('apellido_paterno', 'apellido_materno', 'nombre')
         
         # Get asignaturas
@@ -741,7 +743,7 @@ class DashboardAdminService:
                 'curso_nombre': clase.curso.nombre,
                 'profesor_nombre': clase.profesor.get_full_name()
             })
-        clases_por_asignatura_json = json.dumps(dict(clases_por_asignatura))
+        clases_por_asignatura_json = dict(clases_por_asignatura)
         
         return {
             'asignaturas': asignaturas,

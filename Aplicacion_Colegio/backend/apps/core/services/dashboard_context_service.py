@@ -103,28 +103,13 @@ class DashboardContextService:
         # Get 5 most recent notifications
         recent_notifications = Notificacion.objects.filter(destinatario=user).order_by('-fecha_creacion')[:5]
         
-        from backend.apps.notificaciones.services.notification_link_service import (
-            normalize_notification_enlace,
+        from backend.apps.notificaciones.services.notification_display_service import (
+            format_notification_for_ui,
         )
 
-        formatted_notifications = []
-        for notif in recent_notifications:
-            # Map notification type to icon
-            icono = 'star' if getattr(notif, 'tipo', '') == 'calificacion' else 'bell'
-            url = normalize_notification_enlace(
-                getattr(notif, 'enlace', ''),
-                getattr(notif, 'tipo', ''),
-            )
-                
-            formatted_notifications.append({
-                'id': notif.id if hasattr(notif, 'id') else getattr(notif, 'id_notificacion', None),
-                'titulo': notif.titulo,
-                'mensaje': notif.mensaje,
-                'fecha_creacion': notif.fecha_creacion,
-                'icono': icono,
-                'url': url,
-                'leido': notif.leido,
-            })
+        formatted_notifications = [
+            format_notification_for_ui(notif) for notif in recent_notifications
+        ]
             
         return {
             'notificaciones_count': unread_count,
@@ -138,42 +123,41 @@ class DashboardContextService:
         request_get_params = params.get('request_get_params') or {}
         from backend.apps.notificaciones.models import Notificacion
         
-        # Filter by read/unread if requested
-        filtro_estado = request_get_params.get('estado')
-        queryset = Notificacion.objects.filter(destinatario=user)
-        
+        from backend.apps.notificaciones.services.notification_display_service import (
+            build_notifications_page_summary,
+            format_notification_for_ui,
+        )
+
+        filtro_estado = (request_get_params.get('estado') or '').strip()
+        base_qs = Notificacion.objects.filter(destinatario=user)
+        total = base_qs.count()
+        no_leidas = base_qs.filter(leido=False).count()
+
+        queryset = base_qs
         if filtro_estado == 'leidas':
             queryset = queryset.filter(leido=True)
         elif filtro_estado == 'no_leidas':
             queryset = queryset.filter(leido=False)
-            
-        notifications = queryset.order_by('-fecha_creacion')
-        
-        from backend.apps.notificaciones.services.notification_link_service import (
-            normalize_notification_enlace,
-        )
 
-        formatted_notifications = []
-        for notif in notifications:
-            icono = 'star' if getattr(notif, 'tipo', '') == 'calificacion' else 'bell'
-            url = normalize_notification_enlace(
-                getattr(notif, 'enlace', ''),
-                getattr(notif, 'tipo', ''),
-            )
-                
-            formatted_notifications.append({
-                'id': notif.id if hasattr(notif, 'id') else getattr(notif, 'id_notificacion', None),
-                'titulo': notif.titulo,
-                'mensaje': notif.mensaje,
-                'fecha_creacion': notif.fecha_creacion,
-                'icono': icono,
-                'url': url,
-                'leido': notif.leido,
-            })
-            
+        notifications = queryset.order_by('-fecha_creacion')
+        formatted_notifications = [
+            format_notification_for_ui(notif) for notif in notifications
+        ]
+        prioritarias = [n for n in formatted_notifications if n.get('requiere_atencion')]
+        resto = [n for n in formatted_notifications if not n.get('requiere_atencion')]
+
         return {
             'notificaciones_todas': formatted_notifications,
-            'filtro_estado': filtro_estado or 'todas',
+            'notificaciones_prioritarias': prioritarias,
+            'notificaciones_resto': resto,
+            'notificaciones_total': total,
+            'notificaciones_no_leidas': no_leidas,
+            'notificaciones_filtro_estado': filtro_estado,
+            'notificaciones_resumen': build_notifications_page_summary(
+                formatted_notifications,
+                total=total,
+                no_leidas=no_leidas,
+            ),
         }
 
     @staticmethod
@@ -1956,6 +1940,11 @@ class DashboardContextService:
                 'promedio_estudiantes': round(total_estudiantes_sum / total_clases) if total_clases > 0 else 0,
                 'total_horas_semanales': total_horas_sum,
                 'total_cursos': len(cursos_unicos),
+                'total_entregas_pendientes': sum(c['tareas_sin_corregir'] for c in mis_clases),
+                'total_alumnos_riesgo': sum(c['alumnos_riesgo'] for c in mis_clases),
+                'clases_requieren_atencion': sum(
+                    1 for c in mis_clases if c['tareas_sin_corregir'] > 0 or c['alumnos_riesgo'] > 0
+                ),
             }
     @staticmethod
     @PermissionService.require_permission_any([
@@ -2012,7 +2001,7 @@ class DashboardContextService:
         from backend.apps.cursos.models import Clase, ClaseEstudiante
         from backend.apps.academico.models import Evaluacion, Calificacion
         from django.db.models import Avg, Count
-        from datetime import date
+        from datetime import date, timedelta
 
         clases = Clase.objects.filter(
             profesor=user,
@@ -2040,6 +2029,26 @@ class DashboardContextService:
                 evaluacion__clase__colegio=colegio
             ).aggregate(avg_nota=Avg('nota'))
             promedio_general = round(avg_result['avg_nota'] or 0, 1)
+
+        hoy = date.today()
+        evaluaciones_proximas_globales = list(
+            Evaluacion.objects.filter(
+                clase__profesor=user,
+                clase__colegio=colegio,
+                activa=True,
+                fecha_evaluacion__gte=hoy,
+                fecha_evaluacion__lte=hoy + timedelta(days=14),
+            )
+            .select_related('clase__asignatura', 'clase__curso')
+            .order_by('fecha_evaluacion')[:8]
+        )
+
+        total_estudiantes_clase = 0
+        evaluaciones_incompletas = 0
+        notas_bajas_clase = 0
+        ponderacion_clase_total = 0
+        promedio_clase = None
+        total_calificaciones_clase = 0
 
         filtro_clase_id = request_get_params.get('clase_id', '')
         modo = request_get_params.get('modo', 'evaluaciones')
@@ -2096,6 +2105,28 @@ class DashboardContextService:
                     'estudiante__apellido_materno',
                     'estudiante__nombre'
                 )
+
+                total_estudiantes_clase = estudiantes_rel.count()
+                evaluaciones_incompletas = sum(
+                    1 for evaluacion in evaluaciones
+                    if evaluacion.total_calificaciones < total_estudiantes_clase
+                ) if total_estudiantes_clase else 0
+                ponderacion_clase_total = sum(
+                    float(evaluacion.ponderacion or 0) for evaluacion in evaluaciones
+                )
+                if evaluaciones:
+                    notas_bajas_clase = Calificacion.objects.filter(
+                        evaluacion__in=evaluaciones,
+                        nota__lt=4,
+                    ).count()
+                    total_calificaciones_clase = Calificacion.objects.filter(
+                        evaluacion__in=evaluaciones,
+                    ).count()
+                    if total_calificaciones_clase:
+                        avg_clase = Calificacion.objects.filter(
+                            evaluacion__in=evaluaciones,
+                        ).aggregate(avg_nota=Avg('nota'))
+                        promedio_clase = round(avg_clase['avg_nota'] or 0, 1)
 
                 calificaciones = Calificacion.objects.filter(
                     evaluacion__in=evaluaciones
@@ -2168,6 +2199,28 @@ class DashboardContextService:
             except Exception:
                 pass
 
+        intel = DashboardContextService._build_profesor_notas_inteligencia(
+            clase_seleccionada=clase_seleccionada,
+            evaluaciones=evaluaciones,
+            evaluaciones_proximas_globales=evaluaciones_proximas_globales,
+            total_estudiantes_clase=total_estudiantes_clase,
+            evaluaciones_incompletas=evaluaciones_incompletas,
+            notas_bajas_clase=notas_bajas_clase,
+            ponderacion_clase_total=ponderacion_clase_total,
+            promedio_clase=promedio_clase,
+            total_calificaciones_clase=total_calificaciones_clase,
+            modo=modo,
+        )
+
+        hero_evaluaciones = len(evaluaciones) if clase_seleccionada else total_evaluaciones
+        hero_calificaciones = (
+            total_calificaciones_clase if clase_seleccionada else total_calificaciones_general
+        )
+        hero_promedio = promedio_clase if clase_seleccionada and promedio_clase is not None else promedio_general
+        hero_pendientes = (
+            evaluaciones_incompletas if clase_seleccionada else intel.get('evaluaciones_incompletas_global', 0)
+        )
+
         return {
             'clases': clases,
             'filtro_clase_id': filtro_clase_id,
@@ -2181,10 +2234,138 @@ class DashboardContextService:
             'evaluacion_seleccionada': evaluacion_seleccionada,
             'clase_seleccionada': clase_seleccionada,
             'fecha_hoy': date.today().strftime('%Y-%m-%d'),
-            # Estadísticas generales para dashboard
             'total_evaluaciones': total_evaluaciones,
             'total_calificaciones': total_calificaciones_general,
-            'promedio_general': promedio_general,  # Fix: KPI del dashboard de notas del profesor.
+            'promedio_general': promedio_general,
+            'evaluaciones_proximas_globales': evaluaciones_proximas_globales,
+            'notas_hero_evaluaciones': hero_evaluaciones,
+            'notas_hero_calificaciones': hero_calificaciones,
+            'notas_hero_promedio': hero_promedio,
+            'notas_hero_pendientes': hero_pendientes,
+            **intel,
+        }
+
+    @staticmethod
+    def _build_profesor_notas_inteligencia(
+        *,
+        clase_seleccionada,
+        evaluaciones,
+        evaluaciones_proximas_globales,
+        total_estudiantes_clase,
+        evaluaciones_incompletas,
+        notas_bajas_clase,
+        ponderacion_clase_total,
+        promedio_clase,
+        total_calificaciones_clase,
+        modo,
+    ):
+        """Textos y alertas accionables para la vista de notas del profesor."""
+        alertas = []
+        sugerencias = []
+        resumen = 'Gestiona evaluaciones, calificaciones y el seguimiento por curso.'
+
+        if not clase_seleccionada:
+            prox_count = len(evaluaciones_proximas_globales or [])
+            if prox_count:
+                prox = evaluaciones_proximas_globales[0]
+                asignatura = getattr(getattr(prox.clase, 'asignatura', None), 'nombre', 'Clase')
+                resumen = (
+                    f'Tienes {prox_count} evaluación(es) en los próximos 14 días. '
+                    f'La más cercana es {prox.nombre} en {asignatura}.'
+                )
+            else:
+                resumen = 'Selecciona una clase para ver pendientes de calificación y próximas evaluaciones.'
+            return {
+                'notas_intel_resumen': resumen,
+                'notas_intel_alertas': alertas,
+                'notas_intel_sugerencias': sugerencias,
+                'evaluaciones_incompletas_global': 0,
+            }
+
+        asignatura = getattr(getattr(clase_seleccionada, 'asignatura', None), 'nombre', 'esta clase')
+        curso = getattr(getattr(clase_seleccionada, 'curso', None), 'nombre', '')
+
+        if not evaluaciones:
+            resumen = f'En {asignatura} ({curso}) aún no hay evaluaciones registradas.'
+            sugerencias.append({
+                'icono': '📝',
+                'texto': 'Crea la primera evaluación para comenzar a registrar notas.',
+                'accion': 'crear_evaluacion',
+            })
+        else:
+            partes = [f'{len(evaluaciones)} evaluación(es) activa(s) en {asignatura}.']
+            if evaluaciones_incompletas:
+                partes.append(
+                    f'{evaluaciones_incompletas} requieren completar calificaciones.'
+                )
+            if promedio_clase is not None:
+                partes.append(f'Promedio del curso: {promedio_clase}.')
+            resumen = ' '.join(partes)
+
+        if evaluaciones_incompletas:
+            alertas.append({
+                'tipo': 'warn',
+                'icono': '✏️',
+                'titulo': 'Calificaciones incompletas',
+                'texto': (
+                    f'{evaluaciones_incompletas} evaluación(es) no tienen notas '
+                    f'para todos los estudiantes ({total_estudiantes_clase} alumnos).'
+                ),
+            })
+
+        if notas_bajas_clase:
+            alertas.append({
+                'tipo': 'danger',
+                'icono': '⚠️',
+                'titulo': 'Notas bajo 4.0',
+                'texto': f'{notas_bajas_clase} calificación(es) requieren seguimiento académico.',
+            })
+
+        if evaluaciones and total_estudiantes_clase:
+            ponderacion = float(ponderacion_clase_total or 0)
+            if ponderacion < 99.5:
+                alertas.append({
+                    'tipo': 'info',
+                    'icono': '🎯',
+                    'titulo': 'Ponderación del periodo',
+                    'texto': f'Suma {ponderacion:.0f}% — aún puedes agregar evaluaciones para completar el 100%.',
+                })
+            elif ponderacion > 100.5:
+                alertas.append({
+                    'tipo': 'danger',
+                    'icono': '🎯',
+                    'titulo': 'Ponderación excedida',
+                    'texto': f'La suma de ponderaciones es {ponderacion:.0f}%. Revisa los pesos de las evaluaciones.',
+                })
+
+        proximas_clase = [
+            ev for ev in (evaluaciones_proximas_globales or [])
+            if ev.clase_id == clase_seleccionada.id
+        ]
+        for ev in proximas_clase[:3]:
+            sugerencias.append({
+                'icono': '📅',
+                'texto': f'{ev.nombre} — {ev.fecha_evaluacion.strftime("%d/%m/%Y")}',
+                'accion': 'evaluacion',
+                'evaluacion_id': ev.id_evaluacion,
+            })
+
+        if modo == 'calificar' and evaluaciones_incompletas == 0 and evaluaciones:
+            sugerencias.append({
+                'icono': '✅',
+                'texto': 'Todas las evaluaciones visibles tienen notas registradas para esta clase.',
+                'accion': None,
+            })
+
+        return {
+            'notas_intel_resumen': resumen,
+            'notas_intel_alertas': alertas,
+            'notas_intel_sugerencias': sugerencias,
+            'evaluaciones_incompletas_global': evaluaciones_incompletas,
+            'total_estudiantes_clase': total_estudiantes_clase,
+            'ponderacion_clase_total': ponderacion_clase_total,
+            'promedio_clase': promedio_clase,
+            'notas_bajas_clase': notas_bajas_clase,
         }
 
     # --- Contextos profesor restaurados (libro_clases, reportes, disponibilidad) ---
@@ -2235,7 +2416,9 @@ class DashboardContextService:
     @staticmethod
     def _get_profesor_reportes_context(request_get_params, user, colegio):
         """Contexto de reportes académicos para el dashboard Django del profesor."""
+        from backend.apps.academico.models import Asistencia, Evaluacion
         from backend.apps.academico.services.academic_reports_service import AcademicReportsService
+        from backend.apps.accounts.models import User
 
         clases = AcademicReportsService.get_classes_for_reports(user, colegio)
         tipo_reporte = request_get_params.get('tipo', 'asistencia')
@@ -2266,6 +2449,27 @@ class DashboardContextService:
             except (ValueError, TypeError):
                 pass
 
+        hoy = date.today()
+        inicio_30 = hoy - timedelta(days=30)
+        asist_qs = Asistencia.objects.filter(
+            clase__in=clases,
+            fecha__gte=inicio_30,
+            fecha__lte=hoy,
+        )
+        total_asist = asist_qs.count()
+        presentes_asist = asist_qs.filter(estado='P').count()
+        pct_asist_30 = (
+            f"{round(presentes_asist / total_asist * 100, 1)}%"
+            if total_asist
+            else '—'
+        )
+        hero_evaluaciones = Evaluacion.objects.filter(clase__in=clases, activa=True).count()
+        hero_estudiantes = User.objects.filter(
+            clases_matriculadas__clase__in=clases,
+            clases_matriculadas__activo=True,
+            is_active=True,
+        ).distinct().count()
+
         return {
             'clases': clases,
             'tipo_reporte': tipo_reporte,
@@ -2274,6 +2478,12 @@ class DashboardContextService:
             'fecha_fin': fecha_fin,
             'reporte_data': reporte_data,
             'clase_seleccionada': clase_seleccionada,
+            'reportes_hero_m2': pct_asist_30,
+            'reportes_hero_m2_label': '% Asistencia (30 días)',
+            'reportes_hero_m3': hero_evaluaciones,
+            'reportes_hero_m3_label': 'Evaluaciones activas',
+            'reportes_hero_m4': hero_estudiantes,
+            'reportes_hero_m4_label': 'Estudiantes',
             'can_export_superintendencia': PolicyService.has_capability(
                 user,
                 'REPORT_EXPORT_SUPERINTENDENCIA',
@@ -2410,12 +2620,26 @@ class DashboardContextService:
             activa=True
         ).select_related('clase__asignatura', 'clase__curso')
 
+        ahora = timezone.now()
+        limite_pronto = ahora + timedelta(days=7)
+
         tareas_data = []
         for t in tareas:
             # EntregaTarea no tiene colegio_id; usar _base_manager evita filtro tenant invalido en related manager.
             entregadas = EntregaTarea._base_manager.filter(tarea=t).exclude(estado='pendiente').count()
             total_estudiantes = ClaseEstudiante._base_manager.filter(clase=t.clase, activo=True).count()
             porcentaje = int((entregadas / total_estudiantes * 100) if total_estudiantes > 0 else 0)
+            vencida = t.esta_vencida()
+            por_corregir = EntregaTarea._base_manager.filter(
+                tarea=t,
+                calificacion__isnull=True,
+            ).exclude(estado='pendiente').count()
+            pendientes_entrega = max(0, total_estudiantes - entregadas)
+            vence_pronto = (
+                not vencida
+                and t.fecha_entrega is not None
+                and t.fecha_entrega <= limite_pronto
+            )
 
             tareas_data.append({
                 'id': t.id_tarea,
@@ -2426,11 +2650,72 @@ class DashboardContextService:
                 'entregadas': entregadas,
                 'total_estudiantes': total_estudiantes,
                 'porcentaje_entrega': porcentaje,
-                'vencida': t.esta_vencida()
+                'pendientes_entrega': pendientes_entrega,
+                'por_corregir': por_corregir,
+                'vencida': vencida,
+                'vence_pronto': vence_pronto,
             })
 
+        tareas_ordenadas = sorted(
+            tareas_data,
+            key=lambda x: x['fecha_entrega'] or ahora,
+            reverse=True,
+        )
+
+        def _prioridad(tarea):
+            score = 0
+            if tarea['por_corregir']:
+                score += tarea['por_corregir'] * 2
+            if not tarea['vencida'] and tarea['porcentaje_entrega'] < 50:
+                score += 15
+            if tarea.get('vence_pronto'):
+                score += 8
+            if tarea['pendientes_entrega'] and not tarea['vencida']:
+                score += min(tarea['pendientes_entrega'], 10)
+            return score
+
+        tc_resumen = {
+            'total': len(tareas_ordenadas),
+            'en_curso': sum(1 for x in tareas_ordenadas if not x['vencida']),
+            'vencidas': sum(1 for x in tareas_ordenadas if x['vencida']),
+            'baja_entrega': sum(
+                1 for x in tareas_ordenadas
+                if not x['vencida'] and (x['porcentaje_entrega'] or 0) < 50
+            ),
+            'por_corregir': sum(x['por_corregir'] for x in tareas_ordenadas),
+            'vence_pronto': sum(1 for x in tareas_ordenadas if x.get('vence_pronto')),
+        }
+
+        tc_alertas = []
+        if tc_resumen['por_corregir']:
+            tc_alertas.append(
+                f"Tienes {tc_resumen['por_corregir']} entrega"
+                f"{'s' if tc_resumen['por_corregir'] != 1 else ''} sin calificar — prioriza «Ver entregas»."
+            )
+        if tc_resumen['baja_entrega']:
+            tc_alertas.append(
+                f"{tc_resumen['baja_entrega']} tarea"
+                f"{'s' if tc_resumen['baja_entrega'] != 1 else ''} en curso con menos del 50% de entregas."
+            )
+        if tc_resumen['vence_pronto']:
+            tc_alertas.append(
+                f"{tc_resumen['vence_pronto']} tarea"
+                f"{'s' if tc_resumen['vence_pronto'] != 1 else ''} vence en los próximos 7 días."
+            )
+        if not tc_alertas and tareas_ordenadas:
+            tc_alertas.append('Buen ritmo general: revisa las entregas pendientes de nota cuando puedas.')
+
+        tc_prioridad = sorted(
+            [t for t in tareas_ordenadas if _prioridad(t) > 0],
+            key=_prioridad,
+            reverse=True,
+        )[:4]
+
         return {
-            'tareas': sorted(tareas_data, key=lambda x: x['fecha_entrega'] or timezone.now(), reverse=True),
+            'tareas': tareas_ordenadas,
+            'tc_resumen': tc_resumen,
+            'tc_alertas': tc_alertas,
+            'tc_prioridad': tc_prioridad,
         }
 
     @staticmethod

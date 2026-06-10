@@ -1,0 +1,170 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/bibliotecario_digital/prestamos.css' %}">
+
+<!-- PRÉSTAMOS - BIBLIOTECARIO DIGITAL -->
+
+<div class="bibliotecario-dashboard">
+    <div class="section-header d-flex justify-between align-center">
+        <div>
+            <h2><span class="section-icon">🔄</span> Préstamos de Recursos</h2>
+            <p>Préstamos activos: <strong>{{ prestamos_activos|default:"0" }}</strong></p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalPrestamo()">+ Nuevo Préstamo</button>
+    </div>
+    <div id="msg-prestamos-global" class="feedback-box"></div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Recurso</th>
+                    <th>Usuario</th>
+                    <th>Fecha Préstamo</th>
+                    <th>Devolución Esperada</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prest in prestamos %}
+                <tr id="fila-prest-{{ prest.id_prestamo }}">
+                    <td>{{ prest.recurso.titulo }}</td>
+                    <td>{{ prest.usuario.get_full_name }}</td>
+                    <td>{{ prest.fecha_prestamo|date:"d/m/Y" }}</td>
+                    <td>{{ prest.fecha_devolucion_esperada|date:"d/m/Y" }}</td>
+                    <td><span class="badge badge-{{ prest.estado|lower }}" id="badge-prest-{{ prest.id_prestamo }}">{{ prest.get_estado_display }}</span></td>
+                    <td>
+                        {% if prest.estado == 'ACTIVO' %}
+                        <button onclick="devolverPrestamo({{ prest.id_prestamo }})"
+                            style="padding:0.25rem 0.7rem;background:#27ae60;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;">
+                            ✓ Devolver
+                        </button>
+                        {% else %}
+                        <span class="text-muted-sm">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr id="fila-vacia-prestamos">
+                    <td colspan="6">No hay préstamos registrados</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Nuevo Préstamo -->
+<div id="modal-prestamo" class="modal-overlay">
+    <div style="background:#fff;border-radius:12px;padding:2rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;">
+        <h3 class="mb-4">🔄 Nuevo Préstamo</h3>
+        <div id="msg-prestamo" class="feedback-box"></div>
+        <form id="form-prestamo" onsubmit="enviarPrestamo(event)">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="label-block">Recurso *</label>
+                <select id="prest-recurso" required class="form-input">
+                    <option value="">Cargando recursos...</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="label-block">Usuario *</label>
+                <select id="prest-usuario" required class="form-input">
+                    <option value="">Cargando usuarios...</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="label-block">Fecha Devolución Esperada *</label>
+                <input type="date" id="prest-fecha-dev" required
+                    class="form-input">
+            </div>
+            <div class="d-flex gap-sm">
+                <button type="button" onclick="cerrarModalPrestamo()" class="btn-outline">Cancelar</button>
+                <button type="submit" id="btn-submit-prestamo" class="btn-warning-solid">Registrar Préstamo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    function getCsrf() { return document.querySelector('[name=csrfmiddlewaretoken]').value; }
+
+    window.abrirModalPrestamo = function() {
+        document.getElementById('modal-prestamo').style.display = 'flex';
+        document.getElementById('msg-prestamo').style.display = 'none';
+        document.getElementById('form-prestamo').reset();
+        // Fecha devolución: +14 días
+        const d = new Date(); d.setDate(d.getDate()+14);
+        document.getElementById('prest-fecha-dev').value = d.toISOString().slice(0,10);
+        // Cargar recursos y usuarios
+        Promise.all([
+            fetch('/api/bibliotecario/recursos/', {headers: {'X-Requested-With': 'XMLHttpRequest'}}).then(r=>r.json()),
+            fetch('/api/bibliotecario/usuarios/', {headers: {'X-Requested-With': 'XMLHttpRequest'}}).then(r=>r.json()),
+        ]).then(([dataRec, dataUsr]) => {
+            const selRec = document.getElementById('prest-recurso');
+            selRec.innerHTML = '<option value="">-- Seleccionar recurso --</option>';
+            if (dataRec.success) dataRec.recursos.forEach(r => {
+                const opt = document.createElement('option'); opt.value=r.id; opt.textContent=r.titulo+' ('+r.tipo+')'; selRec.appendChild(opt);
+            });
+            const selUsr = document.getElementById('prest-usuario');
+            selUsr.innerHTML = '<option value="">-- Seleccionar usuario --</option>';
+            if (dataUsr.success) dataUsr.usuarios.forEach(u => {
+                const opt = document.createElement('option'); opt.value=u.id; opt.textContent=u.nombre; selUsr.appendChild(opt);
+            });
+        });
+    };
+    window.cerrarModalPrestamo = function() { document.getElementById('modal-prestamo').style.display = 'none'; };
+
+    window.enviarPrestamo = function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-prestamo');
+        btn.disabled=true; btn.textContent='Registrando...';
+        const payload = {
+            recurso_id: document.getElementById('prest-recurso').value,
+            usuario_id: document.getElementById('prest-usuario').value,
+            fecha_devolucion_esperada: document.getElementById('prest-fecha-dev').value,
+        };
+        fetch('/api/bibliotecario/prestamos/crear/', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf(),'X-Requested-With':'XMLHttpRequest'},
+            body: JSON.stringify(payload),
+        })
+        .then(r=>r.json())
+        .then(data => {
+            const msgEl = document.getElementById('msg-prestamo');
+            msgEl.style.display='block';
+            if (data.success) {
+                msgEl.style.background='#d4edda'; msgEl.style.color='#155724'; msgEl.textContent=data.message;
+                setTimeout(() => { cerrarModalPrestamo(); location.reload(); }, 1200);
+            } else {
+                msgEl.style.background='#f8d7da'; msgEl.style.color='#721c24'; msgEl.textContent=data.error;
+                btn.disabled=false; btn.textContent='Registrar Préstamo';
+            }
+        });
+    };
+
+    window.devolverPrestamo = function(id) {
+        if (!confirm('¿Confirmar devolución de este recurso?')) return;
+        fetch('/api/bibliotecario/prestamos/'+id+'/devolver/', {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf(),'X-Requested-With':'XMLHttpRequest'},
+            body: JSON.stringify({}),
+        })
+        .then(r=>r.json())
+        .then(data => {
+            const msgEl = document.getElementById('msg-prestamos-global');
+            msgEl.style.display='block';
+            if (data.success) {
+                msgEl.style.background='#d4edda'; msgEl.style.color='#155724'; msgEl.textContent=data.message;
+                const badge = document.getElementById('badge-prest-'+id);
+                if (badge) { badge.className='badge badge-devuelto'; badge.textContent='Devuelto'; }
+                const fila = document.getElementById('fila-prest-'+id);
+                if (fila) { const td = fila.querySelector('td:last-child'); if(td) td.innerHTML='<span class="text-muted-sm">—</span>'; }
+            } else {
+                msgEl.style.background='#f8d7da'; msgEl.style.color='#721c24'; msgEl.textContent=data.error;
+            }
+            setTimeout(()=>{ msgEl.style.display='none'; }, 3500);
+        });
+    };
+
+    document.getElementById('modal-prestamo').addEventListener('click', function(e) { if(e.target===this) cerrarModalPrestamo(); });
+})();
+</script>

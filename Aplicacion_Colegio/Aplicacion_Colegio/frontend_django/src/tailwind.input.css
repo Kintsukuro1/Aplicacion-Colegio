@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .tw-card {
+    @apply rounded-xl2 border border-premium-line bg-premium-surface shadow-panel transition duration-250;
+  }
+
+  .tw-card-hover {
+    @apply hover:shadow-soft hover:-translate-y-[1px];
+  }
+
+  .tw-chip {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+  }
+}

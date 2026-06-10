@@ -249,12 +249,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def colegio(self):
         """Retorna el objeto Colegio asociado al usuario"""
+        if hasattr(self, '_colegio_cache'):
+            return self._colegio_cache
         if self.rbd_colegio:
             from backend.apps.institucion.models import Colegio
             try:
-                return Colegio.objects.get(rbd=self.rbd_colegio)
+                self._colegio_cache = Colegio.objects.get(rbd=self.rbd_colegio)
             except Colegio.DoesNotExist:
-                return None
+                self._colegio_cache = None
+            return self._colegio_cache
         return None
     
     @property

@@ -44,7 +44,7 @@ def gestionar_ciclos(request):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ["admin", "admin_escolar"]:
+    if rol not in ["admin_general", "admin_escolar"]:
         messages.error(request, "Acceso denegado")
         return redirect(f'/dashboard/?pagina=gestionar_ciclos')
 

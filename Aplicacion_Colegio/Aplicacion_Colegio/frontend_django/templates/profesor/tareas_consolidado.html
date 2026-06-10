@@ -1,0 +1,67 @@
+{% include 'profesor/_personal_wrap_start.html' %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1>📊 Tareas Consolidadas</h1>
+        <p class="subtitle">Visión general del estado de las tareas en tus cursos</p>
+    </div>
+
+    <!-- Lista de Tareas Consolidadas -->
+    <div class="tareas-lista d-flex flex-col gap-md">
+        {% for tarea in tareas %}
+        <div class="tarea-card {% if tarea.vencida %}vencida{% endif %} card-accent"
+           >
+            <div class="tarea-header header-flex"
+               >
+                <div class="tarea-badge pill-gradient"
+                   >
+                    {{ tarea.clase }}
+                </div>
+                {% if tarea.vencida %}
+                <span
+                    class="pill-danger">Finalizada</span>
+                {% else %}
+                <span
+                    style="padding: 0.3rem 0.7rem; background: #dcfce7; color: #16a34a; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">En
+                    Curso</span>
+                {% endif %}
+            </div>
+
+            <h3 style="color: #1e3a8a; margin: 0 0 1rem 0; font-size: 1.25rem;">{{ tarea.titulo }}</h3>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                <div class="flex-1">
+                    <div
+                        style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">
+                        <span>Entregas: {{ tarea.entregadas }} / {{ tarea.total_estudiantes }}</span>
+                        <span>{{ tarea.porcentaje_entrega }}%</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                        <div
+                            style="height: 100%; background: {% if tarea.porcentaje_entrega >= 80 %}#10b981{% elif tarea.porcentaje_entrega >= 50 %}#f59e0b{% else %}#ef4444{% endif %}; width: {{ tarea.porcentaje_entrega }}%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tarea-meta"
+                style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.9rem; color: #64748b;">
+                <span class="d-flex align-center gap-md">
+                    <span class="icon">📅</span> Vencimiento: {{ tarea.fecha_entrega|date:"d/m/Y H:i" }}
+                </span>
+                <span class="d-flex align-center gap-md">
+                    <span
+                        style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {% if tarea.es_publica %}#10b981{% else %}#94a3b8{% endif %};"></span>
+                    {{ tarea.es_publica|yesno:"Pública,Oculta" }}
+                </span>
+            </div>
+        </div>
+        {% empty %}
+        <div
+            class="empty-state">
+            <div class="icon-lg mb-3">📭</div>
+            <p class="text-lg">No tienes tareas registradas en tus cursos activos.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% include 'profesor/_personal_wrap_end.html' %}

@@ -1,0 +1,372 @@
+{% extends 'estudiante/base_estudiante.html' %}
+{% load static %}
+
+{% block title %}Mis Tareas{% endblock %}
+
+{% block breadcrumbs %}
+<div class="container-xl mt-md">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Mis Tareas</li>
+        </ol>
+    </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-xl gap-md">
+    <div>
+        <h1 class="text-4xl font-bold mb-sm">📝 Mis Tareas</h1>
+        <p class="text-lg text-secondary">Administra tus entregas y trabajos pendientes</p>
+    </div>
+    <a href="{% url 'calendario_tareas_estudiante' %}" class="btn btn-primary">
+        <i class="fas fa-calendar-alt"></i> Ver Calendario
+    </a>
+</div>
+
+<!-- Filtros con Tabs -->
+<div class="card mb-xl">
+    <div class="card-header border-b-0">
+        <div class="tabs" id="tareas-tabs">
+            <button class="tab active" data-tab="todas" onclick="filtrarTareas('todas')">
+                <i class="fas fa-list"></i> Todas
+            </button>
+            <button class="tab" data-tab="pendientes" onclick="filtrarTareas('pendientes')">
+                <i class="fas fa-clock"></i> Pendientes
+            </button>
+            <button class="tab" data-tab="entregadas" onclick="filtrarTareas('entregadas')">
+                <i class="fas fa-check"></i> Entregadas
+            </button>
+            <button class="tab" data-tab="revisadas" onclick="filtrarTareas('revisadas')">
+                <i class="fas fa-star"></i> Revisadas
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="flex flex-col md:flex-row gap-md">
+            <select class="form-control" onchange="filtrarPorAsignatura(this.value)">
+                <option value="">📚 Todas las asignaturas</option>
+                <option value="matematica">🔢 Matemática</option>
+                <option value="lenguaje">📖 Lenguaje</option>
+                <option value="ciencias">🔬 Ciencias</option>
+                <option value="historia">🏛️ Historia</option>
+                <option value="ingles">🌍 Inglés</option>
+            </select>
+            
+            <select class="form-control" onchange="ordenarTareas(this.value)">
+                <option value="fecha">Ordenar por fecha</option>
+                <option value="prioridad">Ordenar por prioridad</option>
+                <option value="asignatura">Ordenar por asignatura</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-md mb-xl">
+    <div class="card card-compact">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-sm">⏳</div>
+            <p class="text-3xl font-bold text-warning">{{ tareas_pendientes|default:"0" }}</p>
+            <p class="text-sm text-secondary">Pendientes</p>
+        </div>
+    </div>
+    
+    <div class="card card-compact">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-sm">✅</div>
+            <p class="text-3xl font-bold text-success">{{ tareas_entregadas|default:"0" }}</p>
+            <p class="text-sm text-secondary">Entregadas</p>
+        </div>
+    </div>
+    
+    <div class="card card-compact">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-sm">⚠️</div>
+            <p class="text-3xl font-bold text-error">{{ tareas_vencidas|default:"0" }}</p>
+            <p class="text-sm text-secondary">Vencidas</p>
+        </div>
+    </div>
+    
+    <div class="card card-compact">
+        <div class="card-body text-center">
+            <div class="text-4xl mb-sm">⭐</div>
+            <p class="text-3xl font-bold text-primary">{{ promedio_tareas|default:"0.0"|floatformat:1 }}</p>
+            <p class="text-sm text-secondary">Promedio</p>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Tareas -->
+<div id="tareas-container" class="d-flex flex-col gap-md">
+    
+    {% if tareas %}
+        {% for tarea in tareas %}
+        <div class="card transition hover:shadow-lg tarea-item" data-estado="{{ tarea.estado|lower }}" data-asignatura="{{ tarea.asignatura|slugify }}">
+            <div class="card-header" style="background-color: var(--bg-secondary);">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
+                    <div class="flex items-center gap-sm flex-wrap">
+                        <span class="badge badge-primary">{{ tarea.asignatura }}</span>
+                        
+                        {% if tarea.dias_restantes < 0 %}
+                            <span class="badge badge-error badge-dot">
+                                <i class="fas fa-exclamation-triangle"></i> Vencida
+                            </span>
+                        {% elif tarea.dias_restantes == 0 %}
+                            <span class="badge badge-warning badge-dot">
+                                <i class="fas fa-clock"></i> Vence hoy
+                            </span>
+                        {% elif tarea.dias_restantes <= 2 %}
+                            <span class="badge badge-warning">
+                                <i class="fas fa-hourglass-half"></i> Vence en {{ tarea.dias_restantes }} día{{ tarea.dias_restantes|pluralize }}
+                            </span>
+                        {% else %}
+                            <span class="badge badge-info">
+                                <i class="fas fa-calendar"></i> Vence en {{ tarea.dias_restantes }} días
+                            </span>
+                        {% endif %}
+                        
+                        {% if tarea.estado == 'ENTREGADA' %}
+                            <span class="badge badge-success badge-dot">
+                                <i class="fas fa-check-circle"></i> Entregada
+                            </span>
+                        {% elif tarea.estado == 'REVISADA' %}
+                            <span class="badge badge-success">
+                                <i class="fas fa-star"></i> Calificada: {{ tarea.nota }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if tarea.prioridad == 'ALTA' %}
+                        <span class="badge badge-error">
+                            <i class="fas fa-bolt"></i> Alta prioridad
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <h3 class="text-xl font-bold mb-sm">{{ tarea.titulo }}</h3>
+                <p class="text-secondary mb-md">{{ tarea.descripcion|truncatewords:30 }}</p>
+                
+                <div class="flex flex-wrap gap-md text-sm text-secondary mb-md">
+                    <span>
+                        <i class="fas fa-user"></i> {{ tarea.profesor }}
+                    </span>
+                    <span>
+                        <i class="fas fa-calendar-alt"></i> Vence: {{ tarea.fecha_vencimiento|date:"d/m/Y H:i" }}
+                    </span>
+                    {% if tarea.archivo_adjunto %}
+                    <span>
+                        <i class="fas fa-paperclip"></i> Archivo adjunto
+                    </span>
+                    {% endif %}
+                    {% if tarea.entrega %}
+                    <span class="text-success">
+                        <i class="fas fa-check-circle"></i> Entregada el {{ tarea.entrega.fecha_entrega|date:"d/m/Y H:i" }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                {% if tarea.estado == 'REVISADA' and tarea.nota %}
+                <div class="alert alert-success mb-md">
+                    <div class="alert-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="alert-content">
+                        <div class="alert-title">Tarea Calificada</div>
+                        <div class="alert-message">
+                            Nota: <strong>{{ tarea.nota }}</strong>
+                            {% if tarea.comentario_profesor %}
+                            <br>Comentario: {{ tarea.comentario_profesor }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <div class="flex flex-wrap gap-sm justify-end">
+                    <button class="btn btn-outline btn-sm" onclick="verDetalleTarea({{ tarea.id }})">
+                        <i class="fas fa-eye"></i> Ver detalles
+                    </button>
+                    
+                    {% if tarea.archivo_adjunto %}
+                    <a href="{{ tarea.archivo_adjunto.url }}" class="btn btn-outline btn-sm" download>
+                        <i class="fas fa-download"></i> Descargar material
+                    </a>
+                    {% endif %}
+                    
+                    {% if tarea.estado == 'PENDIENTE' %}
+                    <button class="btn btn-primary btn-sm" onclick="entregarTarea({{ tarea.id }})">
+                        <i class="fas fa-upload"></i> Entregar ahora
+                    </button>
+                    {% elif tarea.estado == 'ENTREGADA' %}
+                    <button class="btn btn-success btn-sm" disabled>
+                        <i class="fas fa-check"></i> Ya entregada
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <div class="card-body py-3xl text-center">
+                <div class="icon-circle-lg">
+                    <i class="fas fa-clipboard-check text-secondary"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-sm">No hay tareas disponibles</h3>
+                <p class="text-secondary">¡Excelente! No tienes tareas pendientes en este momento.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal para entregar tarea -->
+<div id="modal-entregar" class="modal-backdrop d-none">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 class="modal-title">Entregar Tarea</h3>
+            <button class="modal-close" onclick="cerrarModalEntregar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="form-entregar-tarea" enctype="multipart/form-data" data-validate>
+                <input type="hidden" id="tarea-id" name="tarea_id">
+                
+                <div class="form-group">
+                    <label class="form-label form-label-required" for="archivo">Archivo de entrega</label>
+                    <input type="file" id="archivo" name="archivo" class="form-control" required>
+                    <span class="form-help">Formatos permitidos: PDF, DOC, DOCX, ZIP (Máx. 10MB)</span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="comentario">Comentario (opcional)</label>
+                    <textarea id="comentario" name="comentario" class="form-control" rows="4" placeholder="Agrega algún comentario sobre tu entrega..."></textarea>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" id="confirmar" class="form-check-input" required>
+                    <label class="form-check-label" for="confirmar">
+                        Confirmo que este es mi trabajo y estoy listo para entregarlo
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="cerrarModalEntregar()">Cancelar</button>
+            <button class="btn btn-primary" onclick="submitEntrega()">
+                <i class="fas fa-paper-plane"></i> Entregar Tarea
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filtrar tareas por estado
+    function filtrarTareas(estado) {
+        const tareas = document.querySelectorAll('.tarea-item');
+        const tabs = document.querySelectorAll('.tab');
+        
+        // Actualizar tabs activos
+        tabs.forEach(tab => {
+            if (tab.getAttribute('data-tab') === estado) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+        
+        // Filtrar tareas
+        tareas.forEach(tarea => {
+            if (estado === 'todas') {
+                tarea.style.display = 'block';
+            } else if (tarea.getAttribute('data-estado') === estado) {
+                tarea.style.display = 'block';
+            } else {
+                tarea.style.display = 'none';
+            }
+        });
+    }
+    
+    // Filtrar por asignatura
+    function filtrarPorAsignatura(asignatura) {
+        const tareas = document.querySelectorAll('.tarea-item');
+        
+        tareas.forEach(tarea => {
+            if (!asignatura || tarea.getAttribute('data-asignatura') === asignatura) {
+                tarea.style.display = 'block';
+            } else {
+                tarea.style.display = 'none';
+            }
+        });
+    }
+    
+    // Ordenar tareas
+    function ordenarTareas(criterio) {
+        // Implementar lógica de ordenamiento
+        console.log('Ordenar por:', criterio);
+    }
+    
+    // Ver detalle de tarea
+    function verDetalleTarea(tareaId) {
+        // Abrir modal o redirigir a página de detalle
+        console.log('Ver tarea:', tareaId);
+    }
+    
+    // Entregar tarea
+    function entregarTarea(tareaId) {
+        document.getElementById('tarea-id').value = tareaId;
+        document.getElementById('modal-entregar').style.display = 'flex';
+    }
+    
+    // Cerrar modal
+    function cerrarModalEntregar() {
+        document.getElementById('modal-entregar').style.display = 'none';
+        document.getElementById('form-entregar-tarea').reset();
+    }
+    
+    // Submit entrega
+    function submitEntrega() {
+        const form = document.getElementById('form-entregar-tarea');
+        
+        if (form.checkValidity()) {
+            // Aquí iría la lógica para enviar el formulario vía AJAX
+            ToastManager.success('¡Tarea entregada exitosamente!');
+            cerrarModalEntregar();
+            
+            // Recargar la página después de 1 segundo
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            form.reportValidity();
+        }
+    }
+    
+    // Animación de entrada
+    document.addEventListener('DOMContentLoaded', function() {
+        const tareas = document.querySelectorAll('.tarea-item');
+        tareas.forEach((tarea, index) => {
+            setTimeout(() => {
+                tarea.style.opacity = '0';
+                tarea.style.transform = 'translateY(20px)';
+                tarea.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    tarea.style.opacity = '1';
+                    tarea.style.transform = 'translateY(0)';
+                }, 50);
+            }, index * 50);
+        });
+    });
+</script>
+{% endblock %}
