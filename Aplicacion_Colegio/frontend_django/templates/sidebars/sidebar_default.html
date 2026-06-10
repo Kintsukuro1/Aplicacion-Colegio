@@ -4,26 +4,39 @@
         <p class="user-role">Navegación general</p>
     </div>
 
-    <nav class="sidebar-nav">
-        <ul>
-            <li>
-                <a href="{% url 'dashboard' %}">
+    <nav class="sidebar-nav sidebar-nav--tree">
+        <ul class="nav-tree">
+            <li class="nav-tree__item">
+                <a href="{% url 'dashboard' %}" class="nav-tree__link">
                     <span class="icon">🏠</span>
                     <span>Inicio</span>
                 </a>
             </li>
-            <li>
-                <a href="{% url 'dashboard' %}?pagina=perfil">
-                    <span class="icon">👤</span>
-                    <span>Mi Perfil</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'accounts:logout' %}">
-                    <span class="icon">🚪</span>
-                    <span>Cerrar sesión</span>
-                </a>
+
+            {# ── CUENTA ── #}
+            <li class="nav-tree__group" data-group="def-cuenta">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">👤 Cuenta</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    <li class="nav-tree__item">
+                        <a href="{% url 'dashboard' %}?pagina=perfil" class="nav-tree__link">
+                            <span class="icon">👤</span>
+                            <span>Mi Perfil</span>
+                        </a>
+                    </li>
+                    <li class="nav-tree__item">
+                        <a href="{% url 'accounts:logout' %}" class="nav-tree__link">
+                            <span class="icon">🚪</span>
+                            <span>Cerrar sesión</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
         </ul>
     </nav>
 </aside>
+
+{% include 'includes/_sidebar_tree_js.html' %}

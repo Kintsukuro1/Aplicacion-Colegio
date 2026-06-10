@@ -488,10 +488,10 @@ function abrirModalCrear() {
     document.querySelector('.form-profesor').reset();
     
     // Ocultar sección de observaciones en crear
-    document.getElementById('observacionesSection').style.display = 'none';
+    document.getElementById('observacionesSection').classList.add('d-none');
     
     // Mostrar modal
-    document.getElementById('modalProfesor').style.display = 'flex';
+    document.getElementById('modalProfesor').classList.remove('d-none');
 }
 
 function abrirModalEditar(button) {
@@ -522,10 +522,10 @@ function abrirModalEditar(button) {
     document.getElementById('observaciones').value = data.observaciones;
     
     // Mostrar sección de observaciones
-    document.getElementById('observacionesSection').style.display = 'block';
+    document.getElementById('observacionesSection').classList.remove('d-none');
     
     // Mostrar modal
-    document.getElementById('modalProfesor').style.display = 'flex';
+    document.getElementById('modalProfesor').classList.remove('d-none');
 }
 
 function verProfesor(button) {
@@ -560,11 +560,11 @@ function verProfesor(button) {
     
     document.getElementById('det-observaciones').textContent = data.observaciones || 'Ninguna.';
     
-    document.getElementById('modalDetalleProfesor').style.display = 'flex';
+    document.getElementById('modalDetalleProfesor').classList.remove('d-none');
 }
 
 function cerrarModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
+    document.getElementById(modalId).classList.add('d-none');
 }
 
 function confirmarEliminar(button) {
@@ -589,7 +589,7 @@ function resetearPassword(button) {
 document.querySelectorAll('.modal-overlay').forEach(modal => {
     modal.addEventListener('click', function(e) {
         if (e.target === this) {
-            this.style.display = 'none';
+            this.classList.add('d-none');
         }
     });
 });
@@ -598,7 +598,7 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.style.display = 'none';
+            modal.classList.add('d-none');
         });
     }
 });

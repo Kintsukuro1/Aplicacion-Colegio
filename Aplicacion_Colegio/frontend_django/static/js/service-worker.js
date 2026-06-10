@@ -30,7 +30,12 @@ function isDynamicOrPrivateRequest(request) {
     path.startsWith("/accounts/") ||
     path.startsWith("/dashboard/") ||
     path.startsWith("/admin/") ||
-    path.startsWith("/api/")
+    path.startsWith("/api/") ||
+    path.startsWith("/seleccionar-escuela/") ||
+    path.startsWith("/entrar-escuela/") ||
+    path.startsWith("/importar-datos/") ||
+    path.startsWith("/gestionar-") ||
+    path.startsWith("/setup/")
   );
 }
 

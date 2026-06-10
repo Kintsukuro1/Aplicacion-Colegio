@@ -330,7 +330,11 @@ class AsignaturasViewService:
     @staticmethod
     def handle(request):
         """Lógica completa de gestión de asignaturas encapsulada en service."""
-        colegio = Colegio.objects.get(rbd=request.user.rbd_colegio)
+        from backend.apps.core.views.school_context import resolve_request_rbd
+        rbd_colegio = resolve_request_rbd(request)
+        if not rbd_colegio:
+            raise ValueError("No se pudo determinar el RBD del colegio.")
+        colegio = Colegio.objects.get(rbd=rbd_colegio)
 
         from django.db.models import Sum
 
@@ -338,6 +342,13 @@ class AsignaturasViewService:
             early = AsignaturasViewService.process_post(request, colegio)
             if early is not None:
                 return early
+            return redirect(f"{reverse('dashboard')}?pagina=gestionar_asignaturas")
+
+            # Redirigir al dashboard para evitar que al refrescar se reenvíe el POST
+            # y para devolver un HttpResponseRedirect válido en vez del diccionario de contexto.
+            referer = request.META.get('HTTP_REFERER')
+            if referer and isinstance(referer, str):
+                return redirect(referer)
             return redirect(f"{reverse('dashboard')}?pagina=gestionar_asignaturas")
 
         from core.optimizations import get_asignaturas_optimized

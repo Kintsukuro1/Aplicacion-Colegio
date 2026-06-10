@@ -161,6 +161,82 @@ class DashboardOrchestratorService:
             )
             context.update(role_context)
 
+            # Cargar contexto escolar si administra una escuela y solicita una página escolar
+            if escuela_rbd and pagina_solicitada in {
+                'mi_escuela', 'infraestructura', 'gestionar_estudiantes', 'gestionar_cursos',
+                'gestionar_asignaturas', 'gestionar_profesores', 'gestionar_ciclos',
+                'asistencia', 'notas', 'libro_clases', 'reportes', 'reporte_cursos',
+                'gestionar_finanzas'
+            }:
+                setup_status = OnboardingService.get_setup_status(escuela_rbd)
+                context['setup_status'] = setup_status
+                context['setup_incomplete'] = not setup_status['setup_complete']
+                
+                steps_completed = sum([
+                    setup_status['has_active_ciclo'],
+                    setup_status['has_courses'],
+                    setup_status['has_teachers'],
+                    setup_status['has_students'],
+                ])
+                context['setup_progress'] = int((steps_completed / 4) * 100)
+
+                try:
+                    if pagina_solicitada == 'gestionar_estudiantes':
+                        estudiantes_context = DashboardService.get_gestionar_estudiantes_context(
+                            request.user, request, escuela_rbd
+                        )
+                        context.update(estudiantes_context)
+                    elif pagina_solicitada == 'gestionar_cursos':
+                        cursos_context = DashboardService.get_gestionar_cursos_context(
+                            request.user, request, escuela_rbd
+                        )
+                        context.update(cursos_context)
+                    elif pagina_solicitada == 'gestionar_asignaturas':
+                        asignaturas_context = DashboardService.get_gestionar_asignaturas_context(
+                            request.user, request, escuela_rbd
+                        )
+                        context.update(asignaturas_context)
+                    elif pagina_solicitada == 'gestionar_profesores':
+                        profesores_context = DashboardService.get_gestionar_profesores_context(
+                            request.user, request, escuela_rbd
+                        )
+                        context.update(profesores_context)
+                    elif pagina_solicitada == 'gestionar_ciclos':
+                        ciclos_context = DashboardService.get_gestionar_ciclos_context(
+                            request.user, request.GET, escuela_rbd
+                        )
+                        context.update(ciclos_context)
+                    elif pagina_solicitada == 'asistencia':
+                        from backend.apps.core.views.profesor.asistencia import gestionar_asistencia
+                        colegio = SchoolQueryService.get_required_by_rbd(escuela_rbd)
+                        asistencia_context = gestionar_asistencia(request, colegio, admin_mode=True)
+                        context.update(asistencia_context)
+                    elif pagina_solicitada == 'notas':
+                        notas_context = DashboardService.get_admin_notas_context(request.user, request, escuela_rbd)
+                        context.update(notas_context)
+                    elif pagina_solicitada == 'libro_clases':
+                        libro_context = DashboardService.get_admin_libro_clases_context(request.user, request, escuela_rbd)
+                        context.update(libro_context)
+                    elif pagina_solicitada == 'reportes':
+                        reportes_context = DashboardService.get_admin_reportes_context(request.user, request, escuela_rbd)
+                        context.update(reportes_context)
+                    elif pagina_solicitada == 'reporte_cursos':
+                        reporte_cursos_context = DashboardService.get_reporte_cursos_context(request.user, request, escuela_rbd)
+                        context.update(reporte_cursos_context)
+                    elif pagina_solicitada == 'gestionar_finanzas':
+                        finanzas_context = DashboardService.get_gestionar_finanzas_context(
+                            request.user, escuela_rbd
+                        )
+                        context.update(finanzas_context)
+                    else:
+                        school_context = DashboardService.get_admin_escolar_context(
+                            request.user, pagina_solicitada, escuela_rbd
+                        )
+                        context.update(school_context)
+                except PrerequisiteException:
+                    if setup_status['setup_complete']:
+                        raise
+
         elif is_school_admin_scope or rol in ['admin', 'admin_escolar']:
             setup_status = OnboardingService.get_setup_status(escuela_rbd)
             context['setup_status'] = setup_status

@@ -6,65 +6,81 @@
         <p class="user-role">Psicólogo Educacional / Orientador</p>
     </div>
 
-    <nav class="sidebar-nav">
-        <ul>
+    <nav class="sidebar-nav sidebar-nav--tree">
+        <ul class="nav-tree">
             {% if 'inicio' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'inicio' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=inicio">
+            <li class="nav-tree__item {% if pagina_actual == 'inicio' %}active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio" class="nav-tree__link">
                     <span class="icon">🏠</span>
                     <span>Inicio</span>
                 </a>
             </li>
             {% endif %}
 
-            <li class="nav-section">
-                <span class="section-title">📋 Atención</span>
+            {# ── ATENCIÓN ── #}
+            <li class="nav-tree__group" data-group="psi-atencion">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">📋 Atención</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'entrevistas' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'entrevistas' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=entrevistas" class="nav-tree__link">
+                            <span class="icon">🗣️</span>
+                            <span>Entrevistas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'derivaciones' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'derivaciones' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=derivaciones" class="nav-tree__link">
+                            <span class="icon">🔄</span>
+                            <span>Derivaciones</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'citaciones_casos' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'citaciones_casos' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=citaciones_casos" class="nav-tree__link">
+                            <span class="icon">👥</span>
+                            <span>Citaciones y Casos</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'ficha_estudiante' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'ficha_estudiante' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=ficha_estudiante" class="nav-tree__link">
+                            <span class="icon">📋</span>
+                            <span>Ficha Estudiante</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% if 'entrevistas' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'entrevistas' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=entrevistas">
-                    <span class="icon">🗣️</span>
-                    <span>Entrevistas</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'derivaciones' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'derivaciones' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=derivaciones">
-                    <span class="icon">🔄</span>
-                    <span>Derivaciones</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'citaciones_casos' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'citaciones_casos' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=citaciones_casos">
-                    <span class="icon">👥</span>
-                    <span>Citaciones y Casos</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'ficha_estudiante' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'ficha_estudiante' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=ficha_estudiante">
-                    <span class="icon">📋</span>
-                    <span>Ficha Estudiante</span>
-                </a>
-            </li>
-            {% endif %}
 
-            <li class="nav-section">
-                <span class="section-title">👤 Cuenta</span>
+            {# ── CUENTA ── #}
+            <li class="nav-tree__group" data-group="psi-cuenta">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">👤 Cuenta</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'perfil' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'perfil' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=perfil" class="nav-tree__link">
+                            <span class="icon">👤</span>
+                            <span>Mi Perfil</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% if 'perfil' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'perfil' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=perfil">
-                    <span class="icon">👤</span>
-                    <span>Mi Perfil</span>
-                </a>
-            </li>
-            {% endif %}
         </ul>
     </nav>
 
 </aside>
+
+{% include 'includes/_sidebar_tree_js.html' %}

@@ -6,61 +6,84 @@
         <p class="user-role">Soporte Técnico Escolar</p>
     </div>
 
-    <nav class="sidebar-nav">
-        <ul>
+    <nav class="sidebar-nav sidebar-nav--tree">
+        <ul class="nav-tree">
             {% if 'inicio' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'inicio' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=inicio">
+            <li class="nav-tree__item {% if pagina_actual == 'inicio' %}active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio" class="nav-tree__link">
                     <span class="icon">🏠</span>
                     <span>Inicio</span>
                 </a>
             </li>
             {% endif %}
 
-            <li class="nav-section">
-                <span class="section-title">🎫 Soporte</span>
+            {# ── SOPORTE ── #}
+            <li class="nav-tree__group" data-group="sop-soporte">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">🎫 Soporte</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'tickets' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'tickets' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=tickets" class="nav-tree__link">
+                            <span class="icon">🎫</span>
+                            <span>Tickets</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% if 'tickets' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'tickets' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=tickets">
-                    <span class="icon">🎫</span>
-                    <span>Tickets</span>
-                </a>
-            </li>
-            {% endif %}
 
-            <li class="nav-section">
-                <span class="section-title">👥 Usuarios</span>
+            {# ── USUARIOS ── #}
+            <li class="nav-tree__group" data-group="sop-usuarios">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">👥 Usuarios</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'usuarios' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'usuarios' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=usuarios" class="nav-tree__link">
+                            <span class="icon">👥</span>
+                            <span>Gestión Usuarios</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'actividad' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'actividad' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=actividad" class="nav-tree__link">
+                            <span class="icon">📊</span>
+                            <span>Actividad</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% if 'usuarios' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'usuarios' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=usuarios">
-                    <span class="icon">👥</span>
-                    <span>Gestión Usuarios</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'actividad' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'actividad' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=actividad">
-                    <span class="icon">📊</span>
-                    <span>Actividad</span>
-                </a>
-            </li>
-            {% endif %}
 
-            <li class="nav-section">
-                <span class="section-title">👤 Cuenta</span>
+            {# ── CUENTA ── #}
+            <li class="nav-tree__group" data-group="sop-cuenta">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">👤 Cuenta</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'perfil' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'perfil' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=perfil" class="nav-tree__link">
+                            <span class="icon">👤</span>
+                            <span>Mi Perfil</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% if 'perfil' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'perfil' %}class="active" {% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=perfil">
-                    <span class="icon">👤</span>
-                    <span>Mi Perfil</span>
-                </a>
-            </li>
-            {% endif %}
         </ul>
     </nav>
 
 </aside>
+
+{% include 'includes/_sidebar_tree_js.html' %}

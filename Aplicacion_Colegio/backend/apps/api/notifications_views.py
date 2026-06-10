@@ -2,8 +2,9 @@ import json
 
 from django.http import HttpResponseForbidden, StreamingHttpResponse
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, renderer_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 
 from backend.apps.api.serializers import (
@@ -70,12 +71,27 @@ def device_deactivate(request, device_id: int):
 
     return Response({'detail': 'Dispositivo desactivado.'}, status=status.HTTP_200_OK)
 
+import asyncio
+from asgiref.sync import sync_to_async
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def notifications_sse_stream(request):
-    if not request.user.is_authenticated:
-        return HttpResponseForbidden('Auth requerida')
+async def notifications_sse_stream(request):
+    # Authenticate manually (supporting session, token, and DRF force_authenticate)
+    @sync_to_async
+    def get_authenticated_user(req):
+        from rest_framework.views import APIView
+        try:
+            drf_request = APIView().initialize_request(req)
+            user = drf_request.user
+            if user and user.is_authenticated:
+                return user
+        except Exception:
+            pass
+        return None
+
+    user = await get_authenticated_user(request)
+    if not user:
+        from django.http import HttpResponse
+        return HttpResponse('{"detail": "No autorizado"}', content_type='application/json', status=401)
 
     last_id_raw = request.GET.get('last_id', '0')
     try:
@@ -83,25 +99,57 @@ def notifications_sse_stream(request):
     except (TypeError, ValueError):
         last_id = 0
 
-    def event_generator():
+    @sync_to_async
+    def get_serialized_notifications(current_user, current_last_id):
+        from django.db import close_old_connections
+        close_old_connections()
+        
+        queryset = NotificationsService.queryset_for_user(current_user)
+        notifications = list(queryset.filter(id__gt=current_last_id).order_by('id')[:100])
+        
+        serialized = []
+        for notification in notifications:
+            serialized.append({
+                'id': notification.id,
+                'data': NotificationSerializer(notification).data
+            })
+        return serialized
+
+    @sync_to_async
+    def close_db_connections():
+        from django.db import close_old_connections, connection
+        close_old_connections()
+        connection.close()
+
+    async def event_generator():
+        nonlocal last_id
+        timeout_at = asyncio.get_event_loop().time() + 55
+        keepalive_every = 10
+        last_keepalive = 0
+        
         try:
-            for event_type, event_id, payload in NotificationsService.stream_events(
-                user=request.user, last_id=last_id
-            ):
-                if event_type == 'notification':
-                    data = NotificationSerializer(payload).data
-                    yield f"id: {event_id}\n"
-                    yield 'event: notification\n'
-                    yield f"data: {json.dumps(data, ensure_ascii=True)}\n\n"
+            while asyncio.get_event_loop().time() < timeout_at:
+                items = await get_serialized_notifications(user, last_id)
+                
+                if items:
+                    for item in items:
+                        last_id = item['id']
+                        yield f"id: {item['id']}\n"
+                        yield 'event: notification\n'
+                        yield f"data: {json.dumps(item['data'], ensure_ascii=True)}\n\n"
                     continue
-
-                yield 'event: keepalive\n'
-                yield 'data: {}\n\n'
+                
+                now = asyncio.get_event_loop().time()
+                if now - last_keepalive >= keepalive_every:
+                    last_keepalive = now
+                    yield "event: keepalive\n"
+                    yield "data: {}\n\n"
+                
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            pass
         finally:
-            from django.db import close_old_connections, connection
-
-            close_old_connections()
-            connection.close()
+            await close_db_connections()
 
     response = StreamingHttpResponse(event_generator(), content_type='text/event-stream')
     response['Cache-Control'] = 'no-cache'

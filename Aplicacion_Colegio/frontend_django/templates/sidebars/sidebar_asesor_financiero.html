@@ -6,11 +6,11 @@
         <p class="user-role">Asesor Financiero</p>
     </div>
     
-    <nav class="sidebar-nav">
-        <ul>
+    <nav class="sidebar-nav sidebar-nav--tree">
+        <ul class="nav-tree">
             {% if 'inicio' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'inicio' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=inicio">
+            <li class="nav-tree__item {% if pagina_actual == 'inicio' %}active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio" class="nav-tree__link">
                     <span class="icon">🏠</span>
                     <span>Inicio</span>
                 </a>
@@ -18,98 +18,135 @@
             {% endif %}
             
             {% if 'dashboard_financiero' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'dashboard_financiero' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=dashboard_financiero">
+            <li class="nav-tree__item {% if pagina_actual == 'dashboard_financiero' %}active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=dashboard_financiero" class="nav-tree__link">
                     <span class="icon">📊</span>
                     <span>Dashboard</span>
                 </a>
             </li>
             {% endif %}
-            
-            <li class="nav-section">
-                <span class="section-title">💳 Gestión de Pagos</span>
+
+            {# ── GESTIÓN DE PAGOS ── #}
+            <li class="nav-tree__group" data-group="fin-pagos">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">💳 Gestión de Pagos</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'estados_cuenta' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'estados_cuenta' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=estados_cuenta" class="nav-tree__link">
+                            <span class="icon">📋</span>
+                            <span>Estados de Cuenta</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'pagos' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'pagos' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=pagos" class="nav-tree__link">
+                            <span class="icon">💵</span>
+                            <span>Registrar Pagos</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'cuotas' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'cuotas' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=cuotas" class="nav-tree__link">
+                            <span class="icon">🗓️</span>
+                            <span>Gestionar Cuotas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% if 'estados_cuenta' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'estados_cuenta' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=estados_cuenta">
-                    <span class="icon">📋</span>
-                    <span>Estados de Cuenta</span>
-                </a>
+
+            {# ── BECAS Y DESCUENTOS ── #}
+            <li class="nav-tree__group" data-group="fin-becas">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">🎓 Becas y Descuentos</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'becas' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'becas' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=becas" class="nav-tree__link">
+                            <span class="icon">🏅</span>
+                            <span>Gestionar Becas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% endif %}
-            {% if 'pagos' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'pagos' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=pagos">
-                    <span class="icon">💵</span>
-                    <span>Registrar Pagos</span>
-                </a>
+
+            {# ── FACTURACIÓN ── #}
+            <li class="nav-tree__group" data-group="fin-facturacion">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">🧾 Facturación</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'boletas' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'boletas' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=boletas" class="nav-tree__link">
+                            <span class="icon">🧾</span>
+                            <span>Generar Boletas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% endif %}
-            {% if 'cuotas' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'cuotas' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=cuotas">
-                    <span class="icon">🗓️</span>
-                    <span>Gestionar Cuotas</span>
-                </a>
+
+            {# ── ADMINISTRACIÓN ── #}
+            <li class="nav-tree__group" data-group="fin-admin">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">📈 Administración</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'reportes' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'reportes' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=reportes" class="nav-tree__link">
+                            <span class="icon">📊</span>
+                            <span>Reportes</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'configuracion_transbank' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'configuracion_transbank' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=configuracion_transbank" class="nav-tree__link">
+                            <span class="icon">⚙️</span>
+                            <span>Config. Transbank</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% endif %}
-            
-            <li class="nav-section">
-                <span class="section-title">🎓 Becas y Descuentos</span>
+
+            {# ── CUENTA ── #}
+            <li class="nav-tree__group" data-group="fin-cuenta">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">👤 Cuenta</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'perfil' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'perfil' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=perfil" class="nav-tree__link">
+                            <span class="icon">👤</span>
+                            <span>Mi Perfil</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% if 'becas' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'becas' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=becas">
-                    <span class="icon">🏅</span>
-                    <span>Gestionar Becas</span>
-                </a>
-            </li>
-            {% endif %}
-            
-            <li class="nav-section">
-                <span class="section-title">🧾 Facturación</span>
-            </li>
-            {% if 'boletas' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'boletas' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=boletas">
-                    <span class="icon">🧾</span>
-                    <span>Generar Boletas</span>
-                </a>
-            </li>
-            {% endif %}
-            
-            <li class="nav-section">
-                <span class="section-title">📈 Administración</span>
-            </li>
-            {% if 'reportes' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'reportes' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=reportes">
-                    <span class="icon">📊</span>
-                    <span>Reportes</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'configuracion_transbank' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'configuracion_transbank' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=configuracion_transbank">
-                    <span class="icon">⚙️</span>
-                    <span>Config. Transbank</span>
-                </a>
-            </li>
-            {% endif %}
-            
-            <li class="nav-section">
-                <span class="section-title">👤 Cuenta</span>
-            </li>
-            {% if 'perfil' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'perfil' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=perfil">
-                    <span class="icon">👤</span>
-                    <span>Mi Perfil</span>
-                </a>
-            </li>
-            {% endif %}
         </ul>
     </nav>
     
 </aside>
+
+{% include 'includes/_sidebar_tree_js.html' %}
