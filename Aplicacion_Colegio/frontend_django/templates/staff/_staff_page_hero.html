@@ -1,0 +1,10 @@
+{# Hero automático por página — portal funcionarios #}
+{% if staff_hero_skip %}{% else %}
+<div class="staff-auto-hero" data-staff-page="{{ pagina_actual|default:'inicio' }}">
+{% if pagina_actual == 'inicio' %}
+    {% include 'staff/heroes/_hero_inicio.html' %}
+{% else %}
+    {% include 'staff/heroes/_hero_module.html' %}
+{% endif %}
+</div>
+{% endif %}

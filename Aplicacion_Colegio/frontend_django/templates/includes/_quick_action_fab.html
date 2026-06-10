@@ -1,0 +1,107 @@
+{# FAB de acciones rápidas — rutas según rol del portal #}
+<div class="quick-action-fab-container" id="quickActionFab">
+    <div class="quick-action-fab-menu">
+        {% if rol == 'admin_general' or rol == 'Administrador general' %}
+            <a href="{% url 'seleccionar_escuela' %}?abrir_modal=crear_colegio" class="quick-action-item">
+                <span class="quick-action-label">Nuevo colegio</span>
+                <span class="quick-action-icon icon-blue">🏫</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=usuarios&amp;abrir_modal=crear" class="quick-action-item">
+                <span class="quick-action-label">Nuevo usuario</span>
+                <span class="quick-action-icon icon-emerald">👥</span>
+            </a>
+            <a href="{% url 'importar_datos' %}" class="quick-action-item">
+                <span class="quick-action-label">Importar datos</span>
+                <span class="quick-action-icon icon-purple">📥</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=planes&amp;abrir_modal=crear" class="quick-action-item">
+                <span class="quick-action-label">Nuevo plan</span>
+                <span class="quick-action-icon icon-amber">💼</span>
+            </a>
+        {% elif rol == 'admin_escolar' or rol == 'Administrador escolar' %}
+            <a href="{% url 'dashboard' %}?pagina=gestionar_cursos&amp;abrir_modal=crear" class="quick-action-item">
+                <span class="quick-action-label">Nuevo curso</span>
+                <span class="quick-action-icon icon-blue">🎒</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=gestionar_profesores&amp;abrir_modal=crear" class="quick-action-item">
+                <span class="quick-action-label">Nuevo profesor</span>
+                <span class="quick-action-icon icon-emerald">👨‍🏫</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=gestionar_estudiantes&amp;abrir_modal=crear" class="quick-action-item">
+                <span class="quick-action-label">Nuevo estudiante</span>
+                <span class="quick-action-icon icon-purple">👨‍🎓</span>
+            </a>
+            <a href="{% if menu_access.comunicados %}{% url 'comunicados:crear' %}{% else %}{% url 'dashboard' %}?pagina=inicio{% endif %}" class="quick-action-item">
+                <span class="quick-action-label">Nuevo comunicado</span>
+                <span class="quick-action-icon icon-amber">📢</span>
+            </a>
+        {% elif rol == 'profesor' or rol == 'Profesor' %}
+            <a href="{% url 'dashboard' %}?pagina=tareas_consolidado" class="quick-action-item">
+                <span class="quick-action-label">Nueva tarea</span>
+                <span class="quick-action-icon icon-purple">📝</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=asistencia" class="quick-action-item">
+                <span class="quick-action-label">Registrar asistencia</span>
+                <span class="quick-action-icon icon-emerald">📋</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="quick-action-item">
+                <span class="quick-action-label">Mis clases</span>
+                <span class="quick-action-icon icon-blue">📚</span>
+            </a>
+            <a href="{% if menu_access.comunicados %}{% url 'comunicados:crear' %}{% else %}/comunicados/{% endif %}" class="quick-action-item">
+                <span class="quick-action-label">Enviar anuncio</span>
+                <span class="quick-action-icon icon-amber">📢</span>
+            </a>
+        {% endif %}
+    </div>
+    <button type="button" class="quick-action-fab-trigger" id="quickActionFabTrigger" aria-label="Acciones rápidas" aria-expanded="false">
+        <span><span>+</span></span>
+    </button>
+</div>
+
+<script>
+(function () {
+    function toggleQuickActionFab(forceClose) {
+        var fab = document.getElementById('quickActionFab');
+        var trigger = document.getElementById('quickActionFabTrigger');
+        if (!fab) return;
+        if (forceClose === true) {
+            fab.classList.remove('active');
+        } else {
+            fab.classList.toggle('active');
+        }
+        if (trigger) {
+            trigger.setAttribute('aria-expanded', fab.classList.contains('active') ? 'true' : 'false');
+        }
+    }
+
+    window.toggleQuickActionFab = toggleQuickActionFab;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var fab = document.getElementById('quickActionFab');
+        var trigger = document.getElementById('quickActionFabTrigger');
+        if (!fab || !trigger) return;
+
+        trigger.addEventListener('click', function (event) {
+            event.stopPropagation();
+            toggleQuickActionFab();
+        });
+
+        fab.querySelectorAll('.quick-action-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                toggleQuickActionFab(true);
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            if (fab.classList.contains('active') && !fab.contains(event.target)) {
+                toggleQuickActionFab(true);
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') toggleQuickActionFab(true);
+        });
+    });
+})();
+</script>

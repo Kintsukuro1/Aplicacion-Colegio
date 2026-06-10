@@ -21,6 +21,7 @@ from django.shortcuts import redirect
 
 from backend.apps.core.services.ciclo_academico_service import CicloAcademicoService
 from backend.apps.core.services.dashboard_service import DashboardService
+from backend.apps.core.views.admin_escolar._access import can_manage_school_data
 from backend.apps.core.services.orm_access_service import ORMAccessService
 from backend.apps.core.services.school_query_service import SchoolQueryService
 from backend.apps.institucion.models import CicloAcademico
@@ -44,7 +45,7 @@ def gestionar_ciclos(request):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ["admin_general", "admin_escolar"]:
+    if not can_manage_school_data(rol, request.user):
         messages.error(request, "Acceso denegado")
         return redirect(f'/dashboard/?pagina=gestionar_ciclos')
 

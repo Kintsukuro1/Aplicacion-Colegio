@@ -2,8 +2,6 @@
 Vista para que el administrador general seleccione o administre colegios
 """
 import logging
-from datetime import datetime
-
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -13,7 +11,7 @@ from django.utils import timezone
 
 from backend.apps.core.services.escuela_management_service import EscuelaManagementService
 from backend.common.services.policy_service import PolicyService
-from backend.common.exceptions import PrerequisiteException
+from backend.common.utils.dashboard_helpers import build_dashboard_context
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +35,6 @@ def seleccionar_escuela(request):
             colegio = EscuelaManagementService.crear_colegio(request.user, request.POST)
             messages.success(request, f'✓ Colegio "{colegio.nombre}" creado exitosamente.')
             return redirect('seleccionar_escuela')
-        except PrerequisiteException as e:
-            messages.error(request, e.user_message)
-            return redirect('seleccionar_escuela')
         except Exception:
             logger.exception('Error al crear el colegio')
             messages.error(request, 'Ocurrió un error al crear el colegio. Contacte al administrador.')
@@ -51,9 +46,6 @@ def seleccionar_escuela(request):
             colegio = usuario.rbd_colegio
             messages.success(request, f'✓ Administrador "{usuario.get_full_name()}" creado exitosamente para {colegio.nombre}')
             return redirect('seleccionar_escuela')
-        except PrerequisiteException as e:
-            messages.error(request, e.user_message)
-            return redirect('seleccionar_escuela')
         except Exception:
             logger.exception('Error al crear administrador escolar')
             messages.error(request, 'Ocurrió un error al crear el administrador. Contacte al administrador del sistema.')
@@ -63,9 +55,6 @@ def seleccionar_escuela(request):
         try:
             nombre_colegio = EscuelaManagementService.eliminar_colegio(request.user, request.POST.get('rbd'))
             messages.success(request, f'✓ Colegio "{nombre_colegio}" eliminado exitosamente.')
-            return redirect('seleccionar_escuela')
-        except PrerequisiteException as e:
-            messages.error(request, e.user_message)
             return redirect('seleccionar_escuela')
         except Exception:
             logger.exception('Error al eliminar el colegio')
@@ -80,9 +69,6 @@ def seleccionar_escuela(request):
                 request.POST.get('plan_codigo')
             )
             messages.success(request, f'✓ Plan cambiado a "{plan.nombre}" para {colegio.nombre}')
-            return redirect('seleccionar_escuela')
-        except PrerequisiteException as e:
-            messages.error(request, e.user_message)
             return redirect('seleccionar_escuela')
         except Exception:
             logger.exception('Error al cambiar plan')
@@ -107,15 +93,21 @@ def seleccionar_escuela(request):
         mensaje = "Ocurrió un error al cargar los colegios. Contacte al administrador."
         tipo_mensaje = 'error'
 
-    context = {
+    context, redirect_response = build_dashboard_context(
+        request,
+        pagina_actual='gestionar_escuelas',
+        content_template='admin/seleccionar_escuela.html',
+    )
+    if redirect_response:
+        return redirect_response
+
+    context.update({
         **data,
         'mensaje': mensaje,
         'tipo_mensaje': tipo_mensaje,
-        'nombre_usuario': request.user.get_full_name() or request.user.email,
-        'year': datetime.now().year,
-    }
+    })
 
-    return render(request, 'admin/seleccionar_escuela.html', context)
+    return render(request, 'dashboard.html', context)
 
 
 @login_required(login_url='accounts:login')
@@ -136,6 +128,11 @@ def entrar_escuela(request, rbd):
         request.session.modified = True
         
         messages.success(request, f'Has ingresado a {colegio.nombre}')
+
+        next_destino = (request.GET.get('next') or '').strip()
+        if next_destino == 'importar_datos':
+            return redirect('importar_datos')
+
         return redirect('dashboard')
         
     except Exception:

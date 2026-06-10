@@ -1,0 +1,267 @@
+<section class="adm-card adm-importar-panel adm-import-manual">
+    <div class="adm-card__head import-manual-head">
+        <div class="import-manual-head__text">
+            <p class="import-manual-head__eyebrow">Registro individual · {{ colegio.nombre }}</p>
+            <h2 class="adm-card__title import-manual-head__title">
+                {% if insert_tipo == 'estudiante' %}Nuevo estudiante
+                {% elif insert_tipo == 'profesor' %}Nuevo profesor
+                {% else %}Nuevo apoderado{% endif %}
+            </h2>
+            <p class="import-manual-head__subtitle">
+                {% if insert_tipo == 'estudiante' %}
+                Completa la ficha del alumno. Los campos marcados con <span class="import-manual-required">*</span> son obligatorios.
+                {% elif insert_tipo == 'profesor' %}
+                Alta docente para el portal profesor. Se generará una contraseña temporal al confirmar.
+                {% else %}
+                Registro de apoderado para acceso al portal de familias y comunicaciones.
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% url 'importar_datos' %}" class="btn-secondary btn-secondary--sm">← Volver al panel</a>
+    </div>
+
+    <div class="adm-card__body import-manual-body">
+        <div class="import-manual-layout">
+            <div class="import-manual-main">
+                {% if insert_tipo == 'estudiante' %}
+                <form method="POST" action="{% url 'gestionar_estudiantes' %}" class="import-manual-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="crear">
+                    <input type="hidden" name="origen" value="importar_datos">
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">👤</span> Información personal</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ie-rut">RUT</label>
+                                <input type="text" id="ie-rut" name="rut" class="import-manual-input" placeholder="12.345.678-9" autocomplete="off">
+                                <span class="import-manual-hint">Formato chileno con guión verificador</span>
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-nombre">Nombre <span class="import-manual-required">*</span></label>
+                                <input type="text" id="ie-nombre" name="nombre" class="import-manual-input" required autocomplete="given-name">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-ap">Apellido paterno <span class="import-manual-required">*</span></label>
+                                <input type="text" id="ie-ap" name="apellido_paterno" class="import-manual-input" required autocomplete="family-name">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-am">Apellido materno</label>
+                                <input type="text" id="ie-am" name="apellido_materno" class="import-manual-input" autocomplete="family-name">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-fn">Fecha de nacimiento</label>
+                                <input type="date" id="ie-fn" name="fecha_nacimiento" class="import-manual-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">📧</span> Contacto</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ie-email">Email <span class="import-manual-required">*</span></label>
+                                <input type="email" id="ie-email" name="email" class="import-manual-input" required placeholder="alumno@colegio.cl" autocomplete="email">
+                                <span class="import-manual-hint">Será el usuario de acceso al portal</span>
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-tel">Teléfono</label>
+                                <input type="tel" id="ie-tel" name="telefono" class="import-manual-input" placeholder="+56 9 1234 5678" autocomplete="tel">
+                            </div>
+                            <div class="import-manual-field import-manual-field--full">
+                                <label for="ie-dir">Dirección</label>
+                                <input type="text" id="ie-dir" name="direccion" class="import-manual-input" placeholder="Calle, número, comuna" autocomplete="street-address">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">🎓</span> Datos de ingreso y apoderado</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ie-fi">Fecha de ingreso</label>
+                                <input type="date" id="ie-fi" name="fecha_ingreso" class="import-manual-input">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-apod">Apoderado (nombre completo)</label>
+                                <input type="text" id="ie-apod" name="apoderado_nombre" class="import-manual-input" placeholder="María González Pérez">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-apod-rut">RUT apoderado</label>
+                                <input type="text" id="ie-apod-rut" name="apoderado_rut" class="import-manual-input" placeholder="12.345.678-9">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-apod-email">Email apoderado</label>
+                                <input type="email" id="ie-apod-email" name="apoderado_email" class="import-manual-input" placeholder="apoderado@mail.cl">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ie-apod-tel">Teléfono apoderado</label>
+                                <input type="tel" id="ie-apod-tel" name="apoderado_telefono" class="import-manual-input" placeholder="+56 9 8765 4321">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-actions">
+                        <a href="{% url 'importar_datos' %}" class="btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn-primary">Guardar estudiante</button>
+                    </div>
+                </form>
+
+                {% elif insert_tipo == 'profesor' %}
+                <form method="POST" action="{% url 'gestionar_profesores' %}" class="import-manual-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="crear">
+                    <input type="hidden" name="origen" value="importar_datos">
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">👤</span> Información personal</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ip-rut">RUT</label>
+                                <input type="text" id="ip-rut" name="rut" class="import-manual-input" placeholder="12.345.678-9">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ip-nombre">Nombre <span class="import-manual-required">*</span></label>
+                                <input type="text" id="ip-nombre" name="nombre" class="import-manual-input" required>
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ip-ap">Apellido paterno <span class="import-manual-required">*</span></label>
+                                <input type="text" id="ip-ap" name="apellido_paterno" class="import-manual-input" required>
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ip-am">Apellido materno</label>
+                                <input type="text" id="ip-am" name="apellido_materno" class="import-manual-input">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ip-fn">Fecha de nacimiento</label>
+                                <input type="date" id="ip-fn" name="fecha_nacimiento" class="import-manual-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">📧</span> Contacto</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ip-email">Email <span class="import-manual-required">*</span></label>
+                                <input type="email" id="ip-email" name="email" class="import-manual-input" required placeholder="docente@colegio.cl">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ip-tel">Teléfono fijo</label>
+                                <input type="tel" id="ip-tel" name="telefono" class="import-manual-input">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ip-mov">Teléfono móvil</label>
+                                <input type="tel" id="ip-mov" name="telefono_movil" class="import-manual-input" placeholder="+56 9 1234 5678">
+                            </div>
+                            <div class="import-manual-field import-manual-field--full">
+                                <label for="ip-dir">Dirección</label>
+                                <input type="text" id="ip-dir" name="direccion" class="import-manual-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">📋</span> Datos de ingreso</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ip-ing">Fecha de ingreso</label>
+                                <input type="date" id="ip-ing" name="fecha_ingreso" class="import-manual-input">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ip-esp">Especialidad</label>
+                                <input type="text" id="ip-esp" name="especialidad" class="import-manual-input" placeholder="Matemática, Historia…">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ip-tit">Título profesional</label>
+                                <input type="text" id="ip-tit" name="titulo_profesional" class="import-manual-input" placeholder="Profesor de Educación…">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-actions">
+                        <a href="{% url 'importar_datos' %}" class="btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn-primary">Guardar profesor</button>
+                    </div>
+                </form>
+
+                {% else %}
+                <form method="POST" action="{% url 'gestionar_apoderados' %}" class="import-manual-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="crear">
+                    <input type="hidden" name="origen" value="importar_datos">
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">👤</span> Información personal</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ia-rut">RUT</label>
+                                <input type="text" id="ia-rut" name="rut" class="import-manual-input" placeholder="12.345.678-9">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ia-nombre">Nombre <span class="import-manual-required">*</span></label>
+                                <input type="text" id="ia-nombre" name="nombre" class="import-manual-input" required>
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ia-ap">Apellido paterno <span class="import-manual-required">*</span></label>
+                                <input type="text" id="ia-ap" name="apellido_paterno" class="import-manual-input" required>
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ia-am">Apellido materno</label>
+                                <input type="text" id="ia-am" name="apellido_materno" class="import-manual-input">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ia-fn">Fecha de nacimiento</label>
+                                <input type="date" id="ia-fn" name="fecha_nacimiento" class="import-manual-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">📧</span> Contacto</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ia-email">Email <span class="import-manual-required">*</span></label>
+                                <input type="email" id="ia-email" name="email" class="import-manual-input" required placeholder="apoderado@mail.cl">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ia-tel">Teléfono fijo</label>
+                                <input type="tel" id="ia-tel" name="telefono" class="import-manual-input">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ia-mov">Teléfono móvil</label>
+                                <input type="tel" id="ia-mov" name="telefono_movil" class="import-manual-input" placeholder="+56 9 8765 4321">
+                            </div>
+                            <div class="import-manual-field import-manual-field--full">
+                                <label for="ia-dir">Dirección</label>
+                                <input type="text" id="ia-dir" name="direccion" class="import-manual-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-section-card">
+                        <h3 class="import-manual-section-card__title"><span aria-hidden="true">💼</span> Datos laborales</h3>
+                        <div class="import-manual-grid">
+                            <div class="import-manual-field">
+                                <label for="ia-ocu">Ocupación</label>
+                                <input type="text" id="ia-ocu" name="ocupacion" class="import-manual-input" placeholder="Ingeniero, Contador…">
+                            </div>
+                            <div class="import-manual-field">
+                                <label for="ia-trab">Lugar de trabajo</label>
+                                <input type="text" id="ia-trab" name="lugar_trabajo" class="import-manual-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-manual-actions">
+                        <a href="{% url 'importar_datos' %}" class="btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn-primary">Guardar apoderado</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+
+            {% include 'admin_escolar/_importar_manual_tips.html' %}
+        </div>
+    </div>
+</section>

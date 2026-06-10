@@ -11,6 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 
+from backend.apps.core.views.admin_escolar._access import can_manage_school_data
 from backend.apps.accounts.services.teacher_service import TeacherService
 from backend.apps.core.services.dashboard_service import DashboardService
 
@@ -29,7 +30,7 @@ def gestionar_profesores(request):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ["admin", "admin_escolar", "admin_general"]:
+    if not can_manage_school_data(rol, request.user):
         messages.error(request, "Acceso denegado")
         return redirect("dashboard")
 
@@ -96,4 +97,6 @@ def gestionar_profesores(request):
     except Exception as e:
         messages.error(request, f"No se pudo procesar la solicitud: {str(e)}")
 
+    if request.POST.get("origen") == "importar_datos":
+        return redirect("importar_datos")
     return redirect("/dashboard/?pagina=gestionar_profesores")

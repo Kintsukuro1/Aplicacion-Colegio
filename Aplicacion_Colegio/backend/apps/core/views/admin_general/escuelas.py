@@ -102,22 +102,22 @@ def agregar_escuela(request):
                     'nombre': request.POST['nombre'],
                     'direccion': request.POST.get('direccion'),
                     'telefono': request.POST.get('telefono'),
-                    'email': request.POST.get('correo'),
+                    'correo': request.POST.get('correo'),
                     'web': request.POST.get('web'),
                     'capacidad_maxima': request.POST.get('capacidad_maxima') or None,
                     'fecha_fundacion': request.POST.get('fecha_fundacion') or None,
                     'comuna_id': request.POST['comuna'],
-                    'tipo_establecimiento': request.POST['tipo_establecimiento'],
-                    'dependencia': request.POST['dependencia'],
+                    'tipo_establecimiento_id': request.POST['tipo_establecimiento'],
+                    'dependencia_id': request.POST['dependencia'],
                 },
             )
 
             messages.success(request, f"Escuela '{escuela.nombre}' agregada exitosamente")
             return redirect('/dashboard/?pagina=escuelas')
 
-        except Exception:
+        except Exception as exc:
             logger.exception("Error al agregar escuela")
-            messages.error(request, "Ocurrió un error al agregar la escuela. Contacte al administrador.")
+            messages.error(request, f"Ocurrió un error al agregar la escuela: {exc}")
 
     # Datos para el formulario
     regiones, tipos_establecimiento, dependencias = AdminGeneralEscuelasQueryService.list_filter_data(include_comunas=True)

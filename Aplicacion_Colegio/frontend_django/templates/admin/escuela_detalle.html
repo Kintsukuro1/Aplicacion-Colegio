@@ -1,0 +1,45 @@
+{% include 'admin/_admin_wrap_start.html' %}
+
+<div class="adm-portal">
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Detalle de establecimiento" hero_title=escuela.nombre hero_subtitle="Información del establecimiento educacional" hero_aria="Detalle de escuela" hero_show_date="0" m1_value=total_usuarios m1_label="Usuarios" m1_mod="clases" m2_value=total_profesores m2_label="Profesores" m2_mod="tareas" m3_value=total_estudiantes m3_label="Estudiantes" m3_mod="asistencia" m4_value="—" m4_label="Estado" m4_mod="neutral" %}
+
+    <section class="adm-card card-panel">
+        <div class="adm-card__head">
+            <h2 class="adm-card__title section-title">Información del colegio</h2>
+            <div class="adm-actions-row adm-actions-row--start">
+                <a href="{% url 'admin_general_editar_escuela' escuela.rbd %}" class="adm-btn adm-btn--primary adm-btn--sm">Editar</a>
+                <a href="{% url 'admin_general_escuelas' %}" class="adm-btn adm-btn--secondary adm-btn--sm">Volver</a>
+            </div>
+        </div>
+        <div class="adm-card__body">
+            <div class="adm-profile-grid">
+                <div class="adm-profile-field">
+                    <span class="adm-profile-field__label">RBD</span>
+                    <span class="adm-profile-field__value"><code>{{ escuela.rbd }}</code></span>
+                </div>
+                <div class="adm-profile-field">
+                    <span class="adm-profile-field__label">RUT</span>
+                    <span class="adm-profile-field__value">{{ escuela.rut_establecimiento|default:"—" }}</span>
+                </div>
+                <div class="adm-profile-field">
+                    <span class="adm-profile-field__label">Dirección</span>
+                    <span class="adm-profile-field__value">{{ escuela.direccion|default:"—" }}</span>
+                </div>
+                <div class="adm-profile-field">
+                    <span class="adm-profile-field__label">Teléfono</span>
+                    <span class="adm-profile-field__value">{{ escuela.telefono|default:"—" }}</span>
+                </div>
+                <div class="adm-profile-field">
+                    <span class="adm-profile-field__label">Correo</span>
+                    <span class="adm-profile-field__value">{{ escuela.correo|default:"—" }}</span>
+                </div>
+                <div class="adm-profile-field">
+                    <span class="adm-profile-field__label">Comuna</span>
+                    <span class="adm-profile-field__value">{{ escuela.comuna.nombre|default:"—" }}</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+{% include 'admin/_admin_wrap_end.html' %}

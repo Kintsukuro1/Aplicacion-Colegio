@@ -1,178 +1,343 @@
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/admin_escolar/admin_escolar_premium.css' %}?v=20260610-school-v3">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Escuela - Portal Académico</title>
-    <link rel="stylesheet" href="{% static 'css/admin_escolar/mi_escuela.css' %}">
-    <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
-</head>
-    <!-- Header -->
-    <div class="page-header">
-        <h1>🏫 Mi Escuela</h1>
-        <p>Información y administración de la institución educativa</p>
-    </div>
+<div class="ae-premium ae-school-page">
 
-    <!-- Mensajes -->
     {% if messages %}
         {% for message in messages %}
-            <div class="mensaje-box {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% endif %}">
-                <span class="icon-md">{% if message.tags == 'success' %}✔{% else %}✖{% endif %}</span>
-                <span>{{ message }}</span>
-            </div>
+        <div class="ae-msg {% if message.tags == 'success' %}ae-msg--success{% elif message.tags == 'error' %}ae-msg--error{% endif %}">
+            <span aria-hidden="true">{% if message.tags == 'success' %}✔{% else %}✖{% endif %}</span>
+            <span>{{ message }}</span>
+        </div>
         {% endfor %}
     {% endif %}
 
     {% if colegio %}
-    <div class="escuela-grid">
-        <!-- Columna izquierda: Información resumida -->
-        <div>
-            <!-- Logo y nombre -->
-            <div class="card">
-                <div class="escuela-logo">
-                    <div class="logo-circle">
-                        {{ colegio.nombre.0|upper }}
+    <header class="ae-school-inst-header" aria-label="Identificación del establecimiento">
+        <div class="ae-school-inst-header__main">
+            <p class="ae-eyebrow">Establecimiento educacional</p>
+            <h2 class="ae-school-inst-header__name">{{ colegio.nombre }}</h2>
+            <div class="ae-school-inst-header__chips">
+                <span class="ae-id-chip">RBD {{ colegio.rbd }}</span>
+                <span class="ae-id-chip ae-id-chip--muted">RUT {{ colegio.rut_establecimiento }}</span>
+                <span class="ae-badge">{{ colegio.tipo_establecimiento.nombre }}</span>
+                <span class="ae-badge ae-badge--muted">{{ colegio.dependencia.nombre }}</span>
+            </div>
+        </div>
+        <div class="ae-school-inst-header__actions">
+            <div class="ae-school-inst-header__health">
+                <div class="ae-school-inst-header__health-top">
+                    <span class="ae-school-inst-header__health-label">Ficha completada</span>
+                    <strong class="ae-school-inst-header__health-pct" id="schoolProfilePct">0%</strong>
+                </div>
+                <div class="ae-school-health__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="schoolProfileBarWrap">
+                    <div class="ae-school-health__fill" id="schoolProfileBar" style="width: 0%;"></div>
+                </div>
+            </div>
+            <a href="{% url 'dashboard' %}?pagina=infraestructura" class="ae-btn-secondary ae-btn-secondary--compact">
+                Infraestructura →
+            </a>
+        </div>
+    </header>
+
+    <section class="ae-school-snapshot" aria-label="Resumen operativo">
+        <article class="ae-school-snap">
+            <span class="ae-school-snap__icon" aria-hidden="true">📍</span>
+            <div>
+                <div class="ae-school-snap__lbl">Ubicación</div>
+                <div class="ae-school-snap__val">{{ colegio.comuna.nombre }}</div>
+                <div class="ae-school-snap__hint">{{ colegio.comuna.region.nombre }}</div>
+            </div>
+        </article>
+        <article class="ae-school-snap {% if colegio.telefono or colegio.correo %}ae-school-snap--ok{% else %}ae-school-snap--warn{% endif %}">
+            <span class="ae-school-snap__icon" aria-hidden="true">📞</span>
+            <div>
+                <div class="ae-school-snap__lbl">Contacto</div>
+                <div class="ae-school-snap__val">
+                    {% if colegio.telefono or colegio.correo %}Configurado{% else %}Pendiente{% endif %}
+                </div>
+                <div class="ae-school-snap__hint">
+                    {% if colegio.telefono and colegio.correo %}Teléfono y email activos
+                    {% elif colegio.telefono %}Solo teléfono registrado
+                    {% elif colegio.correo %}Solo email registrado
+                    {% else %}Completa los datos de contacto{% endif %}
+                </div>
+            </div>
+        </article>
+        <article class="ae-school-snap">
+            <span class="ae-school-snap__icon" aria-hidden="true">👥</span>
+            <div>
+                <div class="ae-school-snap__lbl">Capacidad</div>
+                <div class="ae-school-snap__val">
+                    {% if colegio.capacidad_maxima %}{{ colegio.capacidad_maxima }} est.{% else %}Sin definir{% endif %}
+                </div>
+                <div class="ae-school-snap__hint">Cupos máximos del establecimiento</div>
+            </div>
+        </article>
+        <article class="ae-school-snap">
+            <span class="ae-school-snap__icon" aria-hidden="true">🏛️</span>
+            <div>
+                <div class="ae-school-snap__lbl">Antigüedad</div>
+                <div class="ae-school-snap__val">
+                    {% if colegio.fecha_fundacion %}Desde {{ colegio.fecha_fundacion|date:"Y" }}{% else %}—{% endif %}
+                </div>
+                <div class="ae-school-snap__hint">
+                    {% if colegio.fecha_fundacion %}Fundado {{ colegio.fecha_fundacion|date:"d/m/Y" }}{% else %}Fecha de fundación no registrada{% endif %}
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <div class="ae-school-workspace">
+        <div class="ae-panel ae-school-form-panel">
+            <div class="ae-school-form-panel__head">
+                <div>
+                    <p class="ae-eyebrow">Administración institucional</p>
+                    <h2 class="ae-panel__title">Editar información general</h2>
+                    <p class="ae-panel__subtitle">Actualiza contacto, dirección y datos de planificación del establecimiento.</p>
+                </div>
+                <span class="ae-school-form-panel__badge">Campos editables</span>
+            </div>
+
+            <form method="POST" action="{% url 'actualizar_escuela' %}" id="schoolEditForm">
+                {% csrf_token %}
+
+                <div class="ae-form-block">
+                    <div class="ae-form-block__head">
+                        <span class="ae-form-block__icon" aria-hidden="true">🏫</span>
+                        <div>
+                            <h3 class="ae-form-block__title">Identidad del establecimiento</h3>
+                            <p class="ae-form-block__desc">Nombre oficial y dirección física del colegio.</p>
+                        </div>
                     </div>
-                    <div class="escuela-nombre-grande">{{ colegio.nombre }}</div>
-                    <div class="escuela-rbd">RBD: {{ colegio.rbd }}</div>
+                    <div class="ae-form-grid ae-form-grid--1">
+                        <div class="ae-field">
+                            <label for="nombre">Nombre del establecimiento *</label>
+                            <input type="text" id="nombre" name="nombre" value="{{ colegio.nombre }}" required placeholder="Ej: Liceo Municipal de Santiago">
+                        </div>
+                        <div class="ae-field">
+                            <label for="direccion">Dirección</label>
+                            <input type="text" id="direccion" name="direccion" value="{{ colegio.direccion|default:'' }}" placeholder="Calle, número, comuna">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="info-item">
-                    <span class="info-label">Tipo</span>
-                    <span class="info-value">
-                        <span class="badge badge-primary">{{ colegio.tipo_establecimiento.nombre }}</span>
-                    </span>
+                <div class="ae-form-block">
+                    <div class="ae-form-block__head">
+                        <span class="ae-form-block__icon" aria-hidden="true">📞</span>
+                        <div>
+                            <h3 class="ae-form-block__title">Contacto</h3>
+                            <p class="ae-form-block__desc">Canales de comunicación con apoderados y comunidad escolar.</p>
+                        </div>
+                    </div>
+                    <div class="ae-form-grid">
+                        <div class="ae-field">
+                            <label for="telefono">Teléfono</label>
+                            <input type="text" id="telefono" name="telefono" value="{{ colegio.telefono|default:'' }}" placeholder="+56 2 1234 5678">
+                        </div>
+                        <div class="ae-field">
+                            <label for="correo">Email</label>
+                            <input type="email" id="correo" name="correo" value="{{ colegio.correo|default:'' }}" placeholder="contacto@escuela.cl">
+                        </div>
+                        <div class="ae-field" style="grid-column: 1 / -1;">
+                            <label for="web">Sitio web</label>
+                            <input type="url" id="web" name="web" value="{{ colegio.web|default:'' }}" placeholder="https://www.escuela.cl">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="info-item">
-                    <span class="info-label">Dependencia</span>
-                    <span class="info-value">
-                        <span class="badge badge-info">{{ colegio.dependencia.nombre }}</span>
-                    </span>
+                <div class="ae-form-block">
+                    <div class="ae-form-block__head">
+                        <span class="ae-form-block__icon" aria-hidden="true">📊</span>
+                        <div>
+                            <h3 class="ae-form-block__title">Capacidad y antecedentes</h3>
+                            <p class="ae-form-block__desc">Datos históricos y de planificación institucional.</p>
+                        </div>
+                    </div>
+                    <div class="ae-form-grid">
+                        <div class="ae-field">
+                            <label for="capacidad_maxima">Capacidad máxima</label>
+                            <input type="number" id="capacidad_maxima" name="capacidad_maxima" value="{{ colegio.capacidad_maxima|default:'' }}" placeholder="Número de estudiantes" min="0">
+                        </div>
+                        <div class="ae-field">
+                            <label for="fecha_fundacion">Fecha de fundación</label>
+                            <input type="date" id="fecha_fundacion" name="fecha_fundacion" value="{{ colegio.fecha_fundacion|date:'Y-m-d'|default:'' }}">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="info-item">
-                    <span class="info-label">RUT</span>
-                    <span class="info-value">{{ colegio.rut_establecimiento }}</span>
+                <div class="ae-school-form-actions">
+                    <span class="ae-school-form-actions__hint">Los cambios se aplican al guardar</span>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="button" class="ae-btn-secondary" onclick="window.location.reload();">Cancelar</button>
+                        <button type="submit" class="ae-btn-primary">
+                            <i class="bi bi-check-lg"></i> Guardar cambios
+                        </button>
+                    </div>
                 </div>
+            </form>
+        </div>
 
-                <div class="info-item">
-                    <span class="info-label">Comuna</span>
-                    <span class="info-value">{{ colegio.comuna.nombre }}</span>
-                </div>
+        <aside class="ae-school-rail" aria-label="Referencia y seguimiento">
+            <div class="ae-panel ae-school-spec-panel">
+                <p class="ae-eyebrow">Consulta</p>
+                <h3 class="ae-panel__title">Ficha oficial</h3>
+                <p class="ae-panel__subtitle">Datos registrados en el sistema (solo lectura).</p>
+                <dl class="ae-school-spec">
+                    <div class="ae-school-spec__row">
+                        <dt>Comuna</dt>
+                        <dd>{{ colegio.comuna.nombre }}</dd>
+                    </div>
+                    <div class="ae-school-spec__row">
+                        <dt>Región</dt>
+                        <dd>{{ colegio.comuna.region.nombre }}</dd>
+                    </div>
+                    <div class="ae-school-spec__row">
+                        <dt>Dirección</dt>
+                        <dd>{% if colegio.direccion %}{{ colegio.direccion }}{% else %}<span class="ae-school-spec__empty">Sin registrar</span>{% endif %}</dd>
+                    </div>
+                    <div class="ae-school-spec__row">
+                        <dt>Teléfono</dt>
+                        <dd>{% if colegio.telefono %}{{ colegio.telefono }}{% else %}<span class="ae-school-spec__empty">Sin registrar</span>{% endif %}</dd>
+                    </div>
+                    <div class="ae-school-spec__row">
+                        <dt>Email</dt>
+                        <dd>{% if colegio.correo %}{{ colegio.correo }}{% else %}<span class="ae-school-spec__empty">Sin registrar</span>{% endif %}</dd>
+                    </div>
+                    <div class="ae-school-spec__row">
+                        <dt>Sitio web</dt>
+                        <dd>{% if colegio.web %}{{ colegio.web }}{% else %}<span class="ae-school-spec__empty">Sin registrar</span>{% endif %}</dd>
+                    </div>
+                    <div class="ae-school-spec__row">
+                        <dt>Capacidad</dt>
+                        <dd>{% if colegio.capacidad_maxima %}{{ colegio.capacidad_maxima }} estudiantes{% else %}<span class="ae-school-spec__empty">Sin definir</span>{% endif %}</dd>
+                    </div>
+                    <div class="ae-school-spec__row">
+                        <dt>Fundación</dt>
+                        <dd>{% if colegio.fecha_fundacion %}{{ colegio.fecha_fundacion|date:"d/m/Y" }}{% else %}<span class="ae-school-spec__empty">Sin registrar</span>{% endif %}</dd>
+                    </div>
+                </dl>
+            </div>
 
-                <div class="info-item">
-                    <span class="info-label">Región</span>
-                    <span class="info-value">{{ colegio.comuna.region.nombre }}</span>
-                </div>
+            <div class="ae-panel">
+                <p class="ae-eyebrow">Seguimiento</p>
+                <h3 class="ae-panel__title">Completitud de la ficha</h3>
+                <p class="ae-panel__subtitle">Campos pendientes para reportes y comunicaciones.</p>
+                <ul class="ae-school-checklist" id="schoolProfileChecklist">
+                    <li class="{% if colegio.direccion %}is-done{% endif %}" data-field="direccion">Dirección del establecimiento</li>
+                    <li class="{% if colegio.telefono %}is-done{% endif %}" data-field="telefono">Teléfono de contacto</li>
+                    <li class="{% if colegio.correo %}is-done{% endif %}" data-field="correo">Email institucional</li>
+                    <li class="{% if colegio.web %}is-done{% endif %}" data-field="web">Sitio web</li>
+                    <li class="{% if colegio.capacidad_maxima %}is-done{% endif %}" data-field="capacidad">Capacidad máxima</li>
+                    <li class="{% if colegio.fecha_fundacion %}is-done{% endif %}" data-field="fundacion">Fecha de fundación</li>
+                </ul>
+            </div>
 
-                {% if colegio.fecha_fundacion %}
-                <div class="info-item">
-                    <span class="info-label">Fundación</span>
-                    <span class="info-value">{{ colegio.fecha_fundacion|date:"d/m/Y" }}</span>
+            <div class="ae-panel">
+                <p class="ae-eyebrow">Accesos rápidos</p>
+                <h3 class="ae-panel__title">Contacto directo</h3>
+                {% if colegio.telefono or colegio.correo or colegio.web %}
+                <div class="ae-school-contact-links">
+                    {% if colegio.telefono %}
+                    <a href="tel:{{ colegio.telefono }}" class="ae-school-contact-link">
+                        <span class="ae-school-contact-link__icon" aria-hidden="true">📞</span>
+                        <span>{{ colegio.telefono }}</span>
+                    </a>
+                    {% endif %}
+                    {% if colegio.correo %}
+                    <a href="mailto:{{ colegio.correo }}" class="ae-school-contact-link">
+                        <span class="ae-school-contact-link__icon" aria-hidden="true">✉️</span>
+                        <span>{{ colegio.correo }}</span>
+                    </a>
+                    {% endif %}
+                    {% if colegio.web %}
+                    <a href="{{ colegio.web }}" target="_blank" rel="noopener noreferrer" class="ae-school-contact-link">
+                        <span class="ae-school-contact-link__icon" aria-hidden="true">🌐</span>
+                        <span>{{ colegio.web|truncatechars:28 }}</span>
+                    </a>
+                    {% endif %}
                 </div>
-                {% endif %}
-
-                {% if colegio.capacidad_maxima %}
-                <div class="info-item">
-                    <span class="info-label">Capacidad</span>
-                    <span class="info-value">{{ colegio.capacidad_maxima }} estudiantes</span>
-                </div>
+                {% else %}
+                <p class="ae-school-empty-contact">Completa el formulario para habilitar enlaces de contacto.</p>
                 {% endif %}
             </div>
 
-            <!-- Infraestructura -->
             {% if colegio.infraestructura.all %}
-            <div class="card mt-5">
-                <h2>🏗️ Infraestructura</h2>
-                <div class="infra-list">
+            <div class="ae-panel">
+                <p class="ae-eyebrow">Inventario</p>
+                <h3 class="ae-panel__title">Infraestructura</h3>
+                <div class="ae-school-infra-list">
                     {% for infra in colegio.infraestructura.all %}
-                    <div class="infra-item">
-                        <span class="infra-name">{{ infra.tipo_infra.nombre }}</span>
-                        <span class="infra-cantidad">{{ infra.cantidad }}</span>
+                    <div class="ae-school-infra-teaser">
+                        <span class="ae-school-infra-teaser__name">{{ infra.tipo_infra.nombre }}</span>
+                        <span class="ae-school-infra-teaser__count">{{ infra.cantidad }}</span>
                     </div>
                     {% endfor %}
                 </div>
+                <a href="{% url 'dashboard' %}?pagina=infraestructura" class="ae-school-infra-cta">
+                    Gestionar infraestructura →
+                </a>
             </div>
             {% endif %}
-        </div>
-
-        <!-- Columna derecha: Formulario de edición -->
-        <div>
-            <div class="card">
-                <h2>✏️ Editar Información</h2>
-                <form method="POST" action="{% url 'actualizar_escuela' %}">
-                    {% csrf_token %}
-                    
-                    <div class="form-group">
-                        <label for="nombre">Nombre del Establecimiento *</label>
-                        <input type="text" id="nombre" name="nombre" 
-                               value="{{ colegio.nombre }}" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="direccion">Dirección</label>
-                        <input type="text" id="direccion" name="direccion" 
-                               value="{{ colegio.direccion|default:'' }}" 
-                               placeholder="Calle, número, comuna">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="telefono">Teléfono</label>
-                            <input type="text" id="telefono" name="telefono" 
-                                   value="{{ colegio.telefono|default:'' }}" 
-                                   placeholder="+56 2 1234 5678">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="correo">Email</label>
-                            <input type="email" id="correo" name="correo" 
-                                   value="{{ colegio.correo|default:'' }}" 
-                                   placeholder="contacto@escuela.cl">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="web">Sitio Web</label>
-                        <input type="url" id="web" name="web" 
-                               value="{{ colegio.web|default:'' }}" 
-                               placeholder="https://www.escuela.cl">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="capacidad_maxima">Capacidad Máxima</label>
-                            <input type="number" id="capacidad_maxima" name="capacidad_maxima" 
-                                   value="{{ colegio.capacidad_maxima|default:'' }}" 
-                                   placeholder="Número de estudiantes" min="0">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="fecha_fundacion">Fecha de Fundación</label>
-                            <input type="date" id="fecha_fundacion" name="fecha_fundacion" 
-                                   value="{{ colegio.fecha_fundacion|date:'Y-m-d'|default:'' }}">
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ecf0f1;">
-                        <button type="submit" class="btn btn-primary">
-                            💾 Guardar Cambios
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="window.location.reload();">
-                            ↶ Cancelar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        </aside>
     </div>
     {% else %}
-    <div class="card">
-        <div class="mensaje-box error">
-            <span class="icon-md">⚠️</span>
+    <div class="ae-panel">
+        <div class="ae-msg ae-msg--error">
+            <span aria-hidden="true">⚠️</span>
             <span>No se encontró información de la escuela.</span>
         </div>
     </div>
     {% endif %}
 </div>
+
+<script>
+(function () {
+    var checklist = document.getElementById('schoolProfileChecklist');
+    if (!checklist) return;
+
+    function updateProfileHealth() {
+        var items = checklist.querySelectorAll('li');
+        var done = checklist.querySelectorAll('li.is-done').length;
+        var total = items.length;
+        var pct = total ? Math.round((done / total) * 100) : 0;
+
+        var pctEl = document.getElementById('schoolProfilePct');
+        var barEl = document.getElementById('schoolProfileBar');
+        var barWrap = document.getElementById('schoolProfileBarWrap');
+
+        if (pctEl) pctEl.textContent = pct + '%';
+        if (barEl) barEl.style.width = pct + '%';
+        if (barWrap) barWrap.setAttribute('aria-valuenow', String(pct));
+    }
+
+    updateProfileHealth();
+
+    var form = document.getElementById('schoolEditForm');
+    if (!form) return;
+
+    var fieldMap = {
+        direccion: 'direccion',
+        telefono: 'telefono',
+        correo: 'correo',
+        web: 'web',
+        capacidad: 'capacidad_maxima',
+        fundacion: 'fecha_fundacion'
+    };
+
+    Object.keys(fieldMap).forEach(function (key) {
+        var input = form.querySelector('[name="' + fieldMap[key] + '"]');
+        var li = checklist.querySelector('[data-field="' + key + '"]');
+        if (!input || !li) return;
+
+        function sync() {
+            var val = (input.value || '').trim();
+            li.classList.toggle('is-done', val.length > 0);
+            updateProfileHealth();
+        }
+
+        input.addEventListener('input', sync);
+        input.addEventListener('change', sync);
+    });
+})();
+</script>

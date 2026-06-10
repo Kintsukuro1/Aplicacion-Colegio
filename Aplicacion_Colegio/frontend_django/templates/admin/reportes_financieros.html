@@ -1,31 +1,20 @@
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <div>
-                <h1 class="h3 mb-0 text-gray-800 fw-bold">
-                    <i class="bi bi-wallet2 text-primary me-2"></i> Reportes Financieros Globales
-                </h1>
-                <p class="text-muted mb-0">Métricas de facturación mensual recurrente (MRR), planes de suscripción y renovaciones.</p>
-            </div>
-            <div>
-                <a href="/api/admin-general/reportes-financieros/exportar/?plan_id={{ filtros.plan_id }}&status={{ filtros.status }}&fecha_inicio={{ filtros.fecha_inicio }}&fecha_fin={{ filtros.fecha_fin }}" 
-                   class="btn btn-success shadow-sm d-inline-flex align-items-center gap-2">
-                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> Exportar a CSV
-                </a>
-            </div>
-        </div>
+{% include 'admin/_admin_wrap_start.html' %}
+
+<div class="adm-portal adm-fin-page">
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Finanzas SaaS" hero_title="Reportes financieros" hero_subtitle="MRR, suscripciones activas y renovaciones por plan comercial" hero_aria="Reportes financieros" hero_show_date="0" m1_value=ingresos_totales m1_label="MRR ($)" m1_mod="clases" m2_value=suscripciones_activas m2_label="Activas" m2_mod="tareas" m3_value=proximas_vencer|length m3_label="Por vencer" m3_mod="riesgo" m4_value="—" m4_label="Facturación" m4_mod="neutral" %}
+
+    <div class="adm-actions-row adm-actions-row--start mb-2">
+        <a href="/api/admin-general/reportes-financieros/exportar/?plan_id={{ filtros.plan_id }}&status={{ filtros.status }}&fecha_inicio={{ filtros.fecha_inicio }}&fecha_fin={{ filtros.fecha_fin }}" class="adm-btn adm-btn--primary adm-btn--sm">📊 Exportar CSV</a>
     </div>
 
-    <!-- Filtros Card -->
-    <div class="card border-0 shadow-sm rounded-3 mb-4">
-        <div class="card-body p-4">
-            <form method="GET" action="" class="row g-3 align-items-end">
+    <section class="adm-card card-panel">
+        <div class="adm-card__head"><h2 class="adm-card__title">🔍 Filtros</h2></div>
+        <div class="adm-card__body">
+            <form method="GET" action="" class="adm-filters adm-filters--inline">
                 <input type="hidden" name="pagina" value="reportes_financieros">
-                
-                <div class="col-md-3">
-                    <label for="plan_id" class="form-label fw-bold text-secondary small">Plan de Suscripción</label>
-                    <select class="form-select form-select-sm" id="plan_id" name="plan_id">
+                <div class="adm-field">
+                    <label for="plan_id">Plan</label>
+                    <select id="plan_id" name="plan_id">
                         <option value="">Todos los planes</option>
                         {% for plan in planes_choices %}
                             <option value="{{ plan.id }}" {% if filtros.plan_id == plan.id|stringformat:"s" %}selected{% endif %}>
@@ -34,283 +23,200 @@
                         {% endfor %}
                     </select>
                 </div>
-
-                <div class="col-md-2">
-                    <label for="status" class="form-label fw-bold text-secondary small">Estado</label>
-                    <select class="form-select form-select-sm" id="status" name="status">
+                <div class="adm-field">
+                    <label for="status">Estado</label>
+                    <select id="status" name="status">
                         <option value="">Todos</option>
                         {% for code, label in status_choices %}
                             <option value="{{ code }}" {% if filtros.status == code %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>
-
-                <div class="col-md-2.5">
-                    <label for="fecha_inicio" class="form-label fw-bold text-secondary small">Fecha Inicio Desde</label>
-                    <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" value="{{ filtros.fecha_inicio }}">
+                <div class="adm-field">
+                    <label for="fecha_inicio">Inicio desde</label>
+                    <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ filtros.fecha_inicio }}">
                 </div>
-
-                <div class="col-md-2.5">
-                    <label for="fecha_fin" class="form-label fw-bold text-secondary small">Fecha Inicio Hasta</label>
-                    <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" value="{{ filtros.fecha_fin }}">
+                <div class="adm-field">
+                    <label for="fecha_fin">Inicio hasta</label>
+                    <input type="date" id="fecha_fin" name="fecha_fin" value="{{ filtros.fecha_fin }}">
                 </div>
-
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-funnel-fill me-1"></i> Filtrar
-                    </button>
-                    <a href="?pagina=reportes_financieros" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="bi bi-x-circle me-1"></i> Limpiar
-                    </a>
-                </div>
+                <button type="submit" class="adm-btn adm-btn--primary adm-btn--sm">Filtrar</button>
+                <a href="?pagina=reportes_financieros" class="adm-btn adm-btn--secondary adm-btn--sm">Limpiar</a>
             </form>
         </div>
-    </div>
+    </section>
 
-    <!-- KPI Cards Grid -->
-    <div class="row g-4 mb-4">
-        <!-- MRR Card -->
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #2563eb !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Ingresos Proyectados (MRR)</span>
-                        <div class="bg-primary bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-currency-dollar text-primary fs-4"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1">${{ ingresos_totales|floatformat:0|default:"0" }}</h2>
-                    <span class="text-success small fw-semibold">
-                        <i class="bi bi-arrow-up-right-circle-fill me-1"></i> Facturación activa mensual
-                    </span>
+    <div class="adm-grid-2 adm-fin-grid">
+        <div class="adm-fin-main">
+            <section class="adm-card card-panel adm-fin-panel">
+                <div class="adm-card__head">
+                    <h2 class="adm-card__title">Distribución por Plan de Suscripción</h2>
                 </div>
-            </div>
-        </div>
-
-        <!-- Suscripciones Activas Card -->
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #16a34a !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Suscripciones Activas</span>
-                        <div class="bg-success bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-check-circle text-success fs-4"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ suscripciones_activas|default:"0" }} <span class="fs-6 text-muted">/ {{ total_suscripciones|default:"0" }}</span></h2>
-                    <span class="text-muted small">Colegios bajo contrato activo</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Suscripciones Próximas a Vencer Card -->
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #ea580c !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Por Vencer (< 30 días)</span>
-                        <div class="bg-warning bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1 text-warning">{{ proximas_vencer|length }}</h2>
-                    <span class="text-muted small">Suscripciones activas próximas</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Planes Card -->
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #7c3aed !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Planes Ofrecidos</span>
-                        <div class="bg-purple bg-opacity-10 p-2 rounded" style="background-color: rgba(124, 58, 237, 0.1);">
-                            <i class="bi bi-box-seam text-purple fs-4" style="color: #7c3aed;"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ ingresos_por_plan|length }}</h2>
-                    <span class="text-muted small">Tipos de planes en catálogo</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content Row -->
-    <div class="row g-4">
-        <!-- Tables column -->
-        <div class="col-lg-8">
-            <!-- Ingresos por Plan -->
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-gray-800">
-                        <i class="bi bi-grid-3x3-gap text-primary me-2"></i> Distribución por Plan de Suscripción
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+                <div class="adm-card__body adm-card__body--flush">
+                    <div class="adm-table-wrap">
+                        <table class="table-raccademy adm-fin-table">
+                            <thead>
                                 <tr>
-                                    <th class="ps-4">Plan</th>
+                                    <th>Plan</th>
                                     <th>Código</th>
-                                    <th>Suscripciones Activas</th>
-                                    <th class="text-end pe-4">Ingresos Mensuales</th>
+                                    <th>Suscripciones activas</th>
+                                    <th class="adm-fin-table__money">Ingresos mensuales</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% if ingresos_por_plan %}
                                     {% for item in ingresos_por_plan %}
                                     <tr>
-                                        <td class="ps-4 fw-bold text-dark">{{ item.plan__nombre }}</td>
-                                        <td><code class="text-purple">{{ item.plan__codigo }}</code></td>
+                                        <td><strong>{{ item.plan__nombre }}</strong></td>
+                                        <td><span class="adm-badge adm-badge--table">{{ item.plan__codigo }}</span></td>
                                         <td>{{ item.cantidad }} colegios</td>
-                                        <td class="text-end pe-4 fw-bold text-success">${{ item.total_ingresos|floatformat:0 }}</td>
+                                        <td class="adm-fin-table__money"><span class="adm-fin-revenue">${{ item.total_ingresos|floatformat:0 }}</span></td>
                                     </tr>
                                     {% endfor %}
                                 {% else %}
                                     <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">
-                                            <i class="bi bi-info-circle me-1"></i> No hay datos de suscripciones activas por plan
-                                        </td>
+                                        <td colspan="4" class="adm-empty-cell">No hay datos de suscripciones activas por plan.</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Próximas a vencer -->
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-gray-800">
-                        <i class="bi bi-clock-history text-warning me-2"></i> Renovaciones y Expiraciones Próximas
-                    </h5>
+            <section class="adm-card card-panel adm-fin-panel">
+                <div class="adm-card__head">
+                    <h2 class="adm-card__title">Renovaciones y expiraciones próximas</h2>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+                <div class="adm-card__body adm-card__body--flush">
+                    <div class="adm-table-wrap">
+                        <table class="table-raccademy adm-fin-table">
+                            <thead>
                                 <tr>
-                                    <th class="ps-4">Colegio</th>
+                                    <th>Colegio</th>
                                     <th>Plan</th>
                                     <th>Vencimiento</th>
-                                    <th>Auto-Renovar</th>
-                                    <th class="text-end pe-4">Acción</th>
+                                    <th>Auto-renovar</th>
+                                    <th class="adm-fin-table__action">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% if proximas_vencer %}
                                     {% for sub in proximas_vencer %}
                                     <tr>
-                                        <td class="ps-4 fw-bold text-dark">{{ sub.colegio.nombre }}</td>
-                                        <td><span class="badge bg-secondary">{{ sub.plan.nombre }}</span></td>
-                                        <td>{{ sub.fecha_fin|date:"d/m/Y" }}</td>
+                                        <td><strong>{{ sub.colegio.nombre }}</strong></td>
+                                        <td><span class="adm-badge adm-badge--violet">{{ sub.plan.nombre }}</span></td>
+                                        <td class="adm-fin-vence" data-vence="{{ sub.fecha_fin|date:'Y-m-d' }}">
+                                            <span class="adm-fin-vence__date">{{ sub.fecha_fin|date:"d/m/Y" }}</span>
+                                            <span class="adm-fin-urgency adm-badge"></span>
+                                        </td>
                                         <td>
                                             {% if sub.auto_renovar %}
-                                                <span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-arrow-repeat me-1"></i>Sí</span>
+                                                <span class="adm-badge adm-badge--success">Sí</span>
                                             {% else %}
-                                                <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-x-circle me-1"></i>No</span>
+                                                <span class="adm-badge adm-badge--danger">No</span>
                                             {% endif %}
                                         </td>
-                                        <td class="text-end pe-4">
-                                            <a href="{% url 'dashboard' %}?pagina=planes" class="btn btn-sm btn-outline-primary">
-                                                Gestionar Suscripción
-                                            </a>
+                                        <td class="adm-fin-table__action">
+                                            <a href="{% url 'dashboard' %}?pagina=planes" class="btn-secondary btn-secondary--sm">Gestionar</a>
                                         </td>
                                     </tr>
                                     {% endfor %}
                                 {% else %}
                                     <tr>
-                                        <td colspan="5" class="text-center py-4 text-muted">
-                                            <i class="bi bi-shield-check text-success me-1"></i> Ninguna suscripción activa expira en los próximos 30 días
-                                        </td>
+                                        <td colspan="5" class="adm-empty-cell">Ninguna suscripción activa expira en los próximos 30 días.</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
 
-        <!-- Chart and Stats Column -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-gray-800">
-                        <i class="bi bi-pie-chart text-primary me-2"></i> Gráfico de Ingresos
-                    </h5>
+        <aside class="adm-fin-aside">
+            <section class="adm-card card-panel adm-fin-chart">
+                <div class="adm-card__head">
+                    <h2 class="adm-card__title">Gráfico de ingresos</h2>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted small">Representación proporcional de los ingresos mensuales por tipo de plan de suscripción.</p>
-                    
-                    <div class="mt-4">
-                        {% if ingresos_por_plan %}
+                <div class="adm-card__body">
+                    <p class="adm-fin-chart__lead">Proporción de ingresos mensuales por plan de suscripción.</p>
+                    {% if ingresos_por_plan %}
+                        <div class="adm-fin-bars">
                             {% for item in ingresos_por_plan %}
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="fw-semibold text-dark">{{ item.plan__nombre }}</span>
-                                    <span class="text-muted small fw-bold">${{ item.total_ingresos|floatformat:0 }}</span>
+                            <div class="adm-fin-bar" data-total="{{ item.total_ingresos }}" data-max="{{ ingresos_totales }}">
+                                <div class="adm-fin-bar__head">
+                                    <span class="adm-fin-bar__name">{{ item.plan__nombre }}</span>
+                                    <span class="adm-fin-bar__amount">${{ item.total_ingresos|floatformat:0 }}</span>
                                 </div>
-                                <div class="progress rounded-pill" style="height: 12px; background-color: #f3f4f6;">
-                                    <div class="progress-bar rounded-pill bg-primary" 
-                                         role="progressbar" 
-                                         style="width: 0%;" 
-                                         data-total="{{ item.total_ingresos }}" 
-                                         data-max="{{ ingresos_totales }}"></div>
+                                <div class="adm-fin-bar__row">
+                                    <div class="adm-fin-bar__track">
+                                        <div class="adm-fin-bar__fill"></div>
+                                    </div>
+                                    <span class="adm-fin-bar__pct">0%</span>
                                 </div>
                             </div>
                             {% endfor %}
-                        {% else %}
-                            <div class="text-center py-5 text-muted">
-                                <i class="bi bi-pie-chart fs-1 mb-2 d-block"></i>
-                                Sin datos de distribución
-                            </div>
-                        {% endif %}
-                    </div>
+                        </div>
+                    {% else %}
+                        <div class="adm-empty-state adm-empty-state--compact">
+                            <span class="adm-empty-state__icon" aria-hidden="true">📊</span>
+                            <p>Sin datos de distribución</p>
+                        </div>
+                    {% endif %}
 
-                    <!-- Financial Summary Card inside Sidebar -->
-                    <div class="bg-light p-3 rounded-3 mt-4 border border-light-subtle">
-                        <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-info-circle-fill text-info me-1"></i> Resumen de Facturación</h6>
-                        <ul class="list-unstyled small mb-0 d-flex flex-column gap-2 text-muted">
-                            <li class="d-flex justify-content-between">
-                                <span>Tasa de Churn Proyectada:</span>
-                                <span class="fw-bold text-dark">0.0%</span>
-                            </li>
-                            <li class="d-flex justify-content-between">
-                                <span>Ingreso Promedio por Escuela (ARPU):</span>
-                                <span class="fw-bold text-dark" id="arpu-val">$0</span>
-                            </li>
+                    <div class="adm-fin-summary card-panel">
+                        <h3 class="adm-fin-summary__title">Resumen de facturación</h3>
+                        <ul class="adm-fin-summary__list">
+                            <li><span>Tasa de churn proyectada</span><strong>0.0%</strong></li>
+                            <li><span>ARPU (promedio por escuela)</span><strong id="arpu-val">$0</strong></li>
                         </ul>
                     </div>
                 </div>
-            </div>
-        </div>
+            </section>
+        </aside>
     </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Calculate progress bar widths dynamically
-        document.querySelectorAll('.progress-bar').forEach(function(bar) {
-            const total = parseFloat(bar.dataset.total) || 0;
-            const max = parseFloat(bar.dataset.max) || 1;
-            const pct = max > 0 ? (total / max) * 100 : 0;
-            bar.style.width = pct.toFixed(1) + '%';
-            
-            // Assign different colors based on progress index/level if wanted
-            // Bootstrap colors palette
-            const colors = ['#2563eb', '#7c3aed', '#16a34a', '#ea580c', '#06b6d4'];
-            const idx = Array.from(bar.parentNode.parentNode.parentNode.children).indexOf(bar.parentNode.parentNode);
-            bar.style.backgroundColor = colors[idx % colors.length];
-        });
-
-        // Calculate ARPU: total_revenues / total_active_subscriptions
-        const totalRevenues = parseFloat("{{ ingresos_totales }}") || 0;
-        const activeSubs = parseInt("{{ suscripciones_activas }}") || 0;
-        const arpu = activeSubs > 0 ? Math.round(totalRevenues / activeSubs) : 0;
-        document.getElementById('arpu-val').textContent = '$' + arpu.toLocaleString();
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.adm-fin-bar').forEach(function(row) {
+        const total = parseFloat(row.dataset.total) || 0;
+        const max = parseFloat(row.dataset.max) || 1;
+        const pct = max > 0 ? (total / max) * 100 : 0;
+        const fill = row.querySelector('.adm-fin-bar__fill');
+        const pctEl = row.querySelector('.adm-fin-bar__pct');
+        if (fill) fill.style.width = pct.toFixed(1) + '%';
+        if (pctEl) pctEl.textContent = pct.toFixed(0) + '%';
     });
+
+    document.querySelectorAll('.adm-fin-vence').forEach(function(cell) {
+        const raw = cell.dataset.vence;
+        if (!raw) return;
+        const vence = new Date(raw + 'T12:00:00');
+        const today = new Date();
+        today.setHours(12, 0, 0, 0);
+        const diff = Math.ceil((vence - today) / (1000 * 60 * 60 * 24));
+        const badge = cell.querySelector('.adm-fin-urgency');
+        if (!badge) return;
+        if (diff < 7) {
+            badge.className = 'adm-fin-urgency adm-badge adm-badge--danger';
+            badge.textContent = diff <= 0 ? 'Vencido' : diff + ' días';
+        } else if (diff <= 30) {
+            badge.className = 'adm-fin-urgency adm-badge adm-badge--warning';
+            badge.textContent = diff + ' días';
+        } else {
+            badge.className = 'adm-fin-urgency adm-badge adm-badge--success';
+            badge.textContent = 'Al día';
+        }
+    });
+
+    const totalRevenues = parseFloat("{{ ingresos_totales }}") || 0;
+    const activeSubs = parseInt("{{ suscripciones_activas }}") || 0;
+    const arpu = activeSubs > 0 ? Math.round(totalRevenues / activeSubs) : 0;
+    const arpuEl = document.getElementById('arpu-val');
+    if (arpuEl) arpuEl.textContent = '$' + arpu.toLocaleString('es-CL');
+});
 </script>
+
+{% include 'admin/_admin_wrap_end.html' %}

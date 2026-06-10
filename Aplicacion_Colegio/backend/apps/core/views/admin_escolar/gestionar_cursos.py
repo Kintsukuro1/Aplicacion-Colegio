@@ -22,6 +22,7 @@ from backend.apps.accounts.models import PerfilEstudiante, User
 from backend.apps.core.services.clase_service import ClaseService
 from backend.apps.core.services.curso_service import CursoService
 from backend.apps.core.services.dashboard_service import DashboardService
+from backend.apps.core.views.admin_escolar._access import can_manage_school_data
 from backend.apps.core.services.orm_access_service import ORMAccessService
 from backend.apps.core.services.school_query_service import SchoolQueryService
 from backend.apps.cursos.models import Asignatura, Clase, Curso
@@ -43,7 +44,7 @@ def gestionar_cursos(request):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ["admin_general", "admin_escolar"]:
+    if not can_manage_school_data(rol, request.user):
         messages.error(request, "Acceso denegado")
         return redirect("dashboard")
 

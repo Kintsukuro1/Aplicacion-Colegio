@@ -1,0 +1,84 @@
+<section class="adm-stats-insights print-hide" aria-label="Indicadores contextuales">
+    {% if stats_insights.colegio_sin_datos %}
+    <article class="adm-stats-insight adm-stats-insight--warn">
+        <span class="adm-stats-insight__icon" aria-hidden="true">⚠️</span>
+        <div>
+            <p class="adm-stats-insight__val">Sin usuarios</p>
+            <p class="adm-stats-insight__lbl">Este establecimiento aún no tiene cuentas cargadas en la plataforma.</p>
+        </div>
+    </article>
+    <article class="adm-stats-insight adm-stats-insight--tip">
+        <span class="adm-stats-insight__icon" aria-hidden="true">💡</span>
+        <div>
+            <p class="adm-stats-insight__val">Plataforma activa</p>
+            <p class="adm-stats-insight__lbl">{{ stats_insights.global_total_usuarios }} usuarios en {{ stats_insights.global_total_colegios }} colegios · {{ stats_insights.colegio_top_nombre }} concentra {{ stats_insights.colegio_top_usuarios }}.</p>
+        </div>
+    </article>
+    <article class="adm-stats-insight adm-stats-insight--action">
+        <span class="adm-stats-insight__icon" aria-hidden="true">🚀</span>
+        <div>
+            <p class="adm-stats-insight__val">Próximo paso</p>
+            <p class="adm-stats-insight__lbl">
+                {% if colegio_filtrado %}
+                <a href="{% url 'entrar_escuela' colegio_filtrado.rbd %}?next=importar_datos">Importar usuarios</a>
+                {% else %}
+                <a href="{% url 'importar_datos' %}">Importar usuarios</a>
+                {% endif %}
+                ·
+                <a href="{% url 'dashboard' %}?pagina=escuelas">Gestionar escuelas</a>
+            </p>
+        </div>
+    </article>
+    {% elif colegio_filtrado %}
+    <article class="adm-stats-insight adm-stats-insight--clases">
+        <span class="adm-stats-insight__icon" aria-hidden="true">📊</span>
+        <div>
+            <p class="adm-stats-insight__val">{% if stats_insights.pct_del_total is not None %}{{ stats_insights.pct_del_total }}%{% else %}—{% endif %}</p>
+            <p class="adm-stats-insight__lbl">Del total de usuarios de la plataforma ({{ stats_insights.global_total_usuarios }})</p>
+        </div>
+    </article>
+    <article class="adm-stats-insight adm-stats-insight--tareas">
+        <span class="adm-stats-insight__icon" aria-hidden="true">👨‍👩‍👧</span>
+        <div>
+            <p class="adm-stats-insight__val">{{ total_apoderados }}</p>
+            <p class="adm-stats-insight__lbl">Apoderados en {{ colegio_filtrado.nombre }}</p>
+        </div>
+    </article>
+    <article class="adm-stats-insight adm-stats-insight--neutral">
+        <span class="adm-stats-insight__icon" aria-hidden="true">📅</span>
+        <div>
+            <p class="adm-stats-insight__val">{{ stats_insights.registros_ultimos_30 }}</p>
+            <p class="adm-stats-insight__lbl">Registros nuevos · últimos 30 días</p>
+        </div>
+    </article>
+    {% else %}
+    <article class="adm-stats-insight adm-stats-insight--clases">
+        <span class="adm-stats-insight__icon" aria-hidden="true">🏫</span>
+        <div>
+            <p class="adm-stats-insight__val">{{ stats_insights.global_total_colegios }}</p>
+            <p class="adm-stats-insight__lbl">Establecimientos en la plataforma</p>
+        </div>
+    </article>
+    <article class="adm-stats-insight adm-stats-insight--warn">
+        <span class="adm-stats-insight__icon" aria-hidden="true">📭</span>
+        <div>
+            <p class="adm-stats-insight__val">{{ stats_insights.colegios_vacios }}</p>
+            <p class="adm-stats-insight__lbl">Colegio{% if stats_insights.colegios_vacios != 1 %}s{% endif %} sin usuarios registrados</p>
+        </div>
+    </article>
+    <article class="adm-stats-insight adm-stats-insight--tareas">
+        <span class="adm-stats-insight__icon" aria-hidden="true">⭐</span>
+        <div>
+            <p class="adm-stats-insight__val">{{ stats_insights.colegio_top_usuarios }}</p>
+            <p class="adm-stats-insight__lbl">Usuarios en {{ stats_insights.colegio_top_nombre }} (mayor adopción)</p>
+        </div>
+    </article>
+    <article class="adm-stats-insight adm-stats-insight--neutral">
+        <span class="adm-stats-insight__icon" aria-hidden="true">📅</span>
+        <div>
+            <p class="adm-stats-insight__val">{{ stats_insights.registros_ultimos_30 }}</p>
+            <p class="adm-stats-insight__lbl">Altas de usuarios · últimos 30 días</p>
+        </div>
+    </article>
+    {% endif %}
+</section>

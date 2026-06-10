@@ -1,60 +1,20 @@
 {% load static %}
 
-<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_estudiantes.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_estudiantes.css' %}?v=20260609-estudiantes-v2">
 
 <div class="estudiantes-container">
-    <!-- Encabezado y Estadísticas -->
-    <div class="header-section">
-        <div class="titulo-modulo">
-            <i class="fas fa-user-graduate"></i>
-            <h2>Gestión de Estudiantes</h2>
-        </div>
-        
-        <div class="estadisticas-grid">
-            <div class="stat-card blue">
-                <div class="stat-icon">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_estudiantes|default:0 }}</span>
-                    <span class="stat-label">Total Estudiantes</span>
-                </div>
-            </div>
-            
-            <div class="stat-card green">
-                <div class="stat-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ estudiantes_activos|default:0 }}</span>
-                    <span class="stat-label">Activos</span>
-                </div>
-            </div>
-            
-            <div class="stat-card orange">
-                <div class="stat-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ estudiantes_sin_curso|default:0 }}</span>
-                    <span class="stat-label">Sin Curso Asignado</span>
-                </div>
-            </div>
-            
-            <div class="stat-card purple">
-                <div class="stat-icon">
-                    <i class="fas fa-door-open"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_cursos_con_estudiantes|default:0 }}</span>
-                    <span class="stat-label">Cursos con Estudiantes</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Filtros y Búsqueda -->
     <div class="filtros-section">
+        {% if escuela_nombre or escuela_rbd %}
+        <div class="estudiantes-colegio-bar" aria-label="Establecimiento">
+            <div class="estudiantes-colegio-bar__info">
+                <span class="estudiantes-colegio-bar__eyebrow">Establecimiento</span>
+                <strong class="estudiantes-colegio-bar__name">{{ escuela_nombre|default:"—" }}</strong>
+                {% if escuela_rbd %}<span class="estudiantes-colegio-bar__rbd">RBD {{ escuela_rbd }}</span>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <form method="GET" action="{% url 'dashboard' %}" class="filtros-form">
             <input type="hidden" name="pagina" value="gestionar_estudiantes">
             
@@ -69,6 +29,19 @@
                     placeholder="Nombre, RUT, Email..."
                     value="{{ filtro_busqueda }}"
                 >
+            </div>
+
+            <div class="filtro-group">
+                <label for="asignacion">
+                    <i class="fas fa-user-check"></i> Asignación
+                </label>
+                <select id="asignacion" name="asignacion">
+                    <option value="">Todos</option>
+                    <option value="con_curso" {% if filtro_asignacion == 'con_curso' %}selected{% endif %}>Con curso asignado</option>
+                    <option value="sin_asignar" {% if filtro_asignacion == 'sin_asignar' %}selected{% endif %}>
+                        Sin curso asignado ({{ estudiantes_sin_curso|default:0 }})
+                    </option>
+                </select>
             </div>
             
             <div class="filtro-group">
@@ -107,6 +80,13 @@
                 </a>
             </div>
         </form>
+
+        <p class="filtros-resultado" id="filtrosResultado">
+            Mostrando <strong>{{ total_estudiantes|default:0 }}</strong> estudiante{{ total_estudiantes|pluralize:"s" }}
+            {% if filtro_busqueda or filtro_curso or filtro_estado or filtro_asignacion %}
+                · filtros activos
+            {% endif %}
+        </p>
         
         <button onclick="abrirModalCrear()" class="btn-nuevo-estudiante">
             <i class="fas fa-user-plus"></i> Nuevo Estudiante
@@ -123,38 +103,40 @@
                     <th>Nombre Completo</th>
                     <th>Email</th>
                     <th>Curso</th>
+                    <th>NEE / Casos</th>
                     <th>Estado</th>
+                    <th>Último acceso</th>
                     <th>Fecha Ingreso</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for estudiante in estudiantes %}
-                <tr {% if estudiante.perfil_estudiante.tiene_nee %}class="fila-nee" style="background: linear-gradient(to right, #fef3c7 0%, #ffffff 100%);"{% endif %}>
+                <tr {% if estudiante.perfil_estudiante.tiene_nee %}class="fila-nee"{% endif %}>
                     <td>{{ estudiante.rut|default:"—" }}</td>
                     <td>
                         <div class="estudiante-nombre">
                             <div class="avatar-small">
                                 {{ estudiante.nombre.0 }}{{ estudiante.apellido_paterno.0 }}
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <span>{{ estudiante.get_full_name }}</span>
-                                {% if estudiante.perfil_estudiante.tiene_nee %}
-                                <span class="badge-nee">
-                                    <i class="fas fa-info-circle"></i> NEE: {{ estudiante.perfil_estudiante.tipo_nee|default:"No especificado" }}
-                                </span>
-                                {% endif %}
-                            </div>
+                            <span>{{ estudiante.get_full_name }}</span>
                         </div>
                     </td>
                     <td>{{ estudiante.email }}</td>
                     <td>
-                        {% if estudiante.perfil_estudiante.curso_actual_id %}
-                            <span class="badge-curso">{{ estudiante.perfil_estudiante.curso_actual_id.nombre }}</span>
-                        {% elif estudiante.matriculas.all.0.curso %}
-                            <span class="badge-curso">{{ estudiante.matriculas.all.0.curso.nombre }}</span>
+                        {% if estudiante.perfil_estudiante.curso_actual %}
+                            <span class="badge-curso">{{ estudiante.perfil_estudiante.curso_actual.nombre }}</span>
                         {% else %}
                             <span class="badge-sin-curso">Sin asignar</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if estudiante.perfil_estudiante.tiene_nee %}
+                            <span class="badge-nee" title="Necesidades educativas especiales">
+                                NEE · {{ estudiante.perfil_estudiante.tipo_nee|default:"Registrado" }}
+                            </span>
+                        {% else %}
+                            <span class="badge-nee badge-nee--empty">—</span>
                         {% endif %}
                     </td>
                     <td>
@@ -163,13 +145,19 @@
                         {% endwith %}
                     </td>
                     <td>
+                        {% if estudiante.last_login %}
+                            <span class="col-acceso" title="{{ estudiante.last_login|date:'d/m/Y H:i' }}">{{ estudiante.last_login|timesince }} atrás</span>
+                        {% else %}
+                            <span class="col-acceso col-acceso--muted">Sin acceso</span>
+                        {% endif %}
+                    </td>
+                    <td>
                         {% if estudiante.perfil_estudiante.fecha_ingreso %}
                             {{ estudiante.perfil_estudiante.fecha_ingreso|date:"d/m/Y" }}
                         {% else %}
                             —
                         {% endif %}
-                    </td>
-                    <td>
+                    </td>                    <td>
                         <div class="acciones-grupo">
                             <button 
                                 class="btn-icono btn-editar" 
@@ -251,7 +239,7 @@
 </div>
 
 <!-- Modal Crear/Editar Estudiante -->
-<div id="modalEstudiante" class="modal-overlay d-none">
+<div id="modalEstudiante" class="modal-overlay">
     <div class="modal-content modal-large">
         <div class="modal-header">
             <h3 id="modalTitulo">Nuevo Estudiante</h3>
@@ -370,7 +358,7 @@
                 </div>
             </div>
             
-            <div class="form-section d-none" id="observacionesSection">
+            <div class="form-section" id="observacionesSection" hidden>
                 <h4><i class="fas fa-comment-alt"></i> Observaciones</h4>
                 <div class="form-group full-width">
                     <textarea id="observaciones" name="observaciones" rows="3" placeholder="Información adicional..."></textarea>
@@ -390,7 +378,7 @@
 </div>
 
 <!-- Modal Asignar Curso -->
-<div id="modalAsignarCurso" class="modal-overlay d-none">
+<div id="modalAsignarCurso" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
             <h3>Asignar Curso</h3>
@@ -445,75 +433,77 @@
 </form>
 
 <script>
-// Funciones para manejo de modales
+function relocateEstudiantesModals() {
+    document.querySelectorAll('#modalEstudiante, #modalAsignarCurso').forEach(function (el) {
+        if (el.parentElement !== document.body) {
+            document.body.appendChild(el);
+        }
+    });
+}
+
+function abrirModal(modalId) {
+    relocateEstudiantesModals();
+    var modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('active');
+}
+
 function abrirModalCrear() {
     document.getElementById('modalTitulo').textContent = 'Nuevo Estudiante';
     document.getElementById('accionForm').value = 'crear';
     document.getElementById('estudianteId').value = '';
-    
-    // Limpiar formulario
     document.querySelector('.form-estudiante').reset();
-    
-    // Ocultar sección de observaciones en crear
-    document.getElementById('observacionesSection').classList.add('d-none');
-    
-    // Mostrar modal
-    document.getElementById('modalEstudiante').classList.remove('d-none');
+    document.getElementById('observacionesSection').hidden = true;
+    abrirModal('modalEstudiante');
 }
 
 function abrirModalEditar(button) {
     const data = button.dataset;
-    
+
     document.getElementById('modalTitulo').textContent = 'Editar Estudiante';
     document.getElementById('accionForm').value = 'editar';
     document.getElementById('estudianteId').value = data.id;
-    
-    // Llenar campos
-    document.getElementById('rut').value = data.rut;
-    document.getElementById('email').value = data.email;
-    document.getElementById('nombre').value = data.nombre;
-    document.getElementById('apellido_paterno').value = data.apellidoPaterno;
-    document.getElementById('apellido_materno').value = data.apellidoMaterno;
-    document.getElementById('fecha_nacimiento').value = data.fechaNacimiento;
-    document.getElementById('direccion').value = data.direccion;
-    document.getElementById('telefono').value = data.telefono;
-    document.getElementById('contacto_emergencia_nombre').value = data.contactoNombre;
-    document.getElementById('contacto_emergencia_telefono').value = data.contactoTelefono;
-    document.getElementById('apoderado_nombre').value = data.apoderadoNombre;
-    document.getElementById('apoderado_rut').value = data.apoderadoRut;
-    document.getElementById('apoderado_email').value = data.apoderadoEmail;
-    document.getElementById('apoderado_telefono').value = data.apoderadoTelefono;
-    document.getElementById('estado_academico').value = data.estado;
-    document.getElementById('fecha_ingreso').value = data.fechaIngreso;
-    document.getElementById('observaciones').value = data.observaciones;
-    
-    // Mostrar sección de observaciones
-    document.getElementById('observacionesSection').classList.remove('d-none');
-    
-    // Mostrar modal
-    document.getElementById('modalEstudiante').classList.remove('d-none');
+
+    document.getElementById('rut').value = data.rut || '';
+    document.getElementById('email').value = data.email || '';
+    document.getElementById('nombre').value = data.nombre || '';
+    document.getElementById('apellido_paterno').value = data.apellidoPaterno || '';
+    document.getElementById('apellido_materno').value = data.apellidoMaterno || '';
+    document.getElementById('fecha_nacimiento').value = data.fechaNacimiento || '';
+    document.getElementById('direccion').value = data.direccion || '';
+    document.getElementById('telefono').value = data.telefono || '';
+    document.getElementById('contacto_emergencia_nombre').value = data.contactoNombre || '';
+    document.getElementById('contacto_emergencia_telefono').value = data.contactoTelefono || '';
+    document.getElementById('apoderado_nombre').value = data.apoderadoNombre || '';
+    document.getElementById('apoderado_rut').value = data.apoderadoRut || '';
+    document.getElementById('apoderado_email').value = data.apoderadoEmail || '';
+    document.getElementById('apoderado_telefono').value = data.apoderadoTelefono || '';
+    document.getElementById('estado_academico').value = data.estado || 'Activo';
+    document.getElementById('fecha_ingreso').value = data.fechaIngreso || '';
+    document.getElementById('observaciones').value = data.observaciones || '';
+
+    document.getElementById('observacionesSection').hidden = false;
+    abrirModal('modalEstudiante');
 }
 
 function abrirModalAsignar(button) {
     const data = button.dataset;
-    
+
     document.getElementById('asignarEstudianteId').value = data.estudianteId;
     document.getElementById('asignarEstudianteNombre').textContent = data.estudianteNombre;
-    
-    // Preseleccionar curso actual si existe
+
     if (data.cursoActualId) {
         document.getElementById('curso_id').value = data.cursoActualId;
     } else {
         document.getElementById('curso_id').value = '';
     }
-    
-    document.getElementById('modalAsignarCurso').classList.remove('d-none');
+
+    abrirModal('modalAsignarCurso');
 }
 
 function cerrarModal(modalId) {
-    document.getElementById(modalId).classList.add('d-none');
+    var modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('active');
 }
-
 function confirmarEliminar(button) {
     const data = button.dataset;
     
@@ -532,33 +522,59 @@ function resetearPassword(button) {
     }
 }
 
-// Cerrar modal al hacer clic fuera
 document.querySelectorAll('.modal-overlay').forEach(modal => {
     modal.addEventListener('click', function(e) {
         if (e.target === this) {
-            this.classList.add('d-none');
+            this.classList.remove('active');
         }
     });
 });
 
-// Cerrar modal con tecla ESC
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.classList.add('d-none');
+        document.querySelectorAll('.modal-overlay.active').forEach(function (modal) {
+            modal.classList.remove('active');
         });
     }
 });
 
-// Abrir modal automáticamente si viene del botón de inserción manual
 window.addEventListener('DOMContentLoaded', function() {
+    relocateEstudiantesModals();
+
+    var filtrosForm = document.querySelector('.filtros-form');
+    if (filtrosForm) {
+        ['curso', 'estado', 'asignacion'].forEach(function (fieldId) {
+            var field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('change', function () {
+                    filtrosForm.submit();
+                });
+            }
+        });
+
+        var busqueda = document.getElementById('busqueda');
+        var busquedaTimer;
+        if (busqueda) {
+            busqueda.addEventListener('input', function () {
+                clearTimeout(busquedaTimer);
+                busquedaTimer = setTimeout(function () {
+                    filtrosForm.submit();
+                }, 450);
+            });
+        }
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const abrirModal = urlParams.get('abrir_modal');
+    const editarId = urlParams.get('editar');
     
     if (abrirModal === 'crear') {
+        setTimeout(() => { abrirModalCrear(); }, 100);
+    } else if (editarId) {
         setTimeout(() => {
-            abrirModalCrear();
-        }, 100);
+            const btn = document.querySelector(`.btn-editar[data-id="${editarId}"]`);
+            if (btn) abrirModalEditar(btn);
+        }, 150);
     }
 });
 </script>

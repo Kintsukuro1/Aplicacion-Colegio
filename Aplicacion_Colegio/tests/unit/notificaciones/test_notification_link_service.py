@@ -96,3 +96,36 @@ class TestNormalizeNotificationEnlace:
             )
             == '/dashboard/?pagina=inicio&estudiante_id=12'
         )
+
+    def test_sin_enlace_suscripcion_admin(self):
+        assert (
+            normalize_notification_enlace(
+                '',
+                'sistema',
+                titulo='Suscripción próxima a vencer',
+                mensaje='La suscripción del Liceo vence en 7 días.',
+            )
+            == '/dashboard/?pagina=reportes_financieros'
+        )
+
+    def test_sin_enlace_acceso_no_autorizado(self):
+        assert (
+            normalize_notification_enlace(
+                None,
+                'alerta',
+                titulo='Intento de acceso no autorizado',
+                mensaje='Se detectaron 3 intentos fallidos de inicio de sesión.',
+            )
+            == '/dashboard/?pagina=monitoreo_seguridad'
+        )
+
+    def test_sin_enlace_nuevo_colegio(self):
+        assert (
+            normalize_notification_enlace(
+                '',
+                'sistema',
+                titulo='Nuevo colegio registrado',
+                mensaje='Se ha registrado un nuevo colegio en la plataforma.',
+            )
+            == '/seleccionar-escuela/'
+        )

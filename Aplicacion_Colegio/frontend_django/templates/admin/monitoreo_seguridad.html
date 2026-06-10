@@ -1,229 +1,176 @@
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-0 text-gray-800 fw-bold">
-                        <i class="bi bi-shield-lock text-danger me-2"></i> Monitoreo de Seguridad Global
-                    </h1>
-                    <p class="text-muted mb-0">Métricas de intentos fallidos, bloqueos de IP y registros de accesos a la plataforma.</p>
-                </div>
-            </div>
-        </div>
+{% include 'admin/_admin_wrap_start.html' %}
+
+<div class="adm-portal adm-security-page">
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Seguridad" hero_title="Monitoreo de seguridad" hero_subtitle="Intentos fallidos, IPs bloqueadas y accesos recientes a la plataforma" hero_aria="Monitoreo de seguridad" hero_show_date="0" m1_value=total_intentos_fallidos|default:"0" m1_label="Fallidos 24h" m1_mod="riesgo" m2_value=total_ips_bloqueadas|default:"0" m2_label="IPs bloq." m2_mod="riesgo" m3_value=logs_acceso|length|default:"0" m3_label="Accesos" m3_mod="tareas" m4_value=axes_failure_limit m4_label="Máx. intentos" m4_mod="neutral" %}
+
+    <div class="adm-security-config card-panel">
+        <span class="adm-security-config__label">Configuración de seguridad:</span>
+        intentos máximos
+        <span class="adm-badge adm-badge--violet">{{ axes_failure_limit }} intentos</span>
+        · bloqueo
+        <span class="adm-badge adm-badge--violet">{{ axes_cooloff_time }} h</span>
     </div>
 
-    <!-- Alert / Configuration info -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 bg-light rounded-3">
-                <div class="card-body py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <span class="text-dark fw-semibold">
-                        <i class="bi bi-info-circle-fill text-primary me-2"></i>
-                        Configuración de Seguridad:
-                    </span>
-                    <div class="d-flex gap-4">
-                        <span><strong>Intentos Máximos:</strong> <span class="badge bg-danger">{{ axes_failure_limit }} intentos</span></span>
-                        <span><strong>Tiempo de Bloqueo:</strong> <span class="badge bg-secondary">{{ axes_cooloff_time }} hora(s)</span></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- KPI Cards Grid -->
-    <div class="row g-4 mb-4">
-        <!-- Failed Attempts 24h -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #ea580c !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Intentos Fallidos (24h)</span>
-                        <div class="bg-warning bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-exclamation-triangle-fill text-warning fs-4"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ total_intentos_fallidos|default:"0" }}</h2>
-                    <span class="text-muted small">Intentos fallidos de autenticación</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Blocked IPs -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #dc2626 !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">IPs Bloqueadas</span>
-                        <div class="bg-danger bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-slash-circle-fill text-danger fs-4"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ total_ips_bloqueadas|default:"0" }}</h2>
-                    <span class="text-muted small">Direcciones IP restringidas actualmente</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Access Logs -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #16a34a !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Accesos Recientes</span>
-                        <div class="bg-success bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-journal-text text-success fs-4"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ logs_acceso|length|default:"0" }}</h2>
-                    <span class="text-muted small">Registros de sesiones de usuario</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content Tables -->
-    <div class="row g-4">
-        <!-- IPs Bloqueadas y Accesos Recientes -->
-        <div class="col-lg-8">
-            <!-- IPs Bloqueadas Actualmente -->
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-gray-800">
-                        <i class="bi bi-slash-circle text-danger me-2"></i> IPs Bloqueadas Actualmente
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+    <div class="adm-grid-2 adm-security-grid">
+        <div class="adm-security-main">
+            <section class="adm-card card-panel">
+                <div class="adm-card__head"><h2 class="adm-card__title">🚫 IPs bloqueadas</h2></div>
+                <div class="adm-card__body adm-card__body--flush">
+                    {% if not ips_bloqueadas %}
+                    {% include 'admin/_demo_banner.html' %}
+                    {% endif %}
+                    <div class="adm-table-wrap">
+                        <table class="table-raccademy adm-security-table">
+                            <thead>
                                 <tr>
-                                    <th class="ps-4">Dirección IP</th>
-                                    <th>Intentos de Origen</th>
-                                    <th class="text-end pe-4">Acciones</th>
+                                    <th>Dirección IP</th>
+                                    <th>Intentos</th>
+                                    <th class="adm-security-table__action">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% if ips_bloqueadas %}
                                     {% for ip in ips_bloqueadas %}
                                     <tr>
-                                        <td class="ps-4 fw-bold text-dark">
-                                            <span class="font-monospace"><i class="bi bi-laptop me-2 text-muted"></i>{{ ip.ip_address }}</span>
-                                        </td>
-                                        <td><span class="badge bg-danger">{{ ip.total }} fallos</span></td>
-                                        <td class="text-end pe-4">
-                                            <form method="POST" action="{% url 'desbloquear_ip' %}" class="d-inline-block">
+                                        <td><code class="adm-badge adm-badge--mono">{{ ip.ip_address }}</code></td>
+                                        <td><span class="adm-badge adm-badge--danger">{{ ip.total }} fallos</span></td>
+                                        <td class="adm-security-table__action">
+                                            <form method="POST" action="{% url 'desbloquear_ip' %}" class="d-inline">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="ip_address" value="{{ ip.ip_address }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-success" onclick="return confirm('¿Desbloquear esta dirección IP?')">
-                                                    <i class="bi bi-unlock me-1"></i> Desbloquear IP
-                                                </button>
+                                                <button type="submit" class="btn-secondary btn-secondary--sm" onclick="return confirm('¿Desbloquear esta IP?')">Desbloquear</button>
                                             </form>
                                         </td>
                                     </tr>
                                     {% endfor %}
                                 {% else %}
-                                    <tr>
-                                        <td colspan="3" class="text-center py-4 text-muted">
-                                            <i class="bi bi-shield-check text-success me-1 fs-5"></i> No hay direcciones IP bloqueadas en este momento.
-                                        </td>
+                                    <tr class="adm-demo-row">
+                                        <td><code class="adm-badge adm-badge--mono">190.45.122.88</code></td>
+                                        <td><span class="adm-badge adm-badge--danger">5 fallos</span></td>
+                                        <td class="adm-security-table__action"><span class="btn-secondary btn-secondary--sm adm-preview-btn">Vista previa</span></td>
+                                    </tr>
+                                    <tr class="adm-demo-row">
+                                        <td><code class="adm-badge adm-badge--mono">200.114.30.15</code></td>
+                                        <td><span class="adm-badge adm-badge--danger">6 fallos</span></td>
+                                        <td class="adm-security-table__action"><span class="btn-secondary btn-secondary--sm adm-preview-btn">Vista previa</span></td>
                                     </tr>
                                 {% endif %}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Intentos Fallidos Recientes -->
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-gray-800">
-                        <i class="bi bi-exclamation-triangle text-warning me-2"></i> Intentos de Login Fallidos (Últimas 24h)
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+            <section class="adm-card card-panel">
+                <div class="adm-card__head"><h2 class="adm-card__title">⚠️ Intentos fallidos (24h)</h2></div>
+                <div class="adm-card__body adm-card__body--flush">
+                    {% if not intentos_fallidos %}
+                    {% include 'admin/_demo_banner.html' %}
+                    {% endif %}
+                    <div class="adm-table-wrap">
+                        <table class="table-raccademy adm-security-table">
+                            <thead>
                                 <tr>
-                                    <th class="ps-4">Fecha/Hora</th>
-                                    <th>Usuario Ingresado</th>
-                                    <th>IP de Origen</th>
-                                    <th>Intentos Realizados</th>
-                                    <th class="text-end pe-4">Estado</th>
+                                    <th>Fecha/hora</th>
+                                    <th>Usuario</th>
+                                    <th>IP</th>
+                                    <th>Intentos</th>
+                                    <th class="adm-security-table__action">Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% if intentos_fallidos %}
                                     {% for intento in intentos_fallidos %}
                                     <tr>
-                                        <td class="ps-4 text-muted small">{{ intento.attempt_time|date:"d/m/Y H:i:s" }}</td>
-                                        <td class="fw-semibold text-dark">{{ intento.username|default:"N/A" }}</td>
-                                        <td class="font-monospace">{{ intento.ip_address }}</td>
+                                        <td>{{ intento.attempt_time|date:"d/m/Y H:i:s" }}</td>
+                                        <td>{{ intento.username|default:"N/A" }}</td>
+                                        <td><code class="adm-badge adm-badge--mono">{{ intento.ip_address }}</code></td>
                                         <td>{{ intento.failures_since_start }}</td>
-                                        <td class="text-end pe-4">
+                                        <td class="adm-security-table__action">
                                             {% if intento.failures_since_start >= axes_failure_limit %}
-                                                <span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-x-octagon-fill me-1"></i>Bloqueado</span>
+                                            <span class="adm-badge adm-badge--danger">Bloqueado</span>
                                             {% else %}
-                                                <span class="badge bg-warning bg-opacity-10 text-warning"><i class="bi bi-exclamation-circle-fill me-1"></i>Pendiente</span>
+                                            <span class="adm-badge adm-badge--warning">Pendiente</span>
                                             {% endif %}
                                         </td>
                                     </tr>
                                     {% endfor %}
                                 {% else %}
-                                    <tr>
-                                        <td colspan="5" class="text-center py-4 text-muted">
-                                            <i class="bi bi-check-circle text-success me-1"></i> No se han registrado intentos fallidos en las últimas 24 horas.
-                                        </td>
+                                    <tr class="adm-demo-row">
+                                        <td>28/05/2026 08:42:11</td>
+                                        <td>admin.demo@colegio.cl</td>
+                                        <td><code class="adm-badge adm-badge--mono">190.45.122.88</code></td>
+                                        <td>5</td>
+                                        <td class="adm-security-table__action"><span class="adm-badge adm-badge--danger">Bloqueado</span></td>
+                                    </tr>
+                                    <tr class="adm-demo-row">
+                                        <td>28/05/2026 07:15:03</td>
+                                        <td>desconocido@mail.cl</td>
+                                        <td><code class="adm-badge adm-badge--mono">200.114.30.15</code></td>
+                                        <td>3</td>
+                                        <td class="adm-security-table__action"><span class="adm-badge adm-badge--warning">Pendiente</span></td>
                                     </tr>
                                 {% endif %}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
 
-        <!-- Logs de Acceso Column -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-header bg-white border-0 py-3 border-bottom border-light">
-                    <h5 class="card-title mb-0 fw-bold text-gray-800">
-                        <i class="bi bi-clock-history text-success me-2"></i> Logs de Acceso Recientes
-                    </h5>
-                </div>
-                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
-                    {% if logs_acceso %}
-                        <div class="list-group list-group-flush">
-                            {% for log in logs_acceso %}
-                            <div class="list-group-item p-3 border-bottom">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <strong class="text-dark small">{{ log.username|default:"Invitado" }}</strong>
-                                    <span class="text-muted small" style="font-size: 0.75rem;">{{ log.attempt_time|date:"H:i - d M" }}</span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="font-monospace text-muted small" style="font-size: 0.8rem;">IP: {{ log.ip_address }}</span>
-                                    {% if log.logout_time %}
-                                        <span class="badge bg-success bg-opacity-10 text-success small" style="font-size: 0.7rem;">Cerró sesión</span>
-                                    {% else %}
-                                        <span class="badge bg-info bg-opacity-10 text-info small" style="font-size: 0.7rem;">Activo</span>
-                                    {% endif %}
-                                </div>
-                                <div class="text-muted mt-1 text-truncate" style="font-size: 0.75rem;" title="{{ log.user_agent }}">
-                                    {{ log.user_agent|truncatechars:45 }}
-                                </div>
-                            </div>
-                            {% endfor %}
+        <section class="adm-card card-panel adm-security-logs">
+            <div class="adm-card__head"><h2 class="adm-card__title">🕐 Logs de acceso</h2></div>
+            <div class="adm-card__body adm-card__body--flush">
+                {% if not logs_acceso %}
+                {% include 'admin/_demo_banner.html' %}
+                <div class="adm-log-list">
+                    <article class="adm-log-item adm-demo-row">
+                        <div class="adm-log-item__head">
+                            <strong>carlos.perez@colegio.cl</strong>
+                            <span>09:14 · 28 May</span>
                         </div>
-                    {% else %}
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-journal-text fs-1 mb-2 d-block"></i>
-                            Sin registros de acceso disponibles
+                        <div class="adm-log-item__meta">
+                            <span class="adm-log-item__ip">IP: 181.72.45.10</span>
+                            <span class="adm-badge adm-badge--success">Activo</span>
                         </div>
-                    {% endif %}
+                        <p class="adm-log-item__ua">Chrome · Windows · Santiago, RM</p>
+                    </article>
+                    <article class="adm-log-item adm-demo-row">
+                        <div class="adm-log-item__head">
+                            <strong>laura.mendez@colegio.cl</strong>
+                            <span>18:02 · 27 May</span>
+                        </div>
+                        <div class="adm-log-item__meta">
+                            <span class="adm-log-item__ip">IP: 190.98.210.44</span>
+                            <span class="adm-badge adm-badge--muted">Cerró sesión</span>
+                        </div>
+                        <p class="adm-log-item__ua">Safari · macOS · Viña del Mar</p>
+                    </article>
                 </div>
+                {% else %}
+                <div class="adm-log-list">
+                    {% for log in logs_acceso %}
+                    <article class="adm-log-item">
+                        <div class="adm-log-item__head">
+                            <strong>{{ log.username|default:"Invitado" }}</strong>
+                            <span>{{ log.attempt_time|date:"H:i · d M" }}</span>
+                        </div>
+                        <div class="adm-log-item__meta">
+                            <span class="adm-log-item__ip">IP: {{ log.ip_address }}</span>
+                            {% if log.logout_time %}
+                            <span class="adm-badge adm-badge--muted">Cerró sesión</span>
+                            {% else %}
+                            <span class="adm-badge adm-badge--success">Activo</span>
+                            {% endif %}
+                        </div>
+                        <p class="adm-log-item__ua">{{ log.user_agent|truncatechars:80 }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-        </div>
+        </section>
     </div>
 </div>
+
+{% include 'admin/_admin_wrap_end.html' %}

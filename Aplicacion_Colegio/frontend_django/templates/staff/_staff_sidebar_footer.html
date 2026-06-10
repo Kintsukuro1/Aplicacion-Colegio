@@ -1,0 +1,14 @@
+    <div class="pers-sidebar__footer">
+        <a href="{% url 'dashboard' %}?pagina=perfil" class="pers-sidebar__footer-link{% if pagina_actual == 'perfil' %} pers-sidebar__footer-link--active{% endif %}">
+            <span class="pers-sidebar__emoji" aria-hidden="true">👤</span>
+            <span>Mi perfil</span>
+        </a>
+        <form method="POST" action="{% url 'accounts:logout' %}" class="pers-sidebar__logout-form">
+            {% csrf_token %}
+            <button type="submit" class="pers-sidebar__footer-link pers-sidebar__footer-link--logout">
+                <span class="pers-sidebar__emoji" aria-hidden="true">🚪</span>
+                <span>Cerrar sesión</span>
+            </button>
+        </form>
+    </div>
+</aside>

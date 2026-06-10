@@ -1,0 +1,36 @@
+<aside class="adm-sel-aside card-panel" aria-label="Guía de selección de colegio">
+    <div class="adm-sel-aside__head">
+        <span class="adm-sel-aside__icon" aria-hidden="true">🧭</span>
+        <h3 class="adm-sel-aside__title">¿Cómo funciona?</h3>
+    </div>
+    <p class="adm-sel-aside__lead">Como Administrador General operas en modo multi-colegio. Debes <strong>entrar a un establecimiento</strong> para gestionar importaciones, calendario escolar y datos locales.</p>
+
+    <ol class="adm-sel-aside__steps">
+        <li><strong>Selecciona un colegio</strong> — haz clic en la tarjeta o en «Entrar».</li>
+        <li><strong>Contexto activo</strong> — el RBD queda guardado en tu sesión.</li>
+        <li><strong>Gestiona</strong> — importar datos, reuniones y módulos escolares usan ese colegio.</li>
+    </ol>
+
+    {% if escuela_rbd %}
+    <div class="adm-sel-aside__active card-panel">
+        <span class="adm-sel-aside__active-label">Sesión activa</span>
+        <strong class="adm-sel-aside__active-name">{{ escuela_nombre }}</strong>
+        <span class="adm-badge adm-badge--mono">RBD {{ escuela_rbd }}</span>
+        <a href="{% url 'dashboard' %}?pagina=inicio" class="btn-secondary btn-secondary--sm adm-sel-aside__link">Ir al panel →</a>
+    </div>
+    {% else %}
+    <div class="adm-sel-aside__warn card-panel">
+        <span class="adm-sel-aside__warn-icon" aria-hidden="true">⚠️</span>
+        <p>Sin colegio activo. Algunas acciones (importar, calendario por escuela) pedirán que elijas uno primero.</p>
+    </div>
+    {% endif %}
+
+    <div class="adm-sel-aside__tips">
+        <h4>Acciones desde aquí</h4>
+        <ul>
+            <li><strong>Crear colegio</strong> — alta de un nuevo establecimiento en la plataforma.</li>
+            <li><strong>Admin escolar</strong> — asigna un responsable a un colegio existente.</li>
+            <li><strong>Plan</strong> — cambia la suscripción SaaS del colegio (límites y facturación).</li>
+        </ul>
+    </div>
+</aside>

@@ -26,7 +26,7 @@
             <div class="login-hero__overlay" aria-hidden="true"></div>
             <a href="{% url 'accounts:index' %}" class="login-back-btn">← Inicio</a>
             <div class="login-hero__content">
-                <h2 class="login-hero__title">Bienvenido a EduHub</h2>
+                <h2 class="login-hero__title">Bienvenido a Raccademy</h2>
                 <p class="login-hero__subtitle">Tu portal académico en un solo lugar</p>
                 <p class="login-hero__trust">Acceso seguro para estudiantes, apoderados y personal</p>
             </div>
@@ -134,7 +134,7 @@
                     {% endif %}
 
                     <button type="submit" class="btn-login" id="loginSubmit">
-                        <span class="btn-login__label">Iniciar Sesión</span>
+                        <span class="btn-login__label">Iniciar sesión</span>
                         <span class="btn-login__loading" aria-hidden="true">Cargando…</span>
                     </button>
 
@@ -143,7 +143,7 @@
                     <div class="login-links">
                         <a href="#" class="login-link">¿Olvidaste tu contraseña?</a>
                         <span class="login-links__sep" aria-hidden="true">·</span>
-                        <a href="#" class="login-link login-link--muted">Contactar Soporte IT</a>
+                        <a href="#" class="login-link login-link--muted">Contactar soporte técnico</a>
                     </div>
                 </form>
                 </div>
@@ -157,7 +157,7 @@
                 {% include 'includes/_portal_brand_logo.html' with logo_alt='Raccademy' extra_class='portal-brand-logo--login-footer login-footer__icon' %}
                 <span>Raccademy</span>
             </div>
-            <p class="login-footer__copy">&copy; {{ year }} EduHub. Todos los derechos reservados.</p>
+            <p class="login-footer__copy">&copy; {{ year }} Raccademy. Todos los derechos reservados.</p>
             <nav class="login-footer__nav" aria-label="Enlaces legales">
                 <a href="#">Soporte</a>
                 <a href="#">Términos</a>

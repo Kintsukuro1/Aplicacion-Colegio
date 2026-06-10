@@ -434,29 +434,34 @@ class AttendanceService:
         """
         from backend.apps.academico.models import Asistencia
 
+        asistencias_qs = Asistencia.objects.filter(clase=clase)
+        stats = AttendanceService._aggregate_attendance_stats(asistencias_qs, clase=clase, days=days)
+        stats['scope'] = 'clase'
+        stats['scope_label'] = f'{clase.curso.nombre} · {clase.asignatura.nombre}'
+        return stats
+
+    @staticmethod
+    def _aggregate_attendance_stats(asistencias_qs, clase=None, days: int = 30) -> Dict:
+        """Agrega conteos P/A/T/J sobre un queryset de asistencias (30 días o anclado)."""
+        from backend.apps.academico.models import Asistencia
+
         fecha_fin = date.today()
         fecha_inicio = fecha_fin - timedelta(days=days)
         periodo_ancorado = False
 
-        asistencias_mes = Asistencia.objects.filter(
-            clase=clase,
+        asistencias_mes = asistencias_qs.filter(
             fecha__gte=fecha_inicio,
             fecha__lte=fecha_fin,
         )
 
         if not asistencias_mes.exists():
-            ultima_fecha = (
-                Asistencia.objects.filter(clase=clase)
-                .order_by('-fecha')
-                .values_list('fecha', flat=True)
-                .first()
-            )
+            base_qs = asistencias_qs
+            ultima_fecha = base_qs.order_by('-fecha').values_list('fecha', flat=True).first()
             if ultima_fecha:
                 fecha_fin = ultima_fecha
                 fecha_inicio = fecha_fin - timedelta(days=days)
                 periodo_ancorado = True
-                asistencias_mes = Asistencia.objects.filter(
-                    clase=clase,
+                asistencias_mes = base_qs.filter(
                     fecha__gte=fecha_inicio,
                     fecha__lte=fecha_fin,
                 )
@@ -466,8 +471,12 @@ class AttendanceService:
         ausentes = asistencias_mes.filter(estado='A').count()
         tardanzas = asistencias_mes.filter(estado='T').count()
         justificadas = asistencias_mes.filter(estado='J').count()
-
         porcentaje = round((presentes / total_registros * 100), 1) if total_registros > 0 else 0
+
+        scope = 'clase'
+        scope_label = ''
+        if clase is not None:
+            scope_label = f'{clase.curso.nombre} · {clase.asignatura.nombre}'
 
         return {
             'total_registros': total_registros,
@@ -479,7 +488,36 @@ class AttendanceService:
             'periodo_desde': fecha_inicio,
             'periodo_hasta': fecha_fin,
             'periodo_ancorado': periodo_ancorado,
+            'scope': scope,
+            'scope_label': scope_label,
         }
+
+    @staticmethod
+    def calculate_course_attendance_stats(colegio, curso, days: int = 30) -> Dict:
+        """Estadísticas de asistencia agregadas para todas las clases de un curso."""
+        from backend.apps.academico.models import Asistencia
+        from backend.apps.cursos.models import Clase
+
+        clase_ids = list(
+            Clase.objects.filter(colegio=colegio, curso=curso, activo=True).values_list('id', flat=True)
+        )
+        if not clase_ids:
+            return {
+                'total_registros': 0,
+                'presentes': 0,
+                'ausentes': 0,
+                'tardanzas': 0,
+                'justificadas': 0,
+                'porcentaje_asistencia': 0,
+                'scope': 'curso',
+                'scope_label': curso.nombre,
+            }
+
+        asistencias_qs = Asistencia.objects.filter(clase_id__in=clase_ids)
+        stats = AttendanceService._aggregate_attendance_stats(asistencias_qs, days=days)
+        stats['scope'] = 'curso'
+        stats['scope_label'] = curso.nombre
+        return stats
 
     @staticmethod
     def get_student_attendance_stats(user, estudiante, clase, periodo_dias: int = 30) -> Dict:

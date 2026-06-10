@@ -1,64 +1,26 @@
-{% load static %}
+{% load static custom_filters %}
 
-<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_asignaturas.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_asignaturas.css' %}?v=20260610-asig-v6">
 
-<div class="asignaturas-container">
-    <!-- Encabezado y Estadísticas -->
-    <div class="header-section">
-        <div class="titulo-modulo">
-            <i class="fas fa-book"></i>
-            <h2>Gestión de Asignaturas</h2>
+<div class="asignaturas-container" id="asigPageRoot" data-post-url="{% url 'gestionar_asignaturas' %}">
+    {% if insights_asignaturas %}
+    <section class="asig-insights" aria-label="Información útil">
+        {% for insight in insights_asignaturas %}
+        <div class="asig-insight asig-insight--{{ insight.tipo }}">
+            <span class="asig-insight__icon" aria-hidden="true">
+                {% if insight.tipo == 'warn' %}⚠️{% elif insight.tipo == 'info' %}💡{% else %}📋{% endif %}
+            </span>
+            <p>{{ insight.texto }}</p>
         </div>
-        
-        <div class="estadisticas-grid">
-            <div class="stat-card blue">
-                <div class="stat-icon">
-                    📚
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_asignaturas|default:0 }}</span>
-                    <span class="stat-label">Total Asignaturas</span>
-                </div>
-            </div>
-            
-            <div class="stat-card green">
-                <div class="stat-icon">
-                    🎓
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_clases_activas|default:0 }}</span>
-                    <span class="stat-label">Clases Activas</span>
-                </div>
-            </div>
-            
-            <div class="stat-card purple">
-                <div class="stat-icon">
-                    ⏰
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_horas_semanales|default:0 }}</span>
-                    <span class="stat-label">Horas Semanales Totales</span>
-                </div>
-            </div>
-            
-            <div class="stat-card orange">
-                <div class="stat-icon">
-                    ⚠️
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ asignaturas_sin_asignar|default:0 }}</span>
-                    <span class="stat-label">Sin Asignar</span>
-                </div>
-            </div>
-        </div>
-    </div>
+        {% endfor %}
+    </section>
+    {% endif %}
 
-    <!-- Filtros y Búsqueda -->
     <div class="filtros-section">
-        <form method="GET" action="{% url 'dashboard' %}" class="filtros-form">
+        <form method="GET" action="{% url 'dashboard' %}" class="filtros-form" id="filtrosAsignaturasForm">
             <input type="hidden" name="pagina" value="gestionar_asignaturas">
             
-            <div class="filtro-group">
+            <div class="filtro-group filtro-group--wide">
                 <label for="busqueda">
                     <i class="fas fa-search"></i> Buscar
                 </label>
@@ -74,8 +36,14 @@
                 </a>
             </div>
         </form>
+
+        <p class="filtros-resultado">
+            Mostrando <strong>{{ total_asignaturas_filtradas|default:0 }}</strong> de {{ total_asignaturas|default:0 }} asignatura{{ total_asignaturas|pluralize }}
+            {% if filtro_busqueda %} · filtros activos{% endif %}
+            {% if ciclo_activo %} · {{ ciclo_activo.nombre }}{% endif %}
+        </p>
         
-        <button onclick="abrirModalCrear()" class="btn-nueva-asignatura">
+        <button type="button" data-asig-action="crear" class="btn-nueva-asignatura">
             <i class="fas fa-plus"></i> Nueva Asignatura
         </button>
     </div>
@@ -91,29 +59,28 @@
                     <th>Horas/Semana</th>
                     <th>Cursos</th>
                     <th>Clases</th>
-                    <th>Acciones</th>
+                    <th>Gestión</th>
                 </tr>
             </thead>
             <tbody>
                 {% for asignatura in asignaturas %}
-                <tr>
+                {% with accent=asignatura.nombre|color_asignatura:asignatura.color %}
+                <tr class="asig-row" style="--asig-accent: {{ accent }};">
                     <td>
                         <div class="asignatura-nombre">
-                            <div class="asignatura-icon">
-                                📖
-                            </div>
+                            <div class="asignatura-icon" aria-hidden="true" style="background: {{ accent }};">{{ asignatura.nombre.0|upper }}</div>
                             <span><strong>{{ asignatura.nombre }}</strong></span>
                         </div>
                     </td>
                     <td>
                         {% if asignatura.codigo %}
-                            <span class="badge-codigo">{{ asignatura.codigo }}</span>
+                            <span class="badge-codigo" style="background: color-mix(in srgb, {{ accent }} 18%, white); color: {{ accent }}; border-color: color-mix(in srgb, {{ accent }} 35%, white);">{{ asignatura.codigo }}</span>
                         {% else %}
                             <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                     <td>
-                        <span class="badge-horas">{{ asignatura.horas_semanales }}h</span>
+                        <span class="badge-horas" style="background: color-mix(in srgb, {{ accent }} 14%, white); color: {{ accent }};">{{ asignatura.horas_semanales }}h</span>
                     </td>
                     <td>
                         <span class="badge-count">
@@ -121,52 +88,61 @@
                         </span>
                     </td>
                     <td>
-                        <span class="badge-count">
+                        <span class="badge-count {% if asignatura.total_clases == 0 %}badge-count--warn{% endif %}">
                             {{ asignatura.total_clases|default:0 }} clase{{ asignatura.total_clases|default:0|pluralize }}
                         </span>
                     </td>
                     <td>
-                        <div class="acciones-grupo">
-                            <button 
-                                class="btn-icono btn-editar" 
+                        <div class="asig-acciones">
+                            <button type="button"
+                                class="asig-accion asig-accion--edit"
                                 title="Editar"
-                                onclick="abrirModalEditar(this)"
+                                data-asig-action="editar"
                                 data-id="{{ asignatura.id_asignatura }}"
                                 data-nombre="{{ asignatura.nombre }}"
                                 data-codigo="{{ asignatura.codigo|default:'' }}"
-                                data-horas="{{ asignatura.horas_semanales }}"
-                            >
-                                ✏️
+                                data-horas="{{ asignatura.horas_semanales }}">
+                                <i class="fas fa-pen" aria-hidden="true"></i><span>Editar</span>
                             </button>
-                            <button 
-                                class="btn-icono btn-asignar" 
-                                title="Asignar a Curso/Profesor"
-                                onclick="abrirModalAsignar(this)"
+                            <button type="button"
+                                class="asig-accion asig-accion--assign"
+                                title="Asignar a curso/profesor"
+                                data-asig-action="asignar"
                                 data-id="{{ asignatura.id_asignatura }}"
-                                data-nombre="{{ asignatura.nombre }}"
-                            >
-                                👨‍🏫
+                                data-nombre="{{ asignatura.nombre }}">
+                                <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i><span>Asignar</span>
                             </button>
-                            <button 
-                                class="btn-icono btn-eliminar" 
+                            <button type="button"
+                                class="asig-accion asig-accion--danger"
                                 title="Desactivar"
-                                onclick="confirmarEliminar(this)"
+                                data-asig-action="eliminar"
                                 data-id="{{ asignatura.id_asignatura }}"
-                                data-nombre="{{ asignatura.nombre }}"
-                            >
-                                🗑️
+                                data-nombre="{{ asignatura.nombre }}">
+                                <i class="fas fa-ban" aria-hidden="true"></i><span>Desactivar</span>
                             </button>
                         </div>
                     </td>
                 </tr>
+                {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
+        {% if is_paginated %}
+        <nav class="asig-pagination" aria-label="Paginación de asignaturas">
+            {% if page_obj.has_previous %}
+            <a href="?pagina=gestionar_asignaturas&amp;page={{ page_obj.previous_page_number }}{% if filtro_busqueda %}&amp;busqueda={{ filtro_busqueda|urlencode }}{% endif %}">← Anterior</a>
+            {% endif %}
+            <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?pagina=gestionar_asignaturas&amp;page={{ page_obj.next_page_number }}{% if filtro_busqueda %}&amp;busqueda={{ filtro_busqueda|urlencode }}{% endif %}">Siguiente →</a>
+            {% endif %}
+        </nav>
+        {% endif %}
         {% else %}
         <div class="empty-state">
             <i class="fas fa-inbox"></i>
             <p>No se encontraron asignaturas</p>
-            <button onclick="abrirModalCrear()" class="btn-nueva-asignatura">
+            <button type="button" data-asig-action="crear" class="btn-nueva-asignatura">
                 <i class="fas fa-plus"></i> Crear Primera Asignatura
             </button>
         </div>
@@ -232,13 +208,14 @@
                         ondragleave="dragLeave(event)">
                         {% if dia.clases %}
                             {% for clase_info in dia.clases %}
+                            {% with accent=clase_info.clase.asignatura.nombre|color_asignatura:clase_info.clase.asignatura.color %}
                             <div class="bloque-clase" 
                                  data-clase-id="{{ clase_info.clase.id }}"
                                  data-bloque-id="{{ clase_info.bloque_id }}"
-                                 data-asignatura-color="{{ clase_info.clase.asignatura.color }}"
+                                 data-asignatura-color="{{ accent }}"
                                  draggable="true"
                                  ondragstart="drag(event)"
-                                 style="background: {{ clase_info.clase.asignatura.color }}; margin-bottom: 2px;">
+                                 style="--bloque-accent: {{ accent }}; background: {{ accent }}; margin-bottom: 2px;">
                                 <div class="bloque-clase-header">
                                     <span class="asignatura-nombre">{{ clase_info.clase.asignatura.nombre }}</span>
                                     <div class="bloque-acciones">
@@ -257,6 +234,7 @@
                                 <span class="curso-nombre">{{ clase_info.clase.curso.nombre }}</span>
                                 <span class="profesor-nombre">👨‍🏫 {{ clase_info.clase.profesor.get_full_name }}</span>
                             </div>
+                            {% endwith %}
                             {% endfor %}
                         {% else %}
                         <div class="bloque-vacio" onclick="abrirModalAsignarBloqueRapido('{{ dia.dia_numero }}', '{{ bloque.numero }}')">
@@ -273,7 +251,7 @@
 </div>
 
 <!-- Modal Crear/Editar Asignatura -->
-<div id="modalAsignatura" class="modal-overlay d-none">
+<div id="modalAsignatura" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
             <h3 id="modalTitulo">Nueva Asignatura</h3>
@@ -317,7 +295,7 @@
 </div>
 
 <!-- Modal Asignar a Curso/Profesor -->
-<div id="modalAsignar" class="modal-overlay d-none">
+<div id="modalAsignar" class="modal-overlay">
     <div class="modal-content modal-large">
         <div class="modal-header">
             <h3>Asignar Asignatura a Curso/Profesor</h3>
@@ -384,7 +362,7 @@
 </form>
 
 <!-- Modal Asignar Bloque Horario -->
-<div id="modalAsignarBloque" class="modal-overlay d-none">
+<div id="modalAsignarBloque" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
             <h3>Asignar Bloque Horario</h3>
@@ -488,312 +466,5 @@
 </div>
 
 {{ clases_por_asignatura_json|json_script:"clases-data" }}
-<script>
-// Funciones para manejo de modales
-function abrirModalCrear() {
-    document.getElementById('modalTitulo').textContent = 'Nueva Asignatura';
-    document.getElementById('accionForm').value = 'crear';
-    document.getElementById('asignaturaId').value = '';
-    document.getElementById('nombre').value = '';
-    document.getElementById('codigo').value = '';
-    document.getElementById('horas_semanales').value = '0';
-    document.getElementById('modalAsignatura').classList.remove('d-none');
-}
-
-function abrirModalEditar(button) {
-    const data = button.dataset;
-    
-    document.getElementById('modalTitulo').textContent = 'Editar Asignatura';
-    document.getElementById('accionForm').value = 'editar';
-    document.getElementById('asignaturaId').value = data.id;
-    document.getElementById('nombre').value = data.nombre;
-    document.getElementById('codigo').value = data.codigo;
-    document.getElementById('horas_semanales').value = data.horas;
-    document.getElementById('modalAsignatura').classList.remove('d-none');
-}
-
-function abrirModalAsignar(button) {
-    const data = button.dataset;
-    
-    document.getElementById('asignarAsignaturaId').value = data.id;
-    document.getElementById('asignarAsignaturaNombre').textContent = data.nombre;
-    document.getElementById('curso_id').value = '';
-    document.getElementById('profesor_id').value = '';
-    document.getElementById('modalAsignar').classList.remove('d-none');
-}
-
-function cerrarModal(modalId) {
-    document.getElementById(modalId).classList.add('d-none');
-}
-
-function confirmarEliminar(button) {
-    const data = button.dataset;
-    
-    if (confirm(`¿Está seguro que desea desactivar la asignatura "${data.nombre}"?\n\nLas clases asociadas también serán desactivadas.`)) {
-        document.getElementById('eliminarId').value = data.id;
-        document.getElementById('formEliminar').submit();
-    }
-}
-
-// Cerrar modal al hacer clic fuera
-document.querySelectorAll('.modal-overlay').forEach(modal => {
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.classList.add('d-none');
-        }
-    });
-});
-
-// Cerrar modal con tecla ESC
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.classList.add('d-none');
-        });
-    }
-});
-
-// Funciones para horario
-function abrirModalAsignarBloque() {
-    document.getElementById('modalAsignarBloque').classList.remove('d-none');
-}
-
-function abrirModalAsignarBloqueRapido(dia, bloque) {
-    document.getElementById('dia_semana').value = dia;
-    document.getElementById('bloque_numero').value = bloque;
-    document.getElementById('modalAsignarBloque').classList.remove('d-none');
-}
-
-function eliminarBloque(bloqueId) {
-    if (confirm('¿Está seguro que desea eliminar este bloque del horario?')) {
-        document.getElementById('eliminarBloqueId').value = bloqueId;
-        document.getElementById('formEliminarBloque').submit();
-    }
-}
-
-// Drag and Drop functions
-let draggedElement = null;
-
-function drag(event) {
-    draggedElement = event.target;
-    draggedElement.classList.add('dragging');
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', draggedElement.innerHTML);
-}
-
-function allowDrop(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    
-    const celda = event.currentTarget;
-    // Permitir drop en cualquier celda (ahora permitimos múltiples clases por bloque)
-    celda.classList.add('drag-over');
-}
-
-function dragLeave(event) {
-    event.currentTarget.classList.remove('drag-over');
-}
-
-function drop(event) {
-    event.preventDefault();
-    event.currentTarget.classList.remove('drag-over');
-    
-    if (!draggedElement) return;
-    
-    const celda = event.currentTarget;
-    
-    // Permitir drop incluso en celdas que ya tienen clases (múltiples clases por bloque)
-    const bloqueId = draggedElement.dataset.bloqueId;
-    const nuevoDia = celda.dataset.dia;
-    const nuevoBloque = celda.dataset.bloque;
-    
-    // Mover el bloque
-    document.getElementById('moverBloqueId').value = bloqueId;
-    document.getElementById('moverNuevoDia').value = nuevoDia;
-    document.getElementById('moverNuevoBloque').value = nuevoBloque;
-    document.getElementById('formMoverBloque').submit();
-    
-    draggedElement.classList.remove('dragging');
-    draggedElement = null;
-}
-
-// Selector de curso
-let selectorActivo = null;
-const clasesData = JSON.parse(document.getElementById('clases-data').textContent) || {};
-
-function abrirSelectorCurso(event, bloqueId, asignaturaId) {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    const selector = document.getElementById('selectorCurso');
-    const listaCursos = document.getElementById('listaCursos');
-    
-    // Limpiar lista
-    listaCursos.innerHTML = '';
-    
-    // Filtrar clases de la misma asignatura
-    const clasesFiltradas = clasesData[asignaturaId] || [];
-    
-    if (clasesFiltradas.length === 0) {
-        listaCursos.innerHTML = '<p style="color: #9ca3af; padding: 10px;">No hay otros cursos disponibles para esta asignatura.</p>';
-    } else {
-        clasesFiltradas.forEach(clase => {
-            const option = document.createElement('div');
-            option.className = 'curso-option';
-            option.innerHTML = `
-                <div class="curso-option-nombre">${clase.curso_nombre}</div>
-                <div class="curso-option-profesor">👨‍🏫 ${clase.profesor_nombre}</div>
-            `;
-            option.onclick = () => cambiarCurso(bloqueId, clase.clase_id);
-            listaCursos.appendChild(option);
-        });
-    }
-    
-    // Posicionar el selector cerca del botón
-    const rect = event.target.getBoundingClientRect();
-    selector.classList.remove('d-none');
-    selector.style.left = (rect.left - 250) + 'px';
-    selector.style.top = (rect.top + 25) + 'px';
-    
-    selectorActivo = bloqueId;
-}
-
-function cerrarSelectorCurso() {
-    document.getElementById('selectorCurso').classList.add('d-none');
-    selectorActivo = null;
-}
-
-function cambiarCurso(bloqueId, nuevaClaseId) {
-    document.getElementById('cambiarCursoBloqueId').value = bloqueId;
-    document.getElementById('cambiarCursoNuevaClaseId').value = nuevaClaseId;
-    document.getElementById('formCambiarCurso').submit();
-}
-
-// Cerrar selector al hacer clic fuera
-document.addEventListener('click', function(e) {
-    const selector = document.getElementById('selectorCurso');
-    if (selector && !selector.contains(e.target) && !e.target.classList.contains('btn-cambiar-curso')) {
-        cerrarSelectorCurso();
-    }
-});
-
-function verificarConflicto() {
-    const claseSelect = document.getElementById('clase_bloque');
-    const diaSelect = document.getElementById('dia_semana');
-    const bloqueSelect = document.getElementById('bloque_numero');
-    
-    if (!claseSelect.value || !diaSelect.value || !bloqueSelect.value) {
-        document.getElementById('alerta-conflicto').classList.add('d-none');
-        return;
-    }
-    
-    const dia = diaSelect.value;
-    const bloque = bloqueSelect.value;
-    const claseId = claseSelect.value;
-    
-    // Verificar si ya existe un bloque en ese horario
-    const celda = document.querySelector(`td[data-dia="${dia}"][data-bloque="${bloque}"]`);
-    if (celda && celda.querySelector('.bloque-clase')) {
-        const bloqueExistente = celda.querySelector('.bloque-clase');
-        const asignatura = bloqueExistente.querySelector('.asignatura-nombre').textContent;
-        const curso = bloqueExistente.querySelector('.curso-nombre').textContent;
-        
-        document.getElementById('mensaje-conflicto').textContent = 
-            `Ya existe ${asignatura} (${curso}) en este horario.`;
-        document.getElementById('alerta-conflicto').classList.remove('d-none');
-        return;
-    }
-    
-    // Verificar si la asignatura ya está asignada en esa hora en otro curso
-    const option = claseSelect.options[claseSelect.selectedIndex];
-    const asignaturaNombre = option.dataset.asignatura;
-    
-    const celdas = document.querySelectorAll(`td[data-dia="${dia}"][data-bloque="${bloque}"] .bloque-clase`);
-    for (let bloque of celdas) {
-        const asignaturaEnBloque = bloque.querySelector('.asignatura-nombre').textContent;
-        if (asignaturaEnBloque === asignaturaNombre) {
-            const cursoEnBloque = bloque.querySelector('.curso-nombre').textContent;
-            document.getElementById('mensaje-conflicto').textContent = 
-                `La asignatura ${asignaturaNombre} ya está programada en ${cursoEnBloque} a esta hora.`;
-            document.getElementById('alerta-conflicto').classList.remove('d-none');
-            return;
-        }
-    }
-    
-    document.getElementById('alerta-conflicto').classList.add('d-none');
-}
-
-function validarAsignacionBloque() {
-    const alertaConflicto = document.getElementById('alerta-conflicto');
-    if (!alertaConflicto.classList.contains('d-none')) {
-        return confirm('Hay un conflicto detectado. ¿Desea continuar de todas formas?');
-    }
-    return true;
-}
-
-// Asignación automática de horarios
-function asignarAutomatico() {
-    if (!confirm('¿Desea asignar automáticamente todas las clases sin horario?\n\nEsto asignará bloques horarios respetando:\n✓ Disponibilidad de profesores\n✓ Evita conflictos de horario\n✓ Distribuye las horas semanales requeridas')) {
-        return;
-    }
-    
-    // Mostrar indicador de carga
-    const btnAsignar = event.target.closest('button');
-    const textoOriginal = btnAsignar.innerHTML;
-    btnAsignar.disabled = true;
-    btnAsignar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Asignando...';
-    
-    // Crear formulario y enviarlo
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '{% url "dashboard" %}?pagina=gestionar_asignaturas';
-    
-    // CSRF Token
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = 'csrfmiddlewaretoken';
-    csrfInput.value = '{{ csrf_token }}';
-    form.appendChild(csrfInput);
-    
-    // Acción
-    const accionInput = document.createElement('input');
-    accionInput.type = 'hidden';
-    accionInput.name = 'accion';
-    accionInput.value = 'asignar_automatico';
-    form.appendChild(accionInput);
-    
-    document.body.appendChild(form);
-    form.submit();
-}
-
-// Función para cambiar el curso del horario
-function cambiarCursoHorario() {
-    const selector = document.getElementById('selectorCursoHorario');
-    const cursoId = selector.value;
-    
-    console.log('Cambiando a curso ID:', cursoId);
-    
-    // Construir URL manteniendo el parámetro pagina
-    const url = new URL(window.location.href);
-    url.searchParams.set('pagina', 'gestionar_asignaturas');
-    url.searchParams.set('curso_horario', cursoId);
-    
-    console.log('Nueva URL:', url.toString());
-    
-    // Guardar posición del scroll
-    sessionStorage.setItem('scrollPos', window.scrollY);
-    
-    // Navegar a la nueva URL
-    window.location.href = url.toString();
-}
-
-// Restaurar posición del scroll después de la recarga
-window.addEventListener('load', function() {
-    const scrollPos = sessionStorage.getItem('scrollPos');
-    if (scrollPos) {
-        window.scrollTo(0, parseInt(scrollPos));
-        sessionStorage.removeItem('scrollPos');
-    }
-});
-</script>
+<script src="{% static 'js/admin/gestionar_asignaturas.js' %}?v=20260610-asig-v4"></script>
 

@@ -49,6 +49,13 @@
     </div>
 
     {% if curso_seleccionado and reporte_data %}
+        <p class="reporte-meta" role="status">
+            Datos reales del ciclo <strong>{{ ciclo_seleccionado.nombre|default:"—" }}</strong>
+            · curso <strong>{{ curso_seleccionado.nombre }}</strong>
+            · actualizado al cargar: {{ reporte_data.actualizado_en }}
+            <span class="reporte-meta__hint">(cambia al seleccionar otro ciclo/curso o recargar la página)</span>
+        </p>
+
         {# Métricas Rápidas KPI #}
         <div class="stats-grid">
             <div class="stat-card kpi-promedio">
@@ -58,6 +65,7 @@
                         {{ reporte_data.promedio_general|default:"0.0" }}
                     </div>
                     <div class="stat-label">Promedio General</div>
+                    <div class="stat-hint">Promedio de asignaturas con notas</div>
                 </div>
             </div>
 

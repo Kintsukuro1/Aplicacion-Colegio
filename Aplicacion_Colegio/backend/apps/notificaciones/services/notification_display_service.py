@@ -182,6 +182,8 @@ def format_notification_for_ui(notif) -> dict[str, Any]:
     url = normalize_notification_enlace(
         getattr(notif, 'enlace', ''),
         tipo,
+        titulo=getattr(notif, 'titulo', ''),
+        mensaje=getattr(notif, 'mensaje', ''),
     )
     titulo = getattr(notif, 'titulo', '') or ''
     mensaje = getattr(notif, 'mensaje', '') or ''

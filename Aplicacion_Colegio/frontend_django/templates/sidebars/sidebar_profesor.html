@@ -7,157 +7,135 @@
         <p class="user-role">Profesor</p>
     </div>
 
-    <nav class="sidebar-nav sidebar-nav--tree">
-        <ul class="nav-tree">
+    <nav class="sidebar-nav">
+        <ul>
             {% url 'comunicados:lista' as comunicados_url %}
             {% if 'inicio' in paginas_habilitadas %}
-            <li class="nav-tree__item {% if pagina_actual == 'inicio' %}active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=inicio" class="nav-tree__link">
+            <li {% if pagina_actual == 'inicio' %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=inicio">
                     <span class="icon">🏠</span>
                     <span>Inicio</span>
                 </a>
             </li>
             {% endif %}
 
-            {# ── ACADÉMICO ── #}
-            <li class="nav-tree__group" data-group="prof-academico">
-                <button type="button" class="nav-tree__toggle" aria-expanded="false">
-                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    <span class="nav-tree__toggle-label">Académico</span>
-                    <span class="nav-tree__toggle-badge"></span>
-                </button>
-                <ul class="nav-tree__children">
-                    {% if 'mis_clases' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'mis_clases' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=mis_clases" class="nav-tree__link">
-                            <span class="icon">📚</span>
-                            <span>Mis Clases</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'asistencia' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'asistencia' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=asistencia" class="nav-tree__link">
-                            <span class="icon">📅</span>
-                            <span>Registro Asistencia</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'notas' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'notas' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=notas" class="nav-tree__link">
-                            <span class="icon">📝</span>
-                            <span>Evaluaciones y Notas</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'libro_clases' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'libro_clases' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=libro_clases" class="nav-tree__link">
-                            <span class="icon">📖</span>
-                            <span>Libro de Clases</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'reportes' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'reportes' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=reportes" class="nav-tree__link">
-                            <span class="icon">📊</span>
-                            <span>Reportes</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'calendario_eventos' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'calendario_eventos' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=calendario_eventos" class="nav-tree__link">
-                            <span class="icon">🗓️</span>
-                            <span>Calendario Escolar</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'solicitud_reuniones' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'solicitud_reuniones' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=solicitud_reuniones" class="nav-tree__link">
-                            <span class="icon">🤝</span>
-                            <span>Solicitud Reuniones</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'tareas_consolidado' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'tareas_consolidado' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=tareas_consolidado" class="nav-tree__link">
-                            <span class="icon">📋</span>
-                            <span>Tareas</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'mis_planificaciones' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'mis_planificaciones' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=mis_planificaciones" class="nav-tree__link">
-                            <span class="icon">📑</span>
-                            <span>Planificaciones</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
+            <li class="nav-section">
+                <span class="section-title">Académico</span>
             </li>
+            {% if 'mis_clases' in paginas_habilitadas %}
+            <li {% if pagina_actual == "mis_clases" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=mis_clases">
+                    <span class="icon">📚</span>
+                    <span>Mis Clases</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'asistencia' in paginas_habilitadas %}
+            <li {% if pagina_actual == "asistencia" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=asistencia">
+                    <span class="icon">📅</span>
+                    <span>Registro Asistencia</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'notas' in paginas_habilitadas %}
+            <li {% if pagina_actual == "notas" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=notas">
+                    <span class="icon">📝</span>
+                    <span>Evaluaciones y Notas</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'libro_clases' in paginas_habilitadas %}
+            <li {% if pagina_actual == "libro_clases" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=libro_clases">
+                    <span class="icon">📖</span>
+                    <span>Libro de Clases</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'reportes' in paginas_habilitadas %}
+            <li {% if pagina_actual == "reportes" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=reportes">
+                    <span class="icon">📊</span>
+                    <span>Reportes</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'calendario_eventos' in paginas_habilitadas %}
+            <li {% if pagina_actual == "calendario_eventos" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=calendario_eventos">
+                    <span class="icon">🗓️</span>
+                    <span>Calendario Escolar</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'solicitud_reuniones' in paginas_habilitadas %}
+            <li {% if pagina_actual == "solicitud_reuniones" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=solicitud_reuniones">
+                    <span class="icon">🤝</span>
+                    <span>Solicitud Reuniones</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'tareas_consolidado' in paginas_habilitadas %}
+            <li {% if pagina_actual == "tareas_consolidado" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=tareas_consolidado">
+                    <span class="icon">📋</span>
+                    <span>Tareas</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'mis_planificaciones' in paginas_habilitadas %}
+            <li {% if pagina_actual == "mis_planificaciones" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=mis_planificaciones">
+                    <span class="icon">📑</span>
+                    <span>Planificaciones</span>
+                </a>
+            </li>
+            {% endif %}
 
-            {# ── COMUNICACIÓN ── #}
-            <li class="nav-tree__group" data-group="prof-comunicacion">
-                <button type="button" class="nav-tree__toggle" aria-expanded="false">
-                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    <span class="nav-tree__toggle-label">Comunicación</span>
-                    <span class="nav-tree__toggle-badge"></span>
-                </button>
-                <ul class="nav-tree__children">
-                    {% if menu_access.comunicados %}
-                    <li class="nav-tree__item">
-                        <a href="{% if comunicados_url %}{{ comunicados_url }}{% else %}{% url 'dashboard' %}?pagina=inicio{% endif %}" class="nav-tree__link">
-                            <span class="icon">📢</span>
-                            <span>Comunicados</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if menu_access.mensajes %}
-                    <li class="nav-tree__item">
-                        <a href="{% url 'mensajeria:bandeja_mensajes' %}" class="nav-tree__link">
-                            <span class="icon">✉️</span>
-                            <span>Mensajes</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
+            <li class="nav-section">
+                <span class="section-title">Comunicación</span>
             </li>
+            {% if menu_access.comunicados %}
+            <li>
+                <a
+                    href="{% if comunicados_url %}{{ comunicados_url }}{% else %}{% url 'dashboard' %}?pagina=inicio{% endif %}">
+                    <span class="icon">📢</span>
+                    <span>Comunicados</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if menu_access.mensajes %}
+            <li>
+                <a href="{% url 'mensajeria:bandeja_mensajes' %}">
+                    <span class="icon">✉️</span>
+                    <span>Mensajes</span>
+                </a>
+            </li>
+            {% endif %}
 
-            {# ── CONFIGURACIÓN ── #}
-            <li class="nav-tree__group" data-group="prof-config">
-                <button type="button" class="nav-tree__toggle" aria-expanded="false">
-                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    <span class="nav-tree__toggle-label">Configuración</span>
-                    <span class="nav-tree__toggle-badge"></span>
-                </button>
-                <ul class="nav-tree__children">
-                    {% if 'disponibilidad' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'disponibilidad' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=disponibilidad" class="nav-tree__link">
-                            <span class="icon">🕐</span>
-                            <span>Mi Disponibilidad</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if 'perfil' in paginas_habilitadas %}
-                    <li class="nav-tree__item {% if pagina_actual == 'perfil' %}active{% endif %}">
-                        <a href="{% url 'dashboard' %}?pagina=perfil" class="nav-tree__link">
-                            <span class="icon">👤</span>
-                            <span>Mi Perfil</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
+            <li class="nav-section">
+                <span class="section-title">Configuración</span>
             </li>
+            {% if 'disponibilidad' in paginas_habilitadas %}
+            <li {% if pagina_actual == "disponibilidad" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=disponibilidad">
+                    <span class="icon">🕐</span>
+                    <span>Mi Disponibilidad</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'perfil' in paginas_habilitadas %}
+            <li {% if pagina_actual == "perfil" %}class="active" {% endif %}>
+                <a href="{% url 'dashboard' %}?pagina=perfil">
+                    <span class="icon">👤</span>
+                    <span>Mi Perfil</span>
+                </a>
+            </li>
+            {% endif %}
         </ul>
     </nav>
 </aside>
-
-{% include 'includes/_sidebar_tree_js.html' %}
 {% endif %}

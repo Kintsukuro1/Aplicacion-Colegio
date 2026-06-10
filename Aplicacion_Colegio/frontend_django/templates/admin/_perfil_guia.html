@@ -1,0 +1,61 @@
+<aside class="adm-perfil-aside card-panel" aria-label="Resumen de cuenta">
+    <div class="adm-perfil-identity">
+        <div class="adm-perfil-identity__banner" aria-hidden="true"></div>
+        <div class="adm-perfil-identity__avatar" aria-hidden="true">
+            {{ request.user.nombre|first|upper }}{{ request.user.apellido_paterno|first|upper|default:"A" }}
+        </div>
+        <h2 class="adm-perfil-identity__name">{{ nombre_usuario|default:request.user.get_full_name }}</h2>
+        <span class="adm-perfil-identity__badge">Administrador General</span>
+        <ul class="adm-perfil-identity__meta">
+            <li>
+                <span class="adm-perfil-identity__meta-label">Correo</span>
+                <span class="adm-perfil-identity__meta-val">{{ request.user.email|default:"—" }}</span>
+            </li>
+            <li>
+                <span class="adm-perfil-identity__meta-label">Teléfono</span>
+                <span class="adm-perfil-identity__meta-val">{{ request.user.telefono|default:"Sin registrar" }}</span>
+            </li>
+            <li>
+                <span class="adm-perfil-identity__meta-label">Alcance</span>
+                <span class="adm-perfil-identity__meta-val">{{ escuela_nombre|default:"Sistema multi-colegio" }}</span>
+            </li>
+            {% if escuela_rbd %}
+            <li>
+                <span class="adm-perfil-identity__meta-label">RBD activo</span>
+                <span class="adm-perfil-identity__meta-val"><span class="adm-badge adm-badge--mono">{{ escuela_rbd }}</span></span>
+            </li>
+            {% endif %}
+            <li>
+                <span class="adm-perfil-identity__meta-label">ID de cuenta</span>
+                <span class="adm-perfil-identity__meta-val">#{{ request.user.id }}</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="adm-perfil-aside__block">
+        <h3 class="adm-perfil-aside__title">Accesos rápidos</h3>
+        <nav class="adm-perfil-links" aria-label="Enlaces de seguridad">
+            <a href="{% url 'dashboard' %}?pagina=active_sessions" class="adm-perfil-links__item">
+                <span class="adm-perfil-links__icon" aria-hidden="true">🖥️</span>
+                <span>Sesiones activas</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=password_history" class="adm-perfil-links__item">
+                <span class="adm-perfil-links__icon" aria-hidden="true">🔑</span>
+                <span>Historial de contraseñas</span>
+            </a>
+            <a href="{% url 'dashboard' %}?pagina=monitoreo_seguridad" class="adm-perfil-links__item">
+                <span class="adm-perfil-links__icon" aria-hidden="true">🛡️</span>
+                <span>Monitoreo de seguridad</span>
+            </a>
+            <a href="{% url 'seleccionar_escuela' %}" class="adm-perfil-links__item">
+                <span class="adm-perfil-links__icon" aria-hidden="true">🏫</span>
+                <span>Cambiar colegio</span>
+            </a>
+        </nav>
+    </div>
+
+    <div class="adm-perfil-aside__tip card-panel">
+        <span class="adm-perfil-aside__tip-icon" aria-hidden="true">💡</span>
+        <p class="adm-perfil-aside__tip-text">Usa una contraseña única y revisa periódicamente las sesiones activas para mantener la plataforma segura.</p>
+    </div>
+</aside>

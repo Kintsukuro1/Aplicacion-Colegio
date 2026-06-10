@@ -1,0 +1,35 @@
+<aside class="adm-config-aside card-panel" aria-label="Guía de configuración">
+    <div class="adm-config-aside__head">
+        <span class="adm-config-aside__icon" aria-hidden="true">💡</span>
+        <h3 class="adm-config-aside__title">Guía rápida</h3>
+    </div>
+    <p class="adm-config-aside__lead">Desde aquí defines qué eventos se registran en auditoría y cuánto tiempo se conservan los logs de la plataforma.</p>
+
+    <ul class="adm-config-aside__list">
+        <li><strong>Hosts permitidos</strong> — dominios autorizados para acceder al sistema. Editable y se guarda con el botón superior.</li>
+        <li><strong>Categorías a auditar</strong> — activa o desactiva el registro por área (académico, asistencia, etc.).</li>
+        <li><strong>Retención</strong> — los logs más antiguos se purgan automáticamente al superar el plazo configurado.</li>
+        <li><strong>Debug y motor DB</strong> — solo lectura; cambios requieren acceso al servidor.</li>
+    </ul>
+
+    <div class="adm-config-aside__stats">
+        <article class="adm-config-aside__stat">
+            <span class="adm-config-aside__stat-val">{{ total_colegios }}</span>
+            <span class="adm-config-aside__stat-lbl">Colegios activos</span>
+        </article>
+        <article class="adm-config-aside__stat">
+            <span class="adm-config-aside__stat-val">{{ total_usuarios }}</span>
+            <span class="adm-config-aside__stat-lbl">Usuarios totales</span>
+        </article>
+    </div>
+
+    {% if config_auditoria %}
+    <div class="adm-config-aside__retention card-panel">
+        <span class="adm-config-aside__retention-label">Retención actual</span>
+        <span class="adm-config-aside__retention-val">{{ config_auditoria.dias_retencion }} días</span>
+        <span class="adm-config-aside__retention-hint">≈ {% widthratio config_auditoria.dias_retencion 365 1 %} años de historial</span>
+    </div>
+    {% endif %}
+
+    <p class="adm-config-aside__footer">Los módulos e integraciones listados abajo son informativos y forman parte del núcleo Raccademy.</p>
+</aside>

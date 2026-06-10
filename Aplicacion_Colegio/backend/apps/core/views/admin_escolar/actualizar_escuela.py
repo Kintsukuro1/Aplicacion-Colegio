@@ -14,6 +14,7 @@ from django.shortcuts import redirect
 
 from backend.apps.core.services.dashboard_service import DashboardService
 from backend.apps.core.services.colegio_service import ColegioService
+from backend.apps.core.views.admin_escolar._access import can_manage_school_data
 
 
 @login_required(login_url="login")
@@ -30,8 +31,8 @@ def actualizar_escuela(request):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ["admin_general", "admin_escolar"]:
-        messages.error(request, "Acceso denegado")
+    if not can_manage_school_data(rol, request.user):
+        messages.error(request, "No tienes permiso para actualizar la escuela")
         return redirect("dashboard")
 
     if not escuela_rbd:

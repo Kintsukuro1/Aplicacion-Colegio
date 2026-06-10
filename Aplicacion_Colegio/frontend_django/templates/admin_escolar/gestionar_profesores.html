@@ -603,15 +603,19 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Abrir modal automáticamente si viene del botón de inserción manual
+// Abrir modal automáticamente si viene del botón de inserción manual o edición desde importar
 window.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const abrirModal = urlParams.get('abrir_modal');
+    const editarId = urlParams.get('editar');
     
     if (abrirModal === 'crear') {
+        setTimeout(() => { abrirModalCrear(); }, 100);
+    } else if (editarId) {
         setTimeout(() => {
-            abrirModalCrear();
-        }, 100);
+            const btn = document.querySelector(`.btn-editar[data-id="${editarId}"]`);
+            if (btn) abrirModalEditar(btn);
+        }, 150);
     }
 });
 </script>

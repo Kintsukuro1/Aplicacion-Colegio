@@ -1,282 +1,197 @@
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="row mb-4 align-items-center print-hide">
-        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <div>
-                <h1 class="h3 mb-0 text-gray-800 fw-bold">
-                    <i class="bi bi-graph-up-arrow text-primary me-2"></i> Estadísticas Globales del Sistema
-                </h1>
-                <p class="text-muted mb-0">Visión consolidada del uso de la plataforma: volumen de usuarios, roles y distribución por colegio.</p>
-            </div>
-            <div class="d-flex gap-2">
-                <button onclick="window.print()" class="btn btn-outline-primary shadow-sm d-inline-flex align-items-center gap-2">
-                    <i class="bi bi-printer-fill"></i> Imprimir / PDF
-                </button>
-                <a href="/api/admin-general/estadisticas/exportar/?colegio_rbd={{ filtros.colegio_rbd }}&fecha_inicio={{ filtros.fecha_inicio }}&fecha_fin={{ filtros.fecha_fin }}" 
-                   class="btn btn-success shadow-sm d-inline-flex align-items-center gap-2">
-                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> Exportar a CSV
-                </a>
-            </div>
-        </div>
+{% include 'admin/_admin_wrap_start.html' %}
+
+<div class="adm-portal adm-stats-page">
+    {% if colegio_filtrado %}
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Analítica global" hero_title="Estadísticas globales" hero_subtitle="Vista filtrada por establecimiento — los KPIs reflejan solo el colegio seleccionado" hero_aria="Estadísticas globales" hero_show_date="0" m1_value=total_escuelas m1_label="Escuela" m1_mod="clases" m2_value=total_usuarios m2_label="Usuarios" m2_mod="tareas" m3_value=total_profesores m3_label="Profesores" m3_mod="asistencia" m4_value=total_estudiantes m4_label="Estudiantes" m4_mod="neutral" %}
+    {% else %}
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Analítica global" hero_title="Estadísticas globales" hero_subtitle="Visión consolidada de usuarios, roles y distribución por colegio" hero_aria="Estadísticas globales" hero_show_date="0" m1_value=total_escuelas m1_label="Escuelas" m1_mod="clases" m2_value=total_usuarios m2_label="Usuarios" m2_mod="tareas" m3_value=total_profesores m3_label="Profesores" m3_mod="asistencia" m4_value=total_estudiantes m4_label="Estudiantes" m4_mod="neutral" %}
+    {% endif %}
+
+    {% if filtros.colegio_rbd or filtros.fecha_inicio or filtros.fecha_fin %}
+    <div class="adm-alert adm-alert--info adm-module-tip print-hide" role="status">
+        <span>
+            <strong>Filtros activos:</strong>
+            {% if colegio_filtrado %}{{ colegio_filtrado.nombre }} (RBD {{ colegio_filtrado.rbd }}){% elif filtros.colegio_rbd %}RBD {{ filtros.colegio_rbd }}{% endif %}
+            {% if filtros.fecha_inicio %} · desde {{ filtros.fecha_inicio }}{% endif %}
+            {% if filtros.fecha_fin %} · hasta {{ filtros.fecha_fin }}{% endif %}
+            · <a href="{% url 'dashboard' %}?pagina=estadisticas_globales" class="adm-stats-clear">Quitar filtros</a>
+        </span>
+    </div>
+    {% endif %}
+
+    <div class="adm-actions-row adm-actions-row--start print-hide mb-2">
+        <button type="button" onclick="window.print()" class="adm-btn adm-btn--secondary adm-btn--sm">🖨️ Imprimir / PDF</button>
+        <a href="/api/admin-general/estadisticas/exportar/?colegio_rbd={{ filtros.colegio_rbd }}&amp;fecha_inicio={{ filtros.fecha_inicio }}&amp;fecha_fin={{ filtros.fecha_fin }}" class="adm-btn adm-btn--primary adm-btn--sm">📊 Exportar CSV</a>
     </div>
 
-    <!-- Printable Header (shown only on print) -->
     <div class="d-none print-show mb-4">
         <h1 class="fw-bold">Reporte Consolidado de Estadísticas Globales</h1>
         <p class="text-muted">Generado el {% now "d/m/Y H:i" %} por Administrador General</p>
-        {% if filtros.colegio_rbd or filtros.fecha_inicio or filtros.fecha_fin %}
-        <div class="alert alert-secondary p-2 small">
-            <strong>Filtros aplicados:</strong>
-            {% if filtros.colegio_rbd %} Colegio RBD: {{ filtros.colegio_rbd }} | {% endif %}
-            {% if filtros.fecha_inicio %} Desde: {{ filtros.fecha_inicio }} | {% endif %}
-            {% if filtros.fecha_fin %} Hasta: {{ filtros.fecha_fin }} {% endif %}
-        </div>
-        {% endif %}
     </div>
 
-    <!-- Filtros Card (hidden on print) -->
-    <div class="card border-0 shadow-sm rounded-3 mb-4 print-hide">
-        <div class="card-body p-4">
-            <form method="GET" action="" class="row g-3 align-items-end">
+    <section class="adm-card print-hide">
+        <div class="adm-card__head"><h2 class="adm-card__title">🔍 Filtros</h2></div>
+        <div class="adm-card__body adm-card__body--flush">
+            <form method="get" action="{% url 'dashboard' %}" class="adm-filters adm-filters--inline" id="stats-filters-form">
                 <input type="hidden" name="pagina" value="estadisticas_globales">
-                
-                <div class="col-md-4">
-                    <label for="colegio_rbd" class="form-label fw-bold text-secondary small">Establecimiento (Colegio)</label>
-                    <select class="form-select form-select-sm" id="colegio_rbd" name="colegio_rbd">
+                <div class="adm-field">
+                    <label for="colegio_rbd">Establecimiento</label>
+                    <select id="colegio_rbd" name="colegio_rbd">
                         <option value="">Todos los establecimientos</option>
                         {% for colegio in colegios_choices %}
-                            <option value="{{ colegio.rbd }}" {% if filtros.colegio_rbd == colegio.rbd|stringformat:"s" %}selected{% endif %}>
+                            <option value="{{ colegio.rbd }}" {% if filtros.colegio_rbd|stringformat:"s" == colegio.rbd|stringformat:"s" %}selected{% endif %}>
                                 {{ colegio.nombre }} (RBD {{ colegio.rbd }})
                             </option>
                         {% endfor %}
                     </select>
                 </div>
-
-                <div class="col-md-3">
-                    <label for="fecha_inicio" class="form-label fw-bold text-secondary small">Fecha Registro Desde</label>
-                    <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" value="{{ filtros.fecha_inicio }}">
+                <div class="adm-field">
+                    <label for="fecha_inicio">Registro desde</label>
+                    <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ filtros.fecha_inicio }}">
                 </div>
-
-                <div class="col-md-3">
-                    <label for="fecha_fin" class="form-label fw-bold text-secondary small">Fecha Registro Hasta</label>
-                    <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" value="{{ filtros.fecha_fin }}">
+                <div class="adm-field">
+                    <label for="fecha_fin">Registro hasta</label>
+                    <input type="date" id="fecha_fin" name="fecha_fin" value="{{ filtros.fecha_fin }}">
                 </div>
-
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-funnel-fill me-1"></i> Filtrar
-                    </button>
-                    <a href="?pagina=estadisticas_globales" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="bi bi-x-circle me-1"></i> Limpiar
-                    </a>
-                </div>
+                <button type="submit" class="adm-btn adm-btn--primary adm-btn--sm">Filtrar</button>
+                <a href="{% url 'dashboard' %}?pagina=estadisticas_globales" class="adm-btn adm-btn--secondary adm-btn--sm">Limpiar</a>
             </form>
         </div>
-    </div>
+    </section>
 
-    <!-- KPI Grid -->
-    <div class="row g-4 mb-4">
-        <!-- Colegios -->
-        <div class="col-md-2-4 col-sm-6">
-            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted text-uppercase fw-semibold small">Escuelas</span>
-                        <span class="fs-4 text-primary"><i class="bi bi-building"></i></span>
-                    </div>
-                    <h3 class="fw-bold mb-0 text-dark">{{ total_escuelas|default:0 }}</h3>
-                    <small class="text-muted">Establecimientos activos</small>
-                </div>
+    <div class="adm-stats-grid">
+        <section class="adm-card adm-stats-panel">
+            <div class="adm-card__head">
+                <h2 class="adm-card__title">Comunidad escolar</h2>
+                {% if total_usuarios %}<span class="adm-stats-panel__meta">{{ total_usuarios }} usuarios · % del filtro activo</span>{% endif %}
             </div>
-        </div>
-
-        <!-- Usuarios -->
-        <div class="col-md-2-4 col-sm-6">
-            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted text-uppercase fw-semibold small">Usuarios Totales</span>
-                        <span class="fs-4 text-success"><i class="bi bi-people"></i></span>
-                    </div>
-                    <h3 class="fw-bold mb-0 text-dark">{{ total_usuarios|default:0 }}</h3>
-                    <small class="text-muted">Cuentas filtradas</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Profesores -->
-        <div class="col-md-2-4 col-sm-6">
-            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted text-uppercase fw-semibold small">Profesores</span>
-                        <span class="fs-4 text-info"><i class="bi bi-person-workspace"></i></span>
-                    </div>
-                    <h3 class="fw-bold mb-0 text-dark">{{ total_profesores|default:0 }}</h3>
-                    <small class="text-muted">Docentes activos</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Estudiantes -->
-        <div class="col-md-2-4 col-sm-6">
-            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted text-uppercase fw-semibold small">Estudiantes</span>
-                        <span class="fs-4 text-warning"><i class="bi bi-mortarboard"></i></span>
-                    </div>
-                    <h3 class="fw-bold mb-0 text-dark">{{ total_estudiantes|default:0 }}</h3>
-                    <small class="text-muted">Alumnos matriculados</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Apoderados -->
-        <div class="col-md-2-4 col-sm-6">
-            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted text-uppercase fw-semibold small">Apoderados</span>
-                        <span class="fs-4 text-danger" style="color: #ea580c !important;"><i class="bi bi-person-heart"></i></span>
-                    </div>
-                    <h3 class="fw-bold mb-0 text-dark">{{ total_apoderados|default:0 }}</h3>
-                    <small class="text-muted">Tutores registrados</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content Details Row -->
-    <div class="row g-4">
-        <!-- Roles chart and table -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-gray-800">
-                        <i class="bi bi-pie-chart text-primary me-2"></i> Distribución de Usuarios por Rol
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="mt-2">
-                        {% if usuarios_por_rol %}
-                            {% for item in usuarios_por_rol %}
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="fw-semibold text-dark">{{ item.role__nombre|default:"Sin Rol" }}</span>
-                                    <span class="text-muted small fw-bold">{{ item.count }} usuarios</span>
-                                </div>
-                                <div class="progress rounded-pill" style="height: 12px; background-color: #f3f4f6;">
-                                    <div class="progress-bar rounded-pill" 
-                                         role="progressbar" 
-                                         style="width: 0%;" 
-                                         data-count="{{ item.count }}" 
-                                         data-total="{{ total_usuarios }}"></div>
-                                </div>
+            <div class="adm-card__body">
+                {% if roles_comunidad or roles_otros %}
+                    {% if roles_comunidad %}
+                    <ul class="adm-stats-roles">
+                        {% for item in roles_comunidad %}
+                        <li class="adm-stats-role">
+                            <div class="adm-stats-role__head">
+                                <span class="adm-stats-role__name">{{ item.role__nombre|default:"Sin rol" }}</span>
+                                <span class="adm-stats-role__count">{{ item.count }} usuarios · {{ item.pct_css }}%</span>
                             </div>
+                            <div class="adm-stats-role__track" role="presentation" aria-hidden="true">
+                                <span class="adm-stats-role__bar adm-stats-role__bar--{% cycle 'violet' 'green' 'amber' %}" style="width: {{ item.pct_css }}%;"></span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    {% if roles_otros %}
+                    <details class="adm-stats-roles-other">
+                        <summary>Otros roles administrativos ({{ roles_otros|length }})</summary>
+                        <ul class="adm-stats-roles adm-stats-roles--compact">
+                            {% for item in roles_otros %}
+                            <li class="adm-stats-role adm-stats-role--compact">
+                                <span class="adm-stats-role__name">{{ item.role__nombre|default:"Sin rol" }}</span>
+                                <span class="adm-stats-role__count">{{ item.count }} · {{ item.pct_css }}%</span>
+                            </li>
                             {% endfor %}
-                        {% else %}
-                            <div class="text-center py-5 text-muted">
-                                <i class="bi bi-info-circle fs-1 mb-2 d-block"></i>
-                                Sin datos de distribución de roles
-                            </div>
-                        {% endif %}
+                        </ul>
+                    </details>
+                    {% endif %}
+                {% elif stats_insights.colegio_sin_datos %}
+                    <div class="adm-stats-empty">
+                        <span class="adm-stats-empty__icon" aria-hidden="true">📭</span>
+                        <h3>Sin usuarios en este colegio</h3>
+                        <p>El establecimiento existe en la plataforma pero aún no tiene estudiantes, profesores ni apoderados asignados.</p>
+                        <div class="adm-stats-empty__actions">
+                            {% if colegio_filtrado %}
+                            <a href="{% url 'entrar_escuela' colegio_filtrado.rbd %}?next=importar_datos" class="adm-btn adm-btn--primary adm-btn--sm">Importar datos</a>
+                            {% else %}
+                            <a href="{% url 'importar_datos' %}" class="adm-btn adm-btn--primary adm-btn--sm">Importar datos</a>
+                            {% endif %}
+                            <a href="{% url 'dashboard' %}?pagina=estadisticas_globales" class="adm-btn adm-btn--secondary adm-btn--sm">Ver todos los colegios</a>
+                        </div>
                     </div>
-                </div>
+                {% else %}
+                    <div class="adm-stats-empty adm-stats-empty--compact">
+                        <p>Sin datos de roles para los filtros seleccionados.</p>
+                    </div>
+                {% endif %}
             </div>
-        </div>
+        </section>
 
-        <!-- Schools list -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-gray-800">
-                        <i class="bi bi-building-down text-primary me-2"></i> Colegios con Mayor Cantidad de Usuarios
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">Colegio</th>
-                                    <th>RBD</th>
-                                    <th class="text-end pe-4">Total Usuarios</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if usuarios_por_colegio %}
-                                    {% for item in usuarios_por_colegio %}
-                                    <tr>
-                                        <td class="ps-4 fw-bold text-dark">{{ item.colegio_nombre }}</td>
-                                        <td><span class="badge bg-secondary">{{ item.rbd_colegio }}</span></td>
-                                        <td class="text-end pe-4 fw-bold text-primary">{{ item.count }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="3" class="text-center py-4 text-muted">
-                                            <i class="bi bi-info-circle me-1"></i> No hay datos de distribución por colegio
-                                        </td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <section class="adm-card adm-stats-panel">
+            <div class="adm-card__head">
+                <h2 class="adm-card__title">
+                    {% if colegio_filtrado %}Desglose · {{ colegio_filtrado.nombre }}{% else %}Adopción por colegio{% endif %}
+                </h2>
             </div>
-        </div>
+            <div class="adm-card__body{% if not colegio_filtrado %} adm-card__body--flush{% endif %}">
+                {% if colegio_filtrado and not stats_insights.colegio_sin_datos %}
+                <div class="adm-stats-quick">
+                    <article class="adm-stats-quick__item">
+                        <span class="adm-stats-quick__val">{{ total_estudiantes }}</span>
+                        <span class="adm-stats-quick__lbl">Estudiantes</span>
+                    </article>
+                    <article class="adm-stats-quick__item">
+                        <span class="adm-stats-quick__val">{{ total_apoderados }}</span>
+                        <span class="adm-stats-quick__lbl">Apoderados</span>
+                    </article>
+                    <article class="adm-stats-quick__item">
+                        <span class="adm-stats-quick__val">{{ total_profesores }}</span>
+                        <span class="adm-stats-quick__lbl">Profesores</span>
+                    </article>
+                    <article class="adm-stats-quick__item">
+                        <span class="adm-stats-quick__val">{% if stats_insights.pct_del_total is not None %}{{ stats_insights.pct_del_total }}%{% else %}—{% endif %}</span>
+                        <span class="adm-stats-quick__lbl">Del total plataforma</span>
+                    </article>
+                </div>
+                <p class="adm-stats-panel__hint">RBD {{ colegio_filtrado.rbd }} · {{ total_usuarios }} cuentas en este establecimiento frente a {{ stats_insights.global_total_usuarios }} en toda la plataforma.</p>
+                {% elif colegio_filtrado and stats_insights.colegio_sin_datos %}
+                <div class="adm-stats-empty adm-stats-empty--compact">
+                    <p>Este colegio está registrado pero aún no tiene usuarios. Usa el panel superior para importar datos.</p>
+                </div>
+                {% else %}
+                <div class="adm-table-wrap">
+                    <table class="adm-table adm-stats-table">
+                        <thead>
+                            <tr>
+                                <th class="px-4">Colegio</th>
+                                <th>RBD</th>
+                                <th class="text-end">Usuarios</th>
+                                <th class="text-end pe-4">% plataforma</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in colegios_resumen %}
+                            <tr{% if item.sin_usuarios %} class="adm-stats-row--muted"{% endif %}>
+                                <td class="px-4 fw-semibold">{{ item.nombre }}</td>
+                                <td><code class="adm-stats-code">{{ item.rbd }}</code></td>
+                                <td class="text-end fw-bold">{{ item.total_usuarios }}</td>
+                                <td class="text-end pe-4">
+                                    {% if item.total_usuarios %}
+                                    <span class="adm-stats-pct">{{ item.pct_plataforma }}%</span>
+                                    {% else %}
+                                    <span class="adm-badge adm-badge--warning">Vacío</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </section>
     </div>
+
 </div>
 
-<style>
-    /* Custom 5-column layout for Bootstrap 5 */
-    @media (min-width: 768px) {
-        .col-md-2-4 {
-            flex: 0 0 20%;
-            max-width: 20%;
-        }
-    }
-
-    /* Print Styles */
-    @media print {
-        body {
-            background-color: #fff !important;
-            color: #000 !important;
-        }
-        .print-hide {
-            display: none !important;
-        }
-        .print-show {
-            display: block !important;
-        }
-        .card {
-            border: 0 !important;
-            box-shadow: none !important;
-        }
-        .progress {
-            border: 1px solid #ccc !important;
-            background-color: #fff !important;
-        }
-        .progress-bar {
-            background-color: #333 !important;
-        }
-    }
-</style>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Calculate progress bar widths dynamically based on user count
-        document.querySelectorAll('.progress-bar').forEach(function(bar) {
-            const count = parseFloat(bar.dataset.count) || 0;
-            const total = parseFloat(bar.dataset.total) || 1;
-            const pct = total > 0 ? (count / total) * 100 : 0;
-            bar.style.width = pct.toFixed(1) + '%';
-            
-            // Assign different colors based on progress index/level
-            const colors = ['#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#06b6d4'];
-            const idx = Array.from(bar.parentNode.parentNode.parentNode.children).indexOf(bar.parentNode.parentNode);
-            bar.style.backgroundColor = colors[idx % colors.length];
-        });
-    });
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('stats-filters-form');
+    const colegioSelect = document.getElementById('colegio_rbd');
+    if (form && colegioSelect) {
+        colegioSelect.addEventListener('change', function () { form.submit(); });
+    }
+});
 </script>
+
+{% include 'admin/_admin_wrap_end.html' %}

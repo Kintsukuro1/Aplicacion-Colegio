@@ -1,832 +1,445 @@
 {% load static %}
 
-<style>
-    /* Premium SaaS Admin Dashboard Styles */
-    .saas-dashboard {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        color: #1e293b;
-        animation: fadeIn 0.4s ease-out;
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-    }
+{% include 'admin/_admin_wrap_start.html' %}
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(12px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
 
-    /* Welcome Hero Banner */
-    .saas-welcome-bar {
-        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-        border: 1px solid #7dd3fc;
-        border-radius: 20px;
-        padding: 24px 30px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        box-shadow: 0 8px 30px rgba(14, 165, 233, 0.05);
-    }
 
-    .saas-welcome-text h1 {
-        margin: 0;
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: #0369a1;
-        letter-spacing: -0.03em;
-    }
+<div class="adm-portal">
 
-    .saas-welcome-text p {
-        margin: 4px 0 0;
-        font-size: 0.95rem;
-        color: #0284c7;
-        font-weight: 600;
-    }
+    {% include 'admin/_admin_hero.html' with hero_greeting=1 hero_kpi=1 hero_eyebrow="Consola global SaaS" hero_subtitle="Gestión multi-colegio, suscripciones y ecosistema Raccademy" hero_aria="Inicio administrador general" metrics_aria="Indicadores del ecosistema" m1_icon="🏫" m1_value=colegios_activos|default:"0" m1_label="Colegios activos" m1_mod="clases" m2_icon="👥" m2_value=total_usuarios|default:"0" m2_label="Usuarios totales" m2_mod="tareas" m3_icon="💰" m3_value=ingresos_totales|default_if_none:mrr m3_label="MRR ($)" m3_mod="money" m4_icon="✅" m4_value=suscripciones_activas|default:total_active_subs|default:"—" m4_label="Suscripciones activas" m4_mod="asistencia" %}
 
-    .saas-date-badge {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(8px);
-        padding: 8px 16px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: #0284c7;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
-    }
 
-    /* Executive Scorecards (Grid of 4) */
-    .saas-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-    }
 
-    @media (max-width: 1024px) {
-        .saas-stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
+    <section class="adm-card card-panel" aria-label="Accesos rápidos">
 
-    @media (max-width: 640px) {
-        .saas-stats-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+        <div class="adm-card__head">
 
-    .saas-stat-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 18px;
-        padding: 22px 24px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
+            <h2 class="adm-card__title section-title">⚡ Accesos rápidos de gestión</h2>
 
-    .saas-stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
-    }
-
-    .saas-stat-icon {
-        font-size: 1.8rem;
-        width: 50px;
-        height: 50px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .stat-colegios .saas-stat-icon { background: #f0f9ff; color: #0284c7; }
-    .stat-usuarios .saas-stat-icon { background: #ecfdf5; color: #10b981; }
-    .stat-profesores .saas-stat-icon { background: #f5f3ff; color: #8b5cf6; }
-    .stat-estudiantes .saas-stat-icon { background: #eff6ff; color: #3b82f6; }
-
-    .saas-stat-info {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .saas-stat-val {
-        font-size: 1.8rem;
-        font-weight: 850;
-        line-height: 1.1;
-        color: #0f172a;
-    }
-
-    .saas-stat-lbl {
-        font-size: 0.82rem;
-        color: #64748b;
-        font-weight: 600;
-        margin-top: 4px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    /* Layout Grid */
-    .saas-grid {
-        display: grid;
-        grid-template-columns: 1.15fr 0.85fr;
-        gap: 24px;
-    }
-
-    @media (max-width: 1024px) {
-        .saas-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Cards Base */
-    .saas-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 20px;
-        padding: 24px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .saas-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
-    }
-
-    .saas-card-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin-top: 0;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .title-text {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    /* Platform Health Checks */
-    .health-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-bottom: 8px;
-    }
-
-    @media (max-width: 640px) {
-        .health-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    .health-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 18px 16px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .health-badge {
-        font-size: 0.8rem;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .health-badge.online {
-        background: #ecfdf5;
-        color: #047857;
-        border: 1px solid #a7f3d0;
-    }
-
-    .health-badge.correct {
-        background: #eff6ff;
-        color: #1d4ed8;
-        border: 1px solid #bfdbfe;
-    }
-
-    .health-icon {
-        font-size: 1.5rem;
-    }
-
-    .health-label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #475569;
-    }
-
-    /* Pulse animation for active checks */
-    .pulse-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #10b981;
-        border-radius: 50%;
-        display: inline-block;
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-        animation: pulse 1.6s infinite;
-    }
-
-    .pulse-dot.blue {
-        background-color: #3b82f6;
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
-        animation: pulse-blue 1.6s infinite;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-
-    @keyframes pulse-blue {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-    }
-
-    /* SaaS Metrics (Grid of 3) */
-    .saas-metrics-row {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-        margin-top: 8px;
-    }
-
-    @media (max-width: 768px) {
-        .saas-metrics-row {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .saas-metric-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 18px;
-        padding: 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
-        border-top: 4px solid #0284c7;
-    }
-
-    .metric-prueba { border-top-color: #f59e0b; }
-    .metric-vencer { border-top-color: #ef4444; }
-    .metric-uso { border-top-color: #10b981; }
-    .metric-actividad { border-top-color: #8b5cf6; }
-
-    .saas-metric-val {
-        font-size: 2rem;
-        font-weight: 850;
-        color: #0f172a;
-    }
-
-    .saas-metric-lbl {
-        font-size: 0.85rem;
-        color: #475569;
-        font-weight: 700;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .saas-progress-bg {
-        height: 6px;
-        background: #f1f5f9;
-        border-radius: 999px;
-        overflow: hidden;
-        margin-top: 10px;
-    }
-
-    .saas-progress-fill {
-        height: 100%;
-        border-radius: 999px;
-    }
-
-    /* Tables */
-    .saas-table-wrapper {
-        overflow-x: auto;
-    }
-
-    .saas-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-    }
-
-    .saas-table th {
-        background: #f8fafc;
-        padding: 14px 16px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #475569;
-        letter-spacing: 0.05em;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .saas-table td {
-        padding: 16px;
-        font-size: 0.88rem;
-        color: #334155;
-        border-bottom: 1px solid #f1f5f9;
-        font-weight: 500;
-    }
-
-    .saas-table tbody tr:hover td {
-        background: #f8fafc;
-    }
-
-    /* Badges */
-    .plan-badge {
-        font-weight: 750;
-        font-size: 0.75rem;
-        padding: 4px 10px;
-        border-radius: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-    }
-
-    .plan-badge.enterprise { background: #f0f5ff; color: #1d4ed8; border: 1px solid #dbeafe; }
-    .plan-badge.premium { background: #faf5ff; color: #6d28d9; border: 1px solid #f3e8ff; }
-    .plan-badge.standard { background: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
-    .plan-badge.trial { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; }
-
-    .status-badge {
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 6px;
-    }
-
-    .status-badge.active { background: #e6fffa; color: #0d9488; }
-    .status-badge.warning { background: #fffbeb; color: #d97706; }
-    .status-badge.trial { background: #f0fdfa; color: #0f766e; }
-
-    /* Alerts */
-    .alert-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .alert-card {
-        border-radius: 12px;
-        padding: 14px 18px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    .alert-card.warning {
-        background: #fffbeb;
-        border: 1px solid #fcd34d;
-        color: #92400e;
-    }
-
-    .alert-card.info {
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        color: #1d4ed8;
-    }
-
-    .alert-icon {
-        font-size: 1.2rem;
-        flex-shrink: 0;
-    }
-
-    /* Charts Column */
-    .saas-chart-container {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        min-height: 250px;
-    }
-
-    .chart-legend {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        width: 100%;
-        margin-top: 16px;
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        color: #475569;
-    }
-
-    .legend-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 4px;
-        flex-shrink: 0;
-    }
-
-    /* Quick Actions Styles */
-    .saas-quick-actions {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-top: 8px;
-    }
-    
-    @media (max-width: 1024px) {
-        .saas-quick-actions {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-    
-    @media (max-width: 640px) {
-        .saas-quick-actions {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    .quick-action-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 16px 20px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: #334155;
-        text-decoration: none !important;
-        font-weight: 700;
-        font-size: 0.92rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
-        transition: all 0.2s ease;
-    }
-    
-    .quick-action-card:hover {
-        transform: translateY(-2px);
-        background-color: #f8fafc;
-        border-color: #cbd5e1;
-        color: #2563eb !important;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
-    }
-    
-    .quick-action-icon {
-        font-size: 1.3rem;
-        width: 36px;
-        height: 36px;
-        background-color: #eff6ff;
-        color: #2563eb;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-</style>
-
-<div class="saas-dashboard">
-
-    <!-- Welcome Hero Banner -->
-    <section class="saas-welcome-bar" aria-label="Bienvenida">
-        <div class="saas-welcome-text">
-            <h1>¡Bienvenido, Administrador General! 🏢</h1>
-            <p>Consola Global de Suscripciones SaaS y Ecosistema Multi-Colegio</p>
         </div>
-        <div class="saas-date-badge" aria-hidden="true">
-            📅 {% now "l d \d\e F \d\e Y" %}
+
+        <div class="adm-card__body">
+
+            <div class="adm-quick-grid">
+
+                <a href="{% url 'dashboard' %}?pagina=escuelas" class="adm-quick card-panel--clickable"><span class="adm-quick__icon">🏫</span><span>Gestionar escuelas</span></a>
+
+                <a href="{% url 'dashboard' %}?pagina=usuarios" class="adm-quick card-panel--clickable"><span class="adm-quick__icon">👥</span><span>Gestionar usuarios</span></a>
+
+                <a href="{% url 'dashboard' %}?pagina=planes" class="adm-quick card-panel--clickable"><span class="adm-quick__icon">💼</span><span>Planes de pago</span></a>
+
+                <a href="{% url 'dashboard' %}?pagina=auditoria" class="adm-quick card-panel--clickable"><span class="adm-quick__icon">📋</span><span>Auditoría (logs)</span></a>
+
+                <a href="{% url 'dashboard' %}?pagina=estadisticas_globales" class="adm-quick card-panel--clickable"><span class="adm-quick__icon">📊</span><span>Estadísticas de uso</span></a>
+
+                <a href="{% url 'dashboard' %}?pagina=reportes_financieros" class="adm-quick card-panel--clickable"><span class="adm-quick__icon">💰</span><span>Reporte financiero</span></a>
+
+                <a href="{% url 'monitoreo_seguridad' %}" class="adm-quick card-panel--clickable"><span class="adm-quick__icon">🔐</span><span>Monitoreo seguridad</span></a>
+
+                <a href="{% url 'dashboard' %}?pagina=configuracion" class="adm-quick card-panel--clickable"><span class="adm-quick__icon">⚙️</span><span>Configuración global</span></a>
+
+            </div>
+
         </div>
-    </section>
-
-    <!-- Scorecards KPI Grid -->
-    <section class="saas-stats-grid" aria-label="Scorecards de Ecosistema">
-        
-        <!-- Colegios Activos -->
-        <a href="?pagina=escuelas" class="text-decoration-none color-inherit" style="color: inherit;">
-            <article class="saas-stat-card stat-colegios" style="cursor: pointer;">
-                <div class="saas-stat-icon" aria-hidden="true">🏫</div>
-                <div class="saas-stat-info">
-                    <span class="saas-stat-val">{{ colegios_activos|default:"24" }}</span>
-                    <span class="saas-stat-lbl">Colegios Activos</span>
-                </div>
-            </article>
-        </a>
-
-        <!-- Usuarios del Sistema -->
-        <a href="?pagina=usuarios" class="text-decoration-none color-inherit" style="color: inherit;">
-            <article class="saas-stat-card stat-usuarios" style="cursor: pointer;">
-                <div class="saas-stat-icon" aria-hidden="true">👥</div>
-                <div class="saas-stat-info">
-                    <span class="saas-stat-val">{{ total_usuarios|default:"18.000" }}</span>
-                    <span class="saas-stat-lbl">Usuarios</span>
-                </div>
-            </article>
-        </a>
-
-        <!-- Profesores -->
-        <a href="?pagina=usuarios" class="text-decoration-none color-inherit" style="color: inherit;">
-            <article class="saas-stat-card stat-profesores" style="cursor: pointer;">
-                <div class="saas-stat-icon" aria-hidden="true">👨‍🏫</div>
-                <div class="saas-stat-info">
-                    <span class="saas-stat-val">{{ total_profesores|default:"1.100" }}</span>
-                    <span class="saas-stat-lbl">Profesores</span>
-                </div>
-            </article>
-        </a>
-
-        <!-- Estudiantes -->
-        <a href="?pagina=usuarios" class="text-decoration-none color-inherit" style="color: inherit;">
-            <article class="saas-stat-card stat-estudiantes" style="cursor: pointer;">
-                <div class="saas-stat-icon" aria-hidden="true">🎓</div>
-                <div class="saas-stat-info">
-                    <span class="saas-stat-val">{{ total_estudiantes|default:"15.000" }}</span>
-                    <span class="saas-stat-lbl">Estudiantes</span>
-                </div>
-            </article>
-        </a>
 
     </section>
 
-    <!-- Accesos Rápidos -->
-    <section class="saas-card" aria-label="Accesos Rápidos">
-        <h2 class="saas-card-title">
-            <span class="title-text">⚡ Accesos Rápidos de Gestión</span>
-        </h2>
-        <div class="saas-quick-actions">
-            <a href="?pagina=escuelas" class="quick-action-card">
-                <span class="quick-action-icon"><i class="bi bi-building"></i></span>
-                <span>Gestionar Escuelas</span>
-            </a>
-            <a href="?pagina=usuarios" class="quick-action-card">
-                <span class="quick-action-icon"><i class="bi bi-people"></i></span>
-                <span>Gestionar Usuarios</span>
-            </a>
-            <a href="?pagina=planes" class="quick-action-card">
-                <span class="quick-action-icon"><i class="bi bi-credit-card"></i></span>
-                <span>Planes de Pago</span>
-            </a>
-            <a href="?pagina=auditoria" class="quick-action-card">
-                <span class="quick-action-icon"><i class="bi bi-shield-lock"></i></span>
-                <span>Auditoría (Logs)</span>
-            </a>
-            <a href="?pagina=estadisticas_globales" class="quick-action-card">
-                <span class="quick-action-icon"><i class="bi bi-bar-chart-line"></i></span>
-                <span>Estadísticas de Uso</span>
-            </a>
-            <a href="?pagina=reportes_financieros" class="quick-action-card">
-                <span class="quick-action-icon"><i class="bi bi-currency-dollar"></i></span>
-                <span>Reporte Financiero</span>
-            </a>
-            <a href="?pagina=monitoreo_seguridad" class="quick-action-card">
-                <span class="quick-action-icon"><i class="bi bi-shield-exclamation"></i></span>
-                <span>Monitoreo Seguridad</span>
-            </a>
-            <a href="?pagina=configuracion" class="quick-action-card">
-                <span class="quick-action-icon"><i class="bi bi-gear"></i></span>
-                <span>Configuración Global</span>
-            </a>
-        </div>
-    </section>
 
-    <!-- Estado de la Plataforma -->
-    <section class="saas-card" aria-label="Estado de la Plataforma">
-        <h2 class="saas-card-title">
-            <span class="title-text">🌐 Estado Operativo de la Plataforma</span>
-            <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Monitoreo en Tiempo Real</span>
-        </h2>
-        
-        <div class="health-grid">
-            <!-- API Status -->
-            <div class="health-card">
-                <div class="health-icon">🔌</div>
-                <div class="health-label">API Gateway</div>
-                <span class="health-badge online">
-                    <span class="pulse-dot"></span> {{ status_api|default:"Online" }}
-                </span>
-            </div>
 
-            <!-- Database Status -->
-            <div class="health-card">
-                <div class="health-icon">🗄️</div>
-                <div class="health-label">Base de Datos</div>
-                <span class="health-badge online">
-                    <span class="pulse-dot"></span> {{ status_db|default:"Online" }}
-                </span>
-            </div>
+    <section class="adm-card card-panel" aria-label="Actividad reciente">
 
-            <!-- Email Server Status -->
-            <div class="health-card">
-                <div class="health-icon">📧</div>
-                <div class="health-label">Servidor Correos</div>
-                <span class="health-badge online">
-                    <span class="pulse-dot"></span> {{ status_email|default:"Online" }}
-                </span>
-            </div>
+        <div class="adm-card__head">
 
-            <!-- Backups Status -->
-            <div class="health-card">
-                <div class="health-icon">🛡️</div>
-                <div class="health-label">Copias de Respaldo</div>
-                <span class="health-badge correct">
-                    <span class="pulse-dot blue"></span> {{ status_backups|default:"Correctos" }}
-                </span>
-            </div>
-        </div>
-    </section>
+            <h2 class="adm-card__title section-title">🕐 Actividad reciente</h2>
 
-    <!-- Métricas SaaS -->
-    <section class="saas-metrics-row" aria-label="Métricas del Negocio SaaS" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-        
-        <!-- Colegios en Prueba -->
-        <article class="saas-metric-card metric-prueba">
-            <div class="saas-metric-lbl">🧪 Colegios en Prueba</div>
-            <div class="saas-metric-val">{{ colegios_prueba|default:"0" }}</div>
-            <div class="saas-progress-bg" aria-hidden="true">
-                <div class="saas-progress-fill" style="width: {{ pct_colegios_prueba|default:'0' }}%; background-color: #f59e0b;"></div>
-            </div>
-        </article>
+            <a href="{% url 'dashboard' %}?pagina=auditoria" class="btn-table-action">Ver todo</a>
 
-        <!-- Licencias por vencer -->
-        <article class="saas-metric-card metric-vencer">
-            <div class="saas-metric-lbl">⚠️ Licencias por Vencer</div>
-            <div class="saas-metric-val">{{ licencias_vencer|default:"0" }}</div>
-            <div class="saas-progress-bg" aria-hidden="true">
-                <div class="saas-progress-fill" style="width: {{ pct_licencias_vencer|default:'0' }}%; background-color: #ef4444;"></div>
-            </div>
-        </article>
-
-        <!-- Almacenamiento Global -->
-        <article class="saas-metric-card metric-uso">
-            <div class="saas-metric-lbl">💾 Almacenamiento Global</div>
-            <div class="saas-metric-val" style="font-size: 1.6rem;">{{ uso_almacenamiento_formatted }}</div>
-            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; margin-top: 4px;">Límite del Plan: 500 GB</div>
-            <div class="saas-progress-bg" aria-hidden="true">
-                <div class="saas-progress-fill" style="width: {{ pct_almacenamiento }}%; background-color: #10b981;"></div>
-            </div>
-        </article>
-
-        <!-- Actividad Diaria Hoy -->
-        <article class="saas-metric-card metric-actividad">
-            <div class="saas-metric-lbl">⚡ Actividad Diaria Hoy</div>
-            <div class="saas-metric-val">{{ actividad_diaria }}</div>
-            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; margin-top: 4px;">Acciones de red hoy</div>
-            <div class="saas-progress-bg" aria-hidden="true">
-                <div class="saas-progress-fill" style="width: 100%; background-color: #8b5cf6;"></div>
-            </div>
-        </article>
-
-    </section>
-
-    <!-- Grillas y Gráficos -->
-    <div class="saas-grid">
-        
-        <!-- Left Side: Listado de Colegios Tenants -->
-        <div class="saas-left-col">
-            <section class="saas-card" aria-label="Lista de Clientes Multi-Colegio">
-                <h2 class="saas-card-title">
-                    <span class="title-text">🏫 Registro General de Colegios</span>
-                </h2>
-                
-                <div class="saas-table-wrapper">
-                    <table class="saas-table">
-                        <thead>
-                            <tr>
-                                <th>Colegio</th>
-                                <th>RBD</th>
-                                <th>Plan</th>
-                                <th>Usuarios</th>
-                                <th>Estado</th>
-                                <th>Próx. Renovación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for col in colegios_lista %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ col.nombre }}</strong>
-                                    </td>
-                                    <td>
-                                        <code style="font-weight: 700; color: #0284c7;">{{ col.rbd }}</code>
-                                    </td>
-                                    <td>
-                                        <span class="plan-badge {% if col.plan == 'Enterprise' %}enterprise{% elif col.plan == 'Premium' %}premium{% elif col.plan == 'Standard' %}standard{% else %}trial{% endif %}">
-                                            {{ col.plan }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <strong style="color: #475569;">{{ col.usuarios }}</strong>
-                                    </td>
-                                    <td>
-                                        <span class="status-badge {% if col.estado == 'Activa' %}active{% elif col.estado == 'Próxima a vencer' %}warning{% else %}trial{% endif %}">
-                                            {{ col.estado }}
-                                        </span>
-                                    </td>
-                                    <td style="color: #64748b; font-weight: 600;">
-                                        {{ col.vence }}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
         </div>
 
-        <!-- Right Side: Distribución de Suscripciones & Alertas -->
-        <div class="saas-right-col" style="display: flex; flex-direction: column; gap: 24px;">
-            
-            <!-- Plan Distribution Graph -->
-            <section class="saas-card" aria-label="Distribución de Suscripciones">
-                <h2 class="saas-card-title">
-                    <span class="title-text">📊 Distribución de Suscripciones</span>
-                </h2>
-                
-                <div class="saas-chart-container">
-                    <!-- SVG Chart that acts as a sleek premium Donut chart representing SaaS plans -->
-                    <svg viewBox="0 0 100 100" width="160" height="160">
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f1f5f9" stroke-width="12"/>
-                        {% if total_active_subs > 0 %}
-                            {% for pl in distribucion_planes %}
-                                <circle cx="50" cy="50" r="40" fill="transparent" stroke="{{ pl.color }}" stroke-width="12"
-                                        stroke-dasharray="{{ pl.dash_array }}" stroke-dashoffset="{{ pl.dash_offset }}"/>
-                            {% endfor %}
+        <div class="adm-card__body">
+
+            {% if actividad_reciente %}
+
+            <div class="adm-activity-list">
+
+                {% for log in actividad_reciente %}
+
+                <article class="adm-activity-item">
+
+                    <time class="adm-activity-item__time" datetime="{{ log.fecha_hora|date:'c' }}">{{ log.fecha_hora|date:"d/m/Y H:i" }}</time>
+
+                    <div class="adm-activity-item__body">
+
+                        <p class="adm-activity-item__desc">{{ log.descripcion|truncatechars:120 }}</p>
+
+                        <p class="adm-activity-item__user">{{ log.usuario_nombre|default:"Sistema" }}{% if log.usuario_email %} · {{ log.usuario_email }}{% endif %}</p>
+
+                    </div>
+
+                    <div>
+
+                        {% if log.accion == 'CREATE' %}
+
+                        <span class="badge-create">{{ log.get_accion_display|default:"Crear" }}</span>
+
+                        {% elif log.accion == 'UPDATE' %}
+
+                        <span class="badge-update">{{ log.get_accion_display|default:"Modificar" }}</span>
+
+                        {% elif log.accion == 'DELETE' %}
+
+                        <span class="badge-delete">{{ log.get_accion_display|default:"Eliminar" }}</span>
+
+                        {% else %}
+
+                        <span class="badge-standard">{{ log.get_accion_display|default:log.accion }}</span>
+
                         {% endif %}
-                        <text x="50" y="55" font-family="'Inter', sans-serif" font-weight="900" font-size="12" fill="#0f172a" text-anchor="middle">SaaS</text>
+
+                    </div>
+
+                </article>
+
+                {% endfor %}
+
+            </div>
+
+            {% else %}
+
+            <div class="adm-activity-empty">
+
+                <span class="adm-activity-empty__icon" aria-hidden="true">🕐</span>
+
+                <p>No hay actividad reciente</p>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+
+
+    <section class="adm-card card-panel" aria-label="Estado operativo">
+
+        <div class="adm-card__head">
+
+            <h2 class="adm-card__title section-title">🌐 Estado operativo de la plataforma</h2>
+
+            <p class="adm-card__subtitle">Monitoreo en tiempo real</p>
+
+        </div>
+
+        <div class="adm-card__body">
+
+            <div class="adm-health-grid">
+
+                <div class="adm-health">
+
+                    <div aria-hidden="true">🔌</div>
+
+                    <strong>API Gateway</strong>
+
+                    <span class="badge-online">{{ status_api|default:"Online" }}</span>
+
+                </div>
+
+                <div class="adm-health">
+
+                    <div aria-hidden="true">🗄️</div>
+
+                    <strong>Base de datos</strong>
+
+                    <span class="badge-online">{{ status_db|default:"Online" }}</span>
+
+                </div>
+
+                <div class="adm-health">
+
+                    <div aria-hidden="true">📧</div>
+
+                    <strong>Servidor correos</strong>
+
+                    <span class="badge-online">{{ status_email|default:"Online" }}</span>
+
+                </div>
+
+                <div class="adm-health">
+
+                    <div aria-hidden="true">🛡️</div>
+
+                    <strong>Respaldos</strong>
+
+                    <span class="badge-online">{{ status_backups|default:"Correctos" }}</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <section class="adm-metrics-row" aria-label="Métricas SaaS">
+
+        <article class="adm-metric-card adm-metric-card--warn card-panel">
+
+            <div class="adm-metric-card__label">🧪 Colegios en prueba</div>
+
+            <div class="adm-metric-card__value">{{ colegios_prueba|default:"0" }}</div>
+
+            <div class="adm-progress"><div class="adm-progress__fill" style="width: {{ pct_colegios_prueba|default:'0' }}%;"></div></div>
+
+        </article>
+
+        <article class="adm-metric-card adm-metric-card--danger card-panel">
+
+            <div class="adm-metric-card__label">⚠️ Licencias por vencer</div>
+
+            <div class="adm-metric-card__value">{{ licencias_vencer|default:"0" }}</div>
+
+            <div class="adm-progress"><div class="adm-progress__fill" style="width: {{ pct_licencias_vencer|default:'0' }}%; background:#ef4444;"></div></div>
+
+        </article>
+
+        <article class="adm-metric-card adm-metric-card--ok card-panel">
+
+            <div class="adm-metric-card__label">💾 Almacenamiento global</div>
+
+            <div class="adm-metric-card__value" style="font-size:1.35rem;">{{ uso_almacenamiento_formatted }}</div>
+
+            <div class="adm-progress"><div class="adm-progress__fill" style="width: {{ pct_almacenamiento }}%; background:#10b981;"></div></div>
+
+        </article>
+
+        <article class="adm-metric-card card-panel">
+
+            <div class="adm-metric-card__label">⚡ Actividad diaria hoy</div>
+
+            <div class="adm-metric-card__value">{{ actividad_diaria }}</div>
+
+            <div class="adm-progress"><div class="adm-progress__fill" style="width:100%;"></div></div>
+
+        </article>
+
+    </section>
+
+
+
+    <div class="adm-grid-2">
+
+        <section class="adm-card card-panel" aria-label="Registro de colegios">
+
+            <div class="adm-card__head">
+
+                <h2 class="adm-card__title section-title">🏫 Registro general de colegios</h2>
+
+            </div>
+
+            <div class="adm-card__body adm-card__body--flush">
+
+                <div class="adm-table-wrap">
+
+                    <table class="adm-table table-raccademy">
+
+                        <thead>
+
+                            <tr>
+
+                                <th class="px-4">Colegio</th>
+
+                                <th>RBD</th>
+
+                                <th>Plan</th>
+
+                                <th>Usuarios</th>
+
+                                <th>Estado</th>
+
+                                <th class="pe-4">Próx. renovación</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for col in colegios_lista %}
+
+                            <tr>
+
+                                <td class="px-4"><strong>{{ col.nombre }}</strong></td>
+
+                                <td><code>{{ col.rbd }}</code></td>
+
+                                <td>
+
+                                    {% if col.plan == 'Tester' or col.plan == 'Trial' %}
+
+                                    <span class="badge-tester">{{ col.plan }}</span>
+
+                                    {% elif col.plan == 'Premium' or col.plan == 'Enterprise' %}
+
+                                    <span class="badge-premium">{{ col.plan }}</span>
+
+                                    {% else %}
+
+                                    <span class="badge-standard">{{ col.plan }}</span>
+
+                                    {% endif %}
+
+                                </td>
+
+                                <td>{{ col.usuarios }}</td>
+
+                                <td>
+
+                                    {% if col.estado == 'Activa' %}
+
+                                    <span class="badge-activo">{{ col.estado }}</span>
+
+                                    {% elif col.estado == 'Próxima a vencer' %}
+
+                                    <span class="adm-badge adm-badge--warning">{{ col.estado }}</span>
+
+                                    {% else %}
+
+                                    <span class="badge-standard">{{ col.estado }}</span>
+
+                                    {% endif %}
+
+                                </td>
+
+                                <td class="pe-4">{{ col.vence }}</td>
+
+                            </tr>
+
+                            {% empty %}
+
+                            <tr><td colspan="6"><div class="adm-empty">No hay colegios registrados</div></td></tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <div style="display:flex;flex-direction:column;gap:24px;">
+
+            <section class="adm-card card-panel" aria-label="Distribución de suscripciones">
+
+                <div class="adm-card__head">
+
+                    <h2 class="adm-card__title section-title">📊 Distribución de suscripciones</h2>
+
+                </div>
+
+                <div class="adm-card__body" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+
+                    <svg viewBox="0 0 100 100" width="160" height="160" aria-hidden="true">
+
+                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" stroke-width="12"/>
+
+                        {% if total_active_subs > 0 %}
+
+                            {% for pl in distribucion_planes %}
+
+                            <circle cx="50" cy="50" r="40" fill="transparent" stroke="{{ pl.color }}" stroke-width="12"
+
+                                    stroke-dasharray="{{ pl.dash_array }}" stroke-dashoffset="{{ pl.dash_offset }}"/>
+
+                            {% endfor %}
+
+                        {% endif %}
+
+                        <text x="50" y="55" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#374151" text-anchor="middle">SaaS</text>
+
                     </svg>
 
-                    <div class="chart-legend">
-                        {% if total_active_subs > 0 %}
-                            {% for pl in distribucion_planes %}
-                                <div class="legend-item">
-                                    <span class="legend-dot" style="background-color: {{ pl.color }};"></span>
-                                    <span>{{ pl.plan }} ({{ pl.cantidad }})</span>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div style="grid-column: span 2; text-align: center; color: #64748b; font-size: 0.85rem; font-weight: 500;">
-                                No hay suscripciones activas
-                            </div>
-                        {% endif %}
-                    </div>
+                    {% if total_active_subs > 0 %}
+
+                        {% for pl in distribucion_planes %}
+
+                        <span class="badge-standard">{{ pl.plan }} ({{ pl.cantidad }})</span>
+
+                        {% endfor %}
+
+                    {% else %}
+
+                        <p class="adm-empty" style="padding:12px;">No hay suscripciones activas</p>
+
+                    {% endif %}
+
                 </div>
+
             </section>
 
-            <!-- Platform alerts -->
-            <section class="saas-card" aria-label="Alertas y Notificaciones de Red">
-                <h2 class="saas-card-title">
-                    <span class="title-text">🚨 Alertas e Incidentes de Red</span>
-                </h2>
-                
-                <div class="alert-panel">
-                    {% for alert in alertas_plataforma %}
-                        <div class="alert-card {% if alert.tipo == 'warning' %}warning{% else %}info{% endif %}">
-                            <span class="alert-icon" aria-hidden="true">
-                                {% if alert.tipo == 'warning' %}⚠️{% else %}ℹ️{% endif %}
-                            </span>
-                            <span>{{ alert.mensaje }}</span>
-                        </div>
-                    {% endfor %}
 
-                    <!-- Alertas de Baja Asistencia -->
-                    {% for col in colegios_baja_asistencia %}
-                        <div class="alert-card warning">
-                            <span class="alert-icon" aria-hidden="true">🚨</span>
-                            <span>Baja asistencia en <strong>{{ col.nombre }}</strong>: Promedio general de {{ col.asistencia }}%.</span>
-                        </div>
-                    {% endfor %}
-                    
-                    <!-- Alertas de Usuarios Inactivos / Bloqueados -->
-                    {% if usuarios_bloqueados_count > 0 %}
-                        <div class="alert-card warning">
-                            <span class="alert-icon" aria-hidden="true">🚫</span>
-                            <span>Cuentas inhabilitadas: Hay <strong>{{ usuarios_bloqueados_count }}</strong> usuario(s) bloqueado(s) o inactivo(s).</span>
-                        </div>
-                    {% endif %}
+
+            <section class="adm-card card-panel" aria-label="Alertas de red">
+
+                <div class="adm-card__head">
+
+                    <h2 class="adm-card__title section-title">🚨 Alertas e incidentes</h2>
+
                 </div>
+
+                <div class="adm-card__body">
+
+                    <div class="adm-alert-stack">
+
+                        {% for alert in alertas_plataforma %}
+
+                        <div class="adm-alert {% if alert.tipo == 'warning' %}adm-alert--warning{% else %}adm-alert--info{% endif %}">
+
+                            <span aria-hidden="true">{% if alert.tipo == 'warning' %}⚠️{% else %}ℹ️{% endif %}</span>
+
+                            <span>{{ alert.mensaje }}</span>
+
+                        </div>
+
+                        {% endfor %}
+
+                        {% for col in colegios_baja_asistencia %}
+
+                        <div class="adm-alert adm-alert--warning">
+
+                            <span aria-hidden="true">🚨</span>
+
+                            <span>Baja asistencia en <strong>{{ col.nombre }}</strong>: promedio {{ col.asistencia }}%.</span>
+
+                        </div>
+
+                        {% endfor %}
+
+                        {% if usuarios_bloqueados_count > 0 %}
+
+                        <div class="adm-alert adm-alert--warning">
+
+                            <span aria-hidden="true">🚫</span>
+
+                            <span>Hay <strong>{{ usuarios_bloqueados_count }}</strong> usuario(s) bloqueado(s) o inactivo(s).</span>
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
             </section>
 
         </div>
@@ -834,3 +447,8 @@
     </div>
 
 </div>
+
+
+
+{% include 'admin/_admin_wrap_end.html' %}
+

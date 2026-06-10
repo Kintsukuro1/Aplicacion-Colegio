@@ -4,12 +4,12 @@
 {% for grupo in clases_por_curso %}
     {% if grupo.list|length == 1 %}
         {% with clase=grupo.list.0 %}
-        <option value="{{ clase.id }}" data-curso="{{ grupo.grouper }}"{% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %} selected{% endif %}>{{ grupo.grouper }}</option>
+        <option value="{{ clase.id }}" data-curso="{{ grupo.grouper }}" data-curso-id="{{ clase.curso.id_curso }}"{% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %} selected{% endif %}>{{ grupo.grouper }}</option>
         {% endwith %}
     {% else %}
         <optgroup label="{{ grupo.grouper }}">
             {% for clase in grupo.list %}
-            <option value="{{ clase.id }}" data-curso="{{ grupo.grouper }}"{% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %} selected{% endif %}>{{ clase.asignatura.nombre }}</option>
+            <option value="{{ clase.id }}" data-curso="{{ grupo.grouper }}" data-curso-id="{{ clase.curso.id_curso }}"{% if filtro_clase_id|stringformat:"s" == clase.id|stringformat:"s" %} selected{% endif %}>{{ clase.asignatura.nombre }}</option>
             {% endfor %}
         </optgroup>
     {% endif %}

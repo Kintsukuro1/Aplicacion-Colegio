@@ -1,8 +1,16 @@
 {% load static %}
+{% if rol == 'admin_general' or rol == 'Administrador general' %}
+{% include 'admin/_admin_wrap_start.html' %}
+<div class="adm-portal adm-notificaciones-portal">
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Comunicaciones" hero_title="Centro de notificaciones" hero_subtitle="Historial de avisos, alertas y mensajes del ecosistema escolar" hero_aria="Centro de notificaciones" hero_show_date="0" m1_value=notificaciones_total|default:"0" m1_label="Total" m1_mod="clases" m2_value=notificaciones_no_leidas|default:"0" m2_label="Sin leer" m2_mod="riesgo" m3_value=notificaciones_resumen.leidas|default:"0" m3_label="Leídas" m3_mod="tareas" m4_value=notificaciones_resumen.urgentes|default:"0" m4_label="Urgentes" m4_mod="neutral" %}
+    <link rel="stylesheet" href="{% static 'css/notificaciones_page.css' %}?v=20260609-links">
+    {% include 'compartido/_notificaciones_hub.html' with hub_theme='admin' hub_layout='embedded' %}
+</div>
+{% include 'admin/_admin_wrap_end.html' %}
+{% elif rol == 'estudiante' or rol == 'alumno' %}
 <link rel="stylesheet" href="{% static 'css/notificaciones_page.css' %}?v=20260603b">
-
-{% if rol == 'estudiante' or rol == 'alumno' %}
 {% include 'estudiante/notificaciones.html' %}
 {% else %}
+<link rel="stylesheet" href="{% static 'css/notificaciones_page.css' %}?v=20260603b">
 {% include 'compartido/_notificaciones_hub.html' with hub_theme=rol|default:'default' %}
 {% endif %}

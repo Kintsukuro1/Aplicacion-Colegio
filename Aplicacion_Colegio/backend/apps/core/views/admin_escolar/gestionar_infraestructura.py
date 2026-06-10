@@ -19,6 +19,7 @@ from django.urls import reverse
 
 from backend.apps.core.services.dashboard_service import DashboardService
 from backend.apps.core.services.infraestructura_service import InfraestructuraService
+from backend.apps.core.views.admin_escolar._access import can_manage_school_data
 
 
 def _redirect_infraestructura():
@@ -57,7 +58,7 @@ def gestionar_infraestructura(request):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ["admin_general", "admin_escolar"]:
+    if not can_manage_school_data(rol, request.user):
         messages.error(request, "No tienes permiso para gestionar infraestructura")
         return _redirect_infraestructura()
 

@@ -1,0 +1,35 @@
+{% load static %}
+{# Layout unificado funcionarios — identidad Premium Lavanda/Morado (clon Admin General) #}
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260609-sidebar-scroll">
+<link rel="stylesheet" href="{% static 'css/profesor/profesor_hero.css' %}?v=20260609-staff">
+<link rel="stylesheet" href="{% static 'css/admin/admin_portal.css' %}?v=20260609-sidebar-scroll">
+<link rel="stylesheet" href="{% static 'css/staff/staff_portal.css' %}?v=20260609-staff-hero">
+<link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260609-staff">
+<script>document.body.classList.add('vista-personal', 'vista-staff', 'vista-admin-global', 'vista-staff-{{ staff_slug|default:"funcionario" }}');</script>
+<script>
+(function () {
+    var current = (document.title || '').trim();
+    if (current.indexOf('Portal Académico') !== -1) return;
+    document.title = 'Portal Académico - {{ staff_label|default:"Funcionario" }}';
+})();
+</script>
+<div class="personal-dashboard perfil-personal vista-personal adm-global-shell staff-global-shell staff-shell--{{ staff_slug|default:'funcionario' }}">
+<div class="dashboard-personal-layout">
+{% if staff_slug == 'admin_escolar' %}
+    {% include 'staff/sidebars/sidebar_admin_escolar.html' %}
+{% elif staff_slug == 'asesor_financiero' %}
+    {% include 'staff/sidebars/sidebar_asesor_financiero.html' %}
+{% elif staff_slug == 'coordinador_academico' %}
+    {% include 'staff/sidebars/sidebar_coordinador_academico.html' %}
+{% elif staff_slug == 'inspector_convivencia' %}
+    {% include 'staff/sidebars/sidebar_inspector_convivencia.html' %}
+{% elif staff_slug == 'psicologo_orientador' %}
+    {% include 'staff/sidebars/sidebar_psicologo_orientador.html' %}
+{% elif staff_slug == 'soporte_tecnico_escolar' %}
+    {% include 'staff/sidebars/sidebar_soporte_tecnico.html' %}
+{% elif staff_slug == 'bibliotecario_digital' %}
+    {% include 'staff/sidebars/sidebar_bibliotecario_digital.html' %}
+{% endif %}
+<div class="pers-main">
+<div class="pers-main__body pers-page-content adm-page-content staff-page-content">

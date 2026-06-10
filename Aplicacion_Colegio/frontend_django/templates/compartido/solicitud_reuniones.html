@@ -1,8 +1,14 @@
 {% if rol == 'profesor' or rol == 'Profesor' %}
 {% include 'profesor/_personal_wrap_start.html' %}
+{% elif rol == 'admin_general' or rol == 'Administrador general' %}
+{% load static %}
+{% include 'admin/_admin_wrap_start.html' %}
+<div class="adm-portal adm-sr-page">
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Comunidad escolar" hero_title="Solicitud de reuniones" hero_subtitle="Coordina citas entre apoderados y profesores del establecimiento" hero_aria="Solicitud de reuniones" hero_show_date="0" m1_value="—" m1_label="Pendientes" m1_mod="warn" m2_value="—" m2_label="Confirmadas" m2_mod="clases" m3_value="—" m3_label="Esta semana" m3_mod="tareas" m4_value="—" m4_label="Total" m4_mod="neutral" %}
+{% include 'admin_escolar/_reuniones_admin_guia.html' %}
 {% endif %}
-<div class="content-wrapper sr-page">
-    {% if rol == 'profesor' or rol == 'Profesor' %}
+<div class="{% if rol == 'admin_general' or rol == 'Administrador general' %}adm-sr-content{% else %}content-wrapper{% endif %} sr-page">
+    {% if rol == 'profesor' or rol == 'Profesor' or rol == 'admin_general' or rol == 'Administrador general' %}
     {% else %}
     <div class="page-header sr-header">
         <h1>Solicitud de Reuniones</h1>
@@ -13,6 +19,7 @@
     <div id="meet-feedback" class="alert sr-feedback" hidden></div>
 
     <div class="card sr-card sr-card--filters">
+        <h3 class="sr-card-title">Filtros</h3>
         <form id="meet-filters" class="sr-grid sr-grid--filters">
             <label>Estado
                 <select name="estado">
@@ -42,9 +49,9 @@
         </form>
     </div>
 
-    {% if rol == 'profesor' or rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'Admin escolar' %}
+    {% if rol == 'profesor' or rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'Admin escolar' or rol == 'admin_general' or rol == 'Administrador general' %}
     <div class="card sr-card sr-card--create">
-        <h3>Crear reunion</h3>
+        <h3 class="sr-card-title">Crear reunión</h3>
         <form id="meet-create-form" class="sr-grid sr-grid--create">
             <label>Apoderado (correo)
                 <select name="apoderado_email" id="meet-apoderado-select" required>
@@ -100,6 +107,7 @@
     {% endif %}
 
     <div class="card sr-card sr-card--table">
+        <h3 class="sr-card-title">Bandeja de solicitudes</h3>
         <table class="sr-table">
             <thead>
                 <tr>
@@ -123,7 +131,8 @@
 <script>
     (function () {
         const role = '{{ rol|default:""|lower }}';
-        const canCreateMeetings = role === 'profesor' || role === 'admin_escolar' || role === 'administrador escolar' || role === 'admin escolar';
+        const canCreateMeetings = role === 'profesor' || role === 'admin_escolar' || role === 'administrador escolar' || role === 'admin escolar' || role === 'admin_general' || role === 'administrador general';
+        const isAdminGeneralView = role === 'admin_general' || role === 'administrador general';
         const filtersForm = document.getElementById('meet-filters');
         const cleanButton = document.getElementById('meet-clean');
         const createForm = document.getElementById('meet-create-form');
@@ -133,6 +142,31 @@
         const rowsEl = document.getElementById('meet-rows');
         const feedback = document.getElementById('meet-feedback');
         const apoderadosCatalog = new Map();
+
+        function updateAdminMeetingKpis(rows) {
+            if (!isAdminGeneralView) return;
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const weekEnd = new Date(now);
+            weekEnd.setDate(weekEnd.getDate() + 7);
+            let pendientes = 0;
+            let confirmadas = 0;
+            let semana = 0;
+            rows.forEach((row) => {
+                const estado = String(row.estado || '').toLowerCase();
+                if (estado === 'pendiente') pendientes += 1;
+                if (estado === 'confirmada') confirmadas += 1;
+                const fecha = row.fecha_propuesta || row.fecha_confirmada;
+                if (fecha) {
+                    const d = new Date(fecha + 'T12:00:00');
+                    if (d >= now && d <= weekEnd) semana += 1;
+                }
+            });
+            const heroVals = [pendientes, confirmadas, semana, rows.length];
+            document.querySelectorAll('.adm-sr-page .prof-hero-metric__value').forEach((node, idx) => {
+                if (heroVals[idx] !== undefined) node.textContent = String(heroVals[idx]);
+            });
+        }
 
         function notify(message, isError) {
             feedback.hidden = false;
@@ -293,11 +327,13 @@
 
                 const rows = Array.isArray(payload?.reuniones) ? payload.reuniones : [];
                 if (!rows.length) {
+                    updateAdminMeetingKpis([]);
                     rowsEl.innerHTML = '<tr><td colspan="6">Sin reuniones para los filtros seleccionados.</td></tr>';
                     return;
                 }
 
                 rowsEl.innerHTML = '';
+                updateAdminMeetingKpis(rows);
                 rows.forEach((row) => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -425,4 +461,7 @@
 </script>
 {% if rol == 'profesor' or rol == 'Profesor' %}
 {% include 'profesor/_personal_wrap_end.html' %}
+{% elif rol == 'admin_general' or rol == 'Administrador general' %}
+</div>
+{% include 'admin/_admin_wrap_end.html' %}
 {% endif %}

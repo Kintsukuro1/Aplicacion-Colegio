@@ -1,6 +1,8 @@
 {% load static %}
 {% load custom_filters %}
+{% if rol != 'admin_escolar' and rol != 'Administrador escolar' %}
 {% include 'profesor/_personal_wrap_start.html' %}
+{% endif %}
 <link rel="stylesheet" href="{% static 'css/profesor/libro_clases.css' %}?v=20260528-demo">
 
 <div class="lc-page">
@@ -615,7 +617,9 @@ function exportarExcel() {
 }
 </script>
 
-{% if rol == 'admin_escolar' %}
+{% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}
 {% include 'profesor/_filtrar_clases_por_curso_script.html' %}
 {% endif %}
+{% if rol != 'admin_escolar' and rol != 'Administrador escolar' %}
 {% include 'profesor/_personal_wrap_end.html' %}
+{% endif %}

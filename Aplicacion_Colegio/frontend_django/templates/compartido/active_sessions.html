@@ -1,46 +1,111 @@
-<div class="content-wrapper">
+{% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}
+{% include 'admin/_admin_wrap_start.html' %}
+{% endif %}
+
+<div class="{% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}adm-portal{% else %}content-wrapper{% endif %} adm-active-sessions">
+    {% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Consola de seguridad" hero_title="Sesiones activas" hero_subtitle="Monitoreo de sesiones abiertas y revocación remota en la plataforma" hero_aria="Sesiones activas" hero_show_date="0" m1_value="—" m1_label="Sesiones" m1_mod="clases" m2_value="—" m2_label="Usuarios" m2_mod="tareas" m3_value="—" m3_label="Dispositivos" m3_mod="asistencia" m4_value="—" m4_label="Revocadas" m4_mod="neutral" %}
+    {% else %}
     <div class="page-header">
         <h1>Sesiones Activas</h1>
-        <p class="subtitle">Monitoreo de sesiones activas y revocacion remota.</p>
+        <p class="subtitle">Monitoreo de sesiones activas y revocación remota.</p>
     </div>
+    {% endif %}
 
-    <div id="sessions-feedback" class="alert d-none"></div>
+    <div id="sessions-feedback" class="adm-alert adm-alert--warning d-none" hidden></div>
 
-    <div class="card">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th class="text-left">ID</th>
-                    <th class="text-left">Usuario</th>
-                    <th class="text-left">Rol</th>
-                    <th class="text-left">RBD</th>
-                    <th class="text-left">IP</th>
-                    <th class="text-left">Dispositivo</th>
-                    <th class="text-left">Ultima actividad</th>
-                    <th class="text-left">Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="sessions-rows">
-                <tr><td colspan="8">Cargando sesiones...</td></tr>
-            </tbody>
-        </table>
-    </div>
+    <section class="adm-card card-panel{% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}{% else %} card{% endif %}">
+        {% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}
+        <div class="adm-card__head">
+            <h2 class="adm-card__title">🧭 Sesiones en curso</h2>
+        </div>
+        {% endif %}
+        <div class="{% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}adm-card__body adm-card__body--flush{% endif %}">
+            {% if sesiones %}
+            {% elif rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}
+            {% include 'admin/_demo_banner.html' %}
+            {% endif %}
+            <div class="adm-table-wrap">
+                <table class="{% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}adm-table table-raccademy{% else %}table{% endif %}">
+                    <thead>
+                        <tr>
+                            <th class="px-4 text-left">ID</th>
+                            <th class="text-left">Usuario</th>
+                            <th class="text-left">Rol</th>
+                            <th class="text-left">RBD</th>
+                            <th class="text-left">IP</th>
+                            <th class="text-left">Dispositivo</th>
+                            <th class="text-left">Última actividad</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-rows">
+                        {% if sesiones %}
+                            {% for session in sesiones %}
+                            <tr data-session-id="{{ session.id }}">
+                                <td class="px-4">{{ session.id }}</td>
+                                <td>{{ session.user_email|default:"-" }}</td>
+                                <td><span class="adm-badge adm-badge--violet">{{ session.user_rol|default:"-" }}</span></td>
+                                <td><span class="adm-badge adm-badge--mono">{{ session.colegio_rbd|default:"-" }}</span></td>
+                                <td class="font-monospace">{{ session.ip|default:"-" }}</td>
+                                <td>{{ session.dispositivo|default:"-" }}</td>
+                                <td>{{ session.ultima_actividad|default:"-" }}</td>
+                                <td class="text-end pe-4">
+                                    <button type="button" class="adm-btn adm-btn--revoke adm-btn--sm" data-action="revoke" data-demo="0">Revocar sesión</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            {% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}
+                            <tr class="adm-demo-row" data-session-id="1" data-demo="1">
+                                <td class="px-4">1</td>
+                                <td>carlos.perez@colegio.cl</td>
+                                <td><span class="adm-badge adm-badge--violet">Admin General</span></td>
+                                <td><span class="adm-badge adm-badge--mono">10001</span></td>
+                                <td class="font-monospace">192.168.1.45</td>
+                                <td>Chrome / Windows 11</td>
+                                <td>Hace 2 minutos</td>
+                                <td class="text-end pe-4">
+                                    <button type="button" class="adm-btn adm-btn--revoke adm-btn--sm" data-action="revoke" data-demo="1">Revocar sesión</button>
+                                </td>
+                            </tr>
+                            <tr class="adm-demo-row" data-session-id="2" data-demo="1">
+                                <td class="px-4">2</td>
+                                <td>a.edwards@colegio.cl</td>
+                                <td><span class="adm-badge adm-badge--info">Profesor</span></td>
+                                <td><span class="adm-badge adm-badge--mono">10001</span></td>
+                                <td class="font-monospace">186.105.22.14</td>
+                                <td>Safari / iPhone</td>
+                                <td>Hace 15 minutos</td>
+                                <td class="text-end pe-4">
+                                    <button type="button" class="adm-btn adm-btn--revoke adm-btn--sm" data-action="revoke" data-demo="1">Revocar sesión</button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="8" class="text-center py-4">Cargando sesiones...</td></tr>
+                            {% endif %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
 </div>
 
 <script>
 (function () {
     const rowsEl = document.getElementById('sessions-rows');
     const feedback = document.getElementById('sessions-feedback');
+    const isAdminPortal = document.body.classList.contains('vista-admin-global');
+    const hasServerSessions = {% if sesiones %}true{% else %}false{% endif %};
+    const hasDjangoDemo = !hasServerSessions && rowsEl.querySelector('[data-demo="1"]');
 
     function notify(message, isError) {
-        feedback.style.display = 'block';
+        if (!feedback) return;
+        feedback.hidden = false;
+        feedback.classList.remove('d-none', 'adm-alert--warning', 'adm-alert--info');
         feedback.textContent = message;
-        feedback.style.padding = '0.6rem';
-        feedback.style.marginBottom = '0.75rem';
-        feedback.style.borderRadius = '8px';
-        feedback.style.border = isError ? '1px solid #d7acb5' : '1px solid #b8d8bf';
-        feedback.style.background = isError ? '#f7ebee' : '#edf8f0';
-        feedback.style.color = isError ? '#8f1d2c' : '#1e5f2f';
+        feedback.classList.add(isError ? 'adm-alert--warning' : 'adm-alert--info');
     }
 
     function getCookie(name) {
@@ -52,50 +117,87 @@
         return '';
     }
 
-    async function loadSessions() {
-        rowsEl.innerHTML = '<tr><td colspan="8">Cargando sesiones...</td></tr>';
-        try {
-            const response = await fetch('/api/v1/seguridad/sesiones-activas/', {
-                headers: { 'Accept': 'application/json' },
-                credentials: 'same-origin',
-            });
-            const payload = await response.json();
-            if (!response.ok) {
-                notify(payload?.detail || 'No se pudieron cargar sesiones activas.', true);
-                rowsEl.innerHTML = '<tr><td colspan="8">Sin acceso a sesiones activas.</td></tr>';
-                return;
-            }
-
-            const sessions = Array.isArray(payload?.sesiones) ? payload.sesiones : [];
-            if (!sessions.length) {
-                rowsEl.innerHTML = '<tr><td colspan="8">No hay sesiones activas para mostrar.</td></tr>';
-                return;
-            }
-
-            rowsEl.innerHTML = '';
-            sessions.forEach((session) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${session.id}</td>
-                    <td>${session.user_email || '-'}</td>
-                    <td>${session.user_rol || '-'}</td>
-                    <td>${session.colegio_rbd || '-'}</td>
-                    <td>${session.ip || '-'}</td>
-                    <td>${session.dispositivo || '-'}</td>
-                    <td>${session.ultima_actividad || '-'}</td>
-                    <td><button type="button" data-action="revoke">Revocar</button></td>
-                `;
-                tr.querySelector('[data-action="revoke"]').addEventListener('click', () => revokeSession(session));
-                rowsEl.appendChild(tr);
-            });
-        } catch (_) {
-            notify('No se pudieron cargar sesiones activas.', true);
-            rowsEl.innerHTML = '<tr><td colspan="8">No se pudieron cargar sesiones activas.</td></tr>';
+    function renderDemoRows() {
+        const cardBody = rowsEl.closest('.adm-card__body') || rowsEl.closest('.card');
+        if (cardBody && isAdminPortal && !cardBody.querySelector('.adm-demo-banner')) {
+            const banner = document.createElement('div');
+            banner.className = 'adm-demo-banner';
+            banner.setAttribute('role', 'note');
+            banner.innerHTML = '<span class="adm-demo-banner__icon" aria-hidden="true">ℹ</span><span>Modo demostración: vista previa con datos de ejemplo.</span>';
+            const tableWrap = rowsEl.closest('.adm-table-wrap');
+            if (tableWrap) cardBody.insertBefore(banner, tableWrap);
         }
+
+        rowsEl.innerHTML = `
+            <tr class="adm-demo-row" data-session-id="1" data-demo="1">
+                <td class="px-4">1</td>
+                <td>carlos.perez@colegio.cl</td>
+                <td>${isAdminPortal ? '<span class="adm-badge adm-badge--violet">Admin General</span>' : 'Admin General'}</td>
+                <td>${isAdminPortal ? '<span class="adm-badge adm-badge--mono">10001</span>' : '10001'}</td>
+                <td class="font-monospace">192.168.1.45</td>
+                <td>Chrome / Windows 11</td>
+                <td>Hace 2 minutos</td>
+                <td class="text-end pe-4">
+                    <button type="button" class="${isAdminPortal ? 'adm-btn adm-btn--revoke adm-btn--sm' : ''}" data-action="revoke" data-demo="1">Revocar sesión</button>
+                </td>
+            </tr>
+            <tr class="adm-demo-row" data-session-id="2" data-demo="1">
+                <td class="px-4">2</td>
+                <td>a.edwards@colegio.cl</td>
+                <td>${isAdminPortal ? '<span class="adm-badge adm-badge--info">Profesor</span>' : 'Profesor'}</td>
+                <td>${isAdminPortal ? '<span class="adm-badge adm-badge--mono">10001</span>' : '10001'}</td>
+                <td class="font-monospace">186.105.22.14</td>
+                <td>Safari / iPhone</td>
+                <td>Hace 15 minutos</td>
+                <td class="text-end pe-4">
+                    <button type="button" class="${isAdminPortal ? 'adm-btn adm-btn--revoke adm-btn--sm' : ''}" data-action="revoke" data-demo="1">Revocar sesión</button>
+                </td>
+            </tr>
+        `;
+        bindRevokeButtons();
+    }
+
+    function renderSessionRow(session) {
+        const tr = document.createElement('tr');
+        tr.dataset.sessionId = session.id;
+        tr.dataset.demo = '0';
+        const btnClass = isAdminPortal ? 'adm-btn adm-btn--revoke adm-btn--sm' : '';
+        tr.innerHTML = `
+            <td class="px-4">${session.id}</td>
+            <td>${session.user_email || '-'}</td>
+            <td>${isAdminPortal ? `<span class="adm-badge adm-badge--violet">${session.user_rol || '-'}</span>` : (session.user_rol || '-')}</td>
+            <td>${isAdminPortal ? `<span class="adm-badge adm-badge--mono">${session.colegio_rbd || '-'}</span>` : (session.colegio_rbd || '-')}</td>
+            <td class="font-monospace">${session.ip || '-'}</td>
+            <td>${session.dispositivo || '-'}</td>
+            <td>${session.ultima_actividad || '-'}</td>
+            <td class="text-end pe-4">
+                <button type="button" class="${btnClass}" data-action="revoke" data-demo="0">Revocar sesión</button>
+            </td>
+        `;
+        tr.querySelector('[data-action="revoke"]').addEventListener('click', () => revokeSession(session));
+        return tr;
+    }
+
+    function bindRevokeButtons() {
+        rowsEl.querySelectorAll('[data-action="revoke"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const row = btn.closest('tr');
+                const isDemo = btn.dataset.demo === '1';
+                if (isDemo) {
+                    notify('Modo demostración: la revocación se aplicará cuando existan sesiones reales en el sistema.', false);
+                    return;
+                }
+                const session = {
+                    id: row.dataset.sessionId,
+                    user_email: row.children[1]?.textContent?.trim(),
+                };
+                revokeSession(session);
+            });
+        });
     }
 
     async function revokeSession(session) {
-        if (!window.confirm(`Revocar sesion #${session.id} de ${session.user_email || 'usuario'}?`)) {
+        if (!window.confirm(`¿Revocar sesión #${session.id} de ${session.user_email || 'usuario'}?`)) {
             return;
         }
 
@@ -114,13 +216,78 @@
                 notify(payload?.detail || JSON.stringify(payload || {}), true);
                 return;
             }
-            notify('Sesion revocada correctamente.', false);
+            notify('Sesión revocada correctamente.', false);
             loadSessions();
         } catch (_) {
-            notify('No se pudo revocar la sesion.', true);
+            notify('No se pudo revocar la sesión.', true);
         }
     }
 
-    loadSessions();
+    async function loadSessions() {
+        if (hasServerSessions) {
+            bindRevokeButtons();
+            return;
+        }
+
+        if (!hasDjangoDemo) {
+            rowsEl.innerHTML = '<tr><td colspan="8" class="text-center py-4">Cargando sesiones...</td></tr>';
+        }
+
+        try {
+            const response = await fetch('/api/v1/seguridad/sesiones-activas/', {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin',
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                notify(payload?.detail || 'No se pudieron cargar sesiones activas.', true);
+                if (isAdminPortal) {
+                    if (!hasDjangoDemo) renderDemoRows();
+                    else bindRevokeButtons();
+                } else {
+                    rowsEl.innerHTML = '<tr><td colspan="8" class="text-center py-4">Sin acceso a sesiones activas.</td></tr>';
+                }
+                return;
+            }
+
+            const sessions = Array.isArray(payload?.sesiones) ? payload.sesiones : [];
+            if (!sessions.length) {
+                if (isAdminPortal) {
+                    if (!hasDjangoDemo) renderDemoRows();
+                    else bindRevokeButtons();
+                } else {
+                    rowsEl.innerHTML = '<tr><td colspan="8" class="text-center py-4">No hay sesiones activas para mostrar.</td></tr>';
+                }
+                return;
+            }
+
+            rowsEl.innerHTML = '';
+            const cardBody = rowsEl.closest('.adm-card__body');
+            if (cardBody) {
+                const banner = cardBody.querySelector('.adm-demo-banner');
+                if (banner) banner.remove();
+            }
+            sessions.forEach((session) => rowsEl.appendChild(renderSessionRow(session)));
+        } catch (_) {
+            notify('No se pudieron cargar sesiones activas.', true);
+            if (isAdminPortal) {
+                if (!hasDjangoDemo) renderDemoRows();
+                else bindRevokeButtons();
+            } else {
+                rowsEl.innerHTML = '<tr><td colspan="8" class="text-center py-4">No se pudieron cargar sesiones activas.</td></tr>';
+            }
+        }
+    }
+
+    if (hasServerSessions || hasDjangoDemo) {
+        bindRevokeButtons();
+    }
+    if (!hasServerSessions) {
+        loadSessions();
+    }
 })();
 </script>
+
+{% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}
+{% include 'admin/_admin_wrap_end.html' %}
+{% endif %}

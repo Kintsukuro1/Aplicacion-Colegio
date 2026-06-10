@@ -1,0 +1,84 @@
+<aside class="import-manual-aside" aria-label="Guía de ayuda">
+    <div class="import-manual-aside__card import-manual-aside__card--context">
+        <h3 class="import-manual-aside__title">Contexto</h3>
+        <p class="import-manual-aside__lead">Estás registrando datos en:</p>
+        <p class="import-manual-aside__school"><strong>{{ colegio.nombre }}</strong></p>
+        <p class="import-manual-aside__meta">RBD <code>{{ colegio.rbd }}</code></p>
+    </div>
+
+    {% if insert_tipo == 'estudiante' %}
+    <div class="import-manual-aside__card">
+        <h3 class="import-manual-aside__title">Antes de guardar</h3>
+        <ul class="import-manual-aside__list">
+            <li>El <strong>email</strong> y el <strong>RUT</strong> deben ser únicos en todo Raccademy.</li>
+            <li>La contraseña inicial se <strong>genera automáticamente</strong>; el sistema te la mostrará al confirmar.</li>
+            <li>Usa email institucional cuando exista (ej. <code>nombre.apellido@colegio.cl</code>).</li>
+            <li>El apoderado indicado queda asociado al expediente del estudiante.</li>
+        </ul>
+    </div>
+    <div class="import-manual-aside__card import-manual-aside__card--tip">
+        <h3 class="import-manual-aside__title">Formato recomendado</h3>
+        <dl class="import-manual-aside__dl">
+            <dt>RUT</dt><dd>12.345.678-9 (con guión)</dd>
+            <dt>Teléfono</dt><dd>+56 9 1234 5678</dd>
+            <dt>Fecha ingreso</dt><dd>Primer día de clases o matrícula</dd>
+        </dl>
+    </div>
+    <div class="import-manual-aside__card import-manual-aside__card--alt">
+        <h3 class="import-manual-aside__title">¿Muchos estudiantes?</h3>
+        <p>Para carga masiva al inicio del año escolar, usa la importación CSV con plantilla descargable.</p>
+        <a href="{% url 'importar_datos' %}?vista=csv&amp;tipo=estudiantes" class="btn-secondary btn-secondary--sm import-manual-aside__link">Importar estudiantes CSV →</a>
+    </div>
+    {% elif insert_tipo == 'profesor' %}
+    <div class="import-manual-aside__card">
+        <h3 class="import-manual-aside__title">Antes de guardar</h3>
+        <ul class="import-manual-aside__list">
+            <li>El <strong>email</strong> será su usuario de acceso al portal docente.</li>
+            <li>Se crea una <strong>contraseña temporal</strong> que deberás entregar de forma segura.</li>
+            <li>Especialidad y título ayudan en reportes y asignación de clases.</li>
+            <li>Estado laboral por defecto: <strong>Activo</strong>.</li>
+        </ul>
+    </div>
+    <div class="import-manual-aside__card import-manual-aside__card--tip">
+        <h3 class="import-manual-aside__title">Formato recomendado</h3>
+        <dl class="import-manual-aside__dl">
+            <dt>Email</dt><dd>docente@colegio.cl</dd>
+            <dt>Especialidad</dt><dd>Matemática, Lenguaje, etc.</dd>
+            <dt>Fecha ingreso</dt><dd>Contrato o inicio de clases</dd>
+        </dl>
+    </div>
+    <div class="import-manual-aside__card import-manual-aside__card--alt">
+        <h3 class="import-manual-aside__title">¿Varios docentes?</h3>
+        <p>Importa la nómina completa desde CSV con campos de especialidad y contrato.</p>
+        <a href="{% url 'importar_datos' %}?vista=csv&amp;tipo=profesores" class="btn-secondary btn-secondary--sm import-manual-aside__link">Importar profesores CSV →</a>
+    </div>
+    {% else %}
+    <div class="import-manual-aside__card">
+        <h3 class="import-manual-aside__title">Antes de guardar</h3>
+        <ul class="import-manual-aside__list">
+            <li>El apoderado accede al portal con su <strong>email</strong> y contraseña temporal.</li>
+            <li>Puede vincularse después a uno o más estudiantes del colegio.</li>
+            <li>Teléfono móvil es clave para alertas y comunicados urgentes.</li>
+            <li>Ocupación y lugar de trabajo son opcionales pero útiles en citaciones.</li>
+        </ul>
+    </div>
+    <div class="import-manual-aside__card import-manual-aside__card--tip">
+        <h3 class="import-manual-aside__title">Formato recomendado</h3>
+        <dl class="import-manual-aside__dl">
+            <dt>Email</dt><dd>apoderado@mail.cl</dd>
+            <dt>Móvil</dt><dd>+56 9 8765 4321</dd>
+            <dt>RUT</dt><dd>12.345.678-9</dd>
+        </dl>
+    </div>
+    <div class="import-manual-aside__card import-manual-aside__card--alt">
+        <h3 class="import-manual-aside__title">¿Lista extensa?</h3>
+        <p>Sube apoderados masivamente e incluye permisos (ver notas, asistencia) en el CSV.</p>
+        <a href="{% url 'importar_datos' %}?vista=csv&amp;tipo=apoderados" class="btn-secondary btn-secondary--sm import-manual-aside__link">Importar apoderados CSV →</a>
+    </div>
+    {% endif %}
+
+    <div class="import-manual-aside__card import-manual-aside__card--success">
+        <h3 class="import-manual-aside__title">Después de guardar</h3>
+        <p>Volverás al panel principal y el registro aparecerá en la tabla correspondiente. Revisa los mensajes del sistema para credenciales temporales.</p>
+    </div>
+</aside>

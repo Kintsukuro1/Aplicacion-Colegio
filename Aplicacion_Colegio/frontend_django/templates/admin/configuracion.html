@@ -1,258 +1,191 @@
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-cogs"></i> Configuración del Sistema
-                    </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-success btn-sm" id="btnGuardarConfig">
-                            <i class="fas fa-save"></i> Guardar Cambios
-                        </button>
+{% include 'admin/_admin_wrap_start.html' %}
+
+<div class="adm-portal adm-config-page">
+    {% include 'admin/_admin_hero.html' with hero_kpi="1" hero_eyebrow="Parámetros globales" hero_title="Configuración del sistema" hero_subtitle="Auditoría, retención de logs y parámetros técnicos de la plataforma" hero_aria="Configuración del sistema" hero_show_date="0" m1_value=total_colegios m1_label="Colegios" m1_mod="clases" m2_value=total_usuarios m2_label="Usuarios" m2_mod="tareas" m3_value=total_roles m3_label="Roles" m3_mod="asistencia" m4_value=total_planes m4_label="Planes" m4_mod="neutral" %}
+
+    <div class="adm-config-layout">
+        <div class="adm-config-main">
+            <section class="adm-card card-panel">
+                <div class="adm-card__head adm-config-card__head">
+                    <div>
+                        <h2 class="adm-card__title">⚙️ Ajustes del sistema</h2>
+                        <p class="adm-config-card__subtitle">Parámetros editables se guardan con el botón. Los valores técnicos del servidor son solo lectura.</p>
                     </div>
+                    <button type="button" class="btn-primary btn-secondary--sm" id="btnGuardarConfig">💾 Guardar cambios</button>
                 </div>
-                <div class="card-body">
-                    <!-- Información del Sistema -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h4><i class="fas fa-info-circle"></i> Información del Sistema</h4>
-                            <hr>
+                <div class="adm-card__body adm-config-body">
+                    {% csrf_token %}
+
+                    <div class="adm-config-section">
+                        <div class="adm-config-section__head">
+                            <h3 class="adm-config-section__title">Configuración técnica</h3>
+                            <span class="adm-badge adm-badge--view">Solo lectura</span>
                         </div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <div class="card bg-primary text-white">
-                                <div class="card-body text-center">
-                                    <h5>Colegios</h5>
-                                    <h3>{{ total_colegios }}</h3>
+                        <div class="adm-config-tech-grid">
+                            <div class="adm-config-field-card">
+                                <span class="adm-config-field-card__label">Modo debug</span>
+                                <div class="adm-config-field-card__value">
+                                    {% if debug_mode %}
+                                        <span class="adm-badge adm-badge--success">Activado</span>
+                                    {% else %}
+                                        <span class="adm-badge adm-badge--danger">Desactivado</span>
+                                    {% endif %}
                                 </div>
+                                <p class="adm-config-field-card__hint">En producción debe permanecer desactivado. Cambio en <code>settings.py</code>.</p>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-success text-white">
-                                <div class="card-body text-center">
-                                    <h5>Usuarios</h5>
-                                    <h3>{{ total_usuarios }}</h3>
-                                </div>
+                            <div class="adm-config-field-card">
+                                <span class="adm-config-field-card__label">Motor de base de datos</span>
+                                <span class="adm-config-field-card__value">{{ database_engine|title }}</span>
+                                <p class="adm-config-field-card__hint">Motor configurado en el entorno de despliegue.</p>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-warning text-white">
-                                <div class="card-body text-center">
-                                    <h5>Roles</h5>
-                                    <h3>{{ total_roles }}</h3>
+                            <div class="adm-config-field-card adm-config-field-card--full adm-config-field-card--editable">
+                                <div class="adm-config-field-card__head-row">
+                                    <label class="adm-config-field-card__label" for="allowedHosts">Hosts permitidos</label>
+                                    <span class="adm-badge adm-badge--success">Editable</span>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-info text-white">
-                                <div class="card-body text-center">
-                                    <h5>Planes</h5>
-                                    <h3>{{ total_planes }}</h3>
-                                </div>
+                                <input type="text" class="adm-config-input" id="allowedHosts" value="{{ allowed_hosts }}" placeholder="localhost, 127.0.0.1, tu-dominio.cl">
+                                <p class="adm-config-field-card__hint">Separados por coma. Restringe desde qué dominios se puede acceder a la plataforma.</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Configuración Técnica -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h4><i class="fas fa-server"></i> Configuración Técnica</h4>
-                            <hr>
+                    {% if config_auditoria %}
+                    <div class="adm-config-section">
+                        <div class="adm-config-section__head">
+                            <h3 class="adm-config-section__title">Configuración de auditoría global</h3>
+                            <span class="adm-badge adm-badge--success">Editable</span>
                         </div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="debugMode">Modo Debug</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="debugMode"
-                                           {% if debug_mode %}checked{% endif %} disabled>
-                                    <label class="form-check-label" for="debugMode">
-                                        {% if debug_mode %}
-                                            <span class="badge badge-danger">ACTIVADO</span>
-                                        {% else %}
-                                            <span class="badge badge-success">DESACTIVADO</span>
-                                        {% endif %}
+                        <p class="adm-config-section__desc">Define qué operaciones quedan registradas en <a href="{% url 'dashboard' %}?pagina=auditoria">Logs de auditoría</a> y por cuánto tiempo.</p>
+                        <div class="adm-config-audit-grid">
+                            <div class="adm-config-audit-col card-panel">
+                                <h4 class="adm-config-audit-col__title">Categorías a auditar</h4>
+                                <div class="adm-toggle-list">
+                                    <label class="adm-toggle-row" for="auditarAcademico">
+                                        <span class="adm-toggle-row__label">Académico <small>notas, evaluaciones</small></span>
+                                        <span class="adm-toggle">
+                                            <input class="config-checkbox adm-toggle__input" type="checkbox" id="auditarAcademico"
+                                                   {% if config_auditoria.auditar_academico %}checked{% endif %}
+                                                   data-field="auditar_academico">
+                                        </span>
+                                    </label>
+                                    <label class="adm-toggle-row" for="auditarAsistencia">
+                                        <span class="adm-toggle-row__label">Asistencia</span>
+                                        <span class="adm-toggle">
+                                            <input class="config-checkbox adm-toggle__input" type="checkbox" id="auditarAsistencia"
+                                                   {% if config_auditoria.auditar_asistencia %}checked{% endif %}
+                                                   data-field="auditar_asistencia">
+                                        </span>
+                                    </label>
+                                    <label class="adm-toggle-row" for="auditarComunicacion">
+                                        <span class="adm-toggle-row__label">Comunicación <small>comunicados, mensajes</small></span>
+                                        <span class="adm-toggle">
+                                            <input class="config-checkbox adm-toggle__input" type="checkbox" id="auditarComunicacion"
+                                                   {% if config_auditoria.auditar_comunicacion %}checked{% endif %}
+                                                   data-field="auditar_comunicacion">
+                                        </span>
                                     </label>
                                 </div>
-                                <small class="form-text text-muted">Solo se puede cambiar en settings.py</small>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="databaseEngine">Motor de Base de Datos</label>
-                                <input type="text" class="form-control" id="databaseEngine"
-                                       value="{{ database_engine|title }}" readonly>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <div class="form-group">
-                                <label for="allowedHosts">Hosts Permitidos</label>
-                                <input type="text" class="form-control" id="allowedHosts"
-                                       value="{{ allowed_hosts }}" readonly>
-                                <small class="form-text text-muted">Configurado en ALLOWED_HOSTS</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Configuración de Auditoría -->
-                    {% if config_auditoria %}
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h4><i class="fas fa-shield-alt"></i> Configuración de Auditoría Global</h4>
-                            <hr>
-                        </div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h5>Categorías a Auditar</h5>
-                            <div class="form-check">
-                                <input class="form-check-input config-checkbox" type="checkbox" id="auditarAcademico"
-                                       {% if config_auditoria.auditar_academico %}checked{% endif %}
-                                       data-field="auditar_academico">
-                                <label class="form-check-label" for="auditarAcademico">
-                                    Académico (notas, evaluaciones)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input config-checkbox" type="checkbox" id="auditarAsistencia"
-                                       {% if config_auditoria.auditar_asistencia %}checked{% endif %}
-                                       data-field="auditar_asistencia">
-                                <label class="form-check-label" for="auditarAsistencia">
-                                    Asistencia
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input config-checkbox" type="checkbox" id="auditarComunicacion"
-                                       {% if config_auditoria.auditar_comunicacion %}checked{% endif %}
-                                       data-field="auditar_comunicacion">
-                                <label class="form-check-label" for="auditarComunicacion">
-                                    Comunicación (comunicados, mensajes)
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Opciones Adicionales</h5>
-                            <div class="form-check">
-                                <input class="form-check-input config-checkbox" type="checkbox" id="auditarEstudiantes"
-                                       {% if config_auditoria.auditar_estudiantes %}checked{% endif %}
-                                       data-field="auditar_estudiantes">
-                                <label class="form-check-label" for="auditarEstudiantes">
-                                    Cambios en estudiantes
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input config-checkbox" type="checkbox" id="auditarUsuarios"
-                                       {% if config_auditoria.auditar_usuarios %}checked{% endif %}
-                                       data-field="auditar_usuarios">
-                                <label class="form-check-label" for="auditarUsuarios">
-                                    Usuarios y roles
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input config-checkbox" type="checkbox" id="capturarIP"
-                                       {% if config_auditoria.capturar_ip %}checked{% endif %}
-                                       data-field="capturar_ip">
-                                <label class="form-check-label" for="capturarIP">
-                                    Capturar dirección IP
-                                </label>
-                            </div>
-                            <div class="form-group mt-3">
-                                <label for="diasRetencion">Días de Retención</label>
-                                <input type="number" class="form-control config-input" id="diasRetencion"
-                                       value="{{ config_auditoria.dias_retencion }}"
-                                       data-field="dias_retencion" min="30" max="3650">
-                                <small class="form-text text-muted">Período de retención de logs (30-3650 días)</small>
+                            <div class="adm-config-audit-col card-panel">
+                                <h4 class="adm-config-audit-col__title">Opciones adicionales</h4>
+                                <div class="adm-toggle-list">
+                                    <label class="adm-toggle-row" for="auditarEstudiantes">
+                                        <span class="adm-toggle-row__label">Cambios en estudiantes</span>
+                                        <span class="adm-toggle">
+                                            <input class="config-checkbox adm-toggle__input" type="checkbox" id="auditarEstudiantes"
+                                                   {% if config_auditoria.auditar_estudiantes %}checked{% endif %}
+                                                   data-field="auditar_estudiantes">
+                                        </span>
+                                    </label>
+                                    <label class="adm-toggle-row" for="auditarUsuarios">
+                                        <span class="adm-toggle-row__label">Usuarios y roles</span>
+                                        <span class="adm-toggle">
+                                            <input class="config-checkbox adm-toggle__input" type="checkbox" id="auditarUsuarios"
+                                                   {% if config_auditoria.auditar_usuarios %}checked{% endif %}
+                                                   data-field="auditar_usuarios">
+                                        </span>
+                                    </label>
+                                    <label class="adm-toggle-row" for="capturarIP">
+                                        <span class="adm-toggle-row__label">Capturar dirección IP</span>
+                                        <span class="adm-toggle">
+                                            <input class="config-checkbox adm-toggle__input" type="checkbox" id="capturarIP"
+                                                   {% if config_auditoria.capturar_ip %}checked{% endif %}
+                                                   data-field="capturar_ip">
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="adm-config-field-card adm-config-field-card--compact adm-config-field-card--editable">
+                                    <label class="adm-config-field-card__label" for="diasRetencion">Días de retención</label>
+                                    <input type="number" class="adm-config-input config-input" id="diasRetencion"
+                                           value="{{ config_auditoria.dias_retencion }}"
+                                           data-field="dias_retencion" min="30" max="3650">
+                                    <p class="adm-config-field-card__hint">Mínimo 30 · máximo 3650 días (≈ {% widthratio config_auditoria.dias_retencion 365 1 %} años actuales)</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                     {% endif %}
 
-                    <!-- Configuración de Características -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h4><i class="fas fa-toggle-on"></i> Características del Sistema</h4>
-                            <hr>
+                    <div class="adm-config-section">
+                        <div class="adm-config-section__head">
+                            <h3 class="adm-config-section__title">Características del sistema</h3>
+                            <span class="adm-badge adm-badge--view">Informativo</span>
                         </div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h5>Módulos del Sistema</h5>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="moduloAcademico" checked disabled>
-                                <label class="form-check-label" for="moduloAcademico">
-                                    Gestión Académica
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="moduloAsistencia" checked disabled>
-                                <label class="form-check-label" for="moduloAsistencia">
-                                    Control de Asistencia
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="moduloComunicacion" checked disabled>
-                                <label class="form-check-label" for="moduloComunicacion">
-                                    Comunicación y Mensajería
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="moduloReportes" checked disabled>
-                                <label class="form-check-label" for="moduloReportes">
-                                    Reportes y Estadísticas
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Integraciones</h5>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="integracionTransbank" checked disabled>
-                                <label class="form-check-label" for="integracionTransbank">
-                                    Transbank (Pagos)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="integracionEmail" checked disabled>
-                                <label class="form-check-label" for="integracionEmail">
-                                    Sistema de Email
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="modoMantenimiento" disabled>
-                                <label class="form-check-label" for="modoMantenimiento">
-                                    Modo Mantenimiento
-                                </label>
-                            </div>
+                        <p class="adm-config-section__desc">Módulos e integraciones incluidos en tu licencia Raccademy. No requieren configuración adicional.</p>
+                        <div class="adm-config-module-grid">
+                            <article class="adm-config-module-card">
+                                <span class="adm-config-module-card__icon" aria-hidden="true">📚</span>
+                                <span class="adm-config-module-card__name">Gestión académica</span>
+                                <span class="adm-badge adm-badge--success">Activo</span>
+                            </article>
+                            <article class="adm-config-module-card">
+                                <span class="adm-config-module-card__icon" aria-hidden="true">✅</span>
+                                <span class="adm-config-module-card__name">Control de asistencia</span>
+                                <span class="adm-badge adm-badge--success">Activo</span>
+                            </article>
+                            <article class="adm-config-module-card">
+                                <span class="adm-config-module-card__icon" aria-hidden="true">📢</span>
+                                <span class="adm-config-module-card__name">Comunicación</span>
+                                <span class="adm-badge adm-badge--success">Activo</span>
+                            </article>
+                            <article class="adm-config-module-card">
+                                <span class="adm-config-module-card__icon" aria-hidden="true">📊</span>
+                                <span class="adm-config-module-card__name">Reportes y estadísticas</span>
+                                <span class="adm-badge adm-badge--success">Activo</span>
+                            </article>
+                            <article class="adm-config-module-card">
+                                <span class="adm-config-module-card__icon" aria-hidden="true">💳</span>
+                                <span class="adm-config-module-card__name">Transbank</span>
+                                <span class="adm-badge adm-badge--success">Activo</span>
+                            </article>
+                            <article class="adm-config-module-card">
+                                <span class="adm-config-module-card__icon" aria-hidden="true">✉️</span>
+                                <span class="adm-config-module-card__name">Sistema de email</span>
+                                <span class="adm-badge adm-badge--success">Activo</span>
+                            </article>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
+
+        {% include 'admin/_config_guia.html' %}
     </div>
 </div>
 
-<div class="d-none">
-    {% csrf_token %}
-</div>
-
-<!-- Modal de confirmación -->
 <div class="modal fade" id="confirmSaveModal" tabindex="-1" role="dialog" aria-labelledby="confirmSaveModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="confirmSaveModalLabel">Confirmar Cambios</h5>
+                <h5 class="modal-title" id="confirmSaveModalLabel">Confirmar cambios</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 ¿Está seguro de que desea guardar los cambios en la configuración del sistema?
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmSave">Guardar</button>
+                <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn-primary" id="btnConfirmSave">Guardar</button>
             </div>
         </div>
     </div>
@@ -275,7 +208,8 @@ document.addEventListener('DOMContentLoaded', function() {
             auditar_estudiantes: document.getElementById('auditarEstudiantes') ? document.getElementById('auditarEstudiantes').checked : false,
             auditar_usuarios: document.getElementById('auditarUsuarios') ? document.getElementById('auditarUsuarios').checked : false,
             capturar_ip: document.getElementById('capturarIP') ? document.getElementById('capturarIP').checked : false,
-            dias_retencion: document.getElementById('diasRetencion') ? parseInt(document.getElementById('diasRetencion').value) : 30
+            dias_retencion: document.getElementById('diasRetencion') ? parseInt(document.getElementById('diasRetencion').value) : 30,
+            hosts_permitidos: document.getElementById('allowedHosts') ? document.getElementById('allowedHosts').value.trim() : ''
         };
 
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -306,3 +240,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+{% include 'admin/_admin_wrap_end.html' %}

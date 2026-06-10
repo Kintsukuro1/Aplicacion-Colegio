@@ -25,6 +25,12 @@ class PasswordHistory(models.Model):
         related_name='password_history'
     )
     password_hash = models.CharField(max_length=128)
+    tipo_accion = models.CharField(
+        max_length=32,
+        blank=True,
+        default='cambio_voluntario',
+        help_text='Tipo de evento registrado (cambio_voluntario, cambio_forzado, reset_admin)',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

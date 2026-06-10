@@ -1,93 +1,248 @@
-{% load static %}
-
-<link rel="stylesheet" href="{% static 'css/apoderado/perfil.css' %}">
-{% if rol == 'estudiante' or rol == 'Estudiante' %}
-<link rel="stylesheet" href="{% static 'css/dashboard_alumno.css' %}?v=20260602-inicio-hero">
-{% endif %}
-
-<div class="content-wrapper">
-  {% if rol == 'estudiante' or rol == 'Estudiante' %}
-  {% include 'estudiante/_alumno_hero.html' with hero_title="Mi Perfil" hero_subtitle="Administra tu información personal y preferencias de cuenta" hero_aria="Mi Perfil" metrics_aria="Resumen del estudiante" m1_value="6.0" m1_label="Promedio general" m1_mod="promedio" m1_progress="86" m2_value="90%" m2_label="Asistencia" m2_mod="asistencia" m2_progress="90" m3_value="24" m3_label="Calificaciones" m3_mod="clases" m4_value="8" m4_label="Asignaturas" m4_mod="tareas" %}
-  {% endif %}
-  <div class="profile-container">
-    <div class="profile-card">
-      <h2>👤 Mi Perfil</h2>
-
-      <div class="profile-grid">
-        <div class="profile-field">
-          <label>Nombre</label>
-          <p>{{ nombre_usuario|default:"-" }}</p>
-        </div>
-
-        <div class="profile-field">
-          <label>Email</label>
-          <p>{{ request.user.email|default:"-" }}</p>
-        </div>
-
-        <div class="profile-field">
-          <label>Rol</label>
-          <p>{{ rol|default:"-"|capfirst }}</p>
-        </div>
-
-        <div class="profile-field">
-          <label>Escuela</label>
-          <p>{{ escuela_nombre|default:"-" }}</p>
-        </div>
-      </div>
-    </div>
-
-    {% if estadisticas %}
-      <div class="profile-card">
-        <h2>📊 Resumen</h2>
-
-        <div class="profile-grid">
-          {% if estadisticas.total_calificaciones is not None %}
-            <div class="profile-field">
-              <label>Total calificaciones</label>
-              <p>{{ estadisticas.total_calificaciones }}</p>
-            </div>
-          {% endif %}
-
-          {% if estadisticas.promedio_general is not None %}
-            <div class="profile-field">
-              <label>Promedio general</label>
-              <p>{{ estadisticas.promedio_general }}</p>
-            </div>
-          {% endif %}
-
-          {% if estadisticas.total_asignaturas is not None %}
-            <div class="profile-field">
-              <label>Total asignaturas</label>
-              <p>{{ estadisticas.total_asignaturas }}</p>
-            </div>
-          {% endif %}
-
-          {% if estadisticas.total_evaluaciones is not None %}
-            <div class="profile-field">
-              <label>Total evaluaciones</label>
-              <p>{{ estadisticas.total_evaluaciones }}</p>
-            </div>
-          {% endif %}
-
-          {% if estadisticas.total_estudiantes is not None %}
-            <div class="profile-field">
-              <label>Total estudiantes</label>
-              <p>{{ estadisticas.total_estudiantes }}</p>
-            </div>
-          {% endif %}
-
-          {% if estadisticas.total_planificaciones is not None %}
-            <div class="profile-field">
-              <label>Total planificaciones</label>
-              <p>{{ estadisticas.total_planificaciones }}</p>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-    {% endif %}
-
-    <div>
-      <a class="btn btn-outline-primary" href="{% url 'dashboard' %}?pagina=inicio">Volver al inicio</a>
-    </div>
-  </div>
-</div>
+{% load static %}
+
+{% if rol == 'admin_general' or rol == 'Administrador general' %}
+{% include 'admin/_admin_wrap_start.html' %}
+
+<div class="adm-portal adm-perfil adm-perfil--premium">
+    {% include 'admin/_admin_hero.html' with hero_kpi="1" hero_eyebrow="Cuenta global" hero_title="Mi perfil" hero_subtitle="Administra tu identidad, contacto y credenciales de acceso al ecosistema Raccademy" hero_aria="Mi perfil" hero_show_date="0" m1_value="Global" m1_label="Rol del sistema" m1_mod="clases" m2_value=escuela_nombre|default:"Multi-colegio" m2_label="Alcance actual" m2_mod="tareas" m3_value=request.user.last_login|date:"d/m/Y"|default:"—" m3_label="Último acceso" m3_mod="asistencia" m4_value="Activa" m4_label="Estado de cuenta" m4_mod="neutral" %}
+
+    {% if messages %}
+    <div class="adm-alert-stack">
+        {% for message in messages %}
+        <div class="adm-alert adm-alert--{% if message.tags == 'error' %}warning{% else %}info{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="adm-perfil-layout">
+        <div class="adm-perfil-main">
+            <nav class="adm-perfil-tabs" aria-label="Secciones del perfil">
+                <button type="button" class="adm-perfil-tabs__btn is-active" data-perfil-tab="datos" aria-selected="true">
+                    Datos personales
+                </button>
+                <button type="button" class="adm-perfil-tabs__btn" data-perfil-tab="seguridad" aria-selected="false">
+                    Seguridad
+                </button>
+            </nav>
+
+            <section class="adm-card card-panel adm-perfil-panel is-active" id="adm-perfil-datos" data-perfil-panel="datos">
+                <div class="adm-card__head adm-perfil-panel__head">
+                    <div>
+                        <h2 class="adm-card__title">Datos personales</h2>
+                        <p class="adm-perfil-panel__subtitle">Información de contacto visible en tu cuenta de administrador.</p>
+                    </div>
+                    <span class="adm-badge adm-badge--success">Editable</span>
+                </div>
+                <div class="adm-card__body">
+                    <form method="POST" action="{% url 'accounts:actualizar_perfil_profesor' %}" class="adm-perfil-form-grid adm-perfil-form">
+                        {% csrf_token %}
+                        <div class="adm-perfil-field-card">
+                            <label class="adm-perfil-field-card__label" for="adm_email">Correo electrónico</label>
+                            <input type="email" id="adm_email" name="email" value="{{ request.user.email }}" required autocomplete="email">
+                            <p class="adm-perfil-field-card__hint">Se usa para acceso y notificaciones críticas del sistema.</p>
+                        </div>
+                        <div class="adm-perfil-field-card">
+                            <label class="adm-perfil-field-card__label" for="adm_telefono">Teléfono</label>
+                            <input type="text" id="adm_telefono" name="telefono" value="{{ request.user.telefono|default:'' }}" placeholder="+56 9 1234 5678" autocomplete="tel">
+                        </div>
+                        <div class="adm-perfil-field-card adm-perfil-field-card--full">
+                            <label class="adm-perfil-field-card__label" for="adm_direccion">Dirección</label>
+                            <input type="text" id="adm_direccion" name="direccion" value="{{ request.user.direccion|default:'' }}" placeholder="Calle, número, comuna" autocomplete="street-address">
+                        </div>
+                        <div class="adm-actions-row adm-actions-row--start adm-perfil-field-card--full">
+                            <button type="submit" class="btn-primary">Guardar cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="adm-card card-panel adm-perfil-panel" id="adm-perfil-seguridad" data-perfil-panel="seguridad" hidden>
+                <div class="adm-card__head adm-perfil-panel__head">
+                    <div>
+                        <h2 class="adm-card__title">Seguridad de la cuenta</h2>
+                        <p class="adm-perfil-panel__subtitle">Actualiza tu contraseña. Recomendamos mínimo 10 caracteres con números y símbolos.</p>
+                    </div>
+                    <span class="adm-badge adm-badge--view">Protegido</span>
+                </div>
+                <div class="adm-card__body">
+                    <form method="POST" action="{% url 'accounts:cambiar_password_profesor' %}" class="adm-perfil-form-grid adm-perfil-form">
+                        {% csrf_token %}
+                        <div class="adm-perfil-field-card">
+                            <label class="adm-perfil-field-card__label" for="password_actual">Contraseña actual</label>
+                            <input type="password" id="password_actual" name="password_actual" required autocomplete="current-password">
+                        </div>
+                        <div class="adm-perfil-field-card">
+                            <label class="adm-perfil-field-card__label" for="password_nueva">Nueva contraseña</label>
+                            <input type="password" id="password_nueva" name="password_nueva" minlength="6" required autocomplete="new-password">
+                            <div class="adm-pw-strength" id="adm-pw-strength" aria-hidden="true">
+                                <span class="adm-pw-strength__seg"></span>
+                                <span class="adm-pw-strength__seg"></span>
+                                <span class="adm-pw-strength__seg"></span>
+                                <span class="adm-pw-strength__seg"></span>
+                            </div>
+                            <p class="adm-pw-strength__label" id="adm-pw-strength-label"></p>
+                        </div>
+                        <div class="adm-perfil-field-card adm-perfil-field-card--full">
+                            <label class="adm-perfil-field-card__label" for="password_confirmar">Confirmar nueva contraseña</label>
+                            <input type="password" id="password_confirmar" name="password_confirmar" minlength="6" required autocomplete="new-password">
+                        </div>
+                        <div class="adm-actions-row adm-actions-row--start adm-perfil-field-card--full">
+                            <button type="submit" name="cambiar_password" class="btn-primary">Actualizar contraseña</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
+
+        {% include 'admin/_perfil_guia.html' %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tabs = document.querySelectorAll('[data-perfil-tab]');
+    var panels = document.querySelectorAll('[data-perfil-panel]');
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            var target = tab.getAttribute('data-perfil-tab');
+            tabs.forEach(function(t) {
+                var active = t === tab;
+                t.classList.toggle('is-active', active);
+                t.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            panels.forEach(function(panel) {
+                var show = panel.getAttribute('data-perfil-panel') === target;
+                panel.classList.toggle('is-active', show);
+                panel.hidden = !show;
+            });
+        });
+    });
+
+    var hash = (window.location.hash || '').replace('#', '');
+    if (hash === 'seguridad' || hash === 'password') {
+        var secTab = document.querySelector('[data-perfil-tab="seguridad"]');
+        if (secTab) secTab.click();
+    }
+
+    var input = document.getElementById('password_nueva');
+    var bar = document.getElementById('adm-pw-strength');
+    var label = document.getElementById('adm-pw-strength-label');
+    if (!input || !bar) return;
+
+    function scorePassword(value) {
+        var score = 0;
+        if (value.length >= 6) score += 1;
+        if (value.length >= 10) score += 1;
+        if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score += 1;
+        if (/\d/.test(value) && /[^A-Za-z0-9]/.test(value)) score += 1;
+        return Math.min(score, 4);
+    }
+
+    input.addEventListener('input', function() {
+        var score = scorePassword(input.value || '');
+        var segs = bar.querySelectorAll('.adm-pw-strength__seg');
+        var labels = ['', 'Débil', 'Regular', 'Buena', 'Fuerte'];
+        var colors = ['#E5E7EB', '#FCA5A5', '#FCD34D', '#86EFAC', '#6B46C1'];
+        segs.forEach(function(seg, i) {
+            seg.style.background = i < score ? colors[score] : '#E5E7EB';
+        });
+        if (label) label.textContent = input.value ? labels[score] : '';
+    });
+});
+</script>
+
+{% include 'admin/_admin_wrap_end.html' %}
+
+{% else %}
+<link rel="stylesheet" href="{% static 'css/apoderado/perfil.css' %}">
+{% if rol == 'estudiante' or rol == 'Estudiante' %}
+<link rel="stylesheet" href="{% static 'css/dashboard_alumno.css' %}?v=20260602-inicio-hero">
+{% endif %}
+
+<div class="content-wrapper">
+  {% if rol == 'estudiante' or rol == 'Estudiante' %}
+  {% include 'estudiante/_alumno_hero.html' with hero_title="Mi perfil" hero_subtitle="Administra tu información personal y preferencias de cuenta" hero_aria="Mi perfil" metrics_aria="Resumen del estudiante" m1_value="6.0" m1_label="Promedio general" m1_mod="promedio" m1_progress="86" m2_value="90%" m2_label="Asistencia" m2_mod="asistencia" m2_progress="90" m3_value="24" m3_label="Calificaciones" m3_mod="clases" m4_value="8" m4_label="Asignaturas" m4_mod="tareas" %}
+  {% endif %}
+  <div class="profile-container">
+    <div class="profile-card">
+      <h2>👤 Mi perfil</h2>
+
+      <div class="profile-grid">
+        <div class="profile-field">
+          <label>Nombre</label>
+          <p>{{ nombre_usuario|default:"-" }}</p>
+        </div>
+
+        <div class="profile-field">
+          <label>Email</label>
+          <p>{{ request.user.email|default:"-" }}</p>
+        </div>
+
+        <div class="profile-field">
+          <label>Rol</label>
+          <p>{{ rol|default:"-"|capfirst }}</p>
+        </div>
+
+        <div class="profile-field">
+          <label>Escuela</label>
+          <p>{{ escuela_nombre|default:"-" }}</p>
+        </div>
+      </div>
+    </div>
+
+    {% if estadisticas %}
+      <div class="profile-card">
+        <h2>📊 Resumen</h2>
+
+        <div class="profile-grid">
+          {% if estadisticas.total_calificaciones is not None %}
+            <div class="profile-field">
+              <label>Total calificaciones</label>
+              <p>{{ estadisticas.total_calificaciones }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.promedio_general is not None %}
+            <div class="profile-field">
+              <label>Promedio general</label>
+              <p>{{ estadisticas.promedio_general }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.total_asignaturas is not None %}
+            <div class="profile-field">
+              <label>Total asignaturas</label>
+              <p>{{ estadisticas.total_asignaturas }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.total_evaluaciones is not None %}
+            <div class="profile-field">
+              <label>Total evaluaciones</label>
+              <p>{{ estadisticas.total_evaluaciones }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.total_estudiantes is not None %}
+            <div class="profile-field">
+              <label>Total estudiantes</label>
+              <p>{{ estadisticas.total_estudiantes }}</p>
+            </div>
+          {% endif %}
+
+          {% if estadisticas.total_planificaciones is not None %}
+            <div class="profile-field">
+              <label>Total planificaciones</label>
+              <p>{{ estadisticas.total_planificaciones }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div>
+      <a class="btn btn-outline-primary" href="{% url 'dashboard' %}?pagina=inicio">Volver al inicio</a>
+    </div>
+  </div>
+</div>
+{% endif %}

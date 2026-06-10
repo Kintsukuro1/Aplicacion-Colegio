@@ -18,7 +18,9 @@ from backend.apps.academico.services.academic_reports_service import AcademicRep
 from backend.apps.auditoria.services.sensitive_action_service import SensitiveActionService
 from backend.apps.core.services.academic_report_query_service import AcademicReportQueryService
 from backend.apps.core.services.dashboard_service import DashboardService
+from backend.apps.core.views.admin_escolar._access import can_manage_school_data
 from backend.common.services.policy_service import PolicyService
+from backend.common.utils.dashboard_helpers import build_dashboard_context
 from backend.common.utils.report_exporters import ExcelReportExporter, PDFReportExporter
 
 logger = logging.getLogger(__name__)
@@ -35,9 +37,9 @@ def generar_informe_academico(request, estudiante_id: int):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ['admin_general', 'admin_escolar']:
-        messages.error(request, "Acceso denegado para generar informes")
-        return redirect("dashboard")
+    if not can_manage_school_data(rol, request.user):
+        messages.error(request, 'No tienes permiso para generar informes')
+        return redirect('dashboard')
 
     if not escuela_rbd:
         messages.error(request, 'No hay escuela asignada')
@@ -161,5 +163,11 @@ def generar_informe_academico(request, estudiante_id: int):
         'periodos': periodos,
         'anios': anios,
     }
+
+    shell, redirect_response = build_dashboard_context(request, 'generar_informe', None)
+    if redirect_response:
+        return redirect_response
+    if shell:
+        context.update(shell)
 
     return render(request, 'admin_escolar/generar_informe.html', context)

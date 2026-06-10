@@ -250,6 +250,32 @@ class DashboardAdminService:
                 'saldo': int(m.saldo_m or 0),
             })
 
+        insights_finanzas = []
+        if cuotas_vencidas_count > 0:
+            insights_finanzas.append({
+                'tipo': 'warn',
+                'texto': (
+                    f'{cuotas_vencidas_count} cuota{"s" if cuotas_vencidas_count != 1 else ""} '
+                    f'vencida{"s" if cuotas_vencidas_count != 1 else ""} por un total de '
+                    f'${int(deuda_vencida):,}'.replace(',', '.')
+                ),
+            })
+        if tasa_cobro < 70 and total_facturado > 0:
+            insights_finanzas.append({
+                'tipo': 'info',
+                'texto': f'La tasa de cobro del ciclo es {tasa_cobro}%. Revise morosos y becas pendientes.',
+            })
+        if becas_pendientes > 0:
+            insights_finanzas.append({
+                'tipo': 'info',
+                'texto': f'{becas_pendientes} beca{"s" if becas_pendientes != 1 else ""} pendiente{"s" if becas_pendientes != 1 else ""} de revisión.',
+            })
+        if ciclo_activo:
+            insights_finanzas.append({
+                'tipo': 'neutral',
+                'texto': f'Ciclo activo: {ciclo_activo.nombre}.',
+            })
+
         # Reference data for modals
         metodos_pago = [{'code': code, 'label': label} for code, label in Pago.METODO_CHOICES]
         tipos_beca = [{'code': code, 'label': label} for code, label in Beca.TIPO_CHOICES]
@@ -263,6 +289,7 @@ class DashboardAdminService:
             'becas_activas': becas_activas,
             'becas_pendientes': becas_pendientes,
             'deudores': deudores,
+            'insights_finanzas': insights_finanzas,
             'metodos_pago': metodos_pago,
             'tipos_beca': tipos_beca,
             'ciclo_activo': ciclo_activo,
@@ -336,7 +363,13 @@ class DashboardAdminService:
         # Get filters
         filtro_curso = request_get_params.get('curso', '')
         filtro_estado = request_get_params.get('estado', '')
+        filtro_asignacion = request_get_params.get('asignacion', '')
         filtro_busqueda = request_get_params.get('busqueda', '').strip()
+
+        # Compatibilidad: curso=sin_asignar desde enlaces antiguos
+        if filtro_curso == 'sin_asignar' and not filtro_asignacion:
+            filtro_asignacion = 'sin_asignar'
+            filtro_curso = ''
         
         # Optimized query (ported from sistema_antiguo.core.optimizations.get_estudiantes_optimized)
         estudiantes_query = (
@@ -367,10 +400,32 @@ class DashboardAdminService:
         
         if filtro_curso:
             try:
-                ciclo_id = int(filtro_curso)
-                estudiantes_query = estudiantes_query.filter(perfil_estudiante__ciclo_actual=ciclo_id)
+                curso_id = int(filtro_curso)
+                estudiantes_query = estudiantes_query.filter(
+                    Q(perfil_estudiante__curso_actual_id=curso_id)
+                    | Q(
+                        matriculas__curso_id=curso_id,
+                        matriculas__estado='ACTIVA',
+                    )
+                ).distinct()
             except (ValueError, TypeError):
                 pass
+
+        if filtro_asignacion == 'sin_asignar':
+            estudiantes_query = estudiantes_query.filter(
+                perfil_estudiante__curso_actual_id__isnull=True,
+            ).exclude(
+                matriculas__estado='ACTIVA',
+                matriculas__curso__isnull=False,
+            ).distinct()
+        elif filtro_asignacion == 'con_curso':
+            estudiantes_query = estudiantes_query.filter(
+                Q(perfil_estudiante__curso_actual_id__isnull=False)
+                | Q(
+                    matriculas__estado='ACTIVA',
+                    matriculas__curso__isnull=False,
+                )
+            ).distinct()
         
         if filtro_estado:
             estudiantes_query = estudiantes_query.filter(perfil_estudiante__estado_academico=filtro_estado)
@@ -402,13 +457,20 @@ class DashboardAdminService:
             user__is_active=True
         ).aggregate(
             activos=Count('id', filter=Q(estado_academico='Activo')),
-            sin_curso=Count('id', filter=Q(ciclo_actual__isnull=True)),
-            con_curso=Count('ciclo_actual', distinct=True)
+            con_curso=Count('curso_actual_id', distinct=True),
         )
         estudiantes_activos = stats['activos'] or 0
-        estudiantes_sin_curso = stats['sin_curso'] or 0
+        estudiantes_sin_curso = User.objects.filter(
+            rbd_colegio=escuela_rbd,
+            is_active=True,
+            perfil_estudiante__isnull=False,
+            perfil_estudiante__curso_actual_id__isnull=True,
+        ).exclude(
+            matriculas__estado='ACTIVA',
+            matriculas__curso__isnull=False,
+        ).distinct().count()
         cursos_con_estudiantes = stats['con_curso'] or 0
-        
+
         return {
             'page_obj': page_obj,
             'is_paginated': paginator.num_pages > 1,
@@ -418,8 +480,10 @@ class DashboardAdminService:
             'estudiantes_activos': estudiantes_activos,
             'estudiantes_sin_curso': estudiantes_sin_curso,
             'total_cursos_con_estudiantes': cursos_con_estudiantes,
+            'total_cursos_activos': cursos.count(),
             'filtro_curso': filtro_curso,
             'filtro_estado': filtro_estado,
+            'filtro_asignacion': filtro_asignacion,
             'filtro_busqueda': filtro_busqueda,
         }
 
@@ -440,7 +504,7 @@ class DashboardAdminService:
         
         from backend.apps.accounts.models import PerfilEstudiante, User
         from backend.apps.cursos.models import Asignatura, Clase, Curso
-        from backend.apps.institucion.models import NivelEducativo
+        from backend.apps.institucion.models import CicloAcademico, NivelEducativo
         
         # Validate colegio setup first
         is_valid, result = DashboardAdminService._validate_colegio_setup(escuela_rbd)
@@ -449,15 +513,38 @@ class DashboardAdminService:
         
         colegio = result['colegio']
         ciclo_activo = result['ciclo_activo']
+        anio_ciclo_activo = (
+            ciclo_activo.fecha_inicio.year
+            if ciclo_activo and ciclo_activo.fecha_inicio
+            else None
+        )
         
         # Get filters
         filtro_nivel = request_get_params.get('nivel', '').strip()
+        filtro_anio = request_get_params.get('anio', '').strip()
+        filtro_busqueda = request_get_params.get('busqueda', '').strip()
+        filtro_ocupacion = request_get_params.get('ocupacion', '').strip()
+
+        if not filtro_anio and anio_ciclo_activo:
+            filtro_anio = str(anio_ciclo_activo)
+
+        ciclos_disponibles = (
+            CicloAcademico.objects.filter(colegio=colegio)
+            .order_by('-fecha_inicio')
+        )
+        anios_disponibles = sorted(
+            {
+                c.fecha_inicio.year
+                for c in ciclos_disponibles
+                if c.fecha_inicio
+            },
+            reverse=True,
+        )
         
         # Get cursos with annotations
         cursos_query = Curso.objects.filter(
             colegio=colegio,
-            ciclo_academico=ciclo_activo,  # Only courses in active ciclo
-            activo=True
+            activo=True,
         ).select_related('nivel', 'ciclo_academico').annotate(
             total_clases=Count('clases', filter=Q(clases__activo=True), distinct=True),
             total_estudiantes=Count(
@@ -465,17 +552,40 @@ class DashboardAdminService:
                 filter=Q(
                     matriculas__estado='ACTIVA',
                     matriculas__estudiante__is_active=True,
-                    matriculas__ciclo_academico=ciclo_activo,
                 ),
                 distinct=True,
             ),
-        ).order_by('nivel__nombre', 'nombre')
+        )
+
+        if filtro_anio:
+            try:
+                cursos_query = cursos_query.filter(
+                    ciclo_academico__fecha_inicio__year=int(filtro_anio)
+                )
+            except (TypeError, ValueError):
+                pass
+        elif ciclo_activo:
+            cursos_query = cursos_query.filter(ciclo_academico=ciclo_activo)
         
         # Apply filters
         if filtro_nivel:
-            cursos_query = cursos_query.filter(nivel_id=filtro_nivel)
-        
-        cursos = list(cursos_query)
+            try:
+                cursos_query = cursos_query.filter(nivel_id=int(filtro_nivel))
+            except (TypeError, ValueError):
+                pass
+
+        if filtro_busqueda:
+            cursos_query = cursos_query.filter(nombre__icontains=filtro_busqueda)
+
+        if filtro_ocupacion == 'vacios':
+            cursos_query = cursos_query.filter(total_estudiantes=0)
+        elif filtro_ocupacion == 'con_estudiantes':
+            cursos_query = cursos_query.filter(total_estudiantes__gt=0)
+        elif filtro_ocupacion == 'sin_clases':
+            cursos_query = cursos_query.filter(total_clases=0)
+
+        cursos = list(cursos_query.order_by('nivel__nombre', 'nombre'))
+        total_cursos_filtrados = len(cursos)
         
         # Defensive check: Warn if courses with mismatched ciclo states exist
         cursos_with_invalid_ciclo = Curso.objects.filter(
@@ -494,10 +604,14 @@ class DashboardAdminService:
         
         total_estudiantes_asignados = PerfilEstudiante.objects.filter(
             user__rbd_colegio=escuela_rbd,
-            user__perfil_estudiante__isnull=False,
             user__is_active=True,
-            ciclo_actual__isnull=False
-        ).count()
+        ).filter(
+            Q(curso_actual_id__isnull=False)
+            | Q(
+                user__matriculas__estado='ACTIVA',
+                user__matriculas__curso__isnull=False,
+            )
+        ).distinct().count()
         
         total_clases_activas = Clase.objects.filter(
             curso__colegio=colegio,
@@ -523,36 +637,67 @@ class DashboardAdminService:
         estudiantes_sin_curso = User.objects.filter(
             rbd_colegio=escuela_rbd,
             perfil_estudiante__isnull=False,
-            is_active=True
+            is_active=True,
+            perfil_estudiante__curso_actual_id__isnull=True,
         ).exclude(
             matriculas__estado='ACTIVA',
-            matriculas__ciclo_academico=ciclo_activo
-        ).select_related('perfil_estudiante').order_by('apellido_paterno', 'apellido_materno', 'nombre')
-        
-        # Get asignaturas
-        asignaturas = Asignatura.objects.filter(activa=True).order_by('nombre')
-        
-        # Get profesores
+            matriculas__curso__isnull=False,
+        ).distinct().select_related('perfil_estudiante').order_by(
+            'apellido_paterno', 'apellido_materno', 'nombre'
+        )
+        estudiantes_sin_curso_count = estudiantes_sin_curso.count()
+
+        insights_cursos = []
+        if cursos_sin_estudiantes > 0:
+            insights_cursos.append({
+                'tipo': 'warn',
+                'texto': f'{cursos_sin_estudiantes} curso{"s" if cursos_sin_estudiantes != 1 else ""} activo{"s" if cursos_sin_estudiantes != 1 else ""} sin estudiantes matriculados.',
+            })
+        if estudiantes_sin_curso_count > 0:
+            insights_cursos.append({
+                'tipo': 'info',
+                'texto': f'{estudiantes_sin_curso_count} estudiante{"s" if estudiantes_sin_curso_count != 1 else ""} pendiente{"s" if estudiantes_sin_curso_count != 1 else ""} de asignar a un curso.',
+            })
+        if ciclo_activo:
+            insights_cursos.append({
+                'tipo': 'neutral',
+                'texto': f'Ciclo activo: {ciclo_activo.nombre} ({anio_ciclo_activo}).',
+            })
+        if cursos_with_invalid_ciclo > 0:
+            insights_cursos.append({
+                'tipo': 'warn',
+                'texto': f'{cursos_with_invalid_ciclo} curso{"s" if cursos_with_invalid_ciclo != 1 else ""} fuera del ciclo activo requieren revisión.',
+            })
+
+        asignaturas = Asignatura.objects.filter(colegio=colegio, activa=True).order_by('nombre')
         profesores = User.objects.filter(
             rbd_colegio=escuela_rbd,
             perfil_profesor__isnull=False,
-            is_active=True
+            is_active=True,
         ).order_by('apellido_paterno', 'apellido_materno', 'nombre')
         
         return {
             'cursos': cursos,
             'total_cursos': total_cursos,
+            'total_cursos_filtrados': total_cursos_filtrados,
             'total_estudiantes_asignados': total_estudiantes_asignados,
             'total_clases_activas': total_clases_activas,
             'cursos_sin_estudiantes': cursos_sin_estudiantes,
+            'estudiantes_sin_curso_count': estudiantes_sin_curso_count,
             'niveles': niveles,
+            'anios_disponibles': anios_disponibles,
+            'anio_ciclo_activo': anio_ciclo_activo,
             'filtro_nivel': filtro_nivel,
+            'filtro_anio': filtro_anio,
+            'filtro_busqueda': filtro_busqueda,
+            'filtro_ocupacion': filtro_ocupacion,
+            'insights_cursos': insights_cursos,
             'estudiantes_sin_curso': estudiantes_sin_curso,
             'asignaturas': asignaturas,
             'profesores': profesores,
-            'ciclo_activo': ciclo_activo,  # Include for context
-            'colegio': colegio,  # Include for context
-            'cursos_with_invalid_ciclo': cursos_with_invalid_ciclo,  # Warn admin
+            'ciclo_activo': ciclo_activo,
+            'colegio': colegio,
+            'cursos_with_invalid_ciclo': cursos_with_invalid_ciclo,
         }
 
     @staticmethod
@@ -743,16 +888,39 @@ class DashboardAdminService:
                 'curso_nombre': clase.curso.nombre,
                 'profesor_nombre': clase.profesor.get_full_name()
             })
-        clases_por_asignatura_json = dict(clases_por_asignatura)
+        clases_por_asignatura_json = json.dumps(dict(clases_por_asignatura))
+
+        total_asignaturas_filtradas = paginator.count
+        insights_asignaturas = []
+        if asignaturas_sin_asignar > 0:
+            insights_asignaturas.append({
+                'tipo': 'warn',
+                'texto': (
+                    f'{asignaturas_sin_asignar} asignatura{"s" if asignaturas_sin_asignar != 1 else ""} '
+                    f'sin clases asignadas en el ciclo activo.'
+                ),
+            })
+        if total_horas_semanales > 0 and total_clases_activas == 0:
+            insights_asignaturas.append({
+                'tipo': 'info',
+                'texto': 'Hay horas semanales definidas pero aún no hay clases activas. Asigne docentes a los cursos.',
+            })
+        if ciclo_activo:
+            insights_asignaturas.append({
+                'tipo': 'neutral',
+                'texto': f'Ciclo activo: {ciclo_activo.nombre}. {total_horas_semanales}h semanales planificadas.',
+            })
         
         return {
             'asignaturas': asignaturas,
             'page_obj': asignaturas_page,
             'is_paginated': paginator.num_pages > 1,
             'total_asignaturas': total_asignaturas,
+            'total_asignaturas_filtradas': total_asignaturas_filtradas,
             'total_clases_activas': total_clases_activas,
             'total_horas_semanales': total_horas_semanales,
             'asignaturas_sin_asignar': asignaturas_sin_asignar,
+            'insights_asignaturas': insights_asignaturas,
             'filtro_busqueda': filtro_busqueda,
             'cursos': cursos,
             'curso_seleccionado': curso_seleccionado,
@@ -760,168 +928,470 @@ class DashboardAdminService:
             'profesores': profesores,
             'bloques_horarios': bloques_horarios,
             'clases_por_asignatura_json': clases_por_asignatura_json,
+            'ciclo_activo': ciclo_activo,
         }
 
     @staticmethod
     @PermissionService.require_permission('ACADEMICO', 'EDIT_GRADES')
     def get_admin_notas_context(user, request_get_params, escuela_rbd):
-        """
-        Get context for notas page in admin mode (all classes)
-        """
+        """Contexto completo de evaluaciones para administrador escolar (supervisión institucional)."""
         DashboardAdminService._validate_school_integrity(escuela_rbd, 'DASHBOARD_ADMIN_NOTAS_CONTEXT')
 
-        from django.db.models import Q
-        from backend.apps.institucion.models import Colegio
-        from backend.apps.cursos.models import Clase
+        from datetime import date
+        from django.db.models import Avg, Count
+        from django.utils import timezone
+        from backend.apps.institucion.models import Colegio, CicloAcademico
+        from backend.apps.cursos.models import Clase, ClaseEstudiante
         from backend.apps.academico.models import Evaluacion, Calificacion
-        
+
         colegio = Colegio.objects.get(rbd=escuela_rbd)
-        
-        # Get all active classes for the school
+        ciclo_activo = CicloAcademico.objects.filter(
+            colegio=colegio, estado='ACTIVO'
+        ).order_by('-fecha_inicio').first()
+
         clases = Clase.objects.filter(
             colegio=colegio,
-            activo=True
+            activo=True,
         ).select_related('asignatura', 'curso', 'profesor').order_by(
-            'asignatura__nombre', 'curso__nombre'
+            'curso__nombre', 'asignatura__nombre'
         )
-        
-        filtro_clase_id = request_get_params.get('clase_id', '')
-        if not filtro_clase_id and clases.exists():
-            filtro_clase_id = str(clases.first().id)
-        
+
+        filtro_clase_id = (request_get_params.get('clase_id') or '').strip()
+        modo = request_get_params.get('modo', 'evaluaciones')
+        evaluacion_filtro_id = request_get_params.get('evaluacion_id', 'all')
+
         evaluaciones = []
         estudiantes_con_notas = []
+        calificaciones_matriz = []
+        calificaciones_listado = []
+        evaluacion_seleccionada = None
+        evaluaciones_resumen = ''
         clase_seleccionada = None
-        
+        total_estudiantes_clase = 0
+        evaluaciones_incompletas = 0
+        notas_bajas_clase = 0
+        ponderacion_clase_total = 0
+        promedio_clase = None
+        total_calificaciones_clase = 0
+        cobertura_notas_pct = 0
+
+        calificaciones_escuela_qs = Calificacion.objects.filter(
+            evaluacion__clase__colegio=colegio,
+            evaluacion__activa=True,
+        )
+        if ciclo_activo:
+            calificaciones_escuela_qs = calificaciones_escuela_qs.filter(
+                evaluacion__clase__curso__ciclo_academico=ciclo_activo
+            )
+
+        evaluaciones_escuela_qs = Evaluacion.objects.filter(
+            clase__colegio=colegio,
+            activa=True,
+        )
+        if ciclo_activo:
+            evaluaciones_escuela_qs = evaluaciones_escuela_qs.filter(
+                clase__curso__ciclo_academico=ciclo_activo
+            )
+
+        total_evaluaciones_escuela = evaluaciones_escuela_qs.count()
+        total_calificaciones_escuela = calificaciones_escuela_qs.count()
+        promedio_colegio = None
+        if total_calificaciones_escuela:
+            promedio_colegio = round(
+                float(calificaciones_escuela_qs.aggregate(p=Avg('nota'))['p'] or 0), 2
+            )
+
+        clases_atencion = []
+        clases_sin_evaluaciones = 0
+        evaluaciones_incompletas_global = 0
+        estudiantes_por_curso = {}
+
+        for clase in clases:
+            curso_id = clase.curso_id
+            if curso_id not in estudiantes_por_curso:
+                estudiantes_por_curso[curso_id] = DashboardAdminService._count_estudiantes_curso(
+                    clase.curso, ciclo_activo
+                )
+            num_est = estudiantes_por_curso[curso_id] or ClaseEstudiante.objects.filter(
+                clase=clase, activo=True
+            ).values('estudiante_id').distinct().count()
+
+            evals_clase = list(
+                Evaluacion.objects.filter(clase=clase, activa=True).annotate(
+                    num_notas=Count('calificaciones')
+                )
+            )
+            if not evals_clase:
+                clases_sin_evaluaciones += 1
+                clases_atencion.append({
+                    'clase_id': clase.id,
+                    'curso': clase.curso.nombre,
+                    'asignatura': clase.asignatura.nombre,
+                    'profesor': clase.profesor.get_full_name() if clase.profesor else 'Sin docente',
+                    'profesor_id': clase.profesor_id,
+                    'color': clase.asignatura.color or '#6366f1',
+                    'pendientes': 0,
+                    'motivo': 'Sin evaluaciones',
+                    'total_estudiantes': num_est,
+                })
+                continue
+
+            incompletas = sum(
+                1 for ev in evals_clase if num_est and ev.num_notas < num_est
+            )
+            evaluaciones_incompletas_global += incompletas
+            if incompletas:
+                clases_atencion.append({
+                    'clase_id': clase.id,
+                    'curso': clase.curso.nombre,
+                    'asignatura': clase.asignatura.nombre,
+                    'profesor': clase.profesor.get_full_name() if clase.profesor else 'Sin docente',
+                    'profesor_id': clase.profesor_id,
+                    'color': clase.asignatura.color or '#6366f1',
+                    'pendientes': incompletas,
+                    'motivo': f'{incompletas} evaluación(es) incompleta(s)',
+                    'total_estudiantes': num_est,
+                })
+
+        clases_atencion.sort(key=lambda x: (x['pendientes'], x['motivo'] == 'Sin evaluaciones'), reverse=True)
+        clases_atencion = clases_atencion[:12]
+
         if filtro_clase_id:
             try:
-                clase_seleccionada = Clase.objects.get(id=filtro_clase_id, colegio=colegio)
-            
-                # Obtener evaluaciones de la clase
-                evaluaciones = Evaluacion.objects.filter(
-                    clase=clase_seleccionada, 
-                    activa=True
-                ).order_by('fecha_evaluacion')
-                
-                # Obtener estudiantes de la clase
-                from backend.apps.accounts.models import PerfilEstudiante
-                from backend.apps.matriculas.models import Matricula
-                estudiantes_rel = PerfilEstudiante.objects.filter(
-                    user__matriculas__curso=clase_seleccionada.curso,
-                    user__matriculas__estado='ACTIVA',
-                    user__is_active=True
-                ).select_related('user').distinct()
-                
-                estudiantes = [rel.user for rel in estudiantes_rel]
-                calificaciones_map = {}
+                clase_seleccionada = clases.filter(id=int(filtro_clase_id)).first()
+            except (ValueError, TypeError):
+                clase_seleccionada = None
 
-                if evaluaciones and estudiantes:
-                    calificaciones = Calificacion.objects.filter(
-                        evaluacion__in=evaluaciones,
-                        estudiante__in=estudiantes,
-                    ).select_related('evaluacion', 'estudiante')
-                    calificaciones_map = {
-                        (calif.evaluacion_id, calif.estudiante_id): calif
-                        for calif in calificaciones
-                    }
+        if clase_seleccionada:
+            evaluaciones_qs = Evaluacion.objects.filter(
+                clase=clase_seleccionada,
+                activa=True,
+            ).order_by('fecha_evaluacion')
 
-                # Para cada estudiante, obtener calificaciones (sin N+1)
-                for estudiante_rel in estudiantes_rel:
-                    estudiante = estudiante_rel.user
-                    calificaciones_estudiante = []
-                    
-                    for evaluacion in evaluaciones:
-                        calif = calificaciones_map.get((evaluacion.id, estudiante.id))
-                        calificaciones_estudiante.append({
-                            'evaluacion': evaluacion,
-                            'nota': calif.nota if calif else None
-                        })
-                    
-                    estudiantes_con_notas.append({
-                        'estudiante': estudiante,
-                        'calificaciones': calificaciones_estudiante
+            evaluaciones = []
+            for evaluacion in evaluaciones_qs:
+                califs = Calificacion.objects.filter(evaluacion=evaluacion)
+                total_calificaciones_evaluacion = califs.count()
+                promedio_evaluacion = 0
+                if total_calificaciones_evaluacion:
+                    promedio_evaluacion = round(
+                        float(califs.aggregate(p=Avg('nota'))['p'] or 0), 2
+                    )
+                evaluacion.total_calificaciones = total_calificaciones_evaluacion
+                evaluacion.promedio_calculado = promedio_evaluacion
+                evaluaciones.append(evaluacion)
+
+            evaluaciones_resumen = ', '.join(ev.nombre for ev in evaluaciones)
+            evaluaciones_by_id = {str(ev.id_evaluacion): ev for ev in evaluaciones}
+            if evaluacion_filtro_id != 'all':
+                evaluacion_seleccionada = evaluaciones_by_id.get(str(evaluacion_filtro_id))
+
+            estudiantes_rel = ClaseEstudiante.objects.filter(
+                clase=clase_seleccionada,
+                activo=True,
+            ).select_related('estudiante').order_by(
+                'estudiante__apellido_paterno',
+                'estudiante__apellido_materno',
+                'estudiante__nombre',
+            )
+            total_estudiantes_clase = estudiantes_rel.count()
+            if not total_estudiantes_clase:
+                total_estudiantes_clase = DashboardAdminService._count_estudiantes_curso(
+                    clase_seleccionada.curso, ciclo_activo
+                )
+
+            evaluaciones_incompletas = sum(
+                1 for ev in evaluaciones
+                if total_estudiantes_clase and ev.total_calificaciones < total_estudiantes_clase
+            ) if total_estudiantes_clase else 0
+
+            ponderacion_clase_total = sum(float(ev.ponderacion or 0) for ev in evaluaciones)
+            if evaluaciones:
+                notas_bajas_clase = Calificacion.objects.filter(
+                    evaluacion__in=evaluaciones,
+                    nota__lt=4,
+                ).count()
+                total_calificaciones_clase = Calificacion.objects.filter(
+                    evaluacion__in=evaluaciones,
+                ).count()
+                if total_calificaciones_clase:
+                    promedio_clase = round(
+                        float(
+                            Calificacion.objects.filter(evaluacion__in=evaluaciones)
+                            .aggregate(p=Avg('nota'))['p'] or 0
+                        ),
+                        2,
+                    )
+                esperadas = len(evaluaciones) * total_estudiantes_clase
+                if esperadas:
+                    cobertura_notas_pct = round(
+                        (total_calificaciones_clase / esperadas) * 100, 1
+                    )
+
+            calificaciones = Calificacion.objects.filter(
+                evaluacion__in=evaluaciones
+            ).select_related('evaluacion', 'estudiante')
+            calificaciones_map = {
+                (c.evaluacion_id, c.estudiante_id): c for c in calificaciones
+            }
+
+            for estudiante_rel in estudiantes_rel:
+                estudiante = estudiante_rel.estudiante
+                calificaciones_estudiante = []
+                fecha_ultima = None
+                for evaluacion in evaluaciones:
+                    calif = calificaciones_map.get((evaluacion.id_evaluacion, estudiante.id))
+                    nota = calif.nota if calif else None
+                    if calif and (fecha_ultima is None or calif.fecha_creacion > fecha_ultima):
+                        fecha_ultima = calif.fecha_creacion
+                    calificaciones_estudiante.append({
+                        'evaluacion': evaluacion,
+                        'calificacion': calif,
+                        'nota': nota,
+                        'fecha': calif.fecha_creacion if calif else None,
+                        'es_baja': nota is not None and nota < 4,
                     })
-            except Exception as e:
-                pass
-        
-        # Calcular estadísticas para el template
-        total_evaluaciones = len(evaluaciones)
-        total_calificaciones = 0
-        promedio_general = 0
-        
-        if estudiantes_con_notas and evaluaciones:
-            todas_las_notas = []
-            for estudiante in estudiantes_con_notas:
-                for calif in estudiante['calificaciones']:
-                    if calif['nota'] is not None:
-                        todas_las_notas.append(float(calif['nota']))
-                        total_calificaciones += 1
-            
-            if todas_las_notas:
-                promedio_general = round(sum(todas_las_notas) / len(todas_las_notas), 1)
-        
+
+                fila = {
+                    'estudiante': estudiante,
+                    'calificaciones': calificaciones_estudiante,
+                    'fecha_ultima': fecha_ultima,
+                }
+                calificaciones_matriz.append(fila)
+
+                if evaluacion_seleccionada:
+                    calif_sel = calificaciones_map.get(
+                        (evaluacion_seleccionada.id_evaluacion, estudiante.id)
+                    )
+                    nota_sel = calif_sel.nota if calif_sel else None
+                    fila_cal = {
+                        'estudiante': estudiante,
+                        'calificacion': calif_sel,
+                        'nota': nota_sel,
+                        'fecha_registro': calif_sel.fecha_creacion if calif_sel else None,
+                        'es_baja': nota_sel is not None and nota_sel < 4,
+                    }
+                    estudiantes_con_notas.append(fila_cal)
+                    calificaciones_listado.append({**fila_cal, 'evaluacion': evaluacion_seleccionada})
+
+            if evaluacion_filtro_id == 'all':
+                for fila in calificaciones_matriz:
+                    for item in fila['calificaciones']:
+                        if item['calificacion']:
+                            calificaciones_listado.append({
+                                'estudiante': fila['estudiante'],
+                                'evaluacion': item['evaluacion'],
+                                'calificacion': item['calificacion'],
+                                'nota': item['nota'],
+                                'fecha_registro': item['fecha'],
+                                'es_baja': item['es_baja'],
+                            })
+
+        admin_insights = []
+        if clases_sin_evaluaciones:
+            admin_insights.append({
+                'tipo': 'warn',
+                'texto': f'{clases_sin_evaluaciones} clase(s) activa(s) aún no tienen evaluaciones registradas.',
+            })
+        if evaluaciones_incompletas_global:
+            admin_insights.append({
+                'tipo': 'info',
+                'texto': f'{evaluaciones_incompletas_global} evaluación(es) con calificaciones incompletas en el establecimiento.',
+            })
+        if notas_bajas_clase and clase_seleccionada:
+            admin_insights.append({
+                'tipo': 'danger',
+                'texto': f'{notas_bajas_clase} nota(s) bajo 4.0 en la clase seleccionada.',
+            })
+
+        notas_intel_alertas = []
+        if clase_seleccionada and evaluaciones_incompletas:
+            notas_intel_alertas.append({
+                'tipo': 'warn',
+                'icono': '✏️',
+                'titulo': 'Seguimiento docente',
+                'texto': (
+                    f'{evaluaciones_incompletas} evaluación(es) sin notas completas '
+                    f'({total_estudiantes_clase} alumnos en {clase_seleccionada.curso.nombre}).'
+                ),
+            })
+
         return {
             'clases': clases,
             'filtro_clase_id': filtro_clase_id,
+            'modo': modo,
+            'evaluacion_filtro_id': evaluacion_filtro_id,
             'evaluaciones': evaluaciones,
+            'evaluaciones_resumen': evaluaciones_resumen,
             'estudiantes_con_notas': estudiantes_con_notas,
+            'calificaciones_matriz': calificaciones_matriz,
+            'calificaciones_listado': calificaciones_listado,
+            'evaluacion_seleccionada': evaluacion_seleccionada,
             'clase_seleccionada': clase_seleccionada,
-            'total_evaluaciones': total_evaluaciones,
-            'total_calificaciones': total_calificaciones,
-            'promedio_general': promedio_general
+            'fecha_hoy': date.today().strftime('%Y-%m-%d'),
+            'total_evaluaciones': len(evaluaciones) if clase_seleccionada else total_evaluaciones_escuela,
+            'total_calificaciones': total_calificaciones_clase if clase_seleccionada else total_calificaciones_escuela,
+            'promedio_general': promedio_clase if promedio_clase is not None else promedio_colegio,
+            'total_estudiantes_clase': total_estudiantes_clase,
+            'evaluaciones_incompletas': evaluaciones_incompletas,
+            'cobertura_notas_pct': cobertura_notas_pct,
+            'ponderacion_clase_total': ponderacion_clase_total,
+            'notas_bajas_clase': notas_bajas_clase,
+            'admin_kpi': {
+                'total_clases': clases.count(),
+                'total_evaluaciones': total_evaluaciones_escuela,
+                'total_calificaciones': total_calificaciones_escuela,
+                'promedio_colegio': promedio_colegio,
+                'clases_atencion_count': len(clases_atencion),
+                'evaluaciones_incompletas': evaluaciones_incompletas_global,
+            },
+            'admin_insights': admin_insights,
+            'clases_atencion': clases_atencion,
+            'notas_intel_alertas': notas_intel_alertas,
+            'notas_intel_sugerencias': [],
+            'ciclo_activo': ciclo_activo,
+            'actualizado_en': timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M'),
+            'notas_hero_evaluaciones': len(evaluaciones) if clase_seleccionada else total_evaluaciones_escuela,
+            'notas_hero_calificaciones': total_calificaciones_clase if clase_seleccionada else total_calificaciones_escuela,
+            'notas_hero_promedio': promedio_clase if promedio_clase is not None else (promedio_colegio or '—'),
+            'notas_hero_pendientes': evaluaciones_incompletas if clase_seleccionada else evaluaciones_incompletas_global,
         }
 
     @staticmethod
     @PermissionService.require_permission('ACADEMICO', 'VIEW_GRADES')
     def get_admin_libro_clases_context(user, request_get_params, escuela_rbd):
-        """
-        Get context for libro_clases page in admin mode (all classes)
-        """
+        """Libro de clases — supervisión institucional para administrador escolar."""
         DashboardAdminService._validate_school_integrity(escuela_rbd, 'DASHBOARD_ADMIN_LIBRO_CLASES_CONTEXT')
 
-        from backend.apps.institucion.models import Colegio
+        from django.db.models import Avg, Count, Q
+        from django.utils import timezone
+        from backend.apps.institucion.models import Colegio, CicloAcademico
         from backend.apps.cursos.models import Clase
+        from backend.apps.academico.models import Calificacion, Evaluacion
         from backend.apps.academico.services.grades_service import GradesService
-        
+
         colegio = Colegio.objects.get(rbd=escuela_rbd)
-        
-        # Get all active classes for the school
+        ciclo_activo = CicloAcademico.objects.filter(
+            colegio=colegio, estado='ACTIVO'
+        ).order_by('-fecha_inicio').first()
+
         clases = Clase.objects.filter(
             colegio=colegio,
-            activo=True
+            activo=True,
         ).select_related('asignatura', 'curso', 'profesor').order_by(
-            'asignatura__nombre', 'curso__nombre'
+            'curso__nombre', 'asignatura__nombre'
         )
-        
-        filtro_clase_id = request_get_params.get('clase_id', '')
+
+        filtro_clase_id = (request_get_params.get('clase_id') or '').strip()
         clase_seleccionada = None
         matriz_calificaciones = []
         evaluaciones = []
         promedios_evaluaciones = []
         total_evaluaciones = 0
         total_estudiantes = 0
-        promedio_general = 0
-        
+        promedio_general = None
+        alumnos_riesgo = []
+        alumnos_aprobados = 0
+        alumnos_sin_notas = 0
+
+        calificaciones_escuela_qs = Calificacion.objects.filter(
+            evaluacion__clase__colegio=colegio,
+            evaluacion__activa=True,
+        )
+        if ciclo_activo:
+            calificaciones_escuela_qs = calificaciones_escuela_qs.filter(
+                evaluacion__clase__curso__ciclo_academico=ciclo_activo
+            )
+
+        evaluaciones_escuela_qs = Evaluacion.objects.filter(
+            clase__colegio=colegio,
+            activa=True,
+        )
+        if ciclo_activo:
+            evaluaciones_escuela_qs = evaluaciones_escuela_qs.filter(
+                clase__curso__ciclo_academico=ciclo_activo
+            )
+
+        total_evaluaciones_escuela = evaluaciones_escuela_qs.count()
+        total_calificaciones_escuela = calificaciones_escuela_qs.count()
+        promedio_colegio = None
+        if total_calificaciones_escuela:
+            promedio_colegio = round(
+                float(calificaciones_escuela_qs.aggregate(p=Avg('nota'))['p'] or 0), 2
+            )
+
+        clases_con_libro = clases.annotate(
+            num_evaluaciones=Count(
+                'evaluaciones',
+                filter=Q(evaluaciones__activa=True),
+                distinct=True,
+            ),
+            num_calificaciones=Count(
+                'evaluaciones__calificaciones',
+                filter=Q(evaluaciones__activa=True),
+            ),
+            promedio_clase=Avg(
+                'evaluaciones__calificaciones__nota',
+                filter=Q(evaluaciones__activa=True),
+            ),
+        ).filter(num_evaluaciones__gt=0).order_by('curso__nombre', 'asignatura__nombre')
+
+        libro_resumen_clases = []
+        for c in clases_con_libro[:24]:
+            prom = round(float(c.promedio_clase), 2) if c.promedio_clase is not None else None
+            libro_resumen_clases.append({
+                'clase_id': c.id,
+                'curso': c.curso.nombre,
+                'asignatura': c.asignatura.nombre,
+                'profesor': c.profesor.get_full_name() if c.profesor else 'Sin docente',
+                'profesor_id': c.profesor_id,
+                'color': c.asignatura.color or '#6366f1',
+                'num_evaluaciones': c.num_evaluaciones,
+                'num_calificaciones': c.num_calificaciones,
+                'promedio': prom,
+            })
+
+        clases_sin_libro = clases.count() - clases_con_libro.count()
+
         if filtro_clase_id:
             try:
-                clase_id = int(filtro_clase_id)
-                clase_seleccionada = clases.filter(id=clase_id).first()
-                
-                if clase_seleccionada:
-                    gradebook_data = GradesService.build_gradebook_matrix(
-                        colegio, clase_seleccionada
-                    )
-                    
-                    evaluaciones = gradebook_data['evaluaciones']
-                    matriz_calificaciones = gradebook_data['matriz_calificaciones']
-                    promedios_evaluaciones = gradebook_data['promedios_evaluaciones']
-                    total_evaluaciones = gradebook_data['total_evaluaciones']
-                    total_estudiantes = gradebook_data['total_estudiantes']
-                    promedio_general = gradebook_data['promedio_general']
-            
-            except (ValueError, TypeError) as e:
-                pass  # Silently handle errors
-        
+                clase_seleccionada = clases.filter(id=int(filtro_clase_id)).first()
+            except (ValueError, TypeError):
+                clase_seleccionada = None
+
+        if clase_seleccionada:
+            gradebook_data = GradesService.build_gradebook_matrix(colegio, clase_seleccionada)
+            evaluaciones = gradebook_data['evaluaciones']
+            matriz_calificaciones = gradebook_data['matriz_calificaciones']
+            promedios_evaluaciones = gradebook_data['promedios_evaluaciones']
+            total_evaluaciones = gradebook_data['total_evaluaciones']
+            total_estudiantes = gradebook_data['total_estudiantes']
+            promedio_general = gradebook_data['promedio_general']
+
+            for fila in matriz_calificaciones:
+                prom = fila.get('promedio')
+                if prom is None:
+                    alumnos_sin_notas += 1
+                elif prom < 4.0:
+                    alumnos_riesgo.append({
+                        'nombre': fila['estudiante'].get_full_name(),
+                        'promedio': prom,
+                    })
+                else:
+                    alumnos_aprobados += 1
+
+        admin_insights = []
+        if clases_sin_libro:
+            admin_insights.append({
+                'tipo': 'warn',
+                'texto': f'{clases_sin_libro} clase(s) activa(s) aún no tienen evaluaciones en el libro.',
+            })
+        if alumnos_riesgo:
+            admin_insights.append({
+                'tipo': 'danger',
+                'texto': f'{len(alumnos_riesgo)} alumno(s) en seguimiento (promedio < 4.0) en la clase seleccionada.',
+            })
+
         return {
             'clases': clases,
             'filtro_clase_id': filtro_clase_id,
@@ -929,9 +1399,30 @@ class DashboardAdminService:
             'evaluaciones': evaluaciones,
             'matriz_calificaciones': matriz_calificaciones,
             'promedios_evaluaciones': promedios_evaluaciones,
-            'total_evaluaciones': total_evaluaciones,
+            'total_evaluaciones': total_evaluaciones if clase_seleccionada else total_evaluaciones_escuela,
             'total_estudiantes': total_estudiantes,
-            'promedio_general': promedio_general,
+            'promedio_general': promedio_general if clase_seleccionada else promedio_colegio,
+            'alumnos_riesgo': alumnos_riesgo,
+            'alumnos_riesgo_count': len(alumnos_riesgo),
+            'alumnos_aprobados': alumnos_aprobados,
+            'alumnos_sin_notas': alumnos_sin_notas,
+            'libro_resumen_clases': libro_resumen_clases,
+            'clases_con_libro_count': clases_con_libro.count(),
+            'admin_kpi': {
+                'total_clases': clases.count(),
+                'clases_con_libro': clases_con_libro.count(),
+                'total_evaluaciones': total_evaluaciones_escuela,
+                'total_calificaciones': total_calificaciones_escuela,
+                'promedio_colegio': promedio_colegio,
+                'clases_sin_libro': clases_sin_libro,
+            },
+            'admin_insights': admin_insights,
+            'ciclo_activo': ciclo_activo,
+            'actualizado_en': timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M'),
+            'libro_hero_clases': clases_con_libro.count(),
+            'libro_hero_evaluaciones': total_evaluaciones if clase_seleccionada else total_evaluaciones_escuela,
+            'libro_hero_promedio': promedio_general if promedio_general is not None else (promedio_colegio or '—'),
+            'libro_hero_riesgo': len(alumnos_riesgo) if clase_seleccionada else '—',
         }
 
     @staticmethod
@@ -1196,6 +1687,42 @@ class DashboardAdminService:
         }
 
     @staticmethod
+    def _count_estudiantes_curso(curso, ciclo=None):
+        """Cuenta alumnos del curso usando matrícula, perfil o inscripción en clases."""
+        from backend.apps.accounts.models import PerfilEstudiante, User
+        from backend.apps.cursos.models import ClaseEstudiante
+        from backend.apps.matriculas.models import Matricula
+
+        estudiante_ids = set()
+
+        matricula_qs = Matricula.objects.filter(curso=curso, estado='ACTIVA')
+        if ciclo is not None:
+            matricula_qs = matricula_qs.filter(ciclo_academico=ciclo)
+        estudiante_ids.update(matricula_qs.values_list('estudiante_id', flat=True))
+
+        estudiante_ids.update(
+            PerfilEstudiante.objects.filter(
+                curso_actual_id=curso,
+                user__is_active=True,
+            ).values_list('user_id', flat=True)
+        )
+
+        estudiante_ids.update(
+            ClaseEstudiante.objects.filter(
+                clase__curso=curso,
+                activo=True,
+            ).values_list('estudiante_id', flat=True)
+        )
+
+        if not estudiante_ids:
+            return 0
+
+        return User.objects.filter(
+            id__in=estudiante_ids,
+            is_active=True,
+        ).count()
+
+    @staticmethod
     @PermissionService.require_permission('ADMINISTRATIVO', 'VIEW_REPORTS')
     def get_reporte_cursos_context(user, request_get_params, escuela_rbd):
         """
@@ -1206,10 +1733,10 @@ class DashboardAdminService:
 
         import json
         from django.db.models import Avg
+        from django.utils import timezone
         from backend.apps.institucion.models import Colegio, CicloAcademico
         from backend.apps.cursos.models import Curso, Clase
         from backend.apps.academico.models import Evaluacion, Calificacion
-        from backend.apps.accounts.models import PerfilEstudiante
         
         colegio = Colegio.objects.get(rbd=escuela_rbd)
         
@@ -1275,11 +1802,10 @@ class DashboardAdminService:
                 evaluacion__activa=True
             ).values_list('nota', flat=True))
             
-            total_estudiantes = PerfilEstudiante.objects.filter(
-                user__matriculas__curso=curso_seleccionado,
-                user__matriculas__estado='ACTIVA',
-                user__is_active=True
-            ).distinct().count()
+            total_estudiantes = DashboardAdminService._count_estudiantes_curso(
+                curso_seleccionado,
+                ciclo_seleccionado,
+            )
             
             # Grade distribution
             rango_1_3 = 0  # 1.0 - 3.9
@@ -1305,10 +1831,6 @@ class DashboardAdminService:
                 'rango_6_7': rango_6_7,
             }
             
-            promedio_general = 0.0
-            if todas_las_notas:
-                promedio_general = round(sum(float(n) for n in todas_las_notas) / len(todas_las_notas), 2)
-                
             lista_asignaturas_data = []
             nombre_asignaturas = []
             promedios_asignaturas = []
@@ -1333,6 +1855,14 @@ class DashboardAdminService:
             asignaturas_con_nota = [item for item in lista_asignaturas_data if item['promedio'] is not None]
             mejores_asignaturas = sorted(asignaturas_con_nota, key=lambda x: x['promedio'], reverse=True)[:3]
             peores_asignaturas = sorted(asignaturas_con_nota, key=lambda x: x['promedio'])[:3]
+
+            promedios_validos = [item['promedio'] for item in asignaturas_con_nota]
+            if promedios_validos:
+                promedio_general = round(sum(promedios_validos) / len(promedios_validos), 2)
+            elif todas_las_notas:
+                promedio_general = round(sum(float(n) for n in todas_las_notas) / len(todas_las_notas), 2)
+            else:
+                promedio_general = 0.0
             
             reporte_data = {
                 'promedio_general': promedio_general,
@@ -1346,6 +1876,7 @@ class DashboardAdminService:
                 'colores_asignaturas_json': json.dumps(colores_asignaturas),
                 'mejores_asignaturas': mejores_asignaturas,
                 'peores_asignaturas': peores_asignaturas,
+                'actualizado_en': timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M'),
             }
             
         return {

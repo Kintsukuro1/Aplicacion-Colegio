@@ -1,6 +1,6 @@
 {# Título de pestaña. Variables: portal_title_mode ('login'), rol, wrap_title (default True) #}
 {% if portal_title_mode == 'login' %}
-{% if wrap_title != False %}<title>{% endif %}Portal Académico - Iniciar Sesión{% if wrap_title != False %}</title>{% endif %}
+{% if wrap_title != False %}<title>{% endif %}Portal académico - Iniciar sesión{% if wrap_title != False %}</title>{% endif %}
 {% else %}
 {% with r=rol|default:''|lower %}
 {% if r == 'estudiante' or r == 'alumno' %}

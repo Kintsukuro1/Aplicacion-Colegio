@@ -1,0 +1,173 @@
+{% load static %}
+<aside class="pers-sidebar adm-sidebar" aria-label="Navegación del administrador general">
+    <div class="pers-sidebar__top">
+        <div class="pers-sidebar__brand">
+            {% include 'includes/_portal_brand_logo.html' with logo_alt="Raccademy Admin" extra_class='portal-brand-logo--sidebar' %}
+            <span class="pers-sidebar__brand-text">Raccademy Admin</span>
+        </div>
+
+        <div class="pers-sidebar__profile">
+            <div class="pers-sidebar__avatar" aria-hidden="true">
+                {% if iniciales %}{{ iniciales }}{% else %}{{ user.nombre|first|upper }}{{ user.apellido_paterno|first|upper }}{% endif %}
+            </div>
+            <p class="pers-sidebar__name">{{ nombre_usuario|default:user.get_full_name }}</p>
+            <p class="pers-sidebar__course">Administrador General</p>
+        </div>
+    </div>
+
+    <nav class="pers-sidebar__nav">
+        {% if not paginas_habilitadas or 'inicio' in paginas_habilitadas %}
+        <p class="pers-sidebar__section-label">Principal</p>
+        <ul class="pers-sidebar__list">
+            <li class="pers-sidebar__item{% if pagina_actual == 'inicio' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🏠</span>
+                    <span>Inicio</span>
+                </a>
+            </li>
+        </ul>
+        <div class="pers-sidebar__divider" aria-hidden="true"></div>
+        {% endif %}
+
+        <p class="pers-sidebar__section-label">Sistema</p>
+        <ul class="pers-sidebar__list">
+            <li class="pers-sidebar__item{% if pagina_actual == 'gestionar_escuelas' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'seleccionar_escuela' %}">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🔄</span>
+                    <span>Cambiar Colegio</span>
+                </a>
+            </li>
+            {% if not paginas_habilitadas or 'escuelas' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'escuelas' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=escuelas">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🏫</span>
+                    <span>Gestionar Escuelas</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if not paginas_habilitadas or 'usuarios' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'usuarios' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=usuarios">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">👥</span>
+                    <span>Usuarios del Sistema</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if not paginas_habilitadas or 'planes' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'planes' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=planes">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">💼</span>
+                    <span>Planes y Suscripciones</span>
+                </a>
+            </li>
+            {% endif %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'importar_datos' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'importar_datos' %}">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📥</span>
+                    <span>Importar / Exportar</span>
+                </a>
+            </li>
+            {% if not paginas_habilitadas or 'calendario_eventos' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'calendario_eventos' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=calendario_eventos">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🗓️</span>
+                    <span>Calendario Escolar</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if not paginas_habilitadas or 'solicitud_reuniones' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'solicitud_reuniones' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=solicitud_reuniones">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🤝</span>
+                    <span>Solicitud Reuniones</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="pers-sidebar__divider" aria-hidden="true"></div>
+
+        <p class="pers-sidebar__section-label">Reportes globales</p>
+        <ul class="pers-sidebar__list">
+            {% if not paginas_habilitadas or 'estadisticas_globales' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'estadisticas_globales' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=estadisticas_globales">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📊</span>
+                    <span>Estadísticas Globales</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if not paginas_habilitadas or 'reportes_financieros' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'reportes_financieros' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=reportes_financieros">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">💰</span>
+                    <span>Reportes Financieros</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="pers-sidebar__divider" aria-hidden="true"></div>
+
+        <p class="pers-sidebar__section-label">Configuración</p>
+        <ul class="pers-sidebar__list">
+            {% if not paginas_habilitadas or 'configuracion' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'configuracion' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=configuracion">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">⚙️</span>
+                    <span>Configuración Sistema</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if not paginas_habilitadas or 'auditoria' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'auditoria' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=auditoria">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📋</span>
+                    <span>Logs de Auditoría</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="pers-sidebar__divider" aria-hidden="true"></div>
+
+        <p class="pers-sidebar__section-label">Seguridad</p>
+        <ul class="pers-sidebar__list">
+            {% if not menu_access or menu_access.monitoreo_seguridad %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'monitoreo_seguridad' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'monitoreo_seguridad' %}">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🔐</span>
+                    <span>Monitoreo Seguridad</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if not paginas_habilitadas or 'active_sessions' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'active_sessions' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=active_sessions">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🧭</span>
+                    <span>Sesiones Activas</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if not paginas_habilitadas or 'password_history' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'password_history' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=password_history">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🛡️</span>
+                    <span>Historial Contraseñas</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <div class="pers-sidebar__footer">
+        <a href="{% url 'dashboard' %}?pagina=perfil" class="pers-sidebar__footer-link{% if pagina_actual == 'perfil' %} pers-sidebar__footer-link--active{% endif %}">
+            <span class="pers-sidebar__emoji" aria-hidden="true">👤</span>
+            <span>Mi perfil</span>
+        </a>
+        <form method="POST" action="{% url 'accounts:logout' %}" class="pers-sidebar__logout-form">
+            {% csrf_token %}
+            <button type="submit" class="pers-sidebar__footer-link pers-sidebar__footer-link--logout">
+                <span class="pers-sidebar__emoji" aria-hidden="true">🚪</span>
+                <span>Cerrar Sesión</span>
+            </button>
+        </form>
+    </div>
+</aside>

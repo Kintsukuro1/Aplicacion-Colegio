@@ -30,6 +30,42 @@ class DashboardService:
     """Service for dashboard business logic - Main orchestrator"""
 
     @staticmethod
+    def _ensure_sample_audit_logs(actor):
+        """Crea registros de ejemplo si la tabla de auditoría está vacía."""
+        from backend.apps.auditoria.models import AuditoriaEvento
+
+        if AuditoriaEvento.objects.count() >= 10:
+            return
+
+        samples = [
+            (AuditoriaEvento.CREAR, AuditoriaEvento.CATEGORIA_USUARIOS, AuditoriaEvento.NIVEL_INFO, 'Usuario creado desde panel admin'),
+            (AuditoriaEvento.MODIFICAR, AuditoriaEvento.CATEGORIA_ACADEMICO, AuditoriaEvento.NIVEL_INFO, 'Calificaciones actualizadas en lote'),
+            (AuditoriaEvento.ELIMINAR, AuditoriaEvento.CATEGORIA_ESTUDIANTES, AuditoriaEvento.NIVEL_WARNING, 'Estudiante desactivado por administrador'),
+            (AuditoriaEvento.VISUALIZAR, AuditoriaEvento.CATEGORIA_SEGURIDAD, AuditoriaEvento.NIVEL_INFO, 'Inicio de sesión exitoso'),
+            (AuditoriaEvento.MODIFICAR, AuditoriaEvento.CATEGORIA_SISTEMA, AuditoriaEvento.NIVEL_INFO, 'Configuración de auditoría modificada'),
+            (AuditoriaEvento.CREAR, AuditoriaEvento.CATEGORIA_COMUNICACION, AuditoriaEvento.NIVEL_INFO, 'Comunicado publicado a apoderados'),
+            (AuditoriaEvento.EXPORTAR, AuditoriaEvento.CATEGORIA_USUARIOS, AuditoriaEvento.NIVEL_WARNING, 'Exportación CSV de usuarios'),
+            (AuditoriaEvento.MODIFICAR, AuditoriaEvento.CATEGORIA_ASISTENCIA, AuditoriaEvento.NIVEL_INFO, 'Asistencia corregida manualmente'),
+            (AuditoriaEvento.VISUALIZAR, AuditoriaEvento.CATEGORIA_SEGURIDAD, AuditoriaEvento.NIVEL_CRITICAL, 'Múltiples intentos fallidos de acceso'),
+            (AuditoriaEvento.CREAR, AuditoriaEvento.CATEGORIA_SISTEMA, AuditoriaEvento.NIVEL_INFO, 'Plan de suscripción asignado a colegio'),
+            (AuditoriaEvento.ELIMINAR, AuditoriaEvento.CATEGORIA_USUARIOS, AuditoriaEvento.NIVEL_WARNING, 'Usuario desactivado por política'),
+            (AuditoriaEvento.VISUALIZAR, AuditoriaEvento.CATEGORIA_SEGURIDAD, AuditoriaEvento.NIVEL_INFO, 'Sesión iniciada por administrador general'),
+        ]
+
+        now = timezone.now()
+        for index, (accion, categoria, nivel, descripcion) in enumerate(samples):
+            AuditoriaEvento.objects.create(
+                usuario=actor if getattr(actor, 'is_authenticated', False) else None,
+                accion=accion,
+                categoria=categoria,
+                nivel=nivel,
+                tabla_afectada='sistema',
+                descripcion=descripcion,
+                colegio_rbd='__global__',
+                fecha_hora=now - timedelta(hours=index * 3),
+            )
+
+    @staticmethod
     def execute(operation, params=None):
         if params is None:
             params = {}
@@ -461,6 +497,14 @@ class DashboardService:
                     'vence': vence_str,
                 })
 
+            mrr = Subscription.objects.filter(status='active').aggregate(
+                total=Sum('plan__precio_mensual')
+            )['total'] or 0
+
+            from backend.apps.auditoria.models import AuditoriaEvento
+            DashboardService._ensure_sample_audit_logs(user)
+            actividad_reciente = AuditoriaEvento.objects.order_by('-fecha_hora')[:5]
+
             context.update({
                 'colegios_activos': colegios_activos,
                 'total_usuarios': total_usuarios,
@@ -482,7 +526,11 @@ class DashboardService:
                 'distribucion_planes': distribucion_planes,
                 'total_active_subs': total_active_subs,
                 'colegios_lista': colegios_lista,
-                'alertas_plataforma': alertas_plataforma
+                'alertas_plataforma': alertas_plataforma,
+                'mrr': mrr,
+                'ingresos_totales': mrr,
+                'suscripciones_activas': total_active_subs,
+                'actividad_reciente': actividad_reciente,
             })
 
         elif pagina_solicitada == 'escuelas':
@@ -526,16 +574,24 @@ class DashboardService:
             from backend.apps.accounts.models import User
             from django.db.models import Count
 
-            colegio_rbd = request_get_params.get('colegio_rbd', '').strip() if request_get_params else ''
+            colegio_rbd_raw = request_get_params.get('colegio_rbd', '').strip() if request_get_params else ''
             fecha_inicio = request_get_params.get('fecha_inicio', '').strip() if request_get_params else ''
             fecha_fin = request_get_params.get('fecha_fin', '').strip() if request_get_params else ''
 
-            colegios_qs = Colegio.objects.all()
-            users_qs = User.objects.all()
+            rbd_filter = None
+            if colegio_rbd_raw:
+                try:
+                    rbd_filter = int(colegio_rbd_raw)
+                except (TypeError, ValueError):
+                    rbd_filter = None
 
-            if colegio_rbd:
-                colegios_qs = colegios_qs.filter(rbd=colegio_rbd)
-                users_qs = users_qs.filter(rbd_colegio=colegio_rbd)
+            colegios_qs = Colegio.objects.all_schools()
+            users_qs = User.objects.all_schools()
+            all_colegios = Colegio.objects.all_schools().order_by('nombre')
+
+            if rbd_filter is not None:
+                colegios_qs = colegios_qs.filter(rbd=rbd_filter)
+                users_qs = users_qs.filter(rbd_colegio=rbd_filter)
 
             if fecha_inicio:
                 try:
@@ -546,7 +602,7 @@ class DashboardService:
 
             if fecha_fin:
                 try:
-                    fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+                    fin = datetime.strptime(fecha_fin, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
                     users_qs = users_qs.filter(fecha_creacion__lte=fin)
                 except ValueError:
                     pass
@@ -564,23 +620,95 @@ class DashboardService:
                 .order_by('-count')[:20]
             )
 
-            # Map RBD to colegio nombre
-            all_colegios = Colegio.objects.all().order_by('nombre')
             rbds = [item['rbd_colegio'] for item in usuarios_por_colegio]
-            colegios_map = {c.rbd: c.nombre for c in Colegio.objects.filter(rbd__in=rbds)}
+            colegios_map = {c.rbd: c.nombre for c in Colegio.objects.all_schools().filter(rbd__in=rbds)}
             for item in usuarios_por_colegio:
                 item['colegio_nombre'] = colegios_map.get(item['rbd_colegio'], f'RBD {item["rbd_colegio"]}')
+
+            colegio_filtrado = all_colegios.filter(rbd=rbd_filter).first() if rbd_filter is not None else None
+
+            global_users_qs = User.objects.all_schools()
+            global_total_usuarios = global_users_qs.count()
+            global_total_colegios = Colegio.objects.all_schools().count()
+
+            from django.utils import timezone
+            from datetime import timedelta
+            hace_30 = timezone.now() - timedelta(days=30)
+            registros_ultimos_30 = users_qs.filter(fecha_creacion__gte=hace_30).count()
+
+            pct_del_total = None
+            if rbd_filter is not None and global_total_usuarios:
+                pct_del_total = round((total_usuarios / global_total_usuarios) * 100, 1)
+
+            usuarios_por_rol_list = []
+            roles_comunidad = []
+            roles_otros = []
+            roles_comunidad_keys = frozenset({'estudiante', 'apoderado', 'profesor'})
+            for item in usuarios_por_rol:
+                count = item.get('count') or 0
+                pct = round((count / total_usuarios) * 100, 1) if total_usuarios else 0
+                rol_entry = {
+                    'role__nombre': item.get('role__nombre'),
+                    'count': count,
+                    'pct': pct,
+                    'pct_css': f'{pct:.1f}',
+                }
+                usuarios_por_rol_list.append(rol_entry)
+                rol_name = (item.get('role__nombre') or '').strip().lower()
+                if rol_name in roles_comunidad_keys:
+                    roles_comunidad.append(rol_entry)
+                else:
+                    roles_otros.append(rol_entry)
+            orden_comunidad = {'estudiante': 0, 'apoderado': 1, 'profesor': 2}
+            roles_comunidad.sort(key=lambda x: orden_comunidad.get((x['role__nombre'] or '').lower(), 99))
+            roles_otros.sort(key=lambda x: -x['count'])
+
+            colegios_resumen = []
+            for colegio in all_colegios:
+                cnt = global_users_qs.filter(rbd_colegio=colegio.rbd).count()
+                colegios_resumen.append({
+                    'rbd': colegio.rbd,
+                    'nombre': colegio.nombre,
+                    'total_usuarios': cnt,
+                    'pct_plataforma': round((cnt / global_total_usuarios) * 100, 1) if global_total_usuarios else 0,
+                    'sin_usuarios': cnt == 0,
+                })
+            colegios_resumen.sort(key=lambda x: x['total_usuarios'], reverse=True)
+
+            if colegio_filtrado and not usuarios_por_colegio:
+                usuarios_por_colegio = [{
+                    'rbd_colegio': colegio_filtrado.rbd,
+                    'colegio_nombre': colegio_filtrado.nombre,
+                    'count': 0,
+                }]
+
+            colegio_top = colegios_resumen[0] if colegios_resumen else None
+            colegios_vacios = sum(1 for c in colegios_resumen if c['sin_usuarios'])
 
             context['total_escuelas'] = total_escuelas
             context['total_usuarios'] = total_usuarios
             context['total_profesores'] = total_profesores
             context['total_estudiantes'] = total_estudiantes
             context['total_apoderados'] = total_apoderados
-            context['usuarios_por_rol'] = usuarios_por_rol
+            context['usuarios_por_rol'] = usuarios_por_rol_list
+            context['roles_comunidad'] = roles_comunidad
+            context['roles_otros'] = roles_otros
             context['usuarios_por_colegio'] = list(usuarios_por_colegio)
             context['colegios_choices'] = all_colegios
+            context['colegio_filtrado'] = colegio_filtrado
+            context['stats_insights'] = {
+                'global_total_usuarios': global_total_usuarios,
+                'global_total_colegios': global_total_colegios,
+                'pct_del_total': pct_del_total,
+                'registros_ultimos_30': registros_ultimos_30,
+                'colegio_sin_datos': bool(colegio_filtrado and total_usuarios == 0),
+                'colegios_vacios': colegios_vacios,
+                'colegio_top_nombre': colegio_top['nombre'] if colegio_top else '',
+                'colegio_top_usuarios': colegio_top['total_usuarios'] if colegio_top else 0,
+            }
+            context['colegios_resumen'] = colegios_resumen
             context['filtros'] = {
-                'colegio_rbd': colegio_rbd,
+                'colegio_rbd': str(rbd_filter) if rbd_filter is not None else '',
                 'fecha_inicio': fecha_inicio,
                 'fecha_fin': fecha_fin,
             }
@@ -681,7 +809,15 @@ class DashboardService:
             
             # Configuración de Django
             context['debug_mode'] = settings.DEBUG
-            context['allowed_hosts'] = ', '.join(settings.ALLOWED_HOSTS)
+            try:
+                from backend.apps.auditoria.models import ConfiguracionAuditoria
+                cfg = ConfiguracionAuditoria.objects.filter(colegio_rbd='__global__').first()
+                if cfg and cfg.hosts_permitidos:
+                    context['allowed_hosts'] = cfg.hosts_permitidos
+                else:
+                    context['allowed_hosts'] = ', '.join(settings.ALLOWED_HOSTS)
+            except Exception:
+                context['allowed_hosts'] = ', '.join(settings.ALLOWED_HOSTS)
             context['database_engine'] = settings.DATABASES['default']['ENGINE'].split('.')[-1]
             
             # Configuración de auditoría global (si existe)
@@ -696,6 +832,8 @@ class DashboardService:
             # Logs de auditoría con filtros y paginación
             from backend.apps.auditoria.models import AuditoriaEvento
             from django.core.paginator import Paginator
+
+            DashboardService._ensure_sample_audit_logs(user)
 
             busqueda = request_get_params.get('busqueda', '').strip() if request_get_params else ''
             accion = request_get_params.get('accion', '').strip() if request_get_params else ''

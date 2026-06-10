@@ -1533,10 +1533,15 @@ class DashboardApoderadoService:
     def _get_apoderado_mis_pupilos_context(user, estudiantes):
         """Métricas e insights por pupilo para la vista Mis pupilos (sin tocar inicio)."""
         from collections import defaultdict
-        from datetime import date, timedelta
+        from datetime import date, datetime, timedelta
 
         from django.db.models import Avg, Count, Q
         from django.utils import timezone
+
+        def _a_fecha(valor):
+            if isinstance(valor, datetime):
+                return valor.date()
+            return valor
 
         from backend.apps.academico.models import Asistencia, Calificacion, EntregaTarea, Evaluacion, Tarea
         from backend.apps.cursos.models import ClaseEstudiante
@@ -1754,7 +1759,7 @@ class DashboardApoderadoService:
                 for tarea in tareas_por_clase.get(clase_id, []):
                     if (estudiante.id, tarea['id_tarea']) in entregadas_set:
                         continue
-                    fecha_entrega = tarea.get('fecha_entrega')
+                    fecha_entrega = _a_fecha(tarea.get('fecha_entrega'))
                     if not fecha_entrega or fecha_entrega < hoy or fecha_entrega > limite_hitos:
                         continue
                     if not proxima_tarea or fecha_entrega < proxima_tarea['fecha_entrega']:

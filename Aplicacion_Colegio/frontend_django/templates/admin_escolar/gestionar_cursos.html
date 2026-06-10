@@ -1,181 +1,167 @@
 {% load static %}
 
-<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_cursos.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_escolar/gestionar_cursos.css' %}?v=20260610-cursos-v2">
 
 <div class="cursos-container">
-    <!-- Encabezado y Estadísticas -->
-    <div class="header-section">
-        <div class="titulo-modulo">
-            <i class="fas fa-chalkboard"></i>
-            <h2>Gestión de Cursos</h2>
+    {% if insights_cursos %}
+    <section class="cursos-insights" aria-label="Información útil">
+        {% for insight in insights_cursos %}
+        <div class="cursos-insight cursos-insight--{{ insight.tipo }}">
+            <span class="cursos-insight__icon" aria-hidden="true">
+                {% if insight.tipo == 'warn' %}⚠️{% elif insight.tipo == 'info' %}💡{% else %}📋{% endif %}
+            </span>
+            <p>{{ insight.texto }}</p>
+            {% if insight.tipo == 'info' and estudiantes_sin_curso_count %}
+            <a href="{% url 'dashboard' %}?pagina=gestionar_estudiantes&amp;asignacion=sin_asignar" class="cursos-insight__link">Ver estudiantes sin curso →</a>
+            {% endif %}
         </div>
-        
-        <div class="estadisticas-grid">
-            <div class="stat-card blue">
-                <div class="stat-icon">
-                    🎒
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_cursos|default:0 }}</span>
-                    <span class="stat-label">Total Cursos</span>
-                </div>
-            </div>
-            
-            <div class="stat-card green">
-                <div class="stat-icon">
-                    👨‍🎓
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_estudiantes_asignados|default:0 }}</span>
-                    <span class="stat-label">Estudiantes Asignados</span>
-                </div>
-            </div>
-            
-            <div class="stat-card purple">
-                <div class="stat-icon">
-                    📚
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ total_clases_activas|default:0 }}</span>
-                    <span class="stat-label">Clases Activas</span>
-                </div>
-            </div>
-            
-            <div class="stat-card orange">
-                <div class="stat-icon">
-                    ⚠️
-                </div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ cursos_sin_estudiantes|default:0 }}</span>
-                    <span class="stat-label">Cursos Sin Estudiantes</span>
-                </div>
-            </div>
-        </div>
-    </div>
+        {% endfor %}
+    </section>
+    {% endif %}
 
-    <!-- Filtros y Búsqueda -->
     <div class="filtros-section">
-        <form method="GET" action="{% url 'dashboard' %}" class="filtros-form">
+        <form method="GET" action="{% url 'dashboard' %}" class="filtros-form" id="filtrosCursosForm">
             <input type="hidden" name="pagina" value="gestionar_cursos">
-            
+
+            <div class="filtro-group filtro-group--wide">
+                <label for="busqueda"><i class="fas fa-search"></i> Buscar curso</label>
+                <input type="text" id="busqueda" name="busqueda" placeholder="Ej: 1° Básico A" value="{{ filtro_busqueda|default:'' }}">
+            </div>
+
             <div class="filtro-group">
-                <label for="nivel">
-                    <i class="fas fa-layer-group"></i> Nivel
-                </label>
+                <label for="nivel"><i class="fas fa-layer-group"></i> Nivel</label>
                 <select id="nivel" name="nivel">
                     <option value="">Todos los niveles</option>
                     {% for nivel in niveles %}
-                        <option value="{{ nivel.id_nivel }}" {% if filtro_nivel == nivel.id_nivel|stringformat:"s" %}selected{% endif %}>
-                            {{ nivel.nombre }}
-                        </option>
+                    <option value="{{ nivel.id_nivel }}" {% if filtro_nivel == nivel.id_nivel|stringformat:"s" %}selected{% endif %}>
+                        {{ nivel.nombre }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
-            
+
             <div class="filtro-group">
-                <label for="anio">
-                    <i class="fas fa-calendar"></i> Año Escolar
-                </label>
+                <label for="anio"><i class="fas fa-calendar"></i> Año escolar</label>
                 <select id="anio" name="anio">
-                    <option value="2024" {% if filtro_anio == '2024' %}selected{% endif %}>2024</option>
-                    <option value="2025" {% if filtro_anio == '2025' %}selected{% endif %}>2025</option>
-                    <option value="2026" {% if filtro_anio == '2026' %}selected{% endif %}>2026</option>
+                    {% for anio in anios_disponibles %}
+                    <option value="{{ anio }}" {% if filtro_anio == anio|stringformat:"s" %}selected{% endif %}>
+                        {{ anio }}{% if anio_ciclo_activo == anio %} · ciclo activo{% endif %}
+                    </option>
+                    {% empty %}
+                    <option value="{{ filtro_anio|default:'' }}">{{ filtro_anio|default:"Sin ciclos" }}</option>
+                    {% endfor %}
                 </select>
             </div>
-            
+
+            <div class="filtro-group">
+                <label for="ocupacion"><i class="fas fa-chart-pie"></i> Ocupación</label>
+                <select id="ocupacion" name="ocupacion">
+                    <option value="">Todos</option>
+                    <option value="con_estudiantes" {% if filtro_ocupacion == 'con_estudiantes' %}selected{% endif %}>Con estudiantes</option>
+                    <option value="vacios" {% if filtro_ocupacion == 'vacios' %}selected{% endif %}>Sin estudiantes ({{ cursos_sin_estudiantes|default:0 }})</option>
+                    <option value="sin_clases" {% if filtro_ocupacion == 'sin_clases' %}selected{% endif %}>Sin clases configuradas</option>
+                </select>
+            </div>
+
             <div class="filtro-actions">
-                <button type="submit" class="btn-filtrar">
-                    <i class="fas fa-filter"></i> Filtrar
-                </button>
-                <a href="{% url 'dashboard' %}?pagina=gestionar_cursos" class="btn-limpiar">
-                    <i class="fas fa-times"></i> Limpiar
-                </a>
+                <button type="submit" class="btn-filtrar"><i class="fas fa-filter"></i> Filtrar</button>
+                <a href="{% url 'dashboard' %}?pagina=gestionar_cursos" class="btn-limpiar"><i class="fas fa-times"></i> Limpiar</a>
             </div>
         </form>
-        
-        <button onclick="abrirModalCrear()" class="btn-nuevo-curso">
+
+        <p class="filtros-resultado">
+            Mostrando <strong>{{ total_cursos_filtrados|default:0 }}</strong> de {{ total_cursos|default:0 }} curso{{ total_cursos|pluralize:"s" }}
+            {% if filtro_busqueda or filtro_nivel or filtro_ocupacion %} · filtros activos{% endif %}
+            {% if ciclo_activo %} · {{ ciclo_activo.nombre }}{% endif %}
+        </p>
+
+        <button type="button" onclick="abrirModalCrear()" class="btn-nuevo-curso">
             <i class="fas fa-plus"></i> Nuevo Curso
         </button>
     </div>
 
-    <!-- Tabla de Cursos -->
     <div class="tabla-container">
         {% if cursos %}
         <table class="tabla-cursos">
             <thead>
                 <tr>
-                    <th>Nombre</th>
+                    <th>Curso</th>
                     <th>Nivel</th>
-                    <th>Año Escolar</th>
+                    <th>Ciclo / Año</th>
                     <th>Estudiantes</th>
                     <th>Clases</th>
-                    <th>Acciones</th>
+                    <th>Estado</th>
+                    <th>Gestión</th>
                 </tr>
             </thead>
             <tbody>
                 {% for curso in cursos %}
-                <tr>
+                <tr class="{% if curso.total_estudiantes == 0 %}fila-curso-vacio{% endif %}">
                     <td>
                         <div class="curso-nombre">
-                            <div class="curso-icon">
-                                🎓
+                            <div class="curso-icon" aria-hidden="true">{{ curso.nombre.0|upper }}</div>
+                            <div>
+                                <strong>{{ curso.nombre }}</strong>
+                                {% if curso.ciclo_academico %}
+                                <span class="curso-sub">{{ curso.ciclo_academico.nombre }}</span>
+                                {% endif %}
                             </div>
-                            <span><strong>{{ curso.nombre }}</strong></span>
                         </div>
                     </td>
+                    <td><span class="badge-nivel">{{ curso.nivel.nombre }}</span></td>
                     <td>
-                        <span class="badge-nivel">{{ curso.nivel.nombre }}</span>
+                        <span class="badge-anio">{{ curso.anio_escolar|default:"—" }}</span>
                     </td>
-                    <td>{{ curso.anio_escolar }}</td>
                     <td>
-                        <span class="badge-count">
-                            {{ curso.total_estudiantes|default:0 }} estudiante{{ curso.total_estudiantes|default:0|pluralize }}
+                        <span class="badge-count {% if curso.total_estudiantes == 0 %}badge-count--warn{% endif %}">
+                            {{ curso.total_estudiantes|default:0 }} alumno{{ curso.total_estudiantes|default:0|pluralize:"s" }}
                         </span>
                     </td>
                     <td>
-                        <span class="badge-count">
-                            {{ curso.total_clases|default:0 }} clase{{ curso.total_clases|default:0|pluralize }}
+                        <span class="badge-count {% if curso.total_clases == 0 %}badge-count--muted{% endif %}">
+                            {{ curso.total_clases|default:0 }} clase{{ curso.total_clases|default:0|pluralize:"s" }}
                         </span>
                     </td>
                     <td>
-                        <div class="acciones-grupo">
-                            <button 
-                                class="btn-icono btn-editar" 
-                                title="Editar"
+                        {% if curso.total_estudiantes == 0 %}
+                        <span class="badge-estado-curso badge-estado-curso--vacant">Sin matrícula</span>
+                        {% elif curso.total_clases == 0 %}
+                        <span class="badge-estado-curso badge-estado-curso--pending">Sin clases</span>
+                        {% else %}
+                        <span class="badge-estado-curso badge-estado-curso--ok">Operativo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="curso-acciones">
+                            <button type="button" class="curso-accion curso-accion--edit"
+                                title="Editar curso"
                                 onclick="abrirModalEditar(this)"
                                 data-id="{{ curso.id_curso }}"
                                 data-nombre="{{ curso.nombre }}"
                                 data-nivel-id="{{ curso.nivel.id_nivel }}"
-                                data-anio="{{ curso.anio_escolar }}"
-                            >
-                                ✏️
+                                data-anio="{{ curso.anio_escolar|default:anio_ciclo_activo|default:2025 }}">
+                                <i class="fas fa-pen" aria-hidden="true"></i><span>Editar</span>
                             </button>
-                            <button 
-                                class="btn-icono btn-estudiantes" 
-                                title="Asignar Estudiantes"
+                            <button type="button" class="curso-accion curso-accion--students"
+                                title="Asignar estudiantes"
                                 onclick="abrirModalEstudiantes(this)"
                                 data-id="{{ curso.id_curso }}"
-                                data-nombre="{{ curso.nombre }}"
-                            >
-                                👥
+                                data-nombre="{{ curso.nombre }}">
+                                <i class="fas fa-user-plus" aria-hidden="true"></i><span>Alumnos</span>
                             </button>
-                            <button 
-                                class="btn-icono btn-profesores" 
-                                title="Asignar Profesores"
+                            <button type="button" class="curso-accion curso-accion--teachers"
+                                title="Asignar profesores"
                                 onclick="abrirModalProfesores(this)"
                                 data-id="{{ curso.id_curso }}"
-                                data-nombre="{{ curso.nombre }}"
-                            >
-                                👨‍🏫
+                                data-nombre="{{ curso.nombre }}">
+                                <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i><span>Docentes</span>
                             </button>
-                            <button 
-                                class="btn-icono btn-eliminar" 
-                                title="Desactivar"
+                            <button type="button" class="curso-accion curso-accion--danger"
+                                title="Desactivar curso"
                                 onclick="confirmarEliminar(this)"
                                 data-id="{{ curso.id_curso }}"
-                                data-nombre="{{ curso.nombre }}"
-                            >
-                                🗑️
+                                data-nombre="{{ curso.nombre }}">
+                                <i class="fas fa-ban" aria-hidden="true"></i><span>Desactivar</span>
                             </button>
                         </div>
                     </td>
@@ -186,9 +172,10 @@
         {% else %}
         <div class="empty-state">
             <i class="fas fa-inbox"></i>
-            <p>No se encontraron cursos</p>
-            <button onclick="abrirModalCrear()" class="btn-nuevo-curso">
-                <i class="fas fa-plus"></i> Crear Primer Curso
+            <p>No se encontraron cursos con los filtros aplicados.</p>
+            <a href="{% url 'dashboard' %}?pagina=gestionar_cursos" class="btn-limpiar">Limpiar filtros</a>
+            <button type="button" onclick="abrirModalCrear()" class="btn-nuevo-curso">
+                <i class="fas fa-plus"></i> Crear primer curso
             </button>
         </div>
         {% endif %}
@@ -196,74 +183,59 @@
 </div>
 
 <!-- Modal Crear/Editar Curso -->
-<div id="modalCurso" class="modal-overlay d-none">
+<div id="modalCurso" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
             <h3 id="modalTitulo">Nuevo Curso</h3>
-            <button class="btn-close-modal" onclick="cerrarModal('modalCurso')">
+            <button type="button" class="btn-close-modal" onclick="cerrarModal('modalCurso')" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        
         <form method="POST" action="{% url 'gestionar_cursos' %}">
             {% csrf_token %}
             <input type="hidden" name="accion" id="accionForm" value="crear">
             <input type="hidden" name="id" id="cursoId">
-            
             <div class="form-group">
                 <label for="nombre">Nombre del Curso <span class="required">*</span></label>
                 <input type="text" id="nombre" name="nombre" required placeholder="Ej: 1° Básico A">
             </div>
-            
             <div class="form-group">
                 <label for="nivel_id">Nivel Educativo <span class="required">*</span></label>
                 <select id="nivel_id" name="nivel_id" required>
                     <option value="">-- Seleccione un nivel --</option>
                     {% for nivel in niveles %}
-                        <option value="{{ nivel.id_nivel }}">{{ nivel.nombre }}</option>
+                    <option value="{{ nivel.id_nivel }}">{{ nivel.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
-            
             <div class="form-group">
                 <label for="anio_escolar">Año Escolar <span class="required">*</span></label>
-                <input type="number" id="anio_escolar" name="anio_escolar" value="2025" required min="2020" max="2030">
+                <input type="number" id="anio_escolar" name="anio_escolar" value="{{ anio_ciclo_activo|default:2025 }}" required min="2020" max="2035">
             </div>
-            
             <div class="modal-footer">
-                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalCurso')">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-                <button type="submit" class="btn-guardar">
-                    <i class="fas fa-save"></i> Guardar Curso
-                </button>
+                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalCurso')">Cancelar</button>
+                <button type="submit" class="btn-guardar"><i class="fas fa-save"></i> Guardar Curso</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Modal Asignar Estudiantes -->
-<div id="modalEstudiantes" class="modal-overlay d-none">
+<div id="modalEstudiantes" class="modal-overlay">
     <div class="modal-content modal-large">
         <div class="modal-header">
             <h3>Asignar Estudiantes</h3>
-            <button class="btn-close-modal" onclick="cerrarModal('modalEstudiantes')">
+            <button type="button" class="btn-close-modal" onclick="cerrarModal('modalEstudiantes')" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        
         <form method="POST" action="{% url 'gestionar_cursos' %}">
             {% csrf_token %}
             <input type="hidden" name="accion" value="asignar_estudiantes">
             <input type="hidden" name="curso_id" id="estudiantesCursoId">
-            
-            <p class="info-curso">
-                <strong>Curso:</strong> <span id="estudiantesCursoNombre"></span>
-            </p>
-            
+            <p class="info-curso"><strong>Curso:</strong> <span id="estudiantesCursoNombre"></span></p>
             <div class="estudiantes-disponibles">
-                <h4>Estudiantes sin curso asignado ({{ estudiantes_sin_curso|length }})</h4>
-                
+                <h4>Estudiantes sin curso ({{ estudiantes_sin_curso_count|default:0 }})</h4>
                 {% if estudiantes_sin_curso %}
                 <div class="select-all">
                     <label>
@@ -271,91 +243,71 @@
                         Seleccionar todos
                     </label>
                 </div>
-                
                 <div class="lista-estudiantes">
                     {% for estudiante in estudiantes_sin_curso %}
                     <label class="estudiante-item">
                         <input type="checkbox" name="estudiantes_ids" value="{{ estudiante.id }}" class="checkbox-estudiante">
                         <div class="estudiante-info">
-                            <div class="avatar-small">
-                                {{ estudiante.nombre.0 }}{{ estudiante.apellido_paterno.0 }}
-                            </div>
+                            <div class="avatar-small">{{ estudiante.nombre.0 }}{{ estudiante.apellido_paterno.0 }}</div>
                             <span>{{ estudiante.get_full_name }}</span>
                         </div>
                     </label>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="empty-message">No hay estudiantes sin curso disponibles</p>
+                <p class="empty-message">No hay estudiantes sin curso. Revisa la matrícula en Estudiantes.</p>
                 {% endif %}
             </div>
-            
             <div class="modal-footer">
-                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalEstudiantes')">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-                <button type="submit" class="btn-guardar" {% if not estudiantes_sin_curso %}disabled{% endif %}>
-                    <i class="fas fa-check"></i> Asignar Seleccionados
-                </button>
+                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalEstudiantes')">Cancelar</button>
+                <button type="submit" class="btn-guardar" {% if not estudiantes_sin_curso %}disabled{% endif %}>Asignar seleccionados</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Modal Asignar Profesores -->
-<div id="modalProfesores" class="modal-overlay d-none">
+<div id="modalProfesores" class="modal-overlay">
     <div class="modal-content modal-large">
         <div class="modal-header">
             <h3>Asignar Profesores a Asignaturas</h3>
-            <button class="btn-close-modal" onclick="cerrarModal('modalProfesores')">
+            <button type="button" class="btn-close-modal" onclick="cerrarModal('modalProfesores')" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        
         <form method="POST" action="{% url 'gestionar_cursos' %}">
             {% csrf_token %}
             <input type="hidden" name="accion" value="asignar_profesor">
             <input type="hidden" name="curso_id" id="profesoresCursoId">
-            
-            <p class="info-curso">
-                <strong>Curso:</strong> <span id="profesoresCursoNombre"></span>
-            </p>
-            
+            <p class="info-curso"><strong>Curso:</strong> <span id="profesoresCursoNombre"></span></p>
             <div class="form-grid">
                 <div class="form-group">
                     <label for="asignatura_id">Asignatura <span class="required">*</span></label>
                     <select id="asignatura_id" name="asignatura_id" required>
-                        <option value="">-- Seleccione una asignatura --</option>
+                        <option value="">-- Seleccione --</option>
                         {% for asignatura in asignaturas %}
-                            <option value="{{ asignatura.id_asignatura }}">{{ asignatura.nombre }}</option>
+                        <option value="{{ asignatura.id_asignatura }}">{{ asignatura.nombre }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
                 <div class="form-group">
                     <label for="profesor_id">Profesor <span class="required">*</span></label>
                     <select id="profesor_id" name="profesor_id" required>
-                        <option value="">-- Seleccione un profesor --</option>
+                        <option value="">-- Seleccione --</option>
                         {% for profesor in profesores %}
-                            <option value="{{ profesor.id }}">{{ profesor.get_full_name }}</option>
+                        <option value="{{ profesor.id }}">{{ profesor.get_full_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
-            
             <div class="modal-footer">
-                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalProfesores')">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-                <button type="submit" class="btn-guardar">
-                    <i class="fas fa-check"></i> Asignar Profesor
-                </button>
+                <button type="button" class="btn-cancelar" onclick="cerrarModal('modalProfesores')">Cancelar</button>
+                <button type="submit" class="btn-guardar">Asignar profesor</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Form Eliminar (Hidden) -->
 <form id="formEliminar" method="POST" action="{% url 'gestionar_cursos' %}" class="d-none">
     {% csrf_token %}
     <input type="hidden" name="accion" value="eliminar">
@@ -363,118 +315,102 @@
 </form>
 
 <script>
-// Funciones para manejo de modales
+function abrirModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('active');
+}
+
 function abrirModalCrear() {
     document.getElementById('modalTitulo').textContent = 'Nuevo Curso';
     document.getElementById('accionForm').value = 'crear';
     document.getElementById('cursoId').value = '';
     document.getElementById('nombre').value = '';
     document.getElementById('nivel_id').value = '';
-    document.getElementById('anio_escolar').value = '2025';
-    document.getElementById('modalCurso').classList.remove('d-none');
+    document.getElementById('anio_escolar').value = '{{ anio_ciclo_activo|default:2025 }}';
+    abrirModal('modalCurso');
 }
 
 function abrirModalEditar(button) {
-    const data = button.dataset;
-    
+    var data = button.dataset;
     document.getElementById('modalTitulo').textContent = 'Editar Curso';
     document.getElementById('accionForm').value = 'editar';
     document.getElementById('cursoId').value = data.id;
     document.getElementById('nombre').value = data.nombre;
     document.getElementById('nivel_id').value = data.nivelId;
     document.getElementById('anio_escolar').value = data.anio;
-    document.getElementById('modalCurso').classList.remove('d-none');
+    abrirModal('modalCurso');
 }
 
 function abrirModalEstudiantes(button) {
-    const data = button.dataset;
-    
-    console.log('Abriendo modal estudiantes para curso:', data.nombre, 'ID:', data.id);
-    
-    document.getElementById('estudiantesCursoId').value = data.id;
-    document.getElementById('estudiantesCursoNombre').textContent = data.nombre;
-    
-    // Desmarcar todos los checkboxes
-    document.querySelectorAll('.checkbox-estudiante').forEach(cb => cb.checked = false);
-    const selectAllCheckbox = document.getElementById('selectAllEstudiantes');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.checked = false;
-    }
-    
-    const modal = document.getElementById('modalEstudiantes');
-    console.log('Modal encontrado:', modal);
-    modal.classList.remove('d-none');
+    document.getElementById('estudiantesCursoId').value = button.dataset.id;
+    document.getElementById('estudiantesCursoNombre').textContent = button.dataset.nombre;
+    document.querySelectorAll('.checkbox-estudiante').forEach(function (cb) { cb.checked = false; });
+    var selectAll = document.getElementById('selectAllEstudiantes');
+    if (selectAll) selectAll.checked = false;
+    abrirModal('modalEstudiantes');
 }
 
 function abrirModalProfesores(button) {
-    const data = button.dataset;
-    
-    document.getElementById('profesoresCursoId').value = data.id;
-    document.getElementById('profesoresCursoNombre').textContent = data.nombre;
+    document.getElementById('profesoresCursoId').value = button.dataset.id;
+    document.getElementById('profesoresCursoNombre').textContent = button.dataset.nombre;
     document.getElementById('asignatura_id').value = '';
     document.getElementById('profesor_id').value = '';
-    document.getElementById('modalProfesores').classList.remove('d-none');
+    abrirModal('modalProfesores');
 }
 
 function cerrarModal(modalId) {
-    document.getElementById(modalId).classList.add('d-none');
+    var modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('active');
 }
 
 function confirmarEliminar(button) {
-    const data = button.dataset;
-    
-    if (confirm(`¿Está seguro que desea desactivar el curso "${data.nombre}"?\n\nLos estudiantes asignados serán desvinculados.`)) {
-        document.getElementById('eliminarId').value = data.id;
+    if (confirm('¿Desactivar el curso "' + button.dataset.nombre + '"?\n\nLos estudiantes asignados serán desvinculados.')) {
+        document.getElementById('eliminarId').value = button.dataset.id;
         document.getElementById('formEliminar').submit();
     }
 }
 
 function toggleAllEstudiantes() {
-    const selectAll = document.getElementById('selectAllEstudiantes');
-    const checkboxes = document.querySelectorAll('.checkbox-estudiante');
-    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    var selectAll = document.getElementById('selectAllEstudiantes');
+    document.querySelectorAll('.checkbox-estudiante').forEach(function (cb) {
+        cb.checked = selectAll.checked;
+    });
 }
 
-// Cerrar modal al hacer clic fuera
-document.querySelectorAll('.modal-overlay').forEach(modal => {
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.classList.add('d-none');
-        }
+document.querySelectorAll('.modal-overlay').forEach(function (modal) {
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) modal.classList.remove('active');
     });
 });
 
-// Cerrar modal con tecla ESC
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.classList.add('d-none');
+        document.querySelectorAll('.modal-overlay.active').forEach(function (modal) {
+            modal.classList.remove('active');
         });
     }
 });
 
-// Auto-submit al cambiar los selectores de filtro
-document.addEventListener('DOMContentLoaded', function() {
-    const selectNivel = document.getElementById('nivel');
-    const selectAnio = document.getElementById('anio');
-    const form = document.querySelector('.filtros-form');
-    
-    if (form) {
-        if (selectNivel) {
-            selectNivel.addEventListener('change', () => form.submit());
-        }
-        if (selectAnio) {
-            selectAnio.addEventListener('change', () => form.submit());
-        }
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('filtrosCursosForm');
+    if (!form) return;
+
+    ['nivel', 'anio', 'ocupacion'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', function () { form.submit(); });
+    });
+
+    var busqueda = document.getElementById('busqueda');
+    if (busqueda) {
+        var timer;
+        busqueda.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () { form.submit(); }, 450);
+        });
     }
-    
-    // Auto-open modal if requested via URL params
-    const urlParams = new URLSearchParams(window.location.search);
-    const abrirModal = urlParams.get('abrir_modal');
-    if (abrirModal === 'crear') {
-        setTimeout(() => {
-            abrirModalCrear();
-        }, 150);
+
+    if (new URLSearchParams(window.location.search).get('abrir_modal') === 'crear') {
+        setTimeout(abrirModalCrear, 150);
     }
 });
 </script>
