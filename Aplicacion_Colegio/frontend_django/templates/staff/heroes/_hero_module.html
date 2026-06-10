@@ -1,0 +1,94 @@
+{# Hero por módulo — títulos y contexto por pagina_actual #}
+{% if staff_hero_title %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow=staff_hero_eyebrow|default:staff_label hero_title=staff_hero_title hero_subtitle=staff_hero_subtitle|default:"" hero_aria=staff_hero_aria|default:staff_hero_title hero_show_date=staff_hero_show_date|default:"1" hero_hide_metrics=staff_hero_hide_metrics|default:1 hero_kpi=staff_hero_kpi m1_icon=m1_icon m1_value=m1_value m1_label=m1_label m1_mod=m1_mod m2_icon=m2_icon m2_value=m2_value m2_label=m2_label m2_mod=m2_mod m3_icon=m3_icon m3_value=m3_value m3_label=m3_label m3_mod=m3_mod m4_icon=m4_icon m4_value=m4_value m4_label=m4_label m4_mod=m4_mod %}
+{% elif pagina_actual == 'importar_datos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión de datos" hero_title="Importar / exportar datos" hero_subtitle=hero_subtitle_import|default:"Carga manual o masiva de estudiantes, profesores y apoderados" hero_aria="Importar exportar datos" hero_show_date="0" m1_value=total_estudiantes|default:"0" m1_label="Estudiantes" m1_mod="clases" m2_value=total_profesores|default:"0" m2_label="Profesores" m2_mod="tareas" m3_value=total_apoderados|default:"0" m3_label="Apoderados" m3_mod="asistencia" m4_value="CSV" m4_label="Formato" m4_mod="neutral" %}
+{% elif pagina_actual == 'monitoreo_seguridad' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Seguridad institucional" hero_title="Monitoreo de Seguridad" hero_subtitle="Intentos fallidos, accesos y bloqueos del establecimiento" hero_aria="Monitoreo de seguridad" hero_show_date="0" m1_value=total_intentos_fallidos|default:"0" m1_label="Fallidos 24h" m1_mod="warn" m2_value=total_ips_bloqueadas|default:"0" m2_label="IPs bloqueadas" m2_mod="riesgo" m3_value=logs_acceso|length m3_label="Accesos recientes" m3_mod="clases" m4_value=ips_bloqueadas|length m4_label="Bloqueos activos" m4_mod="tareas" %}
+{% elif pagina_actual == 'mi_escuela' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Mi escuela" hero_title="Información general" hero_subtitle="Ficha institucional, contacto y configuración administrativa del establecimiento" hero_aria="Información general" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'infraestructura' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Mi escuela" hero_title="Infraestructura" hero_subtitle="Salas, espacios físicos y recursos del colegio" hero_aria="Infraestructura" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'gestionar_estudiantes' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión escolar" hero_title="Estudiantes" hero_subtitle="Matrícula, búsqueda y administración de alumnos" hero_aria="Gestión de estudiantes" hero_show_date="0" m1_value=total_estudiantes|default:"0" m1_label="Total" m1_mod="clases" m2_value=estudiantes_activos|default:"0" m2_label="Activos" m2_mod="tareas" m3_value=estudiantes_sin_curso|default:"0" m3_label="Sin curso" m3_mod="warn" m4_value=total_cursos_activos|default:"0" m4_label="Cursos" m4_mod="asistencia" %}
+{% elif pagina_actual == 'generar_informe' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión escolar" hero_title="Informe académico" hero_subtitle=estudiante.get_full_name hero_aria="Generar informe académico" hero_show_date="0" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'gestionar_apoderados' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión escolar" hero_title="Apoderados" hero_subtitle="Registro y vínculo de apoderados con estudiantes" hero_aria="Gestión de apoderados" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'gestionar_cursos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión escolar" hero_title="Cursos" hero_subtitle="Organización de niveles, secciones y cupos del ciclo activo" hero_aria="Gestión de cursos" hero_show_date="0" m1_value=total_cursos|default:"0" m1_label="Cursos" m1_mod="clases" m2_value=total_estudiantes_asignados|default:"0" m2_label="Matriculados" m2_mod="tareas" m3_value=cursos_sin_estudiantes|default:"0" m3_label="Sin alumnos" m3_mod="warn" m4_value=total_clases_activas|default:"0" m4_label="Clases" m4_mod="asistencia" %}
+{% elif pagina_actual == 'gestionar_ciclos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión escolar" hero_title="Ciclos académicos" hero_subtitle="Años escolares, periodos y calendarios de evaluación" hero_aria="Gestión de ciclos" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'gestionar_asignaturas' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión escolar" hero_title="Asignaturas" hero_subtitle="Plan de estudios, horarios y asignación docente" hero_aria="Gestión de asignaturas" hero_show_date="0" m1_value=total_asignaturas|default:"0" m1_label="Asignaturas" m1_mod="clases" m2_value=total_clases_activas|default:"0" m2_label="Clases activas" m2_mod="tareas" m3_value=total_horas_semanales|default:"0" m3_label="Horas/semana" m3_mod="asistencia" m4_value=asignaturas_sin_asignar|default:"0" m4_label="Sin asignar" m4_mod="warn" %}
+{% elif pagina_actual == 'gestionar_finanzas' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión escolar" hero_title="Finanzas y pagos" hero_subtitle="Recaudación institucional y estados de cuenta escolares" hero_aria="Finanzas y pagos" hero_show_date="0" m1_prefix="$" m1_value=total_facturado|default:"0"|floatformat:0 m1_label="Facturado" m1_mod="clases" m2_prefix="$" m2_value=total_recaudado|default:"0"|floatformat:0 m2_label="Recaudado" m2_mod="tareas" m3_prefix="$" m3_value=deuda_vencida|default:"0"|floatformat:0 m3_label="Deuda vencida" m3_mod="warn" m4_value=tasa_cobro|default:"0" m4_label="Tasa cobro (%)" m4_mod="asistencia" %}
+{% elif pagina_actual == 'gestionar_profesores' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión escolar" hero_title="Profesores" hero_subtitle="Plantilla docente, asignaciones y datos de contacto" hero_aria="Gestión de profesores" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'asistencia' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Académico" hero_title="Registro de asistencia" hero_subtitle="Control diario de presencia, atrasos y ausencias" hero_aria="Registro de asistencia" hero_show_date="0" m1_value=asistencia_hero_m1|default:total_clases m1_label=asistencia_hero_m1_label|default:"Clases" m1_mod="clases" m2_value=stats_clase.presentes|default:"—" m2_label="Presentes (30d)" m2_mod="tareas" m3_value=stats_clase.ausentes|default:"—" m3_label="Ausentes (30d)" m3_mod="warn" m4_value=stats_clase.porcentaje_asistencia|default:"—" m4_label="Asistencia (%)" m4_mod="asistencia" %}
+{% elif pagina_actual == 'notas' or pagina_actual == 'libro_notas' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Académico" hero_title="Evaluaciones y notas" hero_subtitle="Supervisión institucional de calificaciones, cobertura docente y seguimiento por curso" hero_aria="Evaluaciones y notas" hero_show_date="0" m1_value=notas_hero_evaluaciones|default:"0" m1_label="Evaluaciones" m1_mod="clases" m2_value=notas_hero_calificaciones|default:"0" m2_label="Calificaciones" m2_mod="tareas" m3_value=notas_hero_promedio|default:"—" m3_label="Promedio" m3_mod="asistencia" m4_value=notas_hero_pendientes|default:"0" m4_label="Incompletas" m4_mod="warn" %}
+{% elif pagina_actual == 'libro_clases' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Académico" hero_title="Libro de clases" hero_subtitle="Matriz oficial de calificaciones y seguimiento por curso y asignatura" hero_aria="Libro de clases" hero_show_date="0" m1_value=libro_hero_clases|default:"0" m1_label="Clases c/ libro" m1_mod="clases" m2_value=libro_hero_evaluaciones|default:"0" m2_label="Evaluaciones" m2_mod="tareas" m3_value=libro_hero_promedio|default:"—" m3_label="Promedio" m3_mod="asistencia" m4_value=libro_hero_riesgo|default:"—" m4_label="En seguimiento" m4_mod="warn" %}
+{% elif pagina_actual == 'reportes' or pagina_actual == 'informes_reportes' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Académico" hero_title="Reportes" hero_subtitle="Informes de rendimiento, asistencia y estadísticas" hero_aria="Reportes académicos" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'reporte_cursos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Académico" hero_title="Rendimiento por cursos" hero_subtitle="Comparativo de promedios y desempeño por nivel" hero_aria="Rendimiento por cursos" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'calendario_eventos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Comunidad escolar" hero_title="Calendario escolar" hero_subtitle="Feriados, evaluaciones y actividades institucionales" hero_aria="Calendario escolar" hero_show_date="0" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'solicitud_reuniones' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Comunidad escolar" hero_title="Solicitud de reuniones" hero_subtitle="Coordinación de entrevistas con apoderados y funcionarios" hero_aria="Solicitud de reuniones" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'active_sessions' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Seguridad" hero_title="Sesiones activas" hero_subtitle="Monitoreo de sesiones abiertas y revocación remota" hero_aria="Sesiones activas" hero_show_date="0" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'password_history' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Seguridad" hero_title="Historial de contraseñas" hero_subtitle="Auditoría de cambios de credenciales del establecimiento" hero_aria="Historial de contraseñas" hero_show_date="0" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'perfil' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Mi cuenta" hero_title="Mi perfil" hero_subtitle="Datos personales, contacto y preferencias de acceso" hero_aria="Mi perfil" hero_show_date="0" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'notificaciones' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Comunicaciones" hero_title="Notificaciones" hero_subtitle="Alertas, avisos y novedades de la plataforma" hero_aria="Notificaciones" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'dashboard_financiero' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión financiera" hero_title="Dashboard financiero" hero_subtitle="Métricas, gráficos e indicadores de ingresos" hero_aria="Dashboard financiero" hero_show_date="0" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'estados_cuenta' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión de pagos" hero_title="Estados de cuenta" hero_subtitle="Saldos, deudas y movimientos por familia" hero_aria="Estados de cuenta" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'pagos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión de pagos" hero_title="Registrar pagos" hero_subtitle="Procesar pagos y conciliación bancaria" hero_aria="Registrar pagos" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'cuotas' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión de pagos" hero_title="Gestionar cuotas" hero_subtitle="Aranceles, vencimientos y planes de pago" hero_aria="Gestionar cuotas" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'becas' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Becas y descuentos" hero_title="Gestionar becas" hero_subtitle="Beneficios, descuentos y postulaciones" hero_aria="Gestionar becas" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'boletas' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Facturación" hero_title="Generar boletas" hero_subtitle="Comprobantes de pago y documentos tributarios" hero_aria="Generar boletas" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'configuracion_transbank' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Administración" hero_title="Configuración Transbank" hero_subtitle="Integración de pagos en línea del colegio" hero_aria="Configuración Transbank" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'rendimiento' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Supervisión académica" hero_title="Rendimiento académico" hero_subtitle="Indicadores globales y alertas pedagógicas" hero_aria="Rendimiento académico" hero_show_date="0" m1_value=total_cursos|default:"0" m1_label="Cursos" m1_mod="clases" m2_value=promedio_global|default:"—" m2_label="Promedio" m2_mod="tareas" m3_value=tasa_reprobacion|default:"0" m3_label="Reprobación %" m3_mod="warn" m4_value=total_evaluaciones|default:"0" m4_label="Evaluaciones" m4_mod="asistencia" %}
+{% elif pagina_actual == 'profesores' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Supervisión académica" hero_title="Profesores" hero_subtitle="Seguimiento docente, carga horaria y desempeño" hero_aria="Profesores" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'planificacion' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Planificación" hero_title="Planificaciones" hero_subtitle="Unidades, objetivos y revisión curricular" hero_aria="Planificaciones" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'anotaciones' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Convivencia" hero_title="Anotaciones" hero_subtitle="Registro de conducta y observaciones disciplinarias" hero_aria="Anotaciones" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'justificativos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Convivencia" hero_title="Justificativos" hero_subtitle="Validación de ausencias y documentación respaldatoria" hero_aria="Justificativos" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'entrevistas' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Atención" hero_title="Entrevistas" hero_subtitle="Agenda de atención psicológica y orientación" hero_aria="Entrevistas" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'derivaciones' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Atención" hero_title="Derivaciones" hero_subtitle="Casos derivados desde convivencia y docentes" hero_aria="Derivaciones" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'citaciones_casos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Atención" hero_title="Citaciones y casos" hero_subtitle="Citaciones a apoderados y seguimiento de casos" hero_aria="Citaciones y casos" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'ficha_estudiante' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Atención" hero_title="Ficha estudiante" hero_subtitle="Vista integral de bienestar y antecedentes" hero_aria="Ficha estudiante" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'tickets' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Soporte" hero_title="Tickets" hero_subtitle="Incidencias técnicas y mesa de ayuda escolar" hero_aria="Tickets" hero_show_date="0" m1_value=tickets_abiertos|default:"0" m1_label="Abiertos" m1_mod="warn" m2_value=tickets_urgentes|default:"0" m2_label="Urgentes" m2_mod="riesgo" m3_value="—" m3_label="Cola" m3_mod="tareas" m4_value="—" m4_label="SLA" m4_mod="neutral" %}
+{% elif pagina_actual == 'usuarios' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Usuarios" hero_title="Gestión de usuarios" hero_subtitle="Cuentas, roles y accesos del establecimiento" hero_aria="Gestión de usuarios" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'actividad' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Usuarios" hero_title="Actividad" hero_subtitle="Registro de uso y eventos recientes en la plataforma" hero_aria="Actividad de usuarios" hero_hide_metrics=1 %}
+{% elif pagina_actual == 'catalogo' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Recursos" hero_title="Catálogo" hero_subtitle="Biblioteca digital de libros y materiales" hero_aria="Catálogo" hero_show_date="0" m1_value=total_recursos|default:"0" m1_label="Recursos" m1_mod="clases" m2_value=recursos_publicados|default:"0" m2_label="Publicados" m2_mod="tareas" m3_value="—" m3_label="Categorías" m3_mod="asistencia" m4_value="—" m4_label="Formatos" m4_mod="neutral" %}
+{% elif pagina_actual == 'prestamos' %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Recursos" hero_title="Préstamos" hero_subtitle="Entregas, devoluciones y morosidad bibliotecaria" hero_aria="Préstamos" hero_show_date="0" m1_value=prestamos_activos|default:"0" m1_label="Activos" m1_mod="clases" m2_value=prestamos_vencidos|default:"0" m2_label="Vencidos" m2_mod="warn" m3_value="—" m3_label="Reservas" m3_mod="tareas" m4_value="—" m4_label="Devueltos" m4_mod="neutral" %}
+{% else %}
+{% include 'admin/_admin_hero.html' with hero_eyebrow=staff_label hero_title=pagina_actual|title hero_subtitle="Módulo del portal académico" hero_aria=pagina_actual hero_hide_metrics=1 %}
+{% endif %}

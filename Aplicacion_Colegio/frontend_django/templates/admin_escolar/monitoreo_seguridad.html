@@ -1,13 +1,17 @@
-{% extends 'dashboard.html' %}
+{% extends es_admin_general|yesno:"admin/_layout_standalone.html,dashboard.html" %}
 {% load static %}
 
 {% block title %}Monitoreo de Seguridad - Panel de Control{% endblock %}
 
 {% block content %}
+{% if es_admin_general %}
+{% include 'admin/monitoreo_seguridad.html' %}
+{% else %}
 <link rel="stylesheet" href="{% static 'css/admin_escolar/monitoreo_seguridad.css' %}">
 
 <div class="seguridad-container">
-    <div class="seguridad-header">
+
+    <div class="seguridad-header" hidden>
         <h1>🔐 Monitoreo de Seguridad</h1>
     </div>
 
@@ -175,4 +179,5 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 {% endblock %}

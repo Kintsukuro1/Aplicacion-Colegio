@@ -14,6 +14,22 @@ _MENSAJE_TIPOS = frozenset({'mensaje_nuevo', 'mensaje'})
 _MENSAJE_DASHBOARD_PAGINAS = frozenset({'mensajes', 'mensajeria', 'mensajería'})
 _MENSAJERIA_BANDEJA = '/mensajeria/bandeja/'
 _CLASE_DASHBOARD_SKIP = frozenset({'pagina', 'id', 'clase_id'})
+_TIPO_DEFAULT_LINKS = {
+    'calificacion': '/dashboard/?pagina=inicio',
+    'asistencia': '/dashboard/?pagina=asistencia',
+    'evaluacion': '/dashboard/?pagina=inicio',
+    'alerta': '/dashboard/?pagina=inicio',
+    'sistema': '/dashboard/?pagina=inicio',
+    'tarea_nueva': '/dashboard/?pagina=mis_tareas',
+    'tarea_calificada': '/dashboard/?pagina=mis_tareas',
+    'tarea_entregada': '/dashboard/?pagina=tareas_consolidado',
+    'comunicado_nuevo': '/comunicados/',
+    'anuncio_nuevo': '/comunicados/',
+    'urgente_nuevo': '/comunicados/',
+    'mensaje_nuevo': _MENSAJERIA_BANDEJA,
+    'mensaje': _MENSAJERIA_BANDEJA,
+    'citacion_nueva': '/dashboard/?pagina=calendario_pupilo',
+}
 
 
 def _canonicalize_link(link: str) -> str:
@@ -101,13 +117,47 @@ def _resolve_mensajeria_from_dashboard(link: str) -> str:
     return _MENSAJERIA_BANDEJA
 
 
-def normalize_notification_enlace(enlace: Optional[str], tipo: Optional[str] = None) -> str:
+def resolve_default_notification_enlace(
+    tipo: Optional[str] = None,
+    titulo: Optional[str] = None,
+    mensaje: Optional[str] = None,
+) -> str:
+    """Destino cuando la notificación no trae enlace explícito."""
+    tipo_norm = (tipo or '').strip().lower()
+    combined = f'{(titulo or "").strip().lower()} {(mensaje or "").strip().lower()}'
+
+    if 'suscripci' in combined or ('vence' in combined and 'rbd' in combined):
+        return '/dashboard/?pagina=reportes_financieros'
+    if 'colegio registrado' in combined or 'nuevo colegio' in combined:
+        return '/seleccionar-escuela/'
+    if 'acceso no autorizado' in combined or (
+        'intento' in combined and ('sesión' in combined or 'inicio de sesión' in combined)
+    ):
+        return '/dashboard/?pagina=monitoreo_seguridad'
+
+    if tipo_norm == 'alerta':
+        return '/dashboard/?pagina=monitoreo_seguridad'
+    if tipo_norm == 'sistema':
+        return '/dashboard/?pagina=inicio'
+
+    return _TIPO_DEFAULT_LINKS.get(tipo_norm, '/dashboard/?pagina=notificaciones')
+
+
+def normalize_notification_enlace(
+    enlace: Optional[str],
+    tipo: Optional[str] = None,
+    titulo: Optional[str] = None,
+    mensaje: Optional[str] = None,
+) -> str:
     """
     Corrige enlaces legacy (p. ej. dashboard?pagina=mensajes|mensajeria) hacia rutas reales.
     """
     link = _canonicalize_link((enlace or '').strip())
     tipo_norm = (tipo or '').strip().lower()
     is_mensaje = tipo_norm in _MENSAJE_TIPOS
+
+    if not link or link == '#':
+        return resolve_default_notification_enlace(tipo_norm, titulo, mensaje)
 
     conv = _CONVERSACION_RE.match(link)
     if conv:
@@ -135,4 +185,4 @@ def normalize_notification_enlace(enlace: Optional[str], tipo: Optional[str] = N
     if _APODERADO_INICIO_RE.match(link):
         return _resolve_apoderado_inicio(link)
 
-    return link or '#'
+    return link

@@ -212,6 +212,13 @@ class ConfiguracionAuditoria(models.Model):
     # Captura de datos técnicos
     capturar_ip = models.BooleanField(default=True)
     capturar_user_agent = models.BooleanField(default=False)
+
+    # Parámetros globales del sistema (solo config __global__)
+    hosts_permitidos = models.TextField(
+        blank=True,
+        default='',
+        help_text='Lista de hosts permitidos separados por coma',
+    )
     
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)

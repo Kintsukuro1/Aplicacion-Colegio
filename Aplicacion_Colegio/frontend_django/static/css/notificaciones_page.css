@@ -100,6 +100,61 @@ body.vista-alumno .nh-section-title {
     --nh-accent-deep: #4c3d7a;
 }
 
+.notifications-hub--admin,
+body.vista-admin-global .notifications-hub {
+    --nh-accent: #6B46C1;
+    --nh-accent-soft: #faf5ff;
+    --nh-accent-deep: #553c9a;
+    --nh-warn: #9333ea;
+    --nh-warn-soft: #f3e8ff;
+    --nh-surface: #ffffff;
+    --nh-border: #e9d5ff;
+    --nh-muted: #6b7280;
+    max-width: none;
+    margin: 0;
+}
+
+body.vista-admin-global .notifications-hub .nh-filter.active {
+    background: #6B46C1;
+    border-color: #6B46C1;
+    color: #fff;
+}
+
+body.vista-admin-global .notifications-hub .nh-btn--primary {
+    background: #6B46C1;
+    border-color: #6B46C1;
+    color: #fff;
+}
+
+body.vista-admin-global .notifications-hub .nh-badge {
+    background: #EDE9FE;
+    color: #4C1D95;
+}
+
+body.vista-admin-global .notifications-hub .nh-badge--unread {
+    background: #FEF3C7;
+    color: #78350F;
+}
+
+body.vista-admin-global .notifications-hub .nh-badge--urgent {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+body.vista-admin-global .notifications-hub .nh-card.is-unread {
+    border-color: #ddd6fe;
+    background: linear-gradient(90deg, #faf5ff 0%, #fff 55%);
+}
+
+body.vista-admin-global .notifications-hub .nh-card__context,
+body.vista-admin-global .notifications-hub .nh-card__cta {
+    color: #553c9a;
+}
+
+body.vista-admin-global .notifications-hub .nh-section-title {
+    color: #553c9a;
+}
+
 .nh-hero {
     background: linear-gradient(135deg, var(--nh-accent-soft) 0%, #ffffff 72%);
     border: 1px solid var(--nh-border);
@@ -292,6 +347,12 @@ body.vista-alumno .nh-section-title {
 .nh-card:hover {
     transform: translateY(-1px);
     box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.nh-card--focus {
+    outline: 2px solid #6B46C1;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(107, 70, 193, 0.15);
 }
 
 .nh-card.is-unread {

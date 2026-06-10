@@ -217,21 +217,23 @@ class DashboardAuthService:
         escuela_rbd = user.rbd_colegio
         escuela_nombre = user.colegio.nombre if user.colegio else 'Sistema'
 
-        # Usuarios con capacidad de configuración pueden usar override de sesión
-        if can_configure_school or is_system_admin:
-            # Use session override if available
+        if is_system_admin:
             session_rbd = session.get('admin_rbd_activo') if session else None
             if session_rbd:
                 escuela_rbd = session_rbd
                 escuela_nombre = session.get('admin_colegio_nombre', 'Escuela')
-            elif is_system_admin and not escuela_rbd:
-                # Admin de sistema puede operar sin escuela fija
+            elif not escuela_rbd:
                 escuela_rbd = None
                 escuela_nombre = 'Sistema'
-            elif not escuela_rbd:
-                # Requiere una escuela activa cuando no es administrador de sistema
-                if not is_system_admin:
-                    return None
+        elif can_configure_school:
+            # Admin escolar: un solo colegio asignado; ignorar override de sesión legacy.
+            if session and (session.get('admin_rbd_activo') or session.get('admin_colegio_nombre')):
+                session.pop('admin_rbd_activo', None)
+                session.pop('admin_colegio_nombre', None)
+                if hasattr(session, 'modified'):
+                    session.modified = True
+            if not escuela_rbd:
+                return None
 
         # For other roles, verify school assignment
         elif not escuela_rbd:

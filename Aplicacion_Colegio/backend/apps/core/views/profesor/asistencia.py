@@ -85,7 +85,10 @@ def gestionar_asistencia(request, colegio, admin_mode=False):
         
         clase_id = request.POST.get('clase_id') or request.session.get('last_attendance_clase_id', '')
         fecha = request.POST.get('fecha') or request.session.get('last_attendance_fecha', '')
+        curso_id = request.POST.get('curso_id') or request.GET.get('curso_id')
         url = f"{reverse('dashboard')}?pagina=asistencia"
+        if curso_id:
+            url += f"&curso_id={curso_id}"
         if clase_id:
             url += f"&clase_id={clase_id}"
         if fecha:
@@ -105,60 +108,207 @@ def gestionar_asistencia(request, colegio, admin_mode=False):
                 colegio=colegio,
                 activo=True
             ).select_related('asignatura', 'curso', 'profesor')
+        clases_base = clases
+        total_clases_escuela = clases_base.count()
+
+        # --- Resolver filtros (GET explícito > sesión) ---
+        get_params = request.GET
+
+        if get_params.get('reset_filtros') == '1':
+            request.session.pop('last_attendance_clase_id', None)
+            request.session.pop('last_attendance_curso_id', None)
+
+        filtro_fecha = get_params.get('fecha')
+
+        if admin_mode:
+            if 'curso_id' in get_params:
+                filtro_curso_id = get_params.get('curso_id', '').strip()
+            elif get_params.get('reset_filtros') == '1':
+                filtro_curso_id = ''
+            else:
+                filtro_curso_id = request.session.get('last_attendance_curso_id', '').strip()
+        else:
+            filtro_curso_id = ''
+
+        if 'clase_id' in get_params:
+            filtro_clase_id = get_params.get('clase_id', '').strip()
+        elif get_params.get('reset_filtros') == '1':
+            filtro_clase_id = ''
+        elif admin_mode and 'curso_id' in get_params and filtro_curso_id:
+            filtro_clase_id = ''
+        else:
+            filtro_clase_id = request.session.get('last_attendance_clase_id', '').strip()
+
+        curso_seleccionado = None
+        if admin_mode and filtro_curso_id:
+            from backend.apps.cursos.models import Curso
+            try:
+                curso_seleccionado = ORMAccessService.get(Curso, id_curso=filtro_curso_id, colegio=colegio)
+                clases = clases_base.filter(curso_id=filtro_curso_id)
+            except Exception:
+                filtro_curso_id = ''
+                curso_seleccionado = None
+                clases = clases_base
+        else:
+            clases = clases_base
+
         total_clases = clases.count()
-        
-        # Filtros (con memoria de sesión para reducir clics)
-        filtro_clase_id = request.GET.get('clase_id')
-        filtro_fecha = request.GET.get('fecha')
-        
-        if not filtro_clase_id:
-            filtro_clase_id = request.session.get('last_attendance_clase_id', '')
-            if not filtro_clase_id or not clases.filter(id=filtro_clase_id).exists():
-                if clases.exists():
-                    filtro_clase_id = str(clases.first().id)
-                else:
-                    filtro_clase_id = ''
+
+        if filtro_clase_id and not clases.filter(id=filtro_clase_id).exists():
+            filtro_clase_id = ''
+
+        if filtro_clase_id and not filtro_curso_id and admin_mode:
+            try:
+                clase_tmp = ORMAccessService.get(Clase, id=filtro_clase_id, colegio=colegio)
+                filtro_curso_id = str(clase_tmp.curso_id)
+                curso_seleccionado = clase_tmp.curso
+                clases = clases_base.filter(curso_id=filtro_curso_id)
+                total_clases = clases.count()
+            except Exception:
+                pass
+
+        if not filtro_clase_id and clases.exists() and not admin_mode:
+            filtro_clase_id = str(clases.first().id)
         
         if not filtro_fecha:
             filtro_fecha = request.session.get('last_attendance_fecha', date.today().strftime('%Y-%m-%d'))
             
         # Guardar en sesión para la próxima visita
+        if admin_mode:
+            if filtro_curso_id:
+                request.session['last_attendance_curso_id'] = filtro_curso_id
+            elif 'curso_id' in get_params:
+                request.session.pop('last_attendance_curso_id', None)
         if filtro_clase_id:
             request.session['last_attendance_clase_id'] = filtro_clase_id
+        elif 'clase_id' in get_params:
+            request.session.pop('last_attendance_clase_id', None)
         if filtro_fecha:
             request.session['last_attendance_fecha'] = filtro_fecha
         
         estudiantes_con_asistencia = []
         clase_seleccionada = None
         stats_clase = {}
-        
+        registro_dia = {}
+        filtro_fecha_display = filtro_fecha or ''
+
         if filtro_clase_id:
             try:
                 clase_seleccionada = ORMAccessService.get(Clase, id=filtro_clase_id, colegio=colegio)
                 fecha_obj = datetime.strptime(filtro_fecha, '%Y-%m-%d').date()
-                
+
                 estudiantes_con_asistencia = AttendanceService.get_students_with_attendance(
                     request.user, colegio, clase_seleccionada, fecha_obj
                 )
-                
+
                 stats_clase = AttendanceService.calculate_class_attendance_stats(
                     request.user, clase_seleccionada, days=30
                 )
+
+                registro_dia = {
+                    'total': len(estudiantes_con_asistencia),
+                    'presentes': sum(1 for e in estudiantes_con_asistencia if e.get('estado') == 'P'),
+                    'ausentes': sum(1 for e in estudiantes_con_asistencia if e.get('estado') == 'A'),
+                    'tardanzas': sum(1 for e in estudiantes_con_asistencia if e.get('estado') == 'T'),
+                    'justificadas': sum(1 for e in estudiantes_con_asistencia if e.get('estado') == 'J'),
+                    'guardado': any(e.get('asistencia') for e in estudiantes_con_asistencia),
+                }
+                try:
+                    filtro_fecha_display = datetime.strptime(filtro_fecha, '%Y-%m-%d').strftime('%d/%m/%Y')
+                except ValueError:
+                    filtro_fecha_display = filtro_fecha
             except Exception:
                 logger = __import__('logging').getLogger(__name__)
                 logger.exception('Error al cargar datos de asistencia')
                 messages.error(request, 'No se pudieron cargar los datos de asistencia.')
+        elif admin_mode and curso_seleccionado:
+            stats_clase = AttendanceService.calculate_course_attendance_stats(
+                colegio, curso_seleccionado, days=30
+            )
+
+        stats_chart = {
+            'presentes': stats_clase.get('presentes', 0) if stats_clase else 0,
+            'ausentes': stats_clase.get('ausentes', 0) if stats_clase else 0,
+            'tardanzas': stats_clase.get('tardanzas', 0) if stats_clase else 0,
+            'justificadas': stats_clase.get('justificadas', 0) if stats_clase else 0,
+            'total_registros': stats_clase.get('total_registros', 0) if stats_clase else 0,
+            'porcentaje_asistencia': stats_clase.get('porcentaje_asistencia', 0) if stats_clase else 0,
+            'scope': stats_clase.get('scope', ''),
+            'scope_label': stats_clase.get('scope_label', ''),
+        }
+        stats_chart['chart_key'] = (
+            f"{stats_chart['scope']}-{stats_chart['scope_label']}-"
+            f"{stats_chart['presentes']}-{stats_chart['ausentes']}-"
+            f"{stats_chart['tardanzas']}-{stats_chart['justificadas']}"
+        )
+
+        asistencia_hero_m1 = total_clases
+        asistencia_hero_m1_label = 'Clases'
+        if admin_mode and clase_seleccionada:
+            asistencia_hero_m1 = len(estudiantes_con_asistencia)
+            asistencia_hero_m1_label = 'Estudiantes hoy'
+        elif admin_mode and curso_seleccionado:
+            asistencia_hero_m1 = total_clases
+            asistencia_hero_m1_label = 'Asignaturas'
+        elif admin_mode:
+            asistencia_hero_m1 = total_clases_escuela
+            asistencia_hero_m1_label = 'Clases activas'
         
         context = {
             'clases': clases,
+            'clases_todas': clases_base,
             'total_clases': total_clases,
+            'total_clases_escuela': total_clases_escuela,
             'clase_seleccionada': clase_seleccionada,
+            'curso_seleccionado': curso_seleccionado,
             'estudiantes_con_asistencia': estudiantes_con_asistencia,
             'filtro_clase_id': filtro_clase_id,
+            'filtro_curso_id': filtro_curso_id,
             'filtro_fecha': filtro_fecha,
             'stats_clase': stats_clase,
+            'stats_chart': stats_chart,
+            'asistencia_hero_m1': asistencia_hero_m1,
+            'asistencia_hero_m1_label': asistencia_hero_m1_label,
+            'registro_dia': registro_dia,
+            'filtro_fecha_display': filtro_fecha_display,
             'fecha_hoy': date.today().strftime('%Y-%m-%d'),
         }
+        if admin_mode:
+            from backend.apps.cursos.models import Curso
+            context['cursos_asistencia'] = (
+                Curso.objects.filter(colegio=colegio, activo=True)
+                .select_related('nivel')
+                .order_by('nivel__nombre', 'nombre')
+            )
+            insights_asistencia = []
+            if total_clases == 0 and not curso_seleccionado:
+                insights_asistencia.append({
+                    'tipo': 'warn',
+                    'texto': 'No hay clases activas configuradas. Cree cursos y asignaturas antes de registrar asistencia.',
+                })
+            elif not filtro_clase_id and not curso_seleccionado:
+                insights_asistencia.append({
+                    'tipo': 'info',
+                    'texto': 'Seleccione un curso o una clase y fecha para cargar el listado de estudiantes.',
+                })
+            elif curso_seleccionado and not filtro_clase_id and stats_clase.get('total_registros'):
+                insights_asistencia.append({
+                    'tipo': 'info',
+                    'texto': (
+                        f'Vista agregada del curso {curso_seleccionado.nombre} (últimos 30 días). '
+                        'Elija una asignatura para registrar la asistencia del día.'
+                    ),
+                })
+            elif stats_clase.get('total_registros') and stats_clase.get('porcentaje_asistencia', 100) < 85 and clase_seleccionada:
+                insights_asistencia.append({
+                    'tipo': 'warn',
+                    'texto': (
+                        f'Asistencia en los últimos 30 días en {clase_seleccionada.asignatura.nombre} '
+                        f'({clase_seleccionada.curso.nombre}): '
+                        f'{stats_clase.get("porcentaje_asistencia")}% — revise ausencias recurrentes.'
+                    ),
+                })
+            context['insights_asistencia'] = insights_asistencia
         return context
 
 

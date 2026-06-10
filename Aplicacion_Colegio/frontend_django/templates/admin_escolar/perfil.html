@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - Administrador Escolar</title>
+    <title>Mi perfil - Administrador escolar</title>
     <link rel="stylesheet" href="{% static 'css/admin_escolar/perfil.css' %}">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
 </head>
@@ -11,7 +11,7 @@
 <div class="perfil-container">
     <!-- Header -->
     <div class="page-header">
-        <h1>👨‍💼 Mi Perfil</h1>
+        <h1>👨‍💼 Mi perfil</h1>
         <p>Administra tu información personal y configuración de cuenta</p>
     </div>
 
@@ -39,7 +39,7 @@
 
             <!-- Información no editable -->
             <div class="card">
-                <h2>📋 Información Personal</h2>
+                <h2>📋 Información personal</h2>
                 
                 <div class="info-item">
                     <span class="info-label">RUT</span>
@@ -47,7 +47,7 @@
                 </div>
                 
                 <div class="info-item">
-                    <span class="info-label">Nombre Completo</span>
+                    <span class="info-label">Nombre completo</span>
                     <span class="info-value">{{ user.get_full_name }}</span>
                 </div>
                 
@@ -57,7 +57,7 @@
                 </div>
                 
                 <div class="info-item">
-                    <span class="info-label">Estado de Cuenta</span>
+                    <span class="info-label">Estado de cuenta</span>
                     <span class="info-value">
                         {% if user.is_active %}
                             <span class="badge badge-success">✔ Activo</span>
@@ -73,7 +73,7 @@
         <div>
             <!-- Formulario de edición -->
             <div class="card">
-                <h2>✏️ Editar Información de Contacto</h2>
+                <h2>✏️ Editar información de contacto</h2>
                 <form method="POST" action="{% url 'accounts:actualizar_perfil_profesor' %}">
                     {% csrf_token %}
                     <div class="form-group">
@@ -98,36 +98,36 @@
                     </div>
                     
                     <button type="submit" name="actualizar_perfil" class="btn btn-primary">
-                        💾 Guardar Cambios
+                        💾 Guardar cambios
                     </button>
                 </form>
             </div>
 
             <!-- Formulario de cambio de contraseña -->
             <div class="card mt-5">
-                <h2>🔒 Cambiar Contraseña</h2>
+                <h2>🔒 Cambiar contraseña</h2>
                 <form method="POST" action="{% url 'accounts:cambiar_password_profesor' %}">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="password_actual">Contraseña Actual</label>
+                        <label for="password_actual">Contraseña actual</label>
                         <input type="password" id="password_actual" name="password_actual" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="password_nueva">Nueva Contraseña</label>
+                        <label for="password_nueva">Nueva contraseña</label>
                         <input type="password" id="password_nueva" name="password_nueva" 
                                minlength="6" required>
                         <small>Mínimo 6 caracteres</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="password_confirmar">Confirmar Nueva Contraseña</label>
+                        <label for="password_confirmar">Confirmar nueva contraseña</label>
                         <input type="password" id="password_confirmar" name="password_confirmar" 
                                minlength="6" required>
                     </div>
                     
                     <button type="submit" name="cambiar_password" class="btn btn-primary">
-                        🔒 Cambiar Contraseña
+                        🔒 Cambiar contraseña
                     </button>
                 </form>
             </div>

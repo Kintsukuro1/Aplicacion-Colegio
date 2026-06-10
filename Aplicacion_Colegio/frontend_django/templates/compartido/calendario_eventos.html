@@ -2,9 +2,15 @@
 {% load static %}
 {% include 'profesor/_personal_wrap_start.html' %}
 <link rel="stylesheet" href="{% static 'css/profesor/calendario_eventos.css' %}?v=20260528-demo-intel">
+{% elif rol == 'admin_general' or rol == 'Administrador general' %}
+{% load static %}
+{% include 'admin/_admin_wrap_start.html' %}
+<div class="adm-portal adm-ce-page">
+{% include 'admin/_admin_hero.html' with hero_eyebrow="Comunidad escolar" hero_title="Calendario escolar" hero_subtitle="Feriados, evaluaciones y actividades visibles para profesores, estudiantes y apoderados" hero_aria="Calendario escolar" hero_show_date="0" m1_value="—" m1_label="Eventos" m1_mod="clases" m2_value="—" m2_label="Próximos" m2_mod="tareas" m3_value="—" m3_label="Feriados" m3_mod="warn" m4_value="—" m4_label="Este mes" m4_mod="neutral" %}
+{% include 'admin_escolar/_calendario_admin_guia.html' %}
 {% endif %}
-<div class="content-wrapper ce-page">
-    {% if rol == 'profesor' or rol == 'Profesor' %}
+<div class="{% if rol == 'admin_general' or rol == 'Administrador general' %}adm-ce-content{% else %}content-wrapper{% endif %} ce-page">
+    {% if rol == 'profesor' or rol == 'Profesor' or rol == 'admin_general' or rol == 'Administrador general' %}
     {% else %}
     <div class="page-header ce-header">
         <h1>Calendario Escolar</h1>
@@ -144,7 +150,7 @@
                 <input name="lugar" />
             </label>
             <label>Color
-                <input name="color" type="color" value="#3B82F6" />
+                <input name="color" type="color" value="{% if rol == 'admin_general' or rol == 'Administrador general' %}#6B46C1{% else %}#3B82F6{% endif %}" />
             </label>
             <label class="ce-checkbox-label ce-checkbox-label--spaced">
                 <input name="todo_el_dia" type="checkbox" checked />
@@ -193,6 +199,8 @@
 (function () {
     const canManageEvents = {% if rol == 'profesor' %}false{% else %}true{% endif %};
     const isProfesorView = {% if rol == 'profesor' or rol == 'Profesor' %}true{% else %}false{% endif %};
+    const isAdminGeneralView = {% if rol == 'admin_general' or rol == 'Administrador general' %}true{% else %}false{% endif %};
+    const defaultEventColor = isAdminGeneralView ? '#6B46C1' : '#3B82F6';
     const filtersForm = document.getElementById('calendar-filters');
     const eventForm = document.getElementById('calendar-form');
     const rowsEl = document.getElementById('calendar-rows');
@@ -295,7 +303,31 @@
         eventForm.reset();
         eventForm.id_evento.value = '';
         eventForm.todo_el_dia.checked = true;
-        eventForm.color.value = '#3B82F6';
+        eventForm.color.value = defaultEventColor;
+    }
+
+    function updateAdminCalendarKpis(results) {
+        if (!isAdminGeneralView) return;
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const in30 = new Date(now);
+        in30.setDate(in30.getDate() + 30);
+        const month = now.getMonth();
+        const year = now.getFullYear();
+        let proximos = 0;
+        let feriados = 0;
+        let mes = 0;
+        results.forEach((row) => {
+            const start = row.fecha_inicio ? new Date(row.fecha_inicio + 'T12:00:00') : null;
+            if (start && start >= now && start <= in30) proximos += 1;
+            if (start && start.getMonth() === month && start.getFullYear() === year) mes += 1;
+            const tipo = String(row.tipo || '').toLowerCase();
+            if (tipo === 'feriado' || row.es_feriado_nacional) feriados += 1;
+        });
+        document.querySelectorAll('.adm-ce-page .prof-hero-metric__value').forEach((node, idx) => {
+            const vals = [results.length, proximos, feriados, mes];
+            if (vals[idx] !== undefined) node.textContent = String(vals[idx]);
+        });
     }
 
     function buildListQuery() {
@@ -323,12 +355,14 @@
                     return;
                 }
                 setProfesorDemoUi(false);
+                updateAdminCalendarKpis([]);
                 rowsEl.innerHTML = '<tr><td colspan="6">Sin eventos para los filtros seleccionados.</td></tr>';
                 return;
             }
 
             setProfesorDemoUi(false);
             renderEventRows(results, false);
+            updateAdminCalendarKpis(results);
         } catch (error) {
             if (isProfesorView) {
                 setProfesorDemoUi(true);
@@ -458,4 +492,7 @@
 </script>
 {% if rol == 'profesor' or rol == 'Profesor' %}
 {% include 'profesor/_personal_wrap_end.html' %}
+{% elif rol == 'admin_general' or rol == 'Administrador general' %}
+</div>
+{% include 'admin/_admin_wrap_end.html' %}
 {% endif %}

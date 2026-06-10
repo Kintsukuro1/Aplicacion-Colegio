@@ -2,8 +2,6 @@
 Vista para que el administrador general seleccione o administre colegios
 """
 import logging
-from datetime import datetime
-
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -13,6 +11,7 @@ from django.utils import timezone
 
 from backend.apps.core.services.escuela_management_service import EscuelaManagementService
 from backend.common.services.policy_service import PolicyService
+from backend.common.utils.dashboard_helpers import build_dashboard_context
 
 logger = logging.getLogger(__name__)
 
@@ -94,15 +93,21 @@ def seleccionar_escuela(request):
         mensaje = "Ocurrió un error al cargar los colegios. Contacte al administrador."
         tipo_mensaje = 'error'
 
-    context = {
+    context, redirect_response = build_dashboard_context(
+        request,
+        pagina_actual='gestionar_escuelas',
+        content_template='admin/seleccionar_escuela.html',
+    )
+    if redirect_response:
+        return redirect_response
+
+    context.update({
         **data,
         'mensaje': mensaje,
         'tipo_mensaje': tipo_mensaje,
-        'nombre_usuario': request.user.get_full_name() or request.user.email,
-        'year': datetime.now().year,
-    }
+    })
 
-    return render(request, 'admin/seleccionar_escuela.html', context)
+    return render(request, 'dashboard.html', context)
 
 
 @login_required(login_url='accounts:login')
@@ -123,6 +128,11 @@ def entrar_escuela(request, rbd):
         request.session.modified = True
         
         messages.success(request, f'Has ingresado a {colegio.nombre}')
+
+        next_destino = (request.GET.get('next') or '').strip()
+        if next_destino == 'importar_datos':
+            return redirect('importar_datos')
+
         return redirect('dashboard')
         
     except Exception:

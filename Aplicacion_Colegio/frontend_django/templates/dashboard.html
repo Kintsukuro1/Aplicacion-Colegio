@@ -31,14 +31,18 @@
     {% if pagina_actual == 'calendario_eventos' %}
     {% if rol == 'profesor' or rol == 'Profesor' %}
     <link rel="stylesheet" href="{% static 'css/profesor/calendario_eventos.css' %}">
-    {% elif rol == 'admin_escolar' or rol == 'admin_general' or rol == 'Administrador escolar' or rol == 'Administrador general' %}
+    {% elif rol == 'admin_general' or rol == 'Administrador general' %}
+    <link rel="stylesheet" href="{% static 'css/profesor/calendario_eventos.css' %}">
+    {% elif rol == 'admin_escolar' or rol == 'Administrador escolar' %}
     <link rel="stylesheet" href="{% static 'css/admin_escolar/calendario_eventos.css' %}">
     {% endif %}
     {% endif %}
     {% if pagina_actual == 'solicitud_reuniones' %}
     {% if rol == 'profesor' or rol == 'Profesor' %}
     <link rel="stylesheet" href="{% static 'css/profesor/solicitud_reuniones.css' %}">
-    {% elif rol == 'admin_escolar' or rol == 'admin_general' or rol == 'Administrador escolar' or rol == 'Administrador general' %}
+    {% elif rol == 'admin_general' or rol == 'Administrador general' %}
+    <link rel="stylesheet" href="{% static 'css/profesor/solicitud_reuniones.css' %}">
+    {% elif rol == 'admin_escolar' or rol == 'Administrador escolar' %}
     <link rel="stylesheet" href="{% static 'css/admin_escolar/solicitud_reuniones.css' %}">
     {% endif %}
     {% endif %}
@@ -57,6 +61,9 @@
     {% if pagina_actual == 'importar_datos' %}
     <link rel="stylesheet" href="{% static 'css/admin_escolar/importar_datos.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin_escolar/importar_csv.css' %}">
+    {% endif %}
+    {% if pagina_actual == 'gestionar_escuelas' %}
+    <link rel="stylesheet" href="{% static 'css/admin/seleccionar_escuela.css' %}?v=20260609-uniform">
     {% endif %}
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}?v=20260509">
 </head>
@@ -166,9 +173,47 @@
 
                 {# Incluir contenido dinámicamente según página solicitada #}
                 {% if content_template %}
-                {% include content_template %}
+                {% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}
+                    {% include 'staff/_staff_content_shell.html' with staff_slug='admin_escolar' staff_label='Administrador Escolar' %}
+                {% elif rol == 'asesor_financiero' or rol == 'Asesor financiero' %}
+                    {% include 'staff/_staff_content_shell.html' with staff_slug='asesor_financiero' staff_label='Asesor Financiero' %}
+                {% elif rol == 'coordinador_academico' or rol == 'Coordinador académico' %}
+                    {% include 'staff/_staff_content_shell.html' with staff_slug='coordinador_academico' staff_label='Coordinador Académico' %}
+                {% elif rol == 'inspector_convivencia' or rol == 'Inspector convivencia' %}
+                    {% include 'staff/_staff_content_shell.html' with staff_slug='inspector_convivencia' staff_label='Inspector de Convivencia' %}
+                {% elif rol == 'psicologo_orientador' or rol == 'Psicólogo orientador' %}
+                    {% include 'staff/_staff_content_shell.html' with staff_slug='psicologo_orientador' staff_label='Psicólogo Orientador' %}
+                {% elif rol == 'soporte_tecnico_escolar' or rol == 'Soporte técnico escolar' %}
+                    {% include 'staff/_staff_content_shell.html' with staff_slug='soporte_tecnico_escolar' staff_label='Soporte Técnico Escolar' %}
+                {% elif rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
+                    {% include 'staff/_staff_content_shell.html' with staff_slug='bibliotecario_digital' staff_label='Bibliotecario Digital' %}
                 {% else %}
+                    {% include content_template %}
+                {% endif %}
+                {% else %}
+                {% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}
+                    {% include 'staff/_staff_wrap_start.html' with staff_slug='admin_escolar' staff_label='Administrador Escolar' %}
+                {% elif rol == 'asesor_financiero' or rol == 'Asesor financiero' %}
+                    {% include 'staff/_staff_wrap_start.html' with staff_slug='asesor_financiero' staff_label='Asesor Financiero' %}
+                {% elif rol == 'coordinador_academico' or rol == 'Coordinador académico' %}
+                    {% include 'staff/_staff_wrap_start.html' with staff_slug='coordinador_academico' staff_label='Coordinador Académico' %}
+                {% elif rol == 'inspector_convivencia' or rol == 'Inspector convivencia' %}
+                    {% include 'staff/_staff_wrap_start.html' with staff_slug='inspector_convivencia' staff_label='Inspector de Convivencia' %}
+                {% elif rol == 'psicologo_orientador' or rol == 'Psicólogo orientador' %}
+                    {% include 'staff/_staff_wrap_start.html' with staff_slug='psicologo_orientador' staff_label='Psicólogo Orientador' %}
+                {% elif rol == 'soporte_tecnico_escolar' or rol == 'Soporte técnico escolar' %}
+                    {% include 'staff/_staff_wrap_start.html' with staff_slug='soporte_tecnico_escolar' staff_label='Soporte Técnico Escolar' %}
+                {% elif rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
+                    {% include 'staff/_staff_wrap_start.html' with staff_slug='bibliotecario_digital' staff_label='Bibliotecario Digital' %}
+                {% endif %}
+                {% if rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'asesor_financiero' or rol == 'Asesor financiero' or rol == 'coordinador_academico' or rol == 'Coordinador académico' or rol == 'inspector_convivencia' or rol == 'Inspector convivencia' or rol == 'psicologo_orientador' or rol == 'Psicólogo orientador' or rol == 'soporte_tecnico_escolar' or rol == 'Soporte técnico escolar' or rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
+                    {% include 'staff/_staff_page_frame_start.html' %}
+                {% endif %}
                 {% block content %}{% endblock %}
+                {% if rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'asesor_financiero' or rol == 'Asesor financiero' or rol == 'coordinador_academico' or rol == 'Coordinador académico' or rol == 'inspector_convivencia' or rol == 'Inspector convivencia' or rol == 'psicologo_orientador' or rol == 'Psicólogo orientador' or rol == 'soporte_tecnico_escolar' or rol == 'Soporte técnico escolar' or rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
+                    {% include 'staff/_staff_page_frame_end.html' %}
+                    {% include 'staff/_staff_wrap_end.html' %}
+                {% endif %}
                 {% endif %}
 
             </section>
@@ -178,79 +223,15 @@
 
     <!-- Bootstrap JS Bundle (includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% if rol == 'admin_general' or rol == 'Administrador general' or rol == 'admin_escolar' or rol == 'Administrador escolar' %}
+    <script src="{% static 'js/admin/admin_modal_fix.js' %}?v=20260528b"></script>
+    {% endif %}
     <!-- Dashboard scripts -->
     <script src="{% static 'js/dashboard.js' %}"></script>
-    <script src="{% static 'js/notificaciones.js' %}?v=20260528-mensajeria"></script>
-    {# Floating Action Button (FAB) de Acciones Rápidas (moderno y premium) #}
-    {% if rol == 'profesor' or rol == 'Profesor' %}
-    <div class="quick-action-fab-container" id="quickActionFab">
-        <div class="quick-action-fab-menu">
-            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="quick-action-item">
-                <span class="quick-action-label">Nueva tarea</span>
-                <span class="quick-action-icon icon-purple">📝</span>
-            </a>
-            <a href="{% url 'dashboard' %}?pagina=asistencia" class="quick-action-item">
-                <span class="quick-action-label">Registrar asistencia</span>
-                <span class="quick-action-icon icon-emerald">📋</span>
-            </a>
-            <a href="{% url 'dashboard' %}?pagina=mis_clases" class="quick-action-item">
-                <span class="quick-action-label">Subir material</span>
-                <span class="quick-action-icon icon-blue">📁</span>
-            </a>
-            <a href="{% if menu_access.comunicados %}{% url 'comunicados:lista' %}{% else %}/comunicados/{% endif %}" class="quick-action-item">
-                <span class="quick-action-label">Enviar anuncio</span>
-                <span class="quick-action-icon icon-amber">📢</span>
-            </a>
-        </div>
-        <button class="quick-action-fab-trigger" onclick="toggleQuickActionFab()" aria-label="Acciones rápidas">
-            <span><span>+</span></span>
-        </button>
-    </div>
-    {% elif rol == 'admin_escolar' or rol == 'admin_general' or rol == 'Administrador escolar' or rol == 'Administrador general' %}
-    <div class="quick-action-fab-container" id="quickActionFab">
-        <div class="quick-action-fab-menu">
-            <a href="{% url 'dashboard' %}?pagina=gestionar_cursos&abrir_modal=crear" class="quick-action-item">
-                <span class="quick-action-label">Nuevo curso</span>
-                <span class="quick-action-icon icon-blue">🎒</span>
-            </a>
-            <a href="{% url 'dashboard' %}?pagina=gestionar_profesores&abrir_modal=crear" class="quick-action-item">
-                <span class="quick-action-label">Nuevo profesor</span>
-                <span class="quick-action-icon icon-emerald">👨‍🏫</span>
-            </a>
-            <a href="{% url 'dashboard' %}?pagina=gestionar_estudiantes&abrir_modal=crear" class="quick-action-item">
-                <span class="quick-action-label">Nuevo estudiante</span>
-                <span class="quick-action-icon icon-purple">👨‍🎓</span>
-            </a>
-            <a href="{% if menu_access.comunicados %}{% url 'comunicados:lista' %}{% else %}/comunicados/{% endif %}" class="quick-action-item">
-                <span class="quick-action-label">Nuevo comunicado</span>
-                <span class="quick-action-icon icon-amber">📢</span>
-            </a>
-        </div>
-        <button class="quick-action-fab-trigger" onclick="toggleQuickActionFab()" aria-label="Acciones rápidas">
-            <span><span>+</span></span>
-        </button>
-    </div>
+    <script src="{% static 'js/notificaciones.js' %}?v=20260609-links2"></script>
+    {% if rol == 'profesor' or rol == 'Profesor' or rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'admin_general' or rol == 'Administrador general' %}
+    {% include 'includes/_quick_action_fab.html' %}
     {% endif %}
-
-    <script>
-        function toggleQuickActionFab() {
-            const fab = document.getElementById('quickActionFab');
-            if (fab) {
-                fab.classList.toggle('active');
-            }
-        }
-
-        // Cerrar FAB al hacer clic fuera del mismo
-        document.addEventListener('click', function(event) {
-            const fab = document.getElementById('quickActionFab');
-            if (fab && fab.classList.contains('active')) {
-                const isClickInside = fab.contains(event.target);
-                if (!isClickInside) {
-                    fab.classList.remove('active');
-                }
-            }
-        });
-    </script>
 </body>
 
 </html>

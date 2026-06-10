@@ -1,31 +1,42 @@
 {% load static %}
-<div class="import-container">
+<div class="import-container{% if adm_portal %} import-container--portal{% endif %}">
+                {% if adm_portal %}
+                <section class="adm-card adm-importar-panel mb-3">
+                    <div class="adm-card__head">
+                        <h2 class="adm-card__title">📄 Importar {{ tipo_usuario }} desde CSV</h2>
+                        <a href="{% url 'importar_datos' %}" class="btn-secondary btn-secondary--sm">← Volver al panel</a>
+                    </div>
+                </section>
+                {% else %}
                 <div class="page-header">
                     <h1>📄 Importar {{ tipo_usuario }} desde CSV</h1>
-                    <a href="{% url 'importar_datos' %}" class="back-button">
-                        ← Volver
-                    </a>
+                    <a href="{% url 'importar_datos' %}" class="back-button">← Volver</a>
                 </div>
+                {% endif %}
                 
-                <!-- Información sobre el formato CSV -->
-                <div class="info-card">
-                    <h3>💡 Requisitos del Archivo CSV</h3>
-                    <ul>
-                        <li>El archivo debe estar codificado en <strong>UTF-8</strong></li>
-                        <li>La primera fila debe contener los <strong>nombres de las columnas</strong></li>
-                        <li>Las fechas deben estar en formato <strong>YYYY-MM-DD</strong> (ej: 2010-05-15)</li>
-                        <li>Las contraseñas deben tener <strong>mínimo 12 caracteres</strong></li>
-                        <li>Los RUTs y emails deben ser <strong>únicos</strong> (no repetidos)</li>
-                        <li>Los valores booleanos deben ser <strong>True</strong> o <strong>False</strong></li>
-                        <li>Tamaño máximo del archivo: <strong>5 MB</strong></li>
+                <!-- Requisitos del archivo CSV -->
+                <section class="csv-requirements-card{% if adm_portal %} adm-card mb-3{% endif %}">
+                    {% if adm_portal %}<div class="adm-card__head"><h3 class="adm-card__title">Requisitos del archivo CSV</h3></div><div class="adm-card__body">{% endif %}
+                    <ul class="csv-requirements-list">
+                        <li><span class="csv-requirements-list__check" aria-hidden="true">✓</span> Codificación <strong>UTF-8</strong></li>
+                        <li><span class="csv-requirements-list__check" aria-hidden="true">✓</span> Primera fila con <strong>nombres de columnas</strong></li>
+                        <li><span class="csv-requirements-list__check" aria-hidden="true">✓</span> Fechas en formato <strong>YYYY-MM-DD</strong> (ej: 2010-05-15)</li>
+                        <li><span class="csv-requirements-list__check" aria-hidden="true">✓</span> Contraseñas con <strong>mínimo 12 caracteres</strong></li>
+                        <li><span class="csv-requirements-list__check" aria-hidden="true">✓</span> RUTs y emails <strong>únicos</strong> en el sistema</li>
+                        <li><span class="csv-requirements-list__check" aria-hidden="true">✓</span> Valores booleanos: <strong>True</strong> o <strong>False</strong></li>
+                        <li><span class="csv-requirements-list__check" aria-hidden="true">✓</span> Tamaño máximo: <strong>5 MB</strong></li>
                     </ul>
-                </div>
+                    {% if adm_portal %}</div>{% endif %}
+                </section>
 
-                <!-- Guía de Campos Requeridos -->
-                <div class="info-card" style="background-color: #f8f9fa; border-left: 4px solid #007bff;">
-                    <h3>📋 Guía de Campos CSV para {{ tipo_usuario }}</h3>
-                    
-                    <h4 style="color: #dc3545; margin-top: 20px;">✅ Campos Obligatorios</h4>
+                <!-- Guía de campos (acordeón colapsable) -->
+                <details class="csv-fields-accordion{% if adm_portal %} adm-card adm-importar-panel mb-3{% endif %}">
+                    <summary class="csv-fields-accordion__summary">
+                        <span class="csv-fields-accordion__title">Ver guía de campos CSV</span>
+                        <span class="csv-fields-accordion__arrow" aria-hidden="true">▼</span>
+                    </summary>
+                    <div class="csv-fields-accordion__body">
+                    <h4 class="csv-guide-heading csv-guide-heading--required">Campos obligatorios</h4>
                     <table class="table-simple">
                         <thead>
                             <tr class="bg-muted">
@@ -63,7 +74,7 @@
                         </tbody>
                     </table>
 
-                    <h4 style="color: #28a745; margin-top: 20px;">📌 Campos Opcionales Comunes</h4>
+                    <h4 class="csv-guide-heading csv-guide-heading--optional">Campos opcionales comunes</h4>
                     <table class="table-simple">
                         <thead>
                             <tr class="bg-muted">
@@ -301,55 +312,55 @@
                     </table>
                     {% endif %}
 
-                    <p style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
-                        <strong>💡 Tip:</strong> Todos los campos marcados como opcionales pueden dejarse en blanco en el CSV. 
-                        Los valores por defecto para campos booleanos son: permisos de apoderados = True (excepto autorizar salidas = False), 
-                        NEE = False, estado académico/laboral = Activo.
+                    <p class="csv-guide-tip">
+                        <strong>Tip:</strong> Los campos opcionales pueden dejarse en blanco. Valores por defecto: permisos de apoderados = True (excepto autorizar salidas = False), NEE = False, estado académico/laboral = Activo.
                     </p>
-                </div>
+                    </div>
+                </details>
                 
                 <!-- Plantilla de ejemplo -->
-                <div class="template-card">
-                    <h3>📋 Plantilla CSV de Ejemplo</h3>
-                    <p>Descarga esta plantilla como referencia. Incluye 2 filas de ejemplo que puedes usar como guía:</p>
-                    <button onclick="descargarPlantilla()" class="download-button">
-                        ⬇️ Descargar Plantilla
+                <section class="csv-template-card{% if adm_portal %} adm-card adm-importar-panel mb-3{% else %} template-card{% endif %}">
+                    {% if adm_portal %}<div class="adm-card__head"><h3 class="adm-card__title">Plantilla CSV de ejemplo</h3></div><div class="adm-card__body">{% else %}<h3>📋 Plantilla CSV de Ejemplo</h3>{% endif %}
+                    <p class="csv-template-card__desc">Descarga esta plantilla como referencia. Incluye filas de ejemplo que puedes usar como guía.</p>
+                    <button type="button" onclick="descargarPlantilla()" class="btn-primary csv-download-btn">
+                        ⬇ Descargar plantilla
                     </button>
                     
-                    <div class="csv-preview">
-                        <strong>Vista previa:</strong>
-                        <pre>{{ plantilla_csv }}</pre>
+                    <div class="csv-preview-box">
+                        <span class="csv-preview-box__label">Vista previa</span>
+                        <pre class="csv-preview-box__pre">{{ plantilla_csv }}</pre>
                     </div>
-                </div>
+                    {% if adm_portal %}</div>{% endif %}
+                </section>
                 
                 <!-- Formulario de carga -->
-                <div class="upload-card">
-                    <h3>Cargar Archivo CSV</h3>
-                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                <section class="csv-upload-card{% if adm_portal %} adm-card adm-importar-panel{% else %} upload-card{% endif %}">
+                    {% if adm_portal %}<div class="adm-card__head"><h3 class="adm-card__title">Cargar archivo CSV</h3></div><div class="adm-card__body">{% else %}<h3>Cargar Archivo CSV</h3>{% endif %}
+                    <form method="post" enctype="multipart/form-data" id="uploadForm"{% if csv_post_url %} action="{{ csv_post_url }}"{% endif %}>
                         {% csrf_token %}
                         
-                        <div class="file-upload-area" id="dropZone">
+                        <div class="file-upload-area file-upload-area--compact" id="dropZone">
                             <div class="upload-icon">📁</div>
-                            <div class="upload-text">Arrastra tu archivo CSV aquí o haz clic para seleccionar</div>
-                            <div class="upload-hint">Formato aceptado: CSV (máximo 5 MB)</div>
+                            <div class="upload-text">Arrastra tu CSV aquí o haz clic para seleccionar</div>
+                            <div class="upload-hint">CSV · máximo 5 MB</div>
                             <input type="file" name="archivo_csv" id="fileInput" accept=".csv" class="d-none" required>
                         </div>
                         
-                        <div id="fileInfo" style="margin-top: 15px; display: none;">
+                        <div id="fileInfo" class="csv-file-info d-none">
                             <strong>Archivo seleccionado:</strong> <span id="fileName"></span>
-                            <button type="button" onclick="clearFile()" style="margin-left: 10px; color: #e74c3c; background: none; border: none; cursor: pointer;">✕ Quitar</button>
+                            <button type="button" onclick="clearFile()" class="csv-file-info__clear">✕ Quitar</button>
                         </div>
                         
                         <div class="submit-section">
-                            <a href="{% url 'importar_datos' %}" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Importar {{ tipo_usuario }}</button>
+                            <a href="{% url 'importar_datos' %}" class="btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn-primary" id="submitBtn" disabled>Importar {{ tipo_usuario }}</button>
                         </div>
                     </form>
-                </div>
+                    {% if adm_portal %}</div>{% endif %}
+                </section>
             </div>
-        </main>
-    </div>
-    
+<!-- Fin de import-container -->
+
     <script>
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
@@ -390,9 +401,11 @@
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
                 fileName.textContent = file.name;
+                fileInfo.classList.remove('d-none');
                 fileInfo.style.display = 'block';
                 submitBtn.disabled = false;
             } else {
+                fileInfo.classList.add('d-none');
                 fileInfo.style.display = 'none';
                 submitBtn.disabled = true;
             }
@@ -416,4 +429,3 @@
             document.body.removeChild(link);
         }
     </script>
-<!-- Fin de import-container -->

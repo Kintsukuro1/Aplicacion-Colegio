@@ -177,13 +177,14 @@ def check_password_reuse(user, raw_password: str) -> bool:
     return False
 
 
-def record_password_change(user, raw_password: str):
+def record_password_change(user, raw_password: str, tipo_accion: str = 'cambio_voluntario'):
     """Registra el password actual en el historial tras un cambio."""
     from django.contrib.auth.hashers import make_password
 
     PasswordHistory.objects.create(
         user=user,
         password_hash=make_password(raw_password),
+        tipo_accion=tipo_accion,
     )
 
     old_entries = PasswordHistory.objects.filter(

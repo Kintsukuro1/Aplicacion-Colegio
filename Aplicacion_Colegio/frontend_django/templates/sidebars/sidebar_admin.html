@@ -1,9 +1,11 @@
+{% if pagina_actual == 'inicio' or pagina_actual == 'escuelas' or pagina_actual == 'usuarios' or pagina_actual == 'planes' or pagina_actual == 'estadisticas_globales' or pagina_actual == 'reportes_financieros' or pagina_actual == 'configuracion' or pagina_actual == 'auditoria' or pagina_actual == 'monitoreo_seguridad' or pagina_actual == 'calendario_eventos' or pagina_actual == 'solicitud_reuniones' or pagina_actual == 'importar_datos' or pagina_actual == 'active_sessions' or pagina_actual == 'password_history' or pagina_actual == 'gestionar_escuelas' or pagina_actual == 'notificaciones' or pagina_actual == 'perfil' %}
+{# Layout admin global: sidebar en admin/_sidebar.html #}
+{% else %}
 <aside class="sidebar">
     <div class="sidebar-header">
         <h2>🎓 Portal Académico</h2>
         <p class="user-role">Admin General</p>
     </div>
-
     <nav class="sidebar-nav">
         <ul>
             {% if 'inicio' in paginas_habilitadas %}
@@ -14,130 +16,7 @@
                 </a>
             </li>
             {% endif %}
-
-            <li class="nav-section">
-                <span class="section-title">Sistema</span>
-            </li>
-            <li>
-                <a href="{% url 'seleccionar_escuela' %}">
-                    <span class="icon">🔄</span>
-                    <span>Cambiar Colegio</span>
-                </a>
-            </li>
-            {% if 'escuelas' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'escuelas' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=escuelas">
-                    <span class="icon">🏫</span>
-                    <span>Gestionar Escuelas</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'usuarios' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'usuarios' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=usuarios">
-                    <span class="icon">👥</span>
-                    <span>Usuarios del Sistema</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'planes' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'planes' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=planes">
-                    <span class="icon">💼</span>
-                    <span>Planes y Suscripciones</span>
-                </a>
-            </li>
-            {% endif %}
-            <li {% if pagina_actual == 'importar_datos' %}class="active"{% endif %}>
-                <a href="{% url 'importar_datos' %}">
-                    <span class="icon">📥</span>
-                    <span>Importar/Exportar Datos</span>
-                </a>
-            </li>
-            {% if 'calendario_eventos' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'calendario_eventos' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=calendario_eventos">
-                    <span class="icon">🗓️</span>
-                    <span>Calendario Escolar</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'solicitud_reuniones' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'solicitud_reuniones' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=solicitud_reuniones">
-                    <span class="icon">🤝</span>
-                    <span>Solicitud Reuniones</span>
-                </a>
-            </li>
-            {% endif %}
-
-            <li class="nav-section">
-                <span class="section-title">Reportes Globales</span>
-            </li>
-            {% if 'estadisticas_globales' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'estadisticas_globales' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=estadisticas_globales">
-                    <span class="icon">📊</span>
-                    <span>Estadísticas Globales</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'reportes_financieros' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'reportes_financieros' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=reportes_financieros">
-                    <span class="icon">💰</span>
-                    <span>Reportes Financieros</span>
-                </a>
-            </li>
-            {% endif %}
-
-            <li class="nav-section">
-                <span class="section-title">Configuración</span>
-            </li>
-            {% if 'configuracion' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'configuracion' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=configuracion">
-                    <span class="icon">⚙️</span>
-                    <span>Configuración Sistema</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'auditoria' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'auditoria' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=auditoria">
-                    <span class="icon">📋</span>
-                    <span>Logs de Auditoría</span>
-                </a>
-            </li>
-            {% endif %}
-
-            <li class="nav-section">
-                <span class="section-title">Seguridad</span>
-            </li>
-            {% if menu_access.monitoreo_seguridad %}
-            <li>
-                <a href="{% url 'monitoreo_seguridad' %}">
-                    <span class="icon">🔐</span>
-                    <span>Monitoreo de Seguridad</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'active_sessions' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'active_sessions' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=active_sessions">
-                    <span class="icon">🧭</span>
-                    <span>Sesiones Activas</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'password_history' in paginas_habilitadas %}
-            <li {% if pagina_actual == 'password_history' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard' %}?pagina=password_history">
-                    <span class="icon">🛡️</span>
-                    <span>Password History</span>
-                </a>
-            </li>
-            {% endif %}
         </ul>
     </nav>
 </aside>
+{% endif %}

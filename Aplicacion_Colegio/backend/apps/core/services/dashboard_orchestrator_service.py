@@ -66,6 +66,12 @@ class DashboardOrchestratorService:
             from backend.apps.core.views.admin_general.escuelas import gestionar_escuelas
             return gestionar_escuelas(request)
 
+        if (is_system_admin_scope or rol == 'admin_general') and pagina_solicitada in {
+            'seleccionar_escuela',
+            'gestionar_escuelas',
+        }:
+            return redirect('seleccionar_escuela')
+
         if request.method == 'POST' and pagina_solicitada == 'asistencia':
             from backend.apps.core.views.profesor.asistencia import gestionar_asistencia
             colegio = SchoolQueryService.get_required_by_rbd(escuela_rbd)

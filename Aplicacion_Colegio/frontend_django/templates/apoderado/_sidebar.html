@@ -152,7 +152,7 @@
         {% if 'perfil' in paginas_habilitadas %}
         <a href="{% url 'dashboard' %}?pagina=perfil" class="apod-sidebar__footer-link{% if pagina_actual == 'perfil' %} apod-sidebar__item--active{% endif %}">
             <span class="apod-sidebar__emoji" aria-hidden="true">👤</span>
-            <span>Mi Perfil</span>
+            <span>Mi perfil</span>
         </a>
         {% endif %}
         <form method="POST" action="{% url 'accounts:logout' %}" class="apod-sidebar__logout-form">

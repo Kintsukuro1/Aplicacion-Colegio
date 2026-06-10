@@ -1,17 +1,15 @@
 <script>
-function filtrarClasesPorCurso(cursoNombre) {
+function filtrarClasesPorCurso(cursoId) {
     var claseSelect = document.getElementById('clase_id');
     if (!claseSelect) return;
 
-    var primeraVisible = null;
     Array.from(claseSelect.options).forEach(function (opt) {
         if (!opt.value) {
             opt.hidden = false;
             return;
         }
-        var visible = !cursoNombre || opt.dataset.curso === cursoNombre;
+        var visible = !cursoId || String(opt.dataset.cursoId || '') === String(cursoId);
         opt.hidden = !visible;
-        if (visible && !primeraVisible) primeraVisible = opt;
     });
 
     Array.from(claseSelect.querySelectorAll('optgroup')).forEach(function (group) {
@@ -20,22 +18,49 @@ function filtrarClasesPorCurso(cursoNombre) {
         });
         group.hidden = !anyVisible;
     });
+}
 
-    var actual = claseSelect.options[claseSelect.selectedIndex];
-    if (actual && actual.value && actual.hidden && primeraVisible) {
-        claseSelect.value = primeraVisible.value;
-        claseSelect.dispatchEvent(new Event('change'));
+function syncCursoFromClase(claseSelect) {
+    var cursoSelect = document.getElementById('filtro_curso_id');
+    if (!cursoSelect || !claseSelect) return;
+    var opt = claseSelect.options[claseSelect.selectedIndex];
+    if (opt && opt.value && opt.dataset.cursoId) {
+        cursoSelect.value = opt.dataset.cursoId;
+        filtrarClasesPorCurso(opt.dataset.cursoId);
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    var cursoFiltro = document.getElementById('filtro_curso_nombre');
+function onClaseAsistenciaChange(claseSelect) {
+    syncCursoFromClase(claseSelect);
+    var form = document.getElementById('formFiltros');
+    if (form) form.submit();
+}
+
+function onCursoAsistenciaChange(select) {
+    var form = document.getElementById('formFiltros');
+    var claseSelect = document.getElementById('clase_id');
+    if (!form || !claseSelect) return;
+
+    filtrarClasesPorCurso(select.value);
+    claseSelect.value = '';
+    form.submit();
+}
+
+function initAsistenciaFiltros() {
+    var cursoFiltro = document.getElementById('filtro_curso_id');
     var claseSelect = document.getElementById('clase_id');
     if (!cursoFiltro || !claseSelect) return;
-    var selectedOption = claseSelect.options[claseSelect.selectedIndex];
-    if (selectedOption && selectedOption.value && selectedOption.dataset.curso) {
-        cursoFiltro.value = selectedOption.dataset.curso;
-        filtrarClasesPorCurso(selectedOption.dataset.curso);
+
+    if (cursoFiltro.value) {
+        filtrarClasesPorCurso(cursoFiltro.value);
+    } else if (claseSelect.value) {
+        syncCursoFromClase(claseSelect);
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAsistenciaFiltros);
+} else {
+    initAsistenciaFiltros();
+}
 </script>

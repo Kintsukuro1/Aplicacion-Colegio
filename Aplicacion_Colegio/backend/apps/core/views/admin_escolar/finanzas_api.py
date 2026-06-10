@@ -3,6 +3,7 @@
 Endpoints:
 - registrar_pago_manual: POST — Registra un pago manual contra una cuota.
 - listar_cuotas_estudiante: GET — Lista las cuotas de una matrícula.
+- listar_cuotas_ciclo: GET — Lista cuotas del ciclo activo (panel admin).
 - condonar_cuota: POST — Condona una cuota cambiando su estado.
 """
 
@@ -12,17 +13,55 @@ import json
 import logging
 from decimal import Decimal, InvalidOperation
 
+from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from backend.apps.core.services.orm_access_service import ORMAccessService
 from backend.apps.core.views.school_context import resolve_request_rbd
+from backend.apps.institucion.models import CicloAcademico
 from backend.apps.matriculas.models import Cuota, Pago
 from backend.common.services.policy_service import PolicyService
 from backend.common.utils.view_auth import jwt_or_session_auth_required
 
 logger = logging.getLogger(__name__)
+
+MESES_CUOTA = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
+}
+
+
+def _effective_cuota_estado(cuota, hoy):
+    if cuota.estado in ("PAGADA", "CONDONADA"):
+        return cuota.estado
+    if cuota.fecha_vencimiento < hoy and cuota.estado in ("PENDIENTE", "PAGADA_PARCIAL"):
+        return "VENCIDA"
+    return cuota.estado
+
+
+def _serialize_cuota_admin(cuota, hoy):
+    estudiante = cuota.matricula.estudiante
+    estado_code = _effective_cuota_estado(cuota, hoy)
+    return {
+        "id": cuota.id,
+        "numero_cuota": cuota.numero_cuota,
+        "mes": MESES_CUOTA.get(cuota.mes, str(cuota.mes)),
+        "anio": cuota.anio,
+        "monto_original": int(cuota.monto_original),
+        "monto_descuento": int(cuota.monto_descuento),
+        "monto_final": int(cuota.monto_final),
+        "monto_pagado": int(cuota.monto_pagado),
+        "saldo_pendiente": int(cuota.saldo_pendiente()),
+        "estado": cuota.get_estado_display(),
+        "estado_code": estado_code,
+        "fecha_vencimiento": cuota.fecha_vencimiento.strftime("%Y-%m-%d"),
+        "estudiante_nombre": estudiante.get_full_name() if estudiante else "Sin nombre",
+        "estudiante_rut": getattr(estudiante, "rut", None) or "",
+        "curso_nombre": str(cuota.matricula.curso) if cuota.matricula.curso else "Sin curso",
+    }
 
 
 @require_http_methods(["POST"])
@@ -160,33 +199,71 @@ def listar_cuotas_estudiante(request):
         .order_by("anio", "mes", "numero_cuota")
     )
 
-    meses = {
-        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
-        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
-        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
-    }
-
+    hoy = timezone.localtime(timezone.now()).date()
     cuotas_list = []
     for cuota in cuotas:
-        cuotas_list.append({
-            "id": cuota.id,
-            "numero_cuota": cuota.numero_cuota,
-            "mes": meses.get(cuota.mes, str(cuota.mes)),
-            "anio": cuota.anio,
-            "monto_original": int(cuota.monto_original),
-            "monto_descuento": int(cuota.monto_descuento),
-            "monto_final": int(cuota.monto_final),
-            "monto_pagado": int(cuota.monto_pagado),
-            "saldo_pendiente": int(cuota.saldo_pendiente()),
-            "estado": cuota.get_estado_display(),
-            "estado_code": cuota.estado,
-            "fecha_vencimiento": cuota.fecha_vencimiento.strftime("%d/%m/%Y"),
-        })
+        item = _serialize_cuota_admin(cuota, hoy)
+        item["fecha_vencimiento"] = cuota.fecha_vencimiento.strftime("%d/%m/%Y")
+        cuotas_list.append(item)
 
     return JsonResponse({
         "success": True,
         "cuotas": cuotas_list,
         "total": len(cuotas_list),
+    })
+
+
+@require_http_methods(["GET"])
+@jwt_or_session_auth_required
+def listar_cuotas_ciclo(request):
+    """Lista cuotas del ciclo académico activo para el panel admin escolar."""
+
+    rbd = resolve_request_rbd(request)
+    if not rbd:
+        return JsonResponse({"success": False, "error": "Usuario sin colegio asignado"}, status=400)
+
+    if not PolicyService.has_capability(request.user, "FINANCE_VIEW", school_id=rbd):
+        return JsonResponse({"success": False, "error": "Permiso denegado"}, status=403)
+
+    ciclo_activo = CicloAcademico.objects.filter(
+        colegio_id=rbd, estado="ACTIVO"
+    ).order_by("-fecha_inicio", "-id").first()
+
+    if not ciclo_activo:
+        return JsonResponse({"success": True, "cuotas": [], "total": 0})
+
+    hoy = timezone.localtime(timezone.now()).date()
+    filtro_estado = (request.GET.get("estado") or "").strip().upper()
+    filtro_busqueda = (request.GET.get("busqueda") or "").strip().lower()
+
+    cuotas = (
+        ORMAccessService.filter(
+            Cuota,
+            matricula__colegio_id=rbd,
+            matricula__estado="ACTIVA",
+            matricula__ciclo_academico=ciclo_activo,
+        )
+        .select_related("matricula__estudiante", "matricula__curso")
+        .order_by("-anio", "-mes", "matricula__estudiante__apellido_paterno")
+    )
+
+    cuotas_list = []
+    for cuota in cuotas:
+        item = _serialize_cuota_admin(cuota, hoy)
+        if filtro_estado and item["estado_code"] != filtro_estado:
+            continue
+        if filtro_busqueda:
+            nombre = item["estudiante_nombre"].lower()
+            rut = (item["estudiante_rut"] or "").lower()
+            if filtro_busqueda not in nombre and filtro_busqueda not in rut:
+                continue
+        cuotas_list.append(item)
+
+    return JsonResponse({
+        "success": True,
+        "cuotas": cuotas_list,
+        "total": len(cuotas_list),
+        "ciclo": ciclo_activo.nombre,
     })
 
 

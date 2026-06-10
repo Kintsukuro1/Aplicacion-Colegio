@@ -2,15 +2,32 @@
 
 {% load custom_filters %}
 
+{% if rol != 'admin_escolar' and rol != 'Administrador escolar' %}
 {% include 'profesor/_personal_wrap_start.html' %}
+{% endif %}
 
 
 
-<link rel="stylesheet" href="{% static 'css/profesor/asistencia.css' %}?v=20260605-layout">
+<link rel="stylesheet" href="{% static 'css/profesor/asistencia.css' %}?v=20260610-asist-v3">
 
 
 
 <div class="asistencia-container">
+
+    {% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}
+    {% if insights_asistencia %}
+    <section class="asig-insights as-insights-admin" aria-label="Información útil">
+        {% for insight in insights_asistencia %}
+        <div class="asig-insight asig-insight--{{ insight.tipo }}">
+            <span class="asig-insight__icon" aria-hidden="true">
+                {% if insight.tipo == 'warn' %}⚠️{% elif insight.tipo == 'info' %}💡{% else %}📋{% endif %}
+            </span>
+            <p>{{ insight.texto }}</p>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+    {% endif %}
 
     <!-- 1. Selección de clase y fecha -->
 
@@ -26,21 +43,19 @@
 
             <div class="filtro-group">
 
-                <label for="filtro_curso_nombre">
+                <label for="filtro_curso_id">
 
                     <i class="fas fa-filter"></i> Curso
 
                 </label>
 
-                <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
+                <select id="filtro_curso_id" name="curso_id" onchange="onCursoAsistenciaChange(this)">
 
                     <option value="">-- Todos los cursos --</option>
 
-                    {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                    {% for curso in cursos_asistencia %}
 
-                    {% for grupo in clases_por_curso %}
-
-                        <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+                        <option value="{{ curso.id_curso }}"{% if filtro_curso_id|stringformat:"s" == curso.id_curso|stringformat:"s" %} selected{% endif %}>{{ curso.nombre }}</option>
 
                     {% endfor %}
 
@@ -60,9 +75,9 @@
 
                 </label>
 
-                <select id="clase_id" name="clase_id" required onchange="document.getElementById('formFiltros').submit()">
-                    <option value="">-- Seleccione una clase --</option>
-                    {% include 'profesor/_clase_select_options.html' with filtro_clase_id=filtro_clase_id %}
+                <select id="clase_id" name="clase_id"{% if rol != 'admin_escolar' and rol != 'Administrador escolar' %} required{% endif %} onchange="onClaseAsistenciaChange(this)">
+                    <option value="">{% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}-- Todas las asignaturas del curso --{% else %}-- Seleccione una clase --{% endif %}</option>
+                    {% include 'profesor/_clase_select_options.html' with clases=clases_todas|default:clases filtro_clase_id=filtro_clase_id %}
                 </select>
 
             </div>
@@ -91,7 +106,7 @@
 
                 </button>
 
-                <a href="{% url 'dashboard' %}?pagina=asistencia" class="btn-limpiar">
+                <a href="{% url 'dashboard' %}?pagina=asistencia&amp;reset_filtros=1" class="btn-limpiar">
 
                     <i class="fas fa-times"></i> Limpiar
 
@@ -103,22 +118,58 @@
 
 
 
-        {% if clase_seleccionada %}
-
-        <p class="as-toolbar__context">
-
-            <span class="as-toolbar__pill"><i class="fas fa-book-open" aria-hidden="true"></i> {{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</span>
-
-            <span class="as-toolbar__pill"><i class="fas fa-calendar-day" aria-hidden="true"></i> {{ filtro_fecha }}</span>
-
-            {% if estudiantes_con_asistencia %}
-
-            <span class="as-toolbar__pill as-toolbar__pill--muted">{{ estudiantes_con_asistencia|length }} estudiante{{ estudiantes_con_asistencia|length|pluralize }}</span>
-
+        {% if clase_seleccionada or curso_seleccionado %}
+        <div class="as-context-card">
+            {% if clase_seleccionada %}
+            {% with accent=clase_seleccionada.asignatura.nombre|color_asignatura:clase_seleccionada.asignatura.color %}
+            <div class="as-context-card__accent" style="background: {{ accent }};"></div>
+            <div class="as-context-card__main">
+                <div class="as-context-card__identity">
+                    <div class="as-context-card__icon" style="background: {{ accent }};">{{ clase_seleccionada.asignatura.nombre.0|upper }}</div>
+                    <div>
+                        <span class="as-context-card__badge as-context-card__badge--clase">Asignatura</span>
+                        <h2 class="as-context-card__title">{{ clase_seleccionada.asignatura.nombre }}</h2>
+                        <p class="as-context-card__meta">
+                            <span><i class="fas fa-graduation-cap" aria-hidden="true"></i> {{ clase_seleccionada.curso.nombre }}</span>
+                            <span><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> {{ clase_seleccionada.profesor.get_full_name }}</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="as-context-card__chips">
+                    <span class="as-context-card__chip"><i class="fas fa-calendar-day" aria-hidden="true"></i> {{ filtro_fecha }}</span>
+                    {% if estudiantes_con_asistencia %}
+                    <span class="as-context-card__chip"><i class="fas fa-user-graduate" aria-hidden="true"></i> {{ estudiantes_con_asistencia|length }} estudiante{{ estudiantes_con_asistencia|length|pluralize }}</span>
+                    {% endif %}
+                    {% if stats_chart.total_registros %}
+                    <span class="as-context-card__chip as-context-card__chip--highlight"><i class="fas fa-percent" aria-hidden="true"></i> {{ stats_chart.porcentaje_asistencia|floatformat:1 }}% asistencia</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+            {% elif curso_seleccionado %}
+            <div class="as-context-card__accent" style="background: #6366f1;"></div>
+            <div class="as-context-card__main">
+                <div class="as-context-card__identity">
+                    <div class="as-context-card__icon" style="background: #6366f1;">{{ curso_seleccionado.nombre.0|upper }}</div>
+                    <div>
+                        <span class="as-context-card__badge as-context-card__badge--curso">Curso completo</span>
+                        <h2 class="as-context-card__title">{{ curso_seleccionado.nombre }}</h2>
+                        <p class="as-context-card__meta">
+                            <span><i class="fas fa-layer-group" aria-hidden="true"></i> {{ total_clases }} asignatura{{ total_clases|pluralize }}</span>
+                            <span><i class="fas fa-chart-pie" aria-hidden="true"></i> Vista agregada 30 días</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="as-context-card__chips">
+                    <span class="as-context-card__chip"><i class="fas fa-calendar-day" aria-hidden="true"></i> {{ filtro_fecha }}</span>
+                    {% if stats_chart.total_registros %}
+                    <span class="as-context-card__chip as-context-card__chip--highlight"><i class="fas fa-percent" aria-hidden="true"></i> {{ stats_chart.porcentaje_asistencia|floatformat:1 }}% asistencia</span>
+                    <span class="as-context-card__chip"><i class="fas fa-database" aria-hidden="true"></i> {{ stats_chart.total_registros }} registros</span>
+                    {% endif %}
+                </div>
+            </div>
             {% endif %}
-
-        </p>
-
+        </div>
         {% endif %}
 
     </section>
@@ -127,7 +178,7 @@
 
     <!-- 2. Visualización (solo datos que el hero no muestra: justificadas + gráfico) -->
 
-    {% if stats_clase and stats_clase.total_registros %}
+    {% if stats_chart.total_registros %}
 
     <section class="as-insights" aria-label="Distribución de asistencia">
 
@@ -135,15 +186,27 @@
 
             <header class="as-insights__head">
 
-                <h2 class="as-insights__title">Distribución (30 días)</h2>
+                <h2 class="as-insights__title">Distribución (30 días){% if stats_chart.scope_label %} — {{ stats_chart.scope_label }}{% endif %}</h2>
 
-                <p class="as-insights__sub">Comparativo visual; los totales están en el resumen superior.</p>
+                <p class="as-insights__sub">{% if stats_chart.scope == 'curso' %}Totales agregados del curso seleccionado.{% else %}Comparativo visual de la clase seleccionada.{% endif %}</p>
 
             </header>
 
             <div class="as-insights__chart-wrap">
 
-                <canvas id="asistenciaChart" aria-label="Gráfico de distribución de asistencia"></canvas>
+                <canvas id="asistenciaChart"
+                    aria-label="Gráfico de distribución de asistencia"
+                    data-chart-key="{{ stats_chart.chart_key }}"
+                    data-presentes="{{ stats_chart.presentes }}"
+                    data-ausentes="{{ stats_chart.ausentes }}"
+                    data-tardanzas="{{ stats_chart.tardanzas }}"
+                    data-justificadas="{{ stats_chart.justificadas }}"></canvas>
+
+                <div class="as-chart-center" aria-hidden="true">
+                    <span class="as-chart-center__pct">{{ stats_chart.porcentaje_asistencia|floatformat:1 }}%</span>
+                    <span class="as-chart-center__lbl">asistencia</span>
+                    <span class="as-chart-center__sub">{{ stats_chart.total_registros }} reg.</span>
+                </div>
 
             </div>
 
@@ -157,20 +220,25 @@
 
             <ul class="as-breakdown">
 
-                <li class="as-breakdown__row as-breakdown__row--j">
-
-                    <span class="as-breakdown__label">Justificadas</span>
-
-                    <span class="as-breakdown__val">{{ stats_clase.justificadas|default:0 }}</span>
-
+                <li class="as-breakdown__row as-breakdown__row--p">
+                    <span class="as-breakdown__label">Presentes</span>
+                    <span class="as-breakdown__val">{{ stats_chart.presentes|default:0 }}</span>
                 </li>
-
+                <li class="as-breakdown__row as-breakdown__row--a">
+                    <span class="as-breakdown__label">Ausentes</span>
+                    <span class="as-breakdown__val">{{ stats_chart.ausentes|default:0 }}</span>
+                </li>
+                <li class="as-breakdown__row as-breakdown__row--t">
+                    <span class="as-breakdown__label">Atrasos</span>
+                    <span class="as-breakdown__val">{{ stats_chart.tardanzas|default:0 }}</span>
+                </li>
+                <li class="as-breakdown__row as-breakdown__row--j">
+                    <span class="as-breakdown__label">Justificadas</span>
+                    <span class="as-breakdown__val">{{ stats_chart.justificadas|default:0 }}</span>
+                </li>
                 <li class="as-breakdown__row as-breakdown__row--total">
-
-                    <span class="as-breakdown__label">Registros en período</span>
-
-                    <span class="as-breakdown__val">{{ stats_clase.total_registros|default:0 }}</span>
-
+                    <span class="as-breakdown__label">Total registros (30d)</span>
+                    <span class="as-breakdown__val">{{ stats_chart.total_registros|default:0 }}</span>
                 </li>
 
             </ul>
@@ -195,110 +263,20 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <script>
+    <script src="{% static 'js/admin/asistencia_chart.js' %}?v=20260610-asist-v2"></script>
 
-        document.addEventListener('DOMContentLoaded', function () {
+    {% elif curso_seleccionado %}
+    {% if not stats_chart.total_registros %}
 
-            var ctx = document.getElementById('asistenciaChart');
+    <p class="as-empty-stats" role="status">
 
-            if (!ctx) return;
+        No hay registros de asistencia en los últimos 30 días para este curso. Elige una asignatura o registra asistencia hoy.
 
-            new Chart(ctx, {
+    </p>
 
-                type: 'doughnut',
-
-                data: {
-
-                    labels: ['Presentes', 'Ausentes', 'Atrasos', 'Justificadas'],
-
-                    datasets: [{
-
-                        data: [
-
-                            {{ stats_clase.presentes|default:0 }},
-
-                            {{ stats_clase.ausentes|default:0 }},
-
-                            {{ stats_clase.tardanzas|default:0 }},
-
-                            {{ stats_clase.justificadas|default:0 }}
-
-                        ],
-
-                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'],
-
-                        borderWidth: 2,
-
-                        borderColor: '#ffffff',
-
-                        hoverOffset: 4
-
-                    }]
-
-                },
-
-                options: {
-
-                    responsive: true,
-
-                    maintainAspectRatio: false,
-
-                    plugins: {
-
-                        legend: {
-
-                            position: 'bottom',
-
-                            labels: {
-
-                                font: { family: "'Inter', sans-serif", size: 11 },
-
-                                color: '#5b21b6',
-
-                                boxWidth: 10,
-
-                                padding: 12
-
-                            }
-
-                        },
-
-                        tooltip: {
-
-                            callbacks: {
-
-                                label: function (context) {
-
-                                    var label = context.label || '';
-
-                                    var value = context.parsed;
-
-                                    var total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
-
-                                    var pct = total > 0 ? Math.round((value / total) * 100) : 0;
-
-                                    return label + ': ' + value + ' (' + pct + '%)';
-
-                                }
-
-                            }
-
-                        }
-
-                    },
-
-                    cutout: '62%'
-
-                }
-
-            });
-
-        });
-
-    </script>
-
+    {% endif %}
     {% elif clase_seleccionada %}
-    {% if not stats_clase or not stats_clase.total_registros %}
+    {% if not stats_chart.total_registros %}
 
     <p class="as-empty-stats" role="status">
 
@@ -310,199 +288,137 @@
     {% endif %}
 
     <!-- 3. Registro del día -->
-
     {% if clase_seleccionada %}
+    {% with accent=clase_seleccionada.asignatura.nombre|color_asignatura:clase_seleccionada.asignatura.color %}
+    <section class="as-registro as-registro--premium" aria-label="Registro de asistencia del día" style="--as-reg-accent: {{ accent }};">
 
-    <section class="as-registro" aria-label="Registro de asistencia del día">
+        {% if estudiantes_con_asistencia %}
+        <form method="POST" action="{% url 'dashboard' %}?pagina=asistencia" id="formAsistencia">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="registrar_asistencia">
+            <input type="hidden" name="clase_id" value="{{ clase_seleccionada.id }}">
+            <input type="hidden" name="fecha" value="{{ filtro_fecha }}">
+            {% if filtro_curso_id %}<input type="hidden" name="curso_id" value="{{ filtro_curso_id }}">{% endif %}
 
-        <header class="as-registro__head">
-            <h2 class="as-registro__title">Asistencia del día</h2>
-            <p class="as-registro__sub">Marca el estado de cada estudiante y guarda los cambios.</p>
-        </header>
-        <div class="as-live-counter" id="asLiveCounter" aria-live="polite" hidden>
-            <span class="as-live-counter__pill as-live-counter__pill--p" id="asCountP">Presentes: 0</span>
-            <span class="as-live-counter__pill as-live-counter__pill--a" id="asCountA">Ausentes: 0</span>
-            <span class="as-live-counter__pill as-live-counter__pill--t" id="asCountT">Atrasos: 0</span>
-            <span class="as-live-counter__pill as-live-counter__pill--j" id="asCountJ">Justificadas: 0</span>
-        </div>
-
-
-
-        <div class="tabla-container">
-
-            {% if estudiantes_con_asistencia %}
-
-            <form method="POST" action="{% url 'dashboard' %}?pagina=asistencia" id="formAsistencia">
-
-                {% csrf_token %}
-
-                <input type="hidden" name="accion" value="registrar_asistencia">
-
-                <input type="hidden" name="clase_id" value="{{ clase_seleccionada.id }}">
-
-                <input type="hidden" name="fecha" value="{{ filtro_fecha }}">
-
-
-
-                <div class="acciones-rapidas">
-
-                    <button type="button" class="btn-accion-rapida" onclick="marcarTodos('P')">
-
-                        <i class="fas fa-check-circle"></i> Marcar todos presentes
-
-                    </button>
-
-                    <button type="submit" class="btn-guardar-asistencia">
-
-                        <i class="fas fa-save"></i> Guardar asistencia
-
-                    </button>
-
+            <header class="as-registro__panel">
+                <div class="as-registro__panel-main">
+                    <div class="as-registro__panel-icon" aria-hidden="true">{{ clase_seleccionada.asignatura.nombre.0|upper }}</div>
+                    <div class="as-registro__panel-copy">
+                        <div class="as-registro__panel-badges">
+                            <span class="as-registro__badge as-registro__badge--subject">Asignatura</span>
+                            {% if registro_dia.guardado %}
+                            <span class="as-registro__badge as-registro__badge--saved"><i class="fas fa-check-circle" aria-hidden="true"></i> Registro guardado</span>
+                            {% else %}
+                            <span class="as-registro__badge as-registro__badge--pending"><i class="fas fa-pen" aria-hidden="true"></i> Sin guardar hoy</span>
+                            {% endif %}
+                        </div>
+                        <h2 class="as-registro__panel-title">{{ clase_seleccionada.asignatura.nombre }}</h2>
+                        <p class="as-registro__panel-meta">
+                            <span><i class="fas fa-graduation-cap" aria-hidden="true"></i> {{ clase_seleccionada.curso.nombre }}</span>
+                            <span><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> {{ clase_seleccionada.profesor.get_full_name }}</span>
+                            <span><i class="fas fa-calendar-day" aria-hidden="true"></i> {{ filtro_fecha_display }}</span>
+                        </p>
+                    </div>
                 </div>
 
+                <div class="as-registro__panel-stats" id="asLiveCounter" aria-live="polite">
+                    <div class="as-stat-mini as-stat-mini--p"><span class="as-stat-mini__val" id="asCountP">{{ registro_dia.presentes|default:0 }}</span><span class="as-stat-mini__lbl">Presentes</span></div>
+                    <div class="as-stat-mini as-stat-mini--a"><span class="as-stat-mini__val" id="asCountA">{{ registro_dia.ausentes|default:0 }}</span><span class="as-stat-mini__lbl">Ausentes</span></div>
+                    <div class="as-stat-mini as-stat-mini--t"><span class="as-stat-mini__val" id="asCountT">{{ registro_dia.tardanzas|default:0 }}</span><span class="as-stat-mini__lbl">Atrasos</span></div>
+                    <div class="as-stat-mini as-stat-mini--j"><span class="as-stat-mini__val" id="asCountJ">{{ registro_dia.justificadas|default:0 }}</span><span class="as-stat-mini__lbl">Justificadas</span></div>
+                </div>
 
+                <div class="as-registro__panel-progress">
+                    <div class="as-registro__progress-head">
+                        <span>Cobertura del listado</span>
+                        <strong id="asProgressLabel">{{ registro_dia.total|default:0 }} estudiante{{ registro_dia.total|default:0|pluralize }}</strong>
+                    </div>
+                    <div class="as-registro__progress-track" role="presentation">
+                        <div class="as-registro__progress-fill" id="asProgressFill" style="width: {% if registro_dia.total %}{% widthratio registro_dia.presentes registro_dia.total 100 %}{% else %}0{% endif %}%;"></div>
+                    </div>
+                </div>
 
-                <table class="tabla-asistencia">
+                <div class="as-registro__panel-actions">
+                    <button type="button" class="as-btn as-btn--ghost" onclick="marcarTodos('P')">
+                        <i class="fas fa-check-double" aria-hidden="true"></i> Todos presentes
+                    </button>
+                    <button type="submit" class="as-btn as-btn--primary">
+                        <i class="fas fa-save" aria-hidden="true"></i> Guardar asistencia
+                    </button>
+                </div>
+            </header>
 
+            <div class="as-registro__table-wrap">
+                <table class="as-table">
                     <thead>
-
                         <tr>
-
-                            <th>#</th>
-
-                            <th>Estudiante</th>
-
-                            <th>RUT</th>
-
-                            <th>Estado</th>
-
-                            <th>Observaciones</th>
-
+                            <th scope="col" class="as-table__col-num">#</th>
+                            <th scope="col">Estudiante</th>
+                            <th scope="col" class="as-table__col-rut">RUT</th>
+                            <th scope="col" class="as-table__col-estado">Estado del día</th>
+                            <th scope="col" class="as-table__col-obs">Notas</th>
                         </tr>
-
                     </thead>
-
                     <tbody>
-
                         {% for item in estudiantes_con_asistencia %}
-
-                        <tr>
-
-                            <td>{{ forloop.counter }}</td>
-
+                        <tr class="as-row as-row--{{ item.estado|lower }}" data-estado="{{ item.estado }}">
+                            <td class="as-table__col-num">{{ forloop.counter }}</td>
                             <td>
-
-                                <div class="estudiante-info">
-
-                                    <div class="avatar-small">
-
-                                        {{ item.estudiante.nombre.0 }}{{ item.estudiante.apellido_paterno.0 }}
-
+                                <div class="as-student">
+                                    <div class="as-student__avatar" aria-hidden="true">{{ item.estudiante.nombre.0 }}{{ item.estudiante.apellido_paterno.0 }}</div>
+                                    <div class="as-student__info">
+                                        <span class="as-student__name">{{ item.estudiante.get_full_name }}</span>
+                                        <span class="as-student__hint">Listo para marcar</span>
                                     </div>
-
-                                    <span>{{ item.estudiante.get_full_name }}</span>
-
                                 </div>
-
                             </td>
-
-                            <td>{{ item.estudiante.rut|default:"—" }}</td>
-
+                            <td class="as-table__col-rut"><span class="as-rut">{{ item.estudiante.rut|default:"—" }}</span></td>
                             <td>
-
-                                <div class="estados-grupo">
-
-                                    <label class="radio-estado estado-presente" title="Presente">
-
+                                <div class="as-segment" role="radiogroup" aria-label="Estado de {{ item.estudiante.get_full_name }}">
+                                    <label class="as-segment__opt as-segment__opt--p" title="Presente">
                                         <input type="radio" name="estado_{{ item.estudiante.id }}" value="P" {% if item.estado == 'P' %}checked{% endif %}>
-
-                                        <span class="radio-custom">✅ P</span>
-
+                                        <span><i class="fas fa-check" aria-hidden="true"></i> P</span>
                                     </label>
-
-                                    <label class="radio-estado estado-ausente" title="Ausente">
-
+                                    <label class="as-segment__opt as-segment__opt--a" title="Ausente">
                                         <input type="radio" name="estado_{{ item.estudiante.id }}" value="A" {% if item.estado == 'A' %}checked{% endif %}>
-
-                                        <span class="radio-custom">❌ A</span>
-
+                                        <span><i class="fas fa-times" aria-hidden="true"></i> A</span>
                                     </label>
-
-                                    <label class="radio-estado estado-tardanza" title="Tardanza">
-
+                                    <label class="as-segment__opt as-segment__opt--t" title="Atraso">
                                         <input type="radio" name="estado_{{ item.estudiante.id }}" value="T" {% if item.estado == 'T' %}checked{% endif %}>
-
-                                        <span class="radio-custom">⏰ T</span>
-
+                                        <span><i class="fas fa-clock" aria-hidden="true"></i> T</span>
                                     </label>
-
-                                    <label class="radio-estado estado-justificada" title="Justificada">
-
+                                    <label class="as-segment__opt as-segment__opt--j" title="Justificada">
                                         <input type="radio" name="estado_{{ item.estudiante.id }}" value="J" {% if item.estado == 'J' %}checked{% endif %}>
-
-                                        <span class="radio-custom">📝 J</span>
-
+                                        <span><i class="fas fa-file-alt" aria-hidden="true"></i> J</span>
                                     </label>
-
                                 </div>
-
                             </td>
-
-                            <td>
-
-                                {% if item.asistencia %}
-
-                                    <button type="button" class="btn-observacion" onclick="abrirModalObservacion(this)"
-
-                                        data-asistencia-id="{{ item.asistencia.id_asistencia }}"
-
-                                        data-estudiante="{{ item.estudiante.get_full_name }}"
-
-                                        data-observaciones="{{ item.asistencia.observaciones|default:'' }}">
-
-                                        <i class="fas fa-comment"></i>
-
-                                        {% if item.asistencia.observaciones %}
-
-                                            <span class="badge-obs">1</span>
-
-                                        {% endif %}
-
-                                    </button>
-
-                                {% else %}
-
-                                    <span class="text-muted">—</span>
-
-                                {% endif %}
-
+                            <td class="as-table__col-obs">
+                                <button type="button" class="as-obs-btn{% if item.asistencia and item.asistencia.observaciones %} as-obs-btn--active{% endif %}"
+                                    onclick="abrirModalObservacion(this)"
+                                    data-asistencia-id="{% if item.asistencia %}{{ item.asistencia.id_asistencia }}{% endif %}"
+                                    data-estudiante="{{ item.estudiante.get_full_name }}"
+                                    data-observaciones="{{ item.asistencia.observaciones|default:'' }}"
+                                    {% if not item.asistencia %}disabled title="Guarde la asistencia para agregar notas"{% endif %}>
+                                    <i class="fas fa-comment-dots" aria-hidden="true"></i>
+                                    {% if item.asistencia and item.asistencia.observaciones %}<span class="as-obs-btn__dot"></span>{% endif %}
+                                </button>
                             </td>
-
                         </tr>
-
                         {% endfor %}
-
                     </tbody>
-
                 </table>
-
-            </form>
-
-            {% else %}
-
-            <div class="empty-state">
-
-                <i class="fas fa-users-slash"></i>
-
-                <p>No hay estudiantes asignados a este curso</p>
-
             </div>
-
-            {% endif %}
-
+        </form>
+        {% else %}
+        <div class="as-registro__empty">
+            <i class="fas fa-users-slash" aria-hidden="true"></i>
+            <p>No hay estudiantes matriculados en esta clase.</p>
+            <p class="as-registro__empty-hint">Verifique la matrícula del curso {{ clase_seleccionada.curso.nombre }}.</p>
         </div>
-
+        {% endif %}
     </section>
+    {% endwith %}
 
     {% else %}
 
@@ -524,7 +440,7 @@
 
 <!-- Modal Observaciones -->
 
-<div id="modalObservacion" class="modal-overlay d-none">
+<div id="modalObservacion" class="modal-overlay as-modal">
 
     <div class="modal-content">
 
@@ -595,92 +511,80 @@
 
 
 <script>
-
 function marcarTodos(estado) {
-
-    document.querySelectorAll('input[type="radio"][value="' + estado + '"]').forEach(function (radio) {
-
+    document.querySelectorAll('#formAsistencia input[type="radio"][value="' + estado + '"]').forEach(function (radio) {
         radio.checked = true;
-
     });
-
+    formModificado = true;
+    asUpdateLiveCounter();
 }
-
-
 
 function abrirModalObservacion(button) {
-
     var data = button.dataset;
-
+    if (!data.asistenciaId) return;
     document.getElementById('observacionAsistenciaId').value = data.asistenciaId;
-
     document.getElementById('observacionEstudiante').textContent = data.estudiante;
-
-    document.getElementById('observaciones').value = data.observaciones;
-
-    document.getElementById('modalObservacion').style.display = 'flex';
-
+    document.getElementById('observaciones').value = data.observaciones || '';
+    document.getElementById('modalObservacion').classList.add('active');
 }
-
-
 
 function cerrarModal(modalId) {
-
-    document.getElementById(modalId).style.display = 'none';
-
+    var modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('active');
 }
 
-
-
 document.querySelectorAll('.modal-overlay').forEach(function (modal) {
-
     modal.addEventListener('click', function (e) {
-
-        if (e.target === this) this.style.display = 'none';
-
+        if (e.target === modal) modal.classList.remove('active');
     });
-
 });
-
-
 
 document.addEventListener('keydown', function (e) {
-
     if (e.key === 'Escape') {
-
-        document.querySelectorAll('.modal-overlay').forEach(function (modal) {
-
-            modal.style.display = 'none';
-
+        document.querySelectorAll('.modal-overlay.active').forEach(function (modal) {
+            modal.classList.remove('active');
         });
-
     }
-
 });
-
-
 
 var formModificado = false;
 
 function asUpdateLiveCounter() {
-    var wrap = document.getElementById('asLiveCounter');
-    if (!wrap) return;
+    var form = document.getElementById('formAsistencia');
+    if (!form) return;
     var counts = { P: 0, A: 0, T: 0, J: 0 };
-    document.querySelectorAll('#formAsistencia input[type="radio"]:checked').forEach(function (r) {
+    form.querySelectorAll('input[type="radio"]:checked').forEach(function (r) {
         if (counts[r.value] !== undefined) counts[r.value]++;
     });
     var elP = document.getElementById('asCountP');
     var elA = document.getElementById('asCountA');
     var elT = document.getElementById('asCountT');
     var elJ = document.getElementById('asCountJ');
-    if (elP) elP.textContent = 'Presentes: ' + counts.P;
-    if (elA) elA.textContent = 'Ausentes: ' + counts.A;
-    if (elT) elT.textContent = 'Atrasos: ' + counts.T;
-    if (elJ) elJ.textContent = 'Justificadas: ' + counts.J;
-    wrap.hidden = false;
+    if (elP) elP.textContent = counts.P;
+    if (elA) elA.textContent = counts.A;
+    if (elT) elT.textContent = counts.T;
+    if (elJ) elJ.textContent = counts.J;
+
+    var total = counts.P + counts.A + counts.T + counts.J;
+    var fill = document.getElementById('asProgressFill');
+    var label = document.getElementById('asProgressLabel');
+    if (fill && total > 0) fill.style.width = Math.round((counts.P / total) * 100) + '%';
+    if (label && total > 0) label.textContent = counts.P + ' de ' + total + ' presentes';
+
+    form.querySelectorAll('tbody tr.as-row').forEach(function (row) {
+        var checked = row.querySelector('input[type="radio"]:checked');
+        var estado = checked ? checked.value : 'P';
+        row.className = 'as-row as-row--' + estado.toLowerCase();
+        row.setAttribute('data-estado', estado);
+        var hint = row.querySelector('.as-student__hint');
+        if (hint) {
+            var labels = { P: 'Presente', A: 'Ausente', T: 'Atraso', J: 'Justificada' };
+            hint.textContent = labels[estado] || 'Marcado';
+        }
+    });
 }
 
-document.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+document.querySelectorAll('#formAsistencia input[type="radio"]').forEach(function (radio) {
     radio.addEventListener('change', function () {
         formModificado = true;
         asUpdateLiveCounter();
@@ -690,34 +594,25 @@ document.querySelectorAll('input[type="radio"]').forEach(function (radio) {
 if (document.getElementById('formAsistencia')) asUpdateLiveCounter();
 
 var formAsistencia = document.getElementById('formAsistencia');
-
 if (formAsistencia) {
-
     formAsistencia.addEventListener('submit', function () { formModificado = false; });
-
 }
 
-
-
 window.addEventListener('beforeunload', function (e) {
-
     if (formModificado) {
-
         e.preventDefault();
-
         e.returnValue = '';
-
     }
-
 });
-
 </script>
 
 
 
-{% if rol == 'admin_escolar' %}
+{% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}
 {% include 'profesor/_filtrar_clases_por_curso_script.html' %}
 {% endif %}
 
+{% if rol != 'admin_escolar' and rol != 'Administrador escolar' %}
 {% include 'profesor/_personal_wrap_end.html' %}
+{% endif %}
 

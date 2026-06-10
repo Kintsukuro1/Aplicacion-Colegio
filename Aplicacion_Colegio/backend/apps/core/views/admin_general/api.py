@@ -358,6 +358,9 @@ def guardar_configuracion_auditoria(request):
         except (ValueError, TypeError):
             pass
 
+    if 'hosts_permitidos' in data:
+        config.hosts_permitidos = str(data['hosts_permitidos'] or '').strip()
+
     config.save()
 
     return JsonResponse({
@@ -443,17 +446,23 @@ def exportar_estadisticas_globales_csv(request):
     if not _require_system_admin(request.user):
         return _json_error('Permisos insuficientes', 403)
 
-    colegio_rbd = request.GET.get('colegio_rbd', '').strip()
+    colegio_rbd_raw = request.GET.get('colegio_rbd', '').strip()
     fecha_inicio = request.GET.get('fecha_inicio', '').strip()
     fecha_fin = request.GET.get('fecha_fin', '').strip()
 
-    # Filter base querysets
-    colegios_qs = Colegio.objects.all()
-    users_qs = User.objects.all()
+    rbd_filter = None
+    if colegio_rbd_raw:
+        try:
+            rbd_filter = int(colegio_rbd_raw)
+        except (TypeError, ValueError):
+            rbd_filter = None
 
-    if colegio_rbd:
-        colegios_qs = colegios_qs.filter(rbd=colegio_rbd)
-        users_qs = users_qs.filter(rbd_colegio=colegio_rbd)
+    colegios_qs = Colegio.objects.all_schools()
+    users_qs = User.objects.all_schools()
+
+    if rbd_filter is not None:
+        colegios_qs = colegios_qs.filter(rbd=rbd_filter)
+        users_qs = users_qs.filter(rbd_colegio=rbd_filter)
 
     if fecha_inicio:
         try:
@@ -464,7 +473,7 @@ def exportar_estadisticas_globales_csv(request):
 
     if fecha_fin:
         try:
-            fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+            fin = datetime.strptime(fecha_fin, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
             users_qs = users_qs.filter(fecha_creacion__lte=fin)
         except ValueError:
             pass

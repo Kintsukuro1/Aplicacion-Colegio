@@ -167,6 +167,7 @@ from backend.apps.core.views.coordinador_academico.api import (
 from backend.apps.core.views.admin_escolar.finanzas_api import (
     registrar_pago_manual,
     listar_cuotas_estudiante,
+    listar_cuotas_ciclo,
     condonar_cuota as admin_condonar_cuota,
 )
 from backend.apps.api.importacion_exportacion_views import (
@@ -421,6 +422,7 @@ urlpatterns = [
     # -------------------------------------------------------------------
     path('api/admin-escolar/finanzas/registrar-pago/', registrar_pago_manual, name='api_admin_registrar_pago'),
     path('api/admin-escolar/finanzas/cuotas-estudiante/', listar_cuotas_estudiante, name='api_admin_cuotas_estudiante'),
+    path('api/admin-escolar/finanzas/cuotas-ciclo/', listar_cuotas_ciclo, name='api_admin_cuotas_ciclo'),
     path('api/admin-escolar/finanzas/condonar-cuota/', admin_condonar_cuota, name='api_admin_condonar_cuota'),
     path('api/admin-escolar/reportes/cursos/exportar/', exportar_reporte_cursos_csv, name='api_admin_escolar_exportar_reporte_cursos'),
 

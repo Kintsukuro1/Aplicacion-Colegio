@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.urls import reverse
 
 from backend.apps.core.services.import_csv_service import ImportacionCSVService
@@ -26,25 +26,20 @@ def _has_admin_escolar_access(user) -> bool:
 
 @login_required
 def insertar_estudiante_manual(request):
-    """Redirige al módulo de gestionar estudiantes con modal de creación abierto."""
-    return _redirect_dashboard("gestionar_estudiantes", extra_query="abrir_modal=crear")
+    """Formulario de inserción manual integrado en Importar / Exportar."""
+    return redirect(f"{reverse('importar_datos')}?vista=insertar&tipo=estudiante")
 
 
 @login_required
 def insertar_profesor_manual(request):
-    """Redirige al módulo de gestionar profesores (pendiente de implementación completa)."""
-    messages.info(
-        request,
-        "⚠️ La inserción manual de profesores está en desarrollo. "
-        "Por ahora, puedes usar la importación CSV masiva desde el módulo de Importar Datos."
-    )
-    return redirect("importar_datos")
+    """Formulario de inserción manual integrado en Importar / Exportar."""
+    return redirect(f"{reverse('importar_datos')}?vista=insertar&tipo=profesor")
 
 
 @login_required
 def insertar_apoderado_manual(request):
-    """Redirige al módulo de gestionar apoderados con modal de creación abierto."""
-    return _redirect_dashboard("gestionar_apoderados", extra_query="abrir_modal=crear")
+    """Formulario de inserción manual integrado en Importar / Exportar."""
+    return redirect(f"{reverse('importar_datos')}?vista=insertar&tipo=apoderado")
 
 
 @login_required
@@ -56,7 +51,6 @@ def importar_estudiantes_csv(request):
 
     from backend.apps.core.views.school_context import resolve_request_rbd
     from backend.apps.institucion.models import Colegio
-    from backend.common.utils.dashboard_helpers import build_dashboard_context
 
     is_system_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
     if is_system_admin:
@@ -109,21 +103,7 @@ def importar_estudiantes_csv(request):
 
         return redirect("importar_datos")
 
-    # GET request - mostrar formulario
-    context, redirect_response = build_dashboard_context(
-        request,
-        pagina_actual="importar_datos",
-        content_template="admin_escolar/importar_csv.html"
-    )
-    if redirect_response:
-        return redirect_response
-
-    context.update({
-        "colegio": colegio,
-        "tipo_usuario": "Estudiantes",
-        "plantilla_csv": ImportacionCSVService.generar_plantilla_estudiantes(),
-    })
-    return render(request, "dashboard.html", context)
+    return redirect(f"{reverse('importar_datos')}?vista=csv&tipo=estudiantes")
 
 
 @login_required
@@ -135,7 +115,6 @@ def importar_profesores_csv(request):
 
     from backend.apps.core.views.school_context import resolve_request_rbd
     from backend.apps.institucion.models import Colegio
-    from backend.common.utils.dashboard_helpers import build_dashboard_context
 
     is_system_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
     if is_system_admin:
@@ -188,21 +167,7 @@ def importar_profesores_csv(request):
 
         return redirect("importar_datos")
 
-    # GET request - mostrar formulario
-    context, redirect_response = build_dashboard_context(
-        request,
-        pagina_actual="importar_datos",
-        content_template="admin_escolar/importar_csv.html"
-    )
-    if redirect_response:
-        return redirect_response
-
-    context.update({
-        "colegio": colegio,
-        "tipo_usuario": "Profesores",
-        "plantilla_csv": ImportacionCSVService.generar_plantilla_profesores(),
-    })
-    return render(request, "dashboard.html", context)
+    return redirect(f"{reverse('importar_datos')}?vista=csv&tipo=profesores")
 
 
 @login_required
@@ -214,7 +179,6 @@ def importar_apoderados_csv(request):
 
     from backend.apps.core.views.school_context import resolve_request_rbd
     from backend.apps.institucion.models import Colegio
-    from backend.common.utils.dashboard_helpers import build_dashboard_context
 
     is_system_admin = PolicyService.has_capability(request.user, 'SYSTEM_ADMIN')
     if is_system_admin:
@@ -267,21 +231,7 @@ def importar_apoderados_csv(request):
 
         return redirect("importar_datos")
 
-    # GET request - mostrar formulario
-    context, redirect_response = build_dashboard_context(
-        request,
-        pagina_actual="importar_datos",
-        content_template="admin_escolar/importar_csv.html"
-    )
-    if redirect_response:
-        return redirect_response
-
-    context.update({
-        "colegio": colegio,
-        "tipo_usuario": "Apoderados",
-        "plantilla_csv": ImportacionCSVService.generar_plantilla_apoderados(),
-    })
-    return render(request, "dashboard.html", context)
+    return redirect(f"{reverse('importar_datos')}?vista=csv&tipo=apoderados")
 
 
 @login_required
@@ -298,14 +248,28 @@ def editar_profesor(request, profesor_id: int):
 
 @login_required
 def editar_apoderado(request, apoderado_id: int):
-    messages.info(request, "Edición de apoderados: pendiente de migración.")
-    return redirect("importar_datos")
+    return _redirect_dashboard("gestionar_apoderados", extra_query=f"editar={apoderado_id}")
 
 
 @login_required
 def eliminar_usuario(request, usuario_id: int):
-    messages.warning(
-        request,
-        "Eliminación desde esta pantalla: pendiente de migración. Usa el módulo correspondiente.",
-    )
+    from backend.apps.accounts.models import User
+
+    if not _has_admin_escolar_access(request.user):
+        messages.error(request, "No tienes permisos para realizar esta acción")
+        return redirect("importar_datos")
+
+    try:
+        usuario = User.objects.get(pk=usuario_id)
+    except User.DoesNotExist:
+        messages.error(request, "Usuario no encontrado")
+        return redirect("importar_datos")
+
+    if usuario.id == request.user.id:
+        messages.error(request, "No puedes desactivar tu propia cuenta")
+        return redirect("importar_datos")
+
+    usuario.is_active = False
+    usuario.save(update_fields=['is_active'])
+    messages.success(request, f"Usuario {usuario.email} desactivado correctamente")
     return redirect("importar_datos")

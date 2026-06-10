@@ -1,4 +1,4 @@
-"""
+image.pngimage.png"""
 ============================================================
 SCRIPT DE AUTOPOBLADO PARA SISTEMA DE GESTIÓN ESCOLAR
 FASE 3 - Domain Redesign: Ciclos Académicos y Estados Explícitos
@@ -65,7 +65,7 @@ DATOS DE INICIO DE SESIÓN (USUARIOS DE PRUEBA):
    RUT: 26.000.000-0
    Contraseña: Estud#2025*[N]  (donde [N] es el número del alumno 01-30)
    Ejemplos:
-   - alumno1: Estud#2025*01!
+   - alumno1: Estud#2025*01! (Pedro González Contreras 1° Básico A)
    - alumno2: Estud#2025*02!
    (30 alumnos disponibles: alumno1@colegio.cl hasta alumno30@colegio.cl)
 
@@ -223,11 +223,11 @@ def limpiar_base_datos():
         'planificacion_evaluacion',
         'planificacion_objetivo',
         'planificacion_recurso',
-        # Financiero
+        # Financiero (hijos antes que padres)
         'detalle_informe_academico',
+        'boleta',
         'pago',
         'cuota',
-        'boleta',
         'estado_cuenta',
         'beca',
         'informe_academico',
@@ -256,13 +256,15 @@ def limpiar_base_datos():
         'perfil_estudiante',
         'perfil_profesor',
         'disponibilidad_profesor',
+        'solicitud_reunion',
         'apoderado',
-        # Estructura académica
+        # Estructura académica (bloque_horario referencia clase)
+        'bloque_horario',
         'clase',
         'asignatura',
-        'bloque_horario',
         'curso',
         # Suscripciones
+        'payment',
         'subscription',
         'plan',
         # Ciclos / estados
@@ -1188,150 +1190,214 @@ def poblar_horarios():
     print("   💡 Usa el botón 'Asignar Automáticamente' para completar el resto\n")
 
 def poblar_matriculas():
-    """Matricular los 30 alumnos en 1° Medio A usando modelo Matricula estándar"""
+    """Matricular los 30 alumnos en 1° Medio A (matrícula oficial del ciclo)."""
     print("📝 Creando Matrículas para 1° Medio A...")
 
     colegio = Colegio.objects.get(rbd=10001)
     ciclo = CicloAcademico.objects.get(colegio=colegio, nombre='2025-2026')
 
-    # Obtener curso 1° Medio A
     try:
         curso = Curso.objects.get(
             colegio=colegio,
             nombre='1° Medio A',
-            ciclo_academico=ciclo
+            ciclo_academico=ciclo,
         )
     except Curso.DoesNotExist:
         print("  ❌ No se encontró el curso 1° Medio A")
         return
 
-    # Eliminar matrículas existentes para evitar duplicados con estado incorrecto
     Matricula.objects.filter(
         estudiante__rbd_colegio=colegio.rbd,
-        ciclo_academico=ciclo
+        ciclo_academico=ciclo,
     ).delete()
     print("  🗑️  Matrículas existentes eliminadas")
 
-    # Obtener TODOS los alumnos activos
     alumnos = User.objects.filter(
         rbd_colegio=colegio.rbd,
         role__nombre__in=['Estudiante', 'Alumno'],
-        is_active=True
+        is_active=True,
     ).order_by('email')
 
     matriculas_creadas = 0
-    for i, alumno in enumerate(alumnos, 1):
-        # Crear matrícula estándar
-        matricula, created = Matricula.objects.get_or_create(
+    for alumno in alumnos:
+        _, created = Matricula.objects.get_or_create(
             estudiante=alumno,
             colegio=colegio,
-            ciclo_academico=ciclo,  # ✅ Usar ciclo_academico en lugar de anio_escolar
+            ciclo_academico=ciclo,
             defaults={
                 'curso': curso,
                 'estado': 'ACTIVA',
                 'fecha_matricula': timezone.now().date(),
                 'fecha_inicio': ciclo.fecha_inicio,
                 'valor_matricula': 150000,
-                'observaciones': f"Matrícula automática generada por autopoblar.py"
-            }
+                'observaciones': 'Matrícula automática generada por autopoblar.py',
+            },
         )
-
         if created:
-            print(f"  ✓ {alumno.get_full_name()} → {curso.nombre}")
             matriculas_creadas += 1
-        else:
-            print(f"  ⏭️  Matrícula ya existe: {alumno.get_full_name()}")
 
-    print(f"✅ {matriculas_creadas} matrículas creadas para {len(alumnos)} alumnos\n")
+    print(f"✅ {matriculas_creadas} matrículas creadas para {alumnos.count()} alumnos\n")
 
 def poblar_matriculas_clases():
     """
-    Matricular estudiantes en clases específicas (relación ClaseEstudiante).
-    Vincula cada estudiante matriculado en un curso con todas las clases de ese curso.
+    Inscribir alumnos demo en todas las clases del colegio (ClaseEstudiante).
+    Así cada curso/nivel tiene alumnos visibles para profesores en notas y asistencia.
     """
     print("📚 Creando relaciones Estudiante-Clase (ClaseEstudiante)...")
-    
+
     from backend.apps.cursos.models import ClaseEstudiante
-    
+
     colegio = Colegio.objects.get(rbd=10001)
-    ciclo = CicloAcademico.objects.get(colegio=colegio, nombre='2025-2026')
-    
-    # Eliminar relaciones existentes para evitar duplicados
-    ClaseEstudiante.objects.filter(
-        clase__colegio=colegio
-    ).delete()
+
+    ClaseEstudiante.objects.filter(clase__colegio=colegio).delete()
     print("  🗑️  Relaciones ClaseEstudiante existentes eliminadas")
-    
-    # Obtener todas las matrículas activas
-    matriculas = Matricula.objects.filter(
-        colegio=colegio,
-        ciclo_academico=ciclo,
-        estado='ACTIVA'
-    ).select_related('estudiante', 'curso')
-    
-    print(f"  📝 Procesando {matriculas.count()} matrículas activas...")
-    
+
+    alumnos = list(
+        User.objects.filter(
+            rbd_colegio=colegio.rbd,
+            role__nombre__in=['Estudiante', 'Alumno'],
+            is_active=True,
+        ).order_by('email')
+    )
+    clases = Clase.objects.filter(colegio=colegio, activo=True).select_related('curso', 'asignatura')
+
+    if not alumnos:
+        print("  ❌ No hay alumnos para inscribir en clases")
+        return
+
     relaciones_creadas = 0
-    for matricula in matriculas:
-        # Obtener todas las clases del curso
-        clases_del_curso = Clase.objects.filter(
-            curso=matricula.curso,
-            colegio=colegio,
-            activo=True
-        )
-        
-        # Matricular al estudiante en cada clase
-        for clase in clases_del_curso:
+    clases_con_alumnos = 0
+    for clase in clases:
+        for alumno in alumnos:
             ClaseEstudiante.objects.create(
                 clase=clase,
-                estudiante=matricula.estudiante,
-                activo=True
+                estudiante=alumno,
+                activo=True,
             )
             relaciones_creadas += 1
-        
-        print(f"  ✓ {matricula.estudiante.get_full_name()} → {clases_del_curso.count()} clases de {matricula.curso.nombre}")
-    
+        clases_con_alumnos += 1
+
+    print(
+        f"  ✓ {len(alumnos)} alumnos inscritos en {clases_con_alumnos} clases "
+        f"({relaciones_creadas} relaciones)"
+    )
     print(f"✅ {relaciones_creadas} relaciones ClaseEstudiante creadas\n")
 
 def poblar_perfiles_profesores():
-    """Crear perfiles de profesores con sus especialidades"""
-    print("👨‍🏫 Creando Perfiles de Profesores...")
-    
-    # Esta función se puede implementar si se necesitan datos adicionales de profesores
-    print("  ℹ️  Perfiles de profesores básicos ya creados con usuarios\n")
+    """Crear perfiles de profesores con especialidades según asignatura asignada."""
+    print("  👨‍🏫 Perfiles de Profesores...")
+
+    colegio = Colegio.objects.get(rbd=10001)
+    especialidades_por_email = {
+        'javier.torres@colegio.cl': ('Matemática', 'Licenciado en Matemática', 'Universidad de Chile'),
+        'lucia.ramirez@colegio.cl': ('Lenguaje y Comunicación', 'Licenciado en Lengua y Literatura', 'Pontificia Universidad Católica'),
+        'roberto.silva@colegio.cl': ('Ciencias Naturales', 'Licenciado en Biología', 'Universidad de Concepción'),
+        'patricia.gonzalez@colegio.cl': ('Historia y Ciencias Sociales', 'Licenciado en Historia', 'Universidad de Santiago'),
+        'diego.morales@colegio.cl': ('Inglés', 'Profesor de Inglés', 'Universidad Andrés Bello'),
+        'carmen.vega@colegio.cl': ('Artes Visuales', 'Licenciado en Artes', 'Universidad de Valparaíso'),
+        'andres.pinto@colegio.cl': ('Música', 'Profesor de Música', 'Universidad de Chile'),
+        'francisca.rojas@colegio.cl': ('Educación Física', 'Profesor de Educación Física', 'Universidad Metropolitana'),
+        'manuel.castro@colegio.cl': ('Tecnología', 'Ingeniero en Informática', 'Universidad Técnica Federico Santa María'),
+    }
+
+    profesores = User.objects.filter(
+        rbd_colegio=colegio.rbd,
+        role__nombre='Profesor',
+        is_active=True,
+    )
+    perfiles_creados = 0
+    for profesor in profesores:
+        esp, titulo, universidad = especialidades_por_email.get(
+            profesor.email,
+            ('General', 'Profesor de Educación Media', 'Universidad de Chile'),
+        )
+        _, created = PerfilProfesor.objects.get_or_create(
+            user=profesor,
+            defaults={
+                'fecha_nacimiento': datetime(random.randint(1975, 1990), random.randint(1, 12), random.randint(1, 28)).date(),
+                'direccion': f'Av. Docente {random.randint(100, 999)}, Santiago',
+                'telefono': f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
+                'telefono_movil': f'+56 9 {random.randint(8000, 9999)} {random.randint(1000, 9999)}',
+                'especialidad': esp,
+                'titulo_profesional': titulo,
+                'universidad': universidad,
+                'anio_titulacion': random.randint(2000, 2018),
+                'fecha_ingreso': datetime(2020, 3, 1).date(),
+                'estado_laboral': 'Activo',
+                'horas_semanales_contrato': 44,
+                'horas_no_lectivas': random.choice([4, 6, 8]),
+            },
+        )
+        if created:
+            perfiles_creados += 1
+            print(f"    ✓ {profesor.get_full_name()} — {esp}")
+    print(f"    → {perfiles_creados} perfiles de profesor creados ({profesores.count()} en total)")
+
 
 def poblar_perfil_asesor_financiero():
-    """Crear perfil de asesor financiero"""
-    print("💰 Creando Perfil de Asesor Financiero...")
-    
-    # Obtener el usuario asesor financiero
-    try:
-        asesor = User.objects.get(email='laura.mendez@colegio.cl')
-        
-        # Crear perfil de asesor financiero
-        perfil = PerfilAsesorFinanciero.objects.create(
-            user=asesor,
-            area_especialidad='finanzas',
-            titulo_profesional='Contador Auditor',
-            registro_profesional='N° 12345 - Colegio de Contadores',
-            puede_aprobar_descuentos=True,
-            puede_anular_pagos=False,
-            puede_modificar_aranceles=True,
-            puede_generar_reportes_contables=True,
-            acceso_configuracion_transbank=False,
-            telefono_oficina='+56 2 2234 5690',
-            extension='105',
-            horario_atencion='Lunes a Viernes 9:00-17:00',
-            fecha_ingreso=datetime(2024, 1, 15).date(),
-            estado_laboral='Activo',
-            notas_internas='Asesor financiero principal. Responsable de gestión de pagos, estados de cuenta y reportes contables.'
-        )
-        
-        print(f"  ✓ {asesor.get_full_name()} - Área: {perfil.get_area_especialidad_display()}")
-        print(f"    → Permisos: Descuentos={perfil.puede_aprobar_descuentos}, Aranceles={perfil.puede_modificar_aranceles}, Reportes={perfil.puede_generar_reportes_contables}")
-        print("✅ Perfil de Asesor Financiero creado\n")
-    except User.DoesNotExist:
-        print("  ⚠ Usuario asesor financiero no encontrado\n")
+    """Crear o actualizar perfil del asesor financiero Laura Méndez."""
+    print("  💰 Perfil de Asesor Financiero...")
+
+    asesor = User.objects.filter(email='laura.mendez@colegio.cl').first()
+    if not asesor:
+        print("    ⚠ Usuario laura.mendez@colegio.cl no encontrado")
+        return
+
+    perfil, created = PerfilAsesorFinanciero.objects.get_or_create(
+        user=asesor,
+        defaults={
+            'area_especialidad': 'finanzas',
+            'titulo_profesional': 'Contador Auditor',
+            'registro_profesional': 'N° 12345 - Colegio de Contadores',
+            'puede_aprobar_descuentos': True,
+            'puede_anular_pagos': False,
+            'puede_modificar_aranceles': True,
+            'puede_generar_reportes_contables': True,
+            'acceso_configuracion_transbank': False,
+            'telefono_oficina': '+56 2 2234 5690',
+            'extension': '105',
+            'horario_atencion': 'Lunes a Viernes 9:00-17:00',
+            'fecha_ingreso': datetime(2024, 1, 15).date(),
+            'estado_laboral': 'Activo',
+            'notas_internas': (
+                'Asesora financiera principal. Gestión de pagos, estados de cuenta y reportes contables.'
+            ),
+        },
+    )
+    accion = 'creado' if created else 'verificado'
+    print(f"    ✓ {asesor.get_full_name()} — {perfil.get_area_especialidad_display()} ({accion})")
+
+
+def poblar_perfiles_por_rol():
+    """
+    Crear perfiles extendidos para cada rol con modelo dedicado en usuarios_data.
+    Roles sin modelo (Coordinador, Inspector, etc.) quedan vinculados solo vía User+Role.
+    """
+    print("👤 Creando y vinculando perfiles por rol...")
+    print("=" * 60)
+
+    colegio = Colegio.objects.get(rbd=10001)
+
+    poblar_perfiles_profesores()
+    poblar_perfil_asesor_financiero()
+
+    # Apoderados y estudiantes se crean en poblar_apoderados / poblar_perfiles_estudiantes
+    total_apoderados = Apoderado.objects.filter(user__rbd_colegio=colegio.rbd).count()
+    total_estudiantes = PerfilEstudiante.objects.filter(user__rbd_colegio=colegio.rbd).count()
+    print(f"  👨‍👩‍👧 Apoderados vinculados: {total_apoderados}")
+    print(f"  🎓 Perfiles estudiante: {total_estudiantes}")
+
+    roles_sin_perfil = [
+        'Administrador general', 'Administrador escolar', 'Coordinador académico',
+        'Inspector convivencia', 'Psicólogo orientador', 'Soporte técnico escolar',
+        'Bibliotecario digital',
+    ]
+    for nombre_rol in roles_sin_perfil:
+        cantidad = User.objects.filter(rbd_colegio=colegio.rbd, role__nombre=nombre_rol).count()
+        if cantidad:
+            print(f"  ℹ️  {nombre_rol}: {cantidad} usuario(s) — sin perfil extendido en BD")
+
+    print("✅ Perfiles por rol completados\n")
 
 def poblar_perfiles_estudiantes():
     """Crear perfiles de estudiantes con datos NEE"""
@@ -1493,21 +1559,17 @@ def poblar_disponibilidades_profesores():
     print("✅ Disponibilidades creadas\n")
 
 def poblar_evaluaciones_calificaciones():
-    """Crear evaluaciones y calificaciones para 1° Medio A"""
+    """Crear evaluaciones y calificaciones para todas las clases con alumnos inscritos."""
     print("📊 Creando Evaluaciones y Calificaciones...")
-    
+
+    from backend.apps.cursos.models import ClaseEstudiante
+
     colegio = Colegio.objects.get(rbd=10001)
-    curso_1medio = Curso.objects.get(nombre='1° Medio A', colegio=colegio)
-    
-    # Obtener todas las clases de 1° Medio A
-    clases = Clase.objects.filter(curso=curso_1medio, activo=True).select_related('asignatura', 'profesor')
-    
-    # Obtener estudiantes del curso
-    estudiantes = User.objects.filter(
-        rbd_colegio=colegio.rbd,
-        role__nombre__in=['Estudiante', 'Alumno'],
-        perfil_estudiante__ciclo_actual=curso_1medio.ciclo_academico
-    )
+
+    clases = Clase.objects.filter(
+        colegio=colegio,
+        activo=True,
+    ).select_related('asignatura', 'profesor', 'curso')
     
     tipos_evaluacion = ['Prueba', 'Control', 'Trabajo Práctico', 'Disertación', 'Proyecto']
     tipos_modelo = ['sumativa', 'formativa', 'diagnostica', 'acumulativa']
@@ -1517,10 +1579,21 @@ def poblar_evaluaciones_calificaciones():
             return 'semestre1'
         return 'semestre2'
     
+    clases_con_alumnos = 0
     for clase in clases:
-        # Crear 3-4 evaluaciones por asignatura
-        num_evaluaciones = random.randint(3, 4)
-        
+        estudiante_ids = list(
+            ClaseEstudiante.objects.filter(clase=clase, activo=True).values_list(
+                'estudiante_id', flat=True
+            )
+        )
+        if not estudiante_ids:
+            continue
+        estudiantes = list(User.objects.filter(id__in=estudiante_ids))
+        clases_con_alumnos += 1
+
+        # Crear 2-3 evaluaciones por asignatura (menos volumen al cubrir todos los cursos)
+        num_evaluaciones = random.randint(2, 3)
+
         for i in range(1, num_evaluaciones + 1):
             # Fecha de evaluación en los últimos 2 meses
             fecha_eval = timezone.now().date() - timedelta(days=random.randint(7, 60))
@@ -1560,9 +1633,12 @@ def poblar_evaluaciones_calificaciones():
                     registrado_por=clase.profesor
                 )
             
-            print(f"  ✓ {evaluacion.nombre} - {clase.curso.nombre} ({len(estudiantes)} calificaciones)")
-    
-    print("✅ Evaluaciones y Calificaciones creadas\n")
+            print(
+                f"  ✓ {evaluacion.nombre} - {clase.curso.nombre} "
+                f"({len(estudiantes)} calificaciones)"
+            )
+
+    print(f"✅ Evaluaciones y Calificaciones creadas en {clases_con_alumnos} clases\n")
 
 def poblar_asistencia():
     """Crear registros de asistencia para los últimos 60 días con patrones realistas"""
@@ -1578,19 +1654,20 @@ def poblar_asistencia():
     
     print(f"  → Generando asistencia para {len(clases)} clases")
     
-    # Agrupar estudiantes por curso/ciclo para eficiencia
-    estudiantes_por_curso = {}
+    from backend.apps.cursos.models import ClaseEstudiante
+
+    estudiantes_por_clase = {}
     for clase in clases:
-        curso = clase.curso
-        if curso.pk not in estudiantes_por_curso:
-            estudiantes_por_curso[curso.pk] = list(User.objects.filter(
-                rbd_colegio=colegio.rbd,
-                role__nombre__in=['Estudiante', 'Alumno'],
-                perfil_estudiante__ciclo_actual=curso.ciclo_academico
-            ))
-    
-    total_estudiantes = sum(len(est) for est in estudiantes_por_curso.values())
-    print(f"  → {total_estudiantes} estudiantes en total")
+        estudiantes_por_clase[clase.pk] = list(
+            User.objects.filter(
+                id__in=ClaseEstudiante.objects.filter(
+                    clase=clase, activo=True
+                ).values_list('estudiante_id', flat=True)
+            )
+        )
+
+    total_inscripciones = sum(len(est) for est in estudiantes_por_clase.values())
+    print(f"  → {total_inscripciones} inscripciones estudiante-clase")
     
     # Crear asistencia para los últimos 90 días hábiles (cubre el semestre visible)
     dias_atras = 90
@@ -1608,7 +1685,9 @@ def poblar_asistencia():
         
         # Para TODAS las clases (simular 1 clase por día por asignatura)
         for clase in clases:
-            estudiantes = estudiantes_por_curso[clase.curso.pk]
+            estudiantes = estudiantes_por_clase.get(clase.pk, [])
+            if not estudiantes:
+                continue
             for estudiante in estudiantes:
                 # Patrones realistas de asistencia
                 # 92% presente, 4% tardanza, 2% ausente, 2% justificada
@@ -1654,8 +1733,8 @@ def poblar_asistencia():
     print(f"  ✓ {registros_creados} registros de asistencia creados")
     print(f"  ✓ {dias_procesados} días hábiles procesados")
     print(f"  ✓ {len(clases)} clases con asistencia")
-    promedio = (registros_creados / total_estudiantes) if total_estudiantes > 0 else 0
-    print(f"  ✓ Promedio: {promedio:.0f} registros por estudiante")
+    promedio = (registros_creados / total_inscripciones) if total_inscripciones > 0 else 0
+    print(f"  ✓ Promedio: {promedio:.1f} registros por inscripción estudiante-clase")
     print("✅ Registros de Asistencia creados para TODOS los cursos\n")
 
 def poblar_tareas():
@@ -2355,92 +2434,110 @@ def poblar_notificaciones():
     print(f"  ✓ Conversacion de prueba ID: {conversacion.id_conversacion}")
     print("✅ Notificaciones del sistema creadas\n")
 
+def _crear_perfil_apoderado(usuario_apod, ocupaciones, es_carmen=False):
+    """Helper: perfil Apoderado con defaults; Carmen recibe datos fijos de demo."""
+    puede_firmar = True
+    puede_autorizar_salidas = es_carmen or random.random() > 0.5
+    defaults = {
+        'fecha_nacimiento': datetime(1982, 6, 15).date() if es_carmen else datetime(
+            random.randint(1970, 1990), random.randint(1, 12), random.randint(1, 28)
+        ).date(),
+        'direccion': 'Los Alerces 245, Maipú, Santiago' if es_carmen else f'Av. Principal {random.randint(100, 999)}, Santiago',
+        'telefono': '+56 2 2567 8901' if es_carmen else f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
+        'telefono_movil': '+56 9 8765 4321' if es_carmen else f'+56 9 {random.randint(8000, 9999)} {random.randint(1000, 9999)}',
+        'ocupacion': 'Enfermera' if es_carmen else random.choice(ocupaciones),
+        'lugar_trabajo': 'Hospital Clínico' if es_carmen else f'Empresa {random.choice(["A", "B", "C", "D"])} Ltda.',
+        'telefono_trabajo': '+56 2 2578 9012' if es_carmen else f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
+        'puede_ver_notas': True,
+        'puede_ver_asistencia': True,
+        'puede_recibir_comunicados': True,
+        'puede_firmar_citaciones': puede_firmar,
+        'puede_autorizar_salidas': puede_autorizar_salidas,
+        'puede_ver_tareas': True,
+        'puede_ver_materiales': True,
+        'activo': True,
+    }
+    return Apoderado.objects.get_or_create(user=usuario_apod, defaults=defaults)[0]
+
+
+def _vincular_apoderado_estudiante(apoderado, estudiante, parentesco='madre', prioridad=1):
+    """Helper: relación apoderado-estudiante idempotente."""
+    relacion, created = RelacionApoderadoEstudiante.objects.get_or_create(
+        apoderado=apoderado,
+        estudiante=estudiante,
+        defaults={
+            'tipo_apoderado': 'principal',
+            'parentesco': parentesco,
+            'prioridad_contacto': prioridad,
+            'activa': True,
+            'usar_permisos_personalizados': False,
+        },
+    )
+    return relacion, created
+
+
 def poblar_apoderados():
-    """Crear perfiles de apoderados y relaciones con estudiantes"""
+    """Crear perfiles de apoderados y relaciones con estudiantes."""
     print("👨‍👩‍👧‍👦 Creando Perfiles de Apoderados y Relaciones...")
-    
+
     colegio = Colegio.objects.get(rbd=10001)
-    
-    # Obtener usuarios apoderados
+    CARMEN_EMAIL = 'carmen.silva@gmail.com'
+    HIJOS_CARMEN = {'alumno1@colegio.cl', 'alumno2@colegio.cl'}
+
     usuarios_apoderados = list(User.objects.filter(
         rbd_colegio=colegio.rbd,
         role__nombre='Apoderado',
-        is_active=True
+        is_active=True,
     ).order_by('email'))
-    
-    # Obtener todos los estudiantes
+
     estudiantes = list(User.objects.filter(
         rbd_colegio=colegio.rbd,
         role__nombre__in=['Estudiante', 'Alumno'],
-        is_active=True
+        is_active=True,
     ).order_by('email'))
-    
-    # Ocupaciones de ejemplo
+
     ocupaciones = [
         'Ingeniero/a', 'Profesor/a', 'Médico/a', 'Contador/a', 'Empresario/a',
         'Abogado/a', 'Arquitecto/a', 'Comerciante', 'Técnico/a', 'Enfermero/a',
-        'Empleado/a Público', 'Vendedor/a', 'Dueña de casa', 'Jubilado/a', 'Otro'
+        'Empleado/a Público', 'Vendedor/a', 'Dueña de casa', 'Jubilado/a', 'Otro',
     ]
-    
-    parentescos = ['padre', 'madre', 'abuelo', 'tio', 'tutor_legal']
-    
+
     apoderados_creados = 0
     relaciones_creadas = 0
-    
-    # Crear perfiles de apoderados y asignarles estudiantes
-    # Estrategia: cada 2 estudiantes comparten apoderados (hermanos)
-    for i, usuario_apod in enumerate(usuarios_apoderados):
-        # Crear perfil de apoderado
-        fecha_nac = datetime(random.randint(1970, 1990), random.randint(1, 12), random.randint(1, 28)).date()
-        
-        # Algunos apoderados tienen permisos restringidos
-        puede_firmar = random.random() > 0.1  # 90% puede firmar
-        puede_autorizar_salidas = random.random() > 0.5  # 50% puede autorizar salidas
-        
-        apoderado = Apoderado.objects.create(
-            user=usuario_apod,
-            fecha_nacimiento=fecha_nac,
-            direccion=f'Av. Principal {random.randint(100, 999)}, Santiago',
-            telefono=f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
-            telefono_movil=f'+56 9 {random.randint(8000, 9999)} {random.randint(1000, 9999)}',
-            ocupacion=random.choice(ocupaciones),
-            lugar_trabajo=f'Empresa {random.choice(["A", "B", "C", "D"])} Ltda.',
-            telefono_trabajo=f'+56 2 {random.randint(2000, 2999)} {random.randint(1000, 9999)}',
-            puede_ver_notas=True,
-            puede_ver_asistencia=True,
-            puede_recibir_comunicados=True,
-            puede_firmar_citaciones=puede_firmar,
-            puede_autorizar_salidas=puede_autorizar_salidas,
-            puede_ver_tareas=True,
-            puede_ver_materiales=True,
-            activo=True
-        )
+
+    # Carmen → alumno1 y alumno2 (vínculo explícito, no por orden alfabético)
+    carmen_user = User.objects.filter(email=CARMEN_EMAIL).first()
+    hijos_carmen = list(User.objects.filter(email__in=HIJOS_CARMEN).order_by('email'))
+    estudiantes_restantes = [e for e in estudiantes if e.email not in HIJOS_CARMEN]
+
+    if carmen_user and len(hijos_carmen) == 2:
+        apoderado_carmen = _crear_perfil_apoderado(carmen_user, ocupaciones, es_carmen=True)
         apoderados_creados += 1
-        
-        # Asignar 2 estudiantes por apoderado (hermanos)
-        # Los primeros 2 apoderados tienen 2 hijos, el resto tiene 2 hijos también
-        estudiantes_asignados = estudiantes[i*2:(i*2)+2] if (i*2)+2 <= len(estudiantes) else estudiantes[i*2:]
-        
-        for j, estudiante in enumerate(estudiantes_asignados):
-            # El primer hijo tiene al apoderado como principal, el segundo también
-            # Pero alternamos el parentesco
-            es_principal = True
-            parentesco = 'madre' if i % 2 == 0 else 'padre'
-            prioridad = 1
-            
-            relacion = RelacionApoderadoEstudiante.objects.create(
-                apoderado=apoderado,
-                estudiante=estudiante,
-                tipo_apoderado='principal',
-                parentesco=parentesco,
-                prioridad_contacto=prioridad,
-                activa=True,
-                usar_permisos_personalizados=False  # Usan permisos del apoderado
+        for estudiante in hijos_carmen:
+            _, created = _vincular_apoderado_estudiante(
+                apoderado_carmen, estudiante, parentesco='madre', prioridad=1,
             )
-            relaciones_creadas += 1
-            
+            if created:
+                relaciones_creadas += 1
+            print(f"  ✓ {apoderado_carmen.user.get_full_name()} (madre) → {estudiante.get_full_name()} [{estudiante.email}]")
+
+    # Resto de apoderados: 2 estudiantes cada uno (excluyendo hijos de Carmen)
+    otros_apoderados = [u for u in usuarios_apoderados if u.email != CARMEN_EMAIL]
+    for i, usuario_apod in enumerate(otros_apoderados):
+        apoderado = _crear_perfil_apoderado(usuario_apod, ocupaciones)
+        apoderados_creados += 1
+
+        estudiantes_asignados = estudiantes_restantes[i * 2:(i * 2) + 2]
+        parentesco = 'madre' if i % 2 == 0 else 'padre'
+
+        for estudiante in estudiantes_asignados:
+            _, created = _vincular_apoderado_estudiante(
+                apoderado, estudiante, parentesco=parentesco, prioridad=1,
+            )
+            if created:
+                relaciones_creadas += 1
             print(f"  ✓ {apoderado.user.get_full_name()} ({parentesco}) → {estudiante.get_full_name()}")
-    
+
     print(f"✅ {apoderados_creados} apoderados y {relaciones_creadas} relaciones creadas\n")
 
 def poblar_firmas_digitales():
@@ -3354,6 +3451,244 @@ def poblar_datos_pedro_gonzalez():
     
     print("\n✅ Datos exhaustivos de Pedro González completados\n")
 
+
+def poblar_vinculo_carmen_alumnos():
+    """
+    Refuerza el vínculo de Carmen Silva con alumno1 y alumno2,
+    asegurando notas y asistencia visibles en el panel apoderado.
+    """
+    print("👩‍👧‍👦 Vinculando Carmen Silva con alumno1 y alumno2...")
+    print("=" * 60)
+
+    from decimal import Decimal
+
+    colegio = Colegio.objects.get(rbd=10001)
+    CARMEN_EMAIL = 'carmen.silva@gmail.com'
+    EMAILS_HIJOS = ['alumno1@colegio.cl', 'alumno2@colegio.cl']
+
+    carmen_user = User.objects.filter(email=CARMEN_EMAIL).first()
+    if not carmen_user:
+        print("  ❌ No se encontró carmen.silva@gmail.com")
+        return
+
+    hijos = list(User.objects.filter(email__in=EMAILS_HIJOS).order_by('email'))
+    if len(hijos) != 2:
+        print(f"  ❌ Se esperaban 2 alumnos, se encontraron {len(hijos)}")
+        return
+
+    apoderado_carmen = _crear_perfil_apoderado(
+        carmen_user,
+        ['Enfermera'],
+        es_carmen=True,
+    )
+
+    # Limpiar relaciones previas de los hijos y dejar solo a Carmen como apoderada principal
+    RelacionApoderadoEstudiante.objects.filter(estudiante__in=hijos).exclude(
+        apoderado=apoderado_carmen,
+    ).delete()
+
+    for estudiante in hijos:
+        _vincular_apoderado_estudiante(apoderado_carmen, estudiante, parentesco='madre', prioridad=1)
+
+        perfil = PerfilEstudiante.objects.filter(user=estudiante).first()
+        if perfil:
+            perfil.apoderado_nombre = carmen_user.get_full_name()
+            perfil.apoderado_rut = carmen_user.rut
+            perfil.apoderado_email = CARMEN_EMAIL
+            perfil.apoderado_telefono = '+56 9 8765 4321'
+            perfil.save(update_fields=[
+                'apoderado_nombre', 'apoderado_rut', 'apoderado_email', 'apoderado_telefono',
+            ])
+
+        print(f"  ✓ Vínculo confirmado: Carmen → {estudiante.get_full_name()} ({estudiante.email})")
+
+    # Notas y asistencia para clases del curso de cada hijo
+    calificaciones_ok = 0
+    asistencias_ok = 0
+    hoy = timezone.now().date()
+
+    for estudiante in hijos:
+        perfil = PerfilEstudiante.objects.filter(user=estudiante).first()
+        curso = perfil.curso_actual if perfil else None
+        if not curso:
+            ciclo = CicloAcademico.objects.filter(colegio=colegio, nombre='2025-2026').first()
+            curso = Curso.objects.filter(nombre='1° Medio A', colegio=colegio, ciclo_academico=ciclo).first()
+
+        clases = Clase.objects.filter(curso=curso, colegio=colegio, activo=True).select_related('profesor', 'asignatura')
+        print(f"  📚 {estudiante.email}: {clases.count()} clases en {curso.nombre if curso else 'sin curso'}")
+
+        for clase in clases:
+            profesor = clase.profesor
+            if not profesor:
+                continue
+
+            evaluaciones = Evaluacion.objects.filter(clase=clase)
+            for evaluacion in evaluaciones:
+                nota_base = Decimal('6.2') if estudiante.email == 'alumno1@colegio.cl' else Decimal('5.8')
+                nota = min(Decimal('7.0'), nota_base + Decimal(str(random.uniform(-0.3, 0.5)))).quantize(Decimal('0.1'))
+                _, created = Calificacion.objects.update_or_create(
+                    evaluacion=evaluacion,
+                    estudiante=estudiante,
+                    defaults={
+                        'colegio': colegio,
+                        'nota': nota,
+                        'registrado_por': profesor,
+                    },
+                )
+                if created:
+                    calificaciones_ok += 1
+
+            for dias in range(60, 0, -1):
+                fecha = hoy - timedelta(days=dias)
+                if fecha.weekday() >= 5:
+                    continue
+                estado = 'P' if random.random() < 0.95 else random.choice(['T', 'J'])
+                _, created = Asistencia.objects.update_or_create(
+                    clase=clase,
+                    estudiante=estudiante,
+                    fecha=fecha,
+                    defaults={
+                        'colegio': colegio,
+                        'estado': estado,
+                        'observaciones': None if estado == 'P' else 'Registro demo apoderado',
+                    },
+                )
+                if created:
+                    asistencias_ok += 1
+
+    total_rel = RelacionApoderadoEstudiante.objects.filter(
+        apoderado=apoderado_carmen, estudiante__in=hijos, activa=True,
+    ).count()
+    print(f"  ✓ Relaciones activas Carmen: {total_rel}")
+    print(f"  ✓ Calificaciones nuevas/actualizadas: {calificaciones_ok}+")
+    print(f"  ✓ Asistencias nuevas/actualizadas: {asistencias_ok}+")
+    print("✅ Vínculo Carmen–alumnos completado\n")
+
+
+def poblar_panel_financiero_laura():
+    """
+    Genera deudas y pagos Marzo–Mayo 2026 asociados a matrículas,
+    procesados por Laura Méndez para alimentar el panel financiero.
+    """
+    print("📊 Poblando panel financiero de Laura Méndez (Mar–May 2026)...")
+    print("=" * 60)
+
+    from decimal import Decimal
+
+    colegio = Colegio.objects.get(rbd=10001)
+    laura = User.objects.filter(email='laura.mendez@colegio.cl').first()
+    if not laura:
+        print("  ❌ No se encontró laura.mendez@colegio.cl")
+        return
+
+    PerfilAsesorFinanciero.objects.get_or_create(
+        user=laura,
+        defaults={
+            'area_especialidad': 'cobranzas',
+            'titulo_profesional': 'Contador Auditor',
+            'estado_laboral': 'Activo',
+        },
+    )
+
+    matriculas = list(
+        Matricula.objects.filter(colegio=colegio, estado='ACTIVA').select_related('estudiante')
+    )
+    if not matriculas:
+        print("  ⚠️  Sin matrículas activas")
+        return
+
+    hoy = timezone.now().date()
+    monto_base = Decimal('50000')
+    meses_panel = [
+        # mes, tasa_cobro_objetivo, día_vencimiento
+        (3, 0.88, date(2026, 3, 5)),
+        (4, 0.75, date(2026, 4, 5)),
+        (5, 0.62, date(2026, 5, 5)),
+    ]
+    metodos = ['EFECTIVO', 'TRANSFERENCIA', 'WEBPAY', 'TRANSFERENCIA', 'WEBPAY']
+    nombres_mes = {3: 'Marzo', 4: 'Abril', 5: 'Mayo'}
+
+    cuotas_actualizadas = 0
+    pagos_creados = 0
+
+    for idx, matricula in enumerate(matriculas):
+        for mes_num, tasa_objetivo, fecha_venc in meses_panel:
+            # Determinístico: variar cobranza por índice de matrícula
+            umbral = int(tasa_objetivo * 10)
+            pagada_completa = (idx % 10) < umbral
+            pagada_parcial = not pagada_completa and (idx % 10) == umbral
+            monto_pagado = Decimal('0')
+            estado_cuota = 'PENDIENTE'
+
+            if pagada_completa:
+                monto_pagado = monto_base
+                estado_cuota = 'PAGADA'
+            elif pagada_parcial:
+                monto_pagado = (monto_base * Decimal('0.5')).quantize(Decimal('1'))
+                estado_cuota = 'PAGADA_PARCIAL'
+            elif fecha_venc < hoy:
+                estado_cuota = 'VENCIDA'
+
+            cuota, _ = Cuota.objects.update_or_create(
+                matricula=matricula,
+                mes=mes_num,
+                anio=2026,
+                defaults={
+                    'numero_cuota': mes_num,
+                    'monto_original': monto_base,
+                    'monto_descuento': Decimal('0'),
+                    'monto_final': monto_base,
+                    'monto_pagado': monto_pagado,
+                    'fecha_vencimiento': fecha_venc,
+                    'estado': estado_cuota,
+                    'fecha_pago_completo': timezone.now() if estado_cuota == 'PAGADA' else None,
+                },
+            )
+            cuotas_actualizadas += 1
+
+            Pago.objects.filter(cuota=cuota).delete()
+            if monto_pagado > 0:
+                if mes_num == 5 and idx % 5 == 0:
+                    fecha_pago = hoy
+                elif mes_num == 5:
+                    fecha_pago = date(2026, 5, random.randint(6, 25))
+                else:
+                    fecha_pago = fecha_venc - timedelta(days=random.randint(0, 3))
+
+                Pago.objects.create(
+                    cuota=cuota,
+                    estudiante=matricula.estudiante,
+                    monto=monto_pagado,
+                    metodo_pago=metodos[idx % len(metodos)],
+                    estado='APROBADO',
+                    numero_comprobante=f'LAU-{mes_num:02d}-{idx + 1:04d}',
+                    fecha_pago=datetime.combine(fecha_pago, time(10, 30)),
+                    procesado_por=laura,
+                    fecha_procesamiento=timezone.now(),
+                    observaciones=f'Pago {nombres_mes[mes_num]} 2026 — procesado por asesora financiera',
+                )
+                pagos_creados += 1
+
+    cuotas_mar_may = Cuota.objects.filter(matricula__colegio=colegio, anio=2026, mes__in=[3, 4, 5])
+    total_facturado = sum(c.monto_final for c in cuotas_mar_may)
+    total_pagado = sum(c.monto_pagado for c in cuotas_mar_may)
+    pagos_laura = Pago.objects.filter(
+        cuota__matricula__colegio=colegio,
+        procesado_por=laura,
+        cuota__anio=2026,
+        cuota__mes__in=[3, 4, 5],
+        estado='APROBADO',
+    ).count()
+
+    print(f"  ✓ Matrículas procesadas: {len(matriculas)}")
+    print(f"  ✓ Cuotas Mar–May 2026: {cuotas_actualizadas}")
+    print(f"  ✓ Pagos registrados por Laura: {pagos_laura} (creados/actualizados: {pagos_creados})")
+    print(f"  ✓ Facturado Mar–May: ${total_facturado:,.0f} | Cobrado: ${total_pagado:,.0f}")
+    if total_facturado:
+        print(f"  ✓ Tasa cobranza Mar–May: {(total_pagado / total_facturado * 100):.1f}%")
+    print("✅ Panel financiero Laura completado\n")
+
+
 def poblar_datos_especificos_usuarios_clave():
     """
     Poblar datos específicos y completos para los usuarios clave mencionados.
@@ -3408,7 +3743,6 @@ def main():
         poblar_colegios()
         poblar_usuarios()
         poblar_ciclos_academicos()  # NUEVO: Fase 3 - Movido después de usuarios
-        poblar_perfil_asesor_financiero()
         poblar_disponibilidades_profesores()
         poblar_cursos_asignaturas()
         poblar_clases()
@@ -3429,8 +3763,10 @@ def main():
         poblar_planes()  # Crear planes de suscripción
         poblar_suscripciones()  # Asignar planes de suscripción
         poblar_datos_financieros()  # Datos financieros de prueba
-        poblar_datos_especificos_usuarios_clave()  # Verificar y completar datos de usuarios clave
-        poblar_datos_pedro_gonzalez()  # NUEVO: Datos exhaustivos para Pedro González
+        poblar_datos_pedro_gonzalez()  # Datos exhaustivos para Pedro González
+        poblar_perfiles_por_rol()  # Perfiles Profesor, Asesor y resumen por rol
+        poblar_vinculo_carmen_alumnos()  # Carmen → alumno1/alumno2 con notas y asistencia
+        poblar_panel_financiero_laura()  # Deudas y pagos Mar–May 2026 para panel financiero
         
         print("\n" + "="*60)
         print("✅ AUTOPOBLADO COMPLETADO EXITOSAMENTE")
@@ -3480,7 +3816,7 @@ def main():
         print("  Contraseña: Apod#2025!Seg*")
         print("  [Tiene 2 estudiantes a cargo]")
         print()
-        print("Estudiantes (30 en 1° Medio A):")
+        print("Estudiantes (30 inscritos en todas las clases demo del colegio):")
         print("  Email: alumno1@colegio.cl hasta alumno30@colegio.cl")
         print("  Contraseña: Estud#2025*01! (alumno1), Estud#2025*02! (alumno2), etc.")
         print("  [6 estudiantes tienen NEE asignadas]")

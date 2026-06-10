@@ -1,0 +1,6 @@
+{# Envuelve contenido de funcionarios con layout premium lavanda #}
+{% include 'staff/_staff_wrap_start.html' with staff_slug=staff_slug staff_label=staff_label %}
+{% include 'staff/_staff_page_frame_start.html' %}
+{% include content_template %}
+{% include 'staff/_staff_page_frame_end.html' %}
+{% include 'staff/_staff_wrap_end.html' %}

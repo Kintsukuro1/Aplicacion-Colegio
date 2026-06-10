@@ -221,6 +221,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Flags y meta
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    requiere_cambio_password = models.BooleanField(
+        default=False,
+        help_text='El usuario debe cambiar contraseña en el próximo inicio de sesión',
+    )
     fecha_creacion = models.DateTimeField(default=timezone.now)
 
     objects = UserManager(school_field='rbd_colegio')

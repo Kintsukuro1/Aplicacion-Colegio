@@ -1,0 +1,17 @@
+{% if usuario.role %}
+    {% with rol_n=usuario.role.nombre|lower %}
+        {% if 'estudiante' in rol_n %}
+            <span class="badge-estudiante">{{ usuario.role.nombre }}</span>
+        {% elif 'profesor' in rol_n %}
+            <span class="badge-profesor">{{ usuario.role.nombre }}</span>
+        {% elif 'apoderado' in rol_n %}
+            <span class="badge-apoderado">{{ usuario.role.nombre }}</span>
+        {% elif 'admin' in rol_n %}
+            <span class="badge-admin">{{ usuario.role.nombre }}</span>
+        {% else %}
+            <span class="badge-standard">{{ usuario.role.nombre }}</span>
+        {% endif %}
+    {% endwith %}
+{% else %}
+    <span class="badge-standard">Sin rol</span>
+{% endif %}

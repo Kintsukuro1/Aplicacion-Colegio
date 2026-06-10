@@ -33,7 +33,12 @@ def _is_global_admin(user):
     return PolicyService.has_capability(user, 'SYSTEM_ADMIN')
 
 
-def _school_id(user):
+def _school_id(user, request=None):
+    if request is not None:
+        from backend.apps.core.views.school_context import resolve_request_rbd
+        resolved = resolve_request_rbd(request)
+        if resolved:
+            return resolved
     return getattr(user, 'rbd_colegio', None)
 
 
@@ -60,7 +65,7 @@ def financial_dashboard(request):
     if not (_is_global_admin(user) or PolicyService.has_capability(user, 'FINANCE_VIEW')):
         raise PermissionDenied('Solo administradores pueden acceder al dashboard financiero.')
 
-    school_id = _school_id(user)
+    school_id = _school_id(user, request)
     anio = int(request.query_params.get('anio', date.today().year))
     mes = request.query_params.get('mes')
 
@@ -193,7 +198,7 @@ def financial_morosos_report(request):
     if not (_is_global_admin(user) or PolicyService.has_capability(user, 'FINANCE_VIEW')):
         raise PermissionDenied('Sin permisos financieros.')
 
-    school_id = _school_id(user)
+    school_id = _school_id(user, request)
     hoy = date.today()
 
     cuotas_vencidas = Cuota.objects.filter(
@@ -325,7 +330,7 @@ def solicitar_reunion(request):
     user = request.user
     role_name = getattr(getattr(user, 'role', None), 'nombre', '').strip().lower()
     data = request.data
-    school_id = _school_id(user)
+    school_id = _school_id(user, request)
 
     if role_name not in {'apoderado', 'profesor'} and not _can_manage_school(user):
         raise PermissionDenied('No tiene permisos para crear reuniones.')
@@ -430,7 +435,7 @@ def reuniones_apoderados_pupilos(request):
     if role_name not in {'profesor'} and not _can_manage_school(user):
         raise PermissionDenied('Sin permisos para consultar catalogo de reuniones.')
 
-    school_id = _school_id(user)
+    school_id = _school_id(user, request)
 
     relaciones = (
         RelacionApoderadoEstudiante.objects.select_related('apoderado__user', 'estudiante')
@@ -473,6 +478,40 @@ def reuniones_apoderados_pupilos(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def reuniones_profesores_catalogo(request):
+    """
+    GET /api/reuniones/profesores/
+    Catálogo de profesores del colegio activo para formularios de reuniones.
+    """
+    user = request.user
+    if not _can_manage_school(user) and getattr(getattr(user, 'role', None), 'nombre', '').strip().lower() != 'profesor':
+        raise PermissionDenied('Sin permisos para consultar profesores.')
+
+    school_id = _school_id(user, request)
+    if not school_id:
+        return Response({'total': 0, 'profesores': []})
+
+    profesores_qs = User.objects.filter(
+        rbd_colegio=school_id,
+        is_active=True,
+        role__nombre__iexact='profesor',
+    ).order_by('apellido_paterno', 'nombre')
+
+    return Response({
+        'total': profesores_qs.count(),
+        'profesores': [
+            {
+                'id': prof.id,
+                'nombre': prof.get_full_name(),
+                'email': prof.email,
+            }
+            for prof in profesores_qs
+        ],
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def mis_reuniones(request):
     """
     GET /api/reuniones/mis-reuniones/
@@ -482,7 +521,7 @@ def mis_reuniones(request):
     """
     user = request.user
     role_name = getattr(getattr(user, 'role', None), 'nombre', '').strip().lower()
-    school_id = _school_id(user)
+    school_id = _school_id(user, request)
 
     if role_name == 'apoderado':
         try:
@@ -624,7 +663,7 @@ def ciclo_transition(request, ciclo_id):
     if not (_is_global_admin(user) or PolicyService.has_capability(user, 'SYSTEM_CONFIGURE')):
         raise PermissionDenied('Sin permisos para gestionar ciclos.')
 
-    school_id = _school_id(user)
+    school_id = _school_id(user, request)
     nuevo_estado = request.data.get('nuevo_estado', '').upper()
 
     try:
@@ -705,7 +744,7 @@ def ciclo_statistics(request, ciclo_id):
     if not (_is_global_admin(user) or PolicyService.has_capability(user, 'SYSTEM_CONFIGURE')):
         raise PermissionDenied('Sin permisos.')
 
-    school_id = _school_id(user)
+    school_id = _school_id(user, request)
 
     try:
         ciclo = CicloAcademico.objects.get(id=ciclo_id)

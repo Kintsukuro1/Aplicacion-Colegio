@@ -30,8 +30,20 @@ class ColegioService:
 
     @classmethod
     def create(cls, *, user, data: dict):
-        cls.validations(data=data)
-        return EscuelaManagementService.crear_colegio(user, data)
+        normalized = dict(data)
+        normalized['correo'] = normalized.get('correo') or normalized.get('email')
+        normalized['tipo_establecimiento_id'] = (
+            normalized.get('tipo_establecimiento_id') or normalized.get('tipo_establecimiento')
+        )
+        normalized['dependencia_id'] = normalized.get('dependencia_id') or normalized.get('dependencia')
+        cls.validations(data=normalized)
+        mgmt_data = {
+            **normalized,
+            'tipo_establecimiento': normalized['tipo_establecimiento_id'],
+            'dependencia': normalized['dependencia_id'],
+            'email': normalized.get('correo'),
+        }
+        return EscuelaManagementService.crear_colegio(user, mgmt_data)
 
     @classmethod
     def update(cls, *, user, rbd: int, data: dict):

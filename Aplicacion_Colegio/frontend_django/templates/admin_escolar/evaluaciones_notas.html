@@ -1,0 +1,426 @@
+{% load static %}
+{% load custom_filters %}
+
+<link rel="stylesheet" href="{% static 'css/admin_escolar/evaluaciones_notas.css' %}?v=20260610-admin-notas">
+<link rel="stylesheet" href="{% static 'css/profesor/notas.css' %}?v=20260610-admin-notas-tables">
+
+<div class="ae-notas">
+
+    <p class="ae-notas-meta" role="status">
+        Supervisión académica · ciclo <strong>{{ ciclo_activo.nombre|default:"—" }}</strong>
+        · actualizado al cargar: {{ actualizado_en }}
+    </p>
+
+    {# KPIs institucionales #}
+    <section class="ae-notas-kpi" aria-label="Indicadores del establecimiento">
+        <article class="ae-kpi">
+            <span class="ae-kpi__icon" aria-hidden="true">📚</span>
+            <div>
+                <strong class="ae-kpi__val">{{ admin_kpi.total_clases }}</strong>
+                <span class="ae-kpi__lbl">Clases activas</span>
+            </div>
+        </article>
+        <article class="ae-kpi">
+            <span class="ae-kpi__icon" aria-hidden="true">📝</span>
+            <div>
+                <strong class="ae-kpi__val">{{ admin_kpi.total_evaluaciones }}</strong>
+                <span class="ae-kpi__lbl">Evaluaciones</span>
+            </div>
+        </article>
+        <article class="ae-kpi">
+            <span class="ae-kpi__icon" aria-hidden="true">✍️</span>
+            <div>
+                <strong class="ae-kpi__val">{{ admin_kpi.total_calificaciones }}</strong>
+                <span class="ae-kpi__lbl">Calificaciones</span>
+            </div>
+        </article>
+        <article class="ae-kpi ae-kpi--accent">
+            <span class="ae-kpi__icon" aria-hidden="true">📊</span>
+            <div>
+                <strong class="ae-kpi__val">{% if admin_kpi.promedio_colegio %}{{ admin_kpi.promedio_colegio }}{% else %}—{% endif %}</strong>
+                <span class="ae-kpi__lbl">Promedio colegio</span>
+            </div>
+        </article>
+        <article class="ae-kpi ae-kpi--warn">
+            <span class="ae-kpi__icon" aria-hidden="true">⚠️</span>
+            <div>
+                <strong class="ae-kpi__val">{{ admin_kpi.evaluaciones_incompletas }}</strong>
+                <span class="ae-kpi__lbl">Eval. incompletas</span>
+            </div>
+        </article>
+    </section>
+
+    {# Accesos rápidos admin #}
+    <section class="ae-notas-nav" aria-label="Herramientas relacionadas">
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=reporte_cursos">
+            <span class="ae-nav-card__icon">📈</span>
+            <span class="ae-nav-card__title">Rendimiento por cursos</span>
+            <span class="ae-nav-card__hint">Comparativo por nivel y asignatura</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=libro_clases">
+            <span class="ae-nav-card__icon">📖</span>
+            <span class="ae-nav-card__title">Libro de clases</span>
+            <span class="ae-nav-card__hint">Matriz oficial de notas</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=reportes">
+            <span class="ae-nav-card__icon">📋</span>
+            <span class="ae-nav-card__title">Reportes académicos</span>
+            <span class="ae-nav-card__hint">Informes exportables</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=gestionar_asignaturas">
+            <span class="ae-nav-card__icon">🎨</span>
+            <span class="ae-nav-card__title">Asignaturas</span>
+            <span class="ae-nav-card__hint">Plan de estudios y docentes</span>
+        </a>
+    </section>
+
+    {% if admin_insights %}
+    <section class="ae-notas-insights" aria-label="Alertas institucionales">
+        {% for insight in admin_insights %}
+        <div class="ae-insight ae-insight--{{ insight.tipo }}">{{ insight.texto }}</div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {# Filtros #}
+    <section class="ae-notas-filters" aria-label="Filtrar clase">
+        <form method="GET" class="ae-filters-form" id="formFiltros">
+            <input type="hidden" name="pagina" value="notas">
+            <input type="hidden" name="modo" value="{{ modo }}">
+            <div class="ae-field">
+                <label for="filtro_curso_nombre">Curso</label>
+                <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
+                    <option value="">Todos los cursos</option>
+                    {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                    {% for grupo in clases_por_curso %}
+                    <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ae-field ae-field--grow">
+                <label for="clase_id">Clase (curso · asignatura)</label>
+                <select id="clase_id" name="clase_id" onchange="this.form.submit()">
+                    <option value="">— Vista general del colegio —</option>
+                    {% include 'profesor/_clase_select_options.html' with filtro_clase_id=filtro_clase_id %}
+                </select>
+            </div>
+            <div class="ae-filters-actions">
+                <button type="submit" class="ae-btn ae-btn--primary">Cargar</button>
+                <a href="{% url 'dashboard' %}?pagina=notas" class="ae-btn ae-btn--ghost">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    {% if not clase_seleccionada %}
+    {# Vista general: clases que requieren seguimiento #}
+    <section class="ae-notas-panel" aria-label="Seguimiento institucional">
+        <header class="ae-panel-head">
+            <h2>Clases que requieren seguimiento</h2>
+            <p>Evaluaciones sin registrar o calificaciones incompletas detectadas en el ciclo activo.</p>
+        </header>
+        {% if clases_atencion %}
+        <div class="ae-scroll">
+            <table class="ae-table">
+                <thead>
+                    <tr>
+                        <th>Curso · Asignatura</th>
+                        <th>Docente</th>
+                        <th>Alumnos</th>
+                        <th>Situación</th>
+                        <th class="ae-td-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in clases_atencion %}
+                    <tr>
+                        <td>
+                            <span class="ae-materia-dot" style="--ae-color: {{ item.color }};"></span>
+                            <strong>{{ item.curso }}</strong> · {{ item.asignatura }}
+                        </td>
+                        <td>{{ item.profesor }}</td>
+                        <td>{{ item.total_estudiantes }}</td>
+                        <td><span class="ae-badge ae-badge--{% if item.pendientes %}warn{% else %}muted{% endif %}">{{ item.motivo }}</span></td>
+                        <td class="ae-td-end">
+                            <a class="ae-link" href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ item.clase_id }}">Supervisar</a>
+                            {% if item.profesor_id %}
+                            <a class="ae-link ae-link--muted" href="{% url 'comunicados:crear' %}?destinatario=profesores&amp;tipo=comunicado&amp;titulo=Seguimiento calificaciones: {{ item.asignatura }} - {{ item.curso }}">Contactar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="ae-empty">
+            <span aria-hidden="true">✅</span>
+            <p>No hay alertas de seguimiento. Selecciona una clase para revisar evaluaciones en detalle.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    {% else %}
+    {# Detalle de clase seleccionada #}
+    <nav class="ae-breadcrumb" aria-label="Ruta">
+        <a href="{% url 'dashboard' %}?pagina=notas">Evaluaciones</a>
+        <span>/</span>
+        <span>{{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</span>
+    </nav>
+
+    <section class="ae-clase-hero" style="--ae-asig: {{ clase_seleccionada.asignatura.color|default:'#6366f1' }};">
+        <div class="ae-clase-hero__main">
+            <span class="ae-clase-hero__icon" aria-hidden="true">{{ clase_seleccionada.asignatura.nombre|slice:":1" }}</span>
+            <div>
+                <h2>{{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</h2>
+                <p>
+                    Docente: <strong>{{ clase_seleccionada.profesor.get_full_name|default:"Sin asignar" }}</strong>
+                    · {{ evaluaciones|length }} evaluación{{ evaluaciones|length|pluralize:"es" }}
+                    · {{ total_estudiantes_clase }} estudiante{{ total_estudiantes_clase|pluralize }}
+                </p>
+            </div>
+        </div>
+        <div class="ae-clase-hero__stats">
+            <div class="ae-mini-stat">
+                <span class="ae-mini-stat__val">{% if promedio_general %}{{ promedio_general }}{% else %}—{% endif %}</span>
+                <span class="ae-mini-stat__lbl">Promedio clase</span>
+            </div>
+            <div class="ae-mini-stat">
+                <span class="ae-mini-stat__val">{{ cobertura_notas_pct }}%</span>
+                <span class="ae-mini-stat__lbl">Cobertura notas</span>
+            </div>
+            <div class="ae-mini-stat ae-mini-stat--warn">
+                <span class="ae-mini-stat__val">{{ evaluaciones_incompletas }}</span>
+                <span class="ae-mini-stat__lbl">Incompletas</span>
+            </div>
+        </div>
+        <div class="ae-clase-hero__actions">
+            <a class="ae-btn ae-btn--ghost" href="{% url 'dashboard' %}?pagina=libro_clases&amp;clase_id={{ clase_seleccionada.id }}">Libro de clases</a>
+            <a class="ae-btn ae-btn--ghost" href="{% url 'dashboard' %}?pagina=reporte_cursos&amp;curso_id={{ clase_seleccionada.curso.id_curso }}">Rendimiento curso</a>
+            {% if clase_seleccionada.profesor_id %}
+            <a class="ae-btn ae-btn--ghost" href="{% url 'comunicados:crear' %}?destinatario=profesores&amp;tipo=comunicado&amp;titulo=Seguimiento: {{ clase_seleccionada.asignatura.nombre }} - {{ clase_seleccionada.curso.nombre }}">Contactar docente</a>
+            {% endif %}
+            <button type="button" class="ae-btn ae-btn--primary" onclick="abrirModalCrearEvaluacion()">+ Nueva evaluación</button>
+        </div>
+        {% if total_estudiantes_clase and evaluaciones %}
+        <div class="ae-progress" role="progressbar" aria-valuenow="{{ cobertura_notas_pct }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="ae-progress__bar" style="width: {{ cobertura_notas_pct }}%;"></div>
+        </div>
+        <p class="ae-progress__hint">{{ total_calificaciones }} de {{ evaluaciones|length }}×{{ total_estudiantes_clase }} calificaciones posibles registradas</p>
+        {% endif %}
+    </section>
+
+    {% if notas_intel_alertas %}
+    <section class="ae-notas-insights">
+        {% for alerta in notas_intel_alertas %}
+        <div class="ae-insight ae-insight--{{ alerta.tipo }}"><strong>{{ alerta.titulo }}:</strong> {{ alerta.texto }}</div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if evaluaciones and modo != 'calificar' %}
+    <div class="ae-eval-chips" aria-label="Filtrar evaluación">
+        <a href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase_seleccionada.id }}&amp;evaluacion_id=all" class="ae-chip{% if evaluacion_filtro_id == 'all' %} ae-chip--active{% endif %}">Todas</a>
+        {% for evaluacion in evaluaciones %}
+        {% with eval_id=evaluacion.id_evaluacion|stringformat:"s" %}
+        <a href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase_seleccionada.id }}&amp;evaluacion_id={{ evaluacion.id_evaluacion }}" class="ae-chip{% if evaluacion_filtro_id == eval_id %} ae-chip--active{% endif %}">{{ evaluacion.nombre }} ({{ evaluacion.fecha_evaluacion|date:"d/m" }})</a>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if modo == 'calificar' and evaluacion_seleccionada %}
+    <div class="info-evaluacion">
+        <h3>Calificar: {{ evaluacion_seleccionada.nombre }}</h3>
+        <p>Ponderación {{ evaluacion_seleccionada.ponderacion }}% · {{ clase_seleccionada.curso.nombre }}</p>
+        <a href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase_seleccionada.id }}" class="btn-volver">← Volver al listado</a>
+    </div>
+    <div class="tabla-container">
+        {% if estudiantes_con_notas %}
+        <form method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}" id="formCalificaciones">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="registrar_calificaciones">
+            <input type="hidden" name="evaluacion_id" value="{{ evaluacion_seleccionada.id_evaluacion }}">
+            <button type="submit" class="btn-guardar-calificaciones">Guardar calificaciones</button>
+            <table class="tabla-calificaciones">
+                <thead><tr><th>#</th><th>Estudiante</th><th>RUT</th><th>Nota</th><th>Estado</th></tr></thead>
+                <tbody>
+                    {% for item in estudiantes_con_notas %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.estudiante.get_full_name }}</td>
+                        <td>{{ item.estudiante.rut|default:"—" }}</td>
+                        <td><input type="number" name="nota_{{ item.estudiante.id }}" class="input-nota" value="{% if item.nota %}{{ item.nota }}{% endif %}" min="1" max="7" step="0.1"></td>
+                        <td class="col-estado">{% if item.nota %}{% if item.nota >= 4.0 %}Aprobado{% else %}Reprobado{% endif %}{% else %}Pendiente{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+        {% else %}
+        <div class="empty-state"><p>No hay estudiantes inscritos en esta clase.</p></div>
+        {% endif %}
+    </div>
+
+    {% elif evaluaciones %}
+    <section class="ae-notas-panel" aria-label="Evaluaciones de la clase">
+        <header class="ae-panel-head">
+            <h2>Evaluaciones registradas</h2>
+            <p>Supervisión de ponderaciones, avance de calificaciones y acciones administrativas.</p>
+        </header>
+        <div class="tabla-container">
+            <table class="tabla-evaluaciones ae-table-admin">
+                <thead>
+                    <tr>
+                        <th>Evaluación</th>
+                        <th>Fecha</th>
+                        <th>Pond.</th>
+                        <th>Avance</th>
+                        <th>Promedio</th>
+                        <th class="ae-td-end">Acciones admin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evaluacion in evaluaciones %}
+                    <tr>
+                        <td>
+                            <strong>{{ evaluacion.nombre }}</strong>
+                            <span class="ae-eval-type">{{ evaluacion.get_tipo_evaluacion_display }}</span>
+                        </td>
+                        <td>{{ evaluacion.fecha_evaluacion|date:"d/m/Y" }}</td>
+                        <td><span class="badge-ponderacion">{{ evaluacion.ponderacion }}%</span></td>
+                        <td>
+                            {% if total_estudiantes_clase %}
+                            <span class="ae-avance">{{ evaluacion.total_calificaciones }}/{{ total_estudiantes_clase }}</span>
+                            {% if evaluacion.total_calificaciones < total_estudiantes_clase %}
+                            <span class="ae-badge ae-badge--warn">Incompleta</span>
+                            {% else %}
+                            <span class="ae-badge ae-badge--ok">Completa</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="ae-badge ae-badge--muted">{{ evaluacion.total_calificaciones }} notas</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if evaluacion.total_calificaciones %}
+                            <span class="badge-nota {% if evaluacion.promedio_calculado >= 4.0 %}nota-aprobado{% else %}nota-reprobado{% endif %}">{{ evaluacion.promedio_calculado }}</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="ae-td-end">
+                            <div class="ae-row-actions">
+                                <a href="{% url 'dashboard' %}?pagina=notas&amp;modo=calificar&amp;clase_id={{ clase_seleccionada.id }}&amp;evaluacion_id={{ evaluacion.id_evaluacion }}" class="ae-link">Calificar</a>
+                                <a href="{% url 'crear_evaluacion_online_profesor' %}?clase_id={{ clase_seleccionada.id }}&amp;evaluacion_id={{ evaluacion.id_evaluacion }}" class="ae-link ae-link--muted">Editar</a>
+                                <button type="button" class="ae-link ae-link--danger" onclick="confirmarEliminar(this)" data-id="{{ evaluacion.id_evaluacion }}" data-nombre="{{ evaluacion.nombre }}">Desactivar</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    {% if calificaciones_matriz %}
+    <section class="ae-notas-panel" aria-label="Matriz de calificaciones">
+        <header class="ae-panel-head">
+            <h2>Matriz de calificaciones</h2>
+            <p>Vista consolidada por estudiante — datos reales del ciclo.</p>
+        </header>
+        <div class="tabla-scroll">
+            <table class="tabla-calificaciones tabla-calificaciones-matriz">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        {% for evaluacion in evaluaciones %}
+                        <th title="{{ evaluacion.nombre }}">{{ evaluacion.nombre|truncatechars:12 }}</th>
+                        {% endfor %}
+                        <th>Última</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in calificaciones_matriz %}
+                    <tr>
+                        <td>{{ fila.estudiante.get_full_name }}</td>
+                        {% for item in fila.calificaciones %}
+                        <td class="col-nota">
+                            {% if item.nota %}<span class="nota-valor {% if item.es_baja %}nota-baja{% endif %}">{{ item.nota }}</span>{% else %}<span class="nota-vacia">—</span>{% endif %}
+                        </td>
+                        {% endfor %}
+                        <td>{{ fila.fecha_ultima|date:"d/m"|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% else %}
+    <div class="ae-empty">
+        <span aria-hidden="true">📝</span>
+        <p>Esta clase aún no tiene evaluaciones. Puedes crear una o contactar al docente asignado.</p>
+        <button type="button" class="ae-btn ae-btn--primary" onclick="abrirModalCrearEvaluacion()">+ Crear evaluación</button>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<form id="formEliminar" method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="eliminar_evaluacion">
+    <input type="hidden" name="id" id="eliminarId" value="">
+</form>
+
+<div id="modalOpcionEvaluacion" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:640px;">
+        <div class="modal-header">
+            <h3>Nueva evaluación (supervisión)</h3>
+            <button type="button" class="btn-close-modal" onclick="cerrarModal('modalOpcionEvaluacion')">×</button>
+        </div>
+        <div class="modal-body" style="display:grid;gap:1rem;">
+            <button type="button" class="ae-btn ae-btn--primary" onclick="irAEvaluacionOnline()">Crear evaluación online</button>
+            <button type="button" class="ae-btn ae-btn--ghost" onclick="abrirCargaPdf()">Cargar desde PDF</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalPdfEvaluacion" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:720px;">
+        <div class="modal-header"><h3>Cargar PDF</h3><button type="button" onclick="cerrarModal('modalPdfEvaluacion')">×</button></div>
+        <form method="POST" action="{% url 'gestionar_evaluaciones_calificaciones' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="crear_evaluacion">
+            <input type="hidden" name="formato_evaluacion" value="pdf">
+            <input type="hidden" name="clase_id" value="{{ clase_seleccionada.id|default:'' }}">
+            <div class="modal-body">
+                <input type="text" name="nombre" required placeholder="Nombre evaluación" class="ae-input">
+                <input type="date" name="fecha" required value="{{ fecha_hoy }}" class="ae-input">
+                <input type="number" name="ponderacion" value="100" min="1" max="100" class="ae-input">
+                <input type="file" name="archivo_pdf" accept=".pdf" required class="ae-input">
+            </div>
+            <button type="submit" class="ae-btn ae-btn--primary">Crear</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalCrearEvaluacion() {
+    const claseId = document.getElementById('clase_id')?.value;
+    if (!claseId) { alert('Selecciona una clase antes de crear una evaluación.'); return; }
+    document.getElementById('modalOpcionEvaluacion').style.display = 'flex';
+}
+function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+function abrirCargaPdf() { cerrarModal('modalOpcionEvaluacion'); document.getElementById('modalPdfEvaluacion').style.display = 'flex'; }
+function irAEvaluacionOnline() {
+    const claseId = document.getElementById('clase_id')?.value;
+    if (!claseId) return;
+    window.location.href = "{% url 'crear_evaluacion_online_profesor' %}?clase_id=" + encodeURIComponent(claseId);
+}
+function confirmarEliminar(btn) {
+    if (confirm('¿Desactivar la evaluación "' + btn.dataset.nombre + '"?')) {
+        document.getElementById('eliminarId').value = btn.dataset.id;
+        document.getElementById('formEliminar').submit();
+    }
+}
+</script>
+
+{% include 'profesor/_filtrar_clases_por_curso_script.html' %}

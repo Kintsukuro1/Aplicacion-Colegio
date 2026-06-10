@@ -1,0 +1,211 @@
+/* Portal funcionarios — identidad Premium Lavanda/Morado (extiende admin_portal) */
+
+body.vista-staff {
+    --staff-accent: #6B46C1;
+    --staff-accent-deep: #553C9A;
+    --staff-accent-soft: #EDE9FE;
+    --staff-accent-light: #DDD6FE;
+}
+
+body.vista-staff .staff-global-shell,
+body.vista-staff .staff-global-shell .dashboard-personal-layout {
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+}
+
+body.vista-staff .staff-global-shell .pers-sidebar {
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+}
+
+body.vista-staff .staff-global-shell .pers-sidebar__top,
+body.vista-staff .staff-global-shell .pers-sidebar__footer {
+    flex-shrink: 0;
+}
+
+body.vista-staff .staff-global-shell .pers-sidebar__nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+body.vista-staff .staff-global-shell .pers-sidebar__footer {
+    background: #ffffff;
+}
+
+/* Contenedores legacy de dashboards por rol */
+body.vista-staff .staff-page-content .admin-dashboard,
+body.vista-staff .staff-page-content .asesor-financiero-dashboard,
+body.vista-staff .staff-page-content .coordinador-dashboard,
+body.vista-staff .staff-page-content .inspector-dashboard,
+body.vista-staff .staff-page-content .psicologo-dashboard,
+body.vista-staff .staff-page-content .soporte-dashboard,
+body.vista-staff .staff-page-content .bibliotecario-dashboard,
+body.vista-staff .staff-page-content .content-wrapper {
+    padding: 0;
+}
+
+body.vista-staff .staff-page-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+body.vista-staff .staff-page-body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+}
+
+/* Ocultar encabezados legacy sustituidos por hero central */
+body.vista-staff .staff-page-body .page-header,
+body.vista-staff .staff-page-body .welcome-banner,
+body.vista-staff .staff-page-body .titulo-modulo,
+body.vista-staff .staff-page-body .estadisticas-grid,
+body.vista-staff .staff-page-body .header-section .estadisticas-grid,
+body.vista-staff .staff-page-body .seguridad-header,
+body.vista-staff .staff-page-body .ce-header,
+body.vista-staff .staff-page-body > .adm-portal > .prof-hero,
+body.vista-staff .staff-page-body .adm-portal > .prof-hero:first-child {
+    display: none !important;
+}
+
+body.vista-staff .staff-page-body .estudiantes-container,
+body.vista-staff .staff-page-body .filtros-section,
+body.vista-staff .staff-page-body .tabla-container {
+    width: 100%;
+    max-width: none;
+}
+
+body.vista-staff .staff-page-body .tabla-estudiantes {
+    width: 100%;
+}
+
+/* Paleta unificada — botones y acciones */
+body.vista-staff .btn-module,
+body.vista-staff .btn-action,
+body.vista-staff .btn-action-banner,
+body.vista-staff .action-button,
+body.vista-staff .quick-action-card-school,
+body.vista-staff .setup-banner-cta {
+    background: linear-gradient(135deg, #7c3aed 0%, #6b46c1 100%) !important;
+    border-color: #6b46c1 !important;
+    color: #fff !important;
+}
+
+body.vista-staff .btn-module:hover,
+body.vista-staff .btn-action:hover,
+body.vista-staff .btn-action-banner:hover,
+body.vista-staff .action-button:hover {
+    background: linear-gradient(135deg, #6d28d9 0%, #553c9a 100%) !important;
+    color: #fff !important;
+}
+
+body.vista-staff .btn-danger-banner {
+    background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%) !important;
+}
+
+body.vista-staff .stat-primary,
+body.vista-staff .stat-success,
+body.vista-staff .stat-info {
+    border-left-color: #8b5cf6 !important;
+}
+
+body.vista-staff .section-header h2,
+body.vista-staff .module-card h3,
+body.vista-staff .admin-card-title,
+body.vista-staff .admin-welcome-text h1 {
+    color: #553c9a !important;
+}
+
+body.vista-staff .admin-stat-card,
+body.vista-staff .admin-kpi-card,
+body.vista-staff .module-card,
+body.vista-staff .stat-card {
+    border-color: #e9d5ff !important;
+}
+
+body.vista-staff .admin-kpi-progress-fill,
+body.vista-staff .quick-action-icon-school {
+    background-color: #8b5cf6 !important;
+    color: #6b46c1 !important;
+}
+
+body.vista-staff .admin-hoy-card,
+body.vista-staff .card-sin-asistencia,
+body.vista-staff .card-tareas-pendientes,
+body.vista-staff .card-comunicados-borradores {
+    border-color: #ddd6fe !important;
+    background: #faf5ff !important;
+}
+
+body.vista-staff .page-header h1,
+body.vista-staff .data-management-container .page-header h1 {
+    color: #553c9a;
+}
+
+body.vista-staff .content-area .setup-banner {
+    border-color: #ddd6fe;
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+}
+
+body.vista-staff .content-area .setup-banner-cta {
+    box-shadow: 0 4px 14px rgba(107, 70, 193, 0.25);
+}
+
+/* Admin escolar — anular verde menta inline */
+body.vista-staff .admin-dashboard .admin-stat-card.stat-estudiantes,
+body.vista-staff .admin-dashboard .admin-stat-card.stat-profesores,
+body.vista-staff .admin-dashboard .admin-stat-card.stat-cursos {
+    border-top: 3px solid #8b5cf6 !important;
+}
+
+body.vista-staff .admin-dashboard .kpi-asistencia .admin-kpi-progress-fill,
+body.vista-staff .admin-dashboard .kpi-promedio .admin-kpi-progress-fill {
+    background-color: #8b5cf6 !important;
+}
+
+body.vista-staff .rank-badge,
+body.vista-staff .risk-badge {
+    background: #ede9fe !important;
+    color: #553c9a !important;
+    border-color: #ddd6fe !important;
+}
+
+body.vista-staff .staff-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: -8px;
+}
+
+body.vista-staff .staff-hero-actions .btn-action-banner {
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+body.vista-staff .portal-notif--profesor {
+    display: none !important;
+}
+
+
+@media (max-width: 991px) {
+    body.vista-staff .staff-global-shell .pers-sidebar {
+        position: fixed;
+        z-index: 1040;
+    }
+}

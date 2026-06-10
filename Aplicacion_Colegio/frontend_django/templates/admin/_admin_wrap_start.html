@@ -1,0 +1,20 @@
+{% load static %}
+{# Layout Administrador General — sidebar lavanda (misma estructura que portal docente) #}
+<link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260608-admin">
+<link rel="stylesheet" href="{% static 'css/profesor/profesor_hero.css' %}?v=20260608-admin">
+<link rel="stylesheet" href="{% static 'css/admin/admin_portal.css' %}?v=20260609-sidebar-scroll">
+<link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260608-admin">
+<script>document.body.classList.add('vista-personal', 'vista-admin-global');</script>
+<script>
+(function () {
+    var current = (document.title || '').trim();
+    if (current.indexOf('Portal Académico') !== -1) return;
+    document.title = 'Portal Académico - Administrador General';
+})();
+</script>
+<div class="personal-dashboard perfil-personal vista-personal adm-global-shell">
+<div class="dashboard-personal-layout">
+{% include 'admin/_sidebar.html' %}
+<div class="pers-main">
+<div class="pers-main__body pers-page-content adm-page-content">

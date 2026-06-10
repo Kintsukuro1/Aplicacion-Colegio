@@ -8,13 +8,18 @@ Acciones soportadas (POST): crear, editar, eliminar, resetear_password.
 
 from __future__ import annotations
 
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 
-from backend.apps.accounts.models import Apoderado, Role, User
+from backend.apps.core.views.admin_escolar._access import can_manage_school_data
+from backend.apps.accounts.models import User, Role, Apoderado
 from backend.apps.accounts.services.apoderado_service import ApoderadoService
 from backend.apps.core.services.dashboard_service import DashboardService
+
+logger = logging.getLogger(__name__)
 
 
 @login_required(login_url="login")
@@ -31,7 +36,7 @@ def gestionar_apoderados(request):
     rol = user_data.get('rol')
     escuela_rbd = user_data.get('escuela_rbd')
 
-    if rol not in ["admin", "admin_escolar"]:
+    if not can_manage_school_data(rol, request.user):
         messages.error(request, "Acceso denegado")
         return redirect("dashboard")
 
@@ -89,9 +94,12 @@ def gestionar_apoderados(request):
         else:
             messages.error(request, "Acción no reconocida")
 
-    except ValueError:
-        messages.error(request, "Parámetros inválidos")
-    except Exception:
-        messages.error(request, "No se pudo procesar la solicitud")
+    except ValueError as exc:
+        messages.error(request, str(exc) or "Parámetros inválidos")
+    except Exception as exc:
+        logger.exception("Error en gestionar_apoderados")
+        messages.error(request, f"No se pudo procesar la solicitud: {exc}")
 
+    if request.POST.get("origen") == "importar_datos":
+        return redirect("importar_datos")
     return redirect("/dashboard/?pagina=gestionar_apoderados")

@@ -43,7 +43,12 @@ class NotificationSerializer(serializers.ModelSerializer):
         ]
 
     def get_enlace(self, obj: Notificacion) -> str:
-        return normalize_notification_enlace(obj.enlace, obj.tipo)
+        return normalize_notification_enlace(
+            obj.enlace,
+            obj.tipo,
+            titulo=obj.titulo,
+            mensaje=obj.mensaje,
+        )
 
 
 class DeviceRegistrationSerializer(serializers.Serializer):

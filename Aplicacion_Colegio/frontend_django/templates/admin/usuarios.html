@@ -1,84 +1,20 @@
-<div class="container-fluid py-4">
-    <!-- Breadcrumbs & Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-0 text-gray-800 fw-bold">
-                        <i class="bi bi-people-fill text-primary me-2"></i> Gestión de Usuarios
-                    </h1>
-                    <p class="text-muted mb-0">Administración global de cuentas de usuario, roles y asignación de colegios.</p>
-                </div>
-            </div>
-        </div>
-    </div>
+{% include 'admin/_admin_wrap_start.html' %}
 
-    <!-- KPI Cards Grid -->
-    <div class="row g-4 mb-4">
-        <!-- Total Usuarios -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #2563eb !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Usuarios del Sistema</span>
-                        <div class="bg-primary bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-people text-primary fs-4"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ usuarios|length }}</h2>
-                    <span class="text-muted small">Cuentas creadas en la plataforma</span>
-                </div>
-            </div>
-        </div>
+<div class="adm-portal">
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Administración global" hero_title="Gestión de usuarios" hero_subtitle="Cuentas, roles y asignación de colegios en todo el ecosistema" hero_aria="Gestión de usuarios" hero_show_date="0" metrics_aria="Resumen de usuarios" m1_value=usuarios|length m1_label="Usuarios" m1_mod="clases" m2_value=colegios|length m2_label="Colegios" m2_mod="tareas" m3_value=roles|length m3_label="Roles" m3_mod="asistencia" m4_value="—" m4_label="Sistema" m4_mod="neutral" %}
 
-        <!-- Colegios Registrados -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #16a34a !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Colegios Activos</span>
-                        <div class="bg-success bg-opacity-10 p-2 rounded">
-                            <i class="bi bi-building text-success fs-4"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ colegios|length }}</h2>
-                    <span class="text-muted small">Establecimientos educacionales</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Roles del Sistema -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 5px solid #7c3aed !important;">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-uppercase fw-semibold text-muted small">Roles Definidos</span>
-                        <div class="bg-purple bg-opacity-10 p-2 rounded" style="background-color: rgba(124, 58, 237, 0.1);">
-                            <i class="bi bi-shield-lock text-purple fs-4" style="color: #7c3aed;"></i>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-1" style="color: #7c3aed;">{{ roles|length }}</h2>
-                    <span class="text-muted small">Perfiles de seguridad configurados</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Usuarios Section -->
-    <div class="card border-0 shadow-sm rounded-3">
-        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-            <h3 class="card-title h5 mb-0 fw-bold text-gray-800">
-                <i class="bi bi-list-stars text-primary me-2"></i> Listado de Usuarios
-            </h3>
-            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                <i class="bi bi-person-plus-fill me-1"></i> Agregar Usuario
+    <section class="adm-card card-panel">
+        <div class="adm-card__head">
+            <h2 class="adm-card__title section-title">📋 Listado de usuarios</h2>
+            <button type="button" class="adm-btn adm-btn--primary adm-btn--sm btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                ➕ Agregar usuario
             </button>
         </div>
-        <div class="card-body p-0">
+        <div class="adm-card__body adm-card__body--flush">
             {% if usuarios %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                <div class="adm-table-wrap">
+                    <table class="adm-table table-raccademy table-raccademy--zebra">
+                        <thead>
                             <tr>
                                 <th class="px-4">Nombre Completo</th>
                                 <th>Email</th>
@@ -92,35 +28,28 @@
                         <tbody>
                             {% for usuario in usuarios %}
                             <tr id="user-row-{{ usuario.id }}">
-                                <td class="px-4 fw-semibold text-gray-800">{{ usuario.get_full_name }}</td>
+                                <td class="px-4">{{ usuario.get_full_name }}</td>
                                 <td>{{ usuario.email }}</td>
-                                <td>
-                                    {% if usuario.role %}
-                                        <span class="badge bg-info text-dark">{{ usuario.role.nombre }}</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Sin rol</span>
-                                    {% endif %}
-                                </td>
+                                <td>{% include 'admin/_role_badge.html' %}</td>
                                 <td>
                                     {% if usuario.colegio %}
-                                        <span class="fw-medium text-secondary">{{ usuario.colegio.nombre }}</span>
+                                        {{ usuario.colegio.nombre }}
                                     {% else %}
-                                        <span class="text-muted small"><i class="bi bi-cpu me-1"></i>Sistema</span>
+                                        <span style="color:#9CA3AF;font-size:13px;">Sistema</span>
                                     {% endif %}
                                 </td>
                                 <td id="user-status-{{ usuario.id }}">
                                     {% if usuario.is_active %}
-                                        <span class="badge bg-success">Activo</span>
+                                        <span class="badge-activo">Activo</span>
                                     {% else %}
-                                        <span class="badge bg-danger">Inactivo</span>
+                                        <span class="badge-delete">Inactivo</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ usuario.fecha_creacion|date:"d/m/Y H:i" }}</td>
                                 <td class="text-end px-4">
-                                    <div class="d-inline-flex gap-2 align-items-center">
-                                        <button onclick="verDetalleUsuario(this)" 
-                                                class="btn btn-light btn-sm text-primary border" 
-                                                title="Ver detalles"
+                                    <button onclick="verDetalleUsuario(this)" 
+                                            class="btn-table-action" 
+                                            title="Ver detalles"
                                                 data-nombre="{{ usuario.get_full_name }}"
                                                 data-email="{{ usuario.email }}"
                                                 data-rut="{{ usuario.rut|default:'-' }}"
@@ -132,7 +61,7 @@
                                             <i class="bi bi-eye me-1"></i> Ver
                                         </button>
                                         <button onclick="abrirEditarUsuario(this)" 
-                                                class="btn btn-light btn-sm text-warning border" 
+                                                class="btn-table-action" 
                                                 title="Editar"
                                                 data-id="{{ usuario.id }}"
                                                 data-nombre="{{ usuario.nombre }}"
@@ -143,7 +72,7 @@
                                             <i class="bi bi-pencil me-1"></i> Editar
                                         </button>
                                         <button onclick="toggleEstadoUsuario(this)" 
-                                                class="btn btn-sm {% if usuario.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" 
+                                                class="btn-table-action{% if not usuario.is_active %} danger{% endif %}" 
                                                 title="{% if usuario.is_active %}Desactivar{% else %}Activar{% endif %}"
                                                 data-id="{{ usuario.id }}"
                                                 data-nombre="{{ usuario.get_full_name }}"
@@ -154,7 +83,6 @@
                                                 <i class="bi bi-person-check me-1"></i> Activar
                                             {% endif %}
                                         </button>
-                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -162,12 +90,10 @@
                     </table>
                 </div>
             {% else %}
-                <div class="p-4 text-center text-muted">
-                    <i class="bi bi-info-circle fs-3 d-block mb-2"></i> No hay usuarios registrados en el sistema.
-                </div>
+                <div class="adm-empty">No hay usuarios registrados en el sistema.</div>
             {% endif %}
         </div>
-    </div>
+    </section>
 </div>
 
 <!-- Modal Ver Detalles -->
@@ -499,9 +425,12 @@ function crearUsuario() {
     .then(data => {
         if (data.success) {
             showFeedback(data.message, 'success');
-            const modalEl = document.getElementById('addUserModal');
-            const bsModal = bootstrap.Modal.getInstance(modalEl);
-            if (bsModal) bsModal.hide();
+            if (window.AdminModal) AdminModal.hide('addUserModal');
+            else {
+                const modalEl = document.getElementById('addUserModal');
+                const bsModal = bootstrap.Modal.getInstance(modalEl);
+                if (bsModal) bsModal.hide();
+            }
             setTimeout(() => { location.reload(); }, 1200);
         } else {
             showFeedback('Error: ' + data.error, 'danger');
@@ -509,4 +438,15 @@ function crearUsuario() {
     })
     .catch(() => showFeedback('Error de conexión con el servidor', 'danger'));
 }
+
+(function () {
+    if (new URLSearchParams(window.location.search).get('abrir_modal') === 'crear') {
+        var modalEl = document.getElementById('addUserModal');
+        if (modalEl && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+    }
+})();
 </script>
+
+{% include 'admin/_admin_wrap_end.html' %}

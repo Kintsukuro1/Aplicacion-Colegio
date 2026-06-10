@@ -7,8 +7,11 @@ Endpoints para administradores:
 3. Auditoría de acceso a datos sensibles (historial)
 4. Desbloqueo de IPs
 """
+import csv
 import logging
+from datetime import datetime
 
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
@@ -17,6 +20,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from backend.apps.security.models import ActiveSession, PasswordHistory
+from backend.apps.accounts.models import User
 from backend.apps.security.services.security_hardening_service import (
     audit_sensitive_access,
     check_password_reuse,
@@ -285,13 +289,7 @@ def sensitive_data_audit_log(request):
     })
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def password_history_list(request):
-    """
-    GET /api/seguridad/password-history/
-    Lista historial de cambios de contraseña para admins.
-    """
+def _password_history_queryset(request):
     user = request.user
     if not _is_admin(user):
         raise PermissionDenied('Solo administradores acceden al historial de contraseñas.')
@@ -305,20 +303,134 @@ def password_history_list(request):
         school_rbd = getattr(user, 'rbd_colegio', None)
         qs = qs.filter(user__rbd_colegio=school_rbd)
 
+    user_id = request.GET.get('user_id', '').strip()
+    tipo_accion = request.GET.get('tipo_accion', '').strip()
+    fecha_inicio = request.GET.get('fecha_inicio', '').strip()
+    fecha_fin = request.GET.get('fecha_fin', '').strip()
+
+    if user_id:
+        try:
+            qs = qs.filter(user_id=int(user_id))
+        except ValueError:
+            pass
+    if tipo_accion:
+        qs = qs.filter(tipo_accion=tipo_accion)
+    if fecha_inicio:
+        try:
+            qs = qs.filter(created_at__date__gte=datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+        except ValueError:
+            pass
+    if fecha_fin:
+        try:
+            qs = qs.filter(created_at__date__lte=datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+        except ValueError:
+            pass
+
+    return qs
+
+
+def _serialize_password_entry(entry):
+    tipo_labels = {
+        'cambio_voluntario': 'Actualización voluntaria',
+        'cambio_forzado': 'Cambio forzado por admin',
+        'reset_admin': 'Reset administrativo',
+    }
+    return {
+        'id': entry.id,
+        'user_id': entry.user_id,
+        'user_email': entry.user.email,
+        'user_nombre': entry.user.get_full_name() or entry.user.email,
+        'user_rol': getattr(getattr(entry.user, 'role', None), 'nombre', ''),
+        'colegio_rbd': entry.user.rbd_colegio,
+        'created_at': entry.created_at.isoformat(),
+        'tipo_accion': entry.tipo_accion,
+        'action_label': tipo_labels.get(entry.tipo_accion, entry.tipo_accion or 'Cambio registrado'),
+        'requiere_cambio_password': getattr(entry.user, 'requiere_cambio_password', False),
+    }
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def password_history_list(request):
+    """
+    GET /api/seguridad/password-history/
+    Lista historial de cambios de contraseña para admins.
+    """
+    qs = _password_history_queryset(request)
+    entries = [_serialize_password_entry(entry) for entry in qs[:300]]
+
     return Response({
         'total': qs.count(),
-        'entries': [
-            {
-                'id': entry.id,
-                'user_id': entry.user_id,
-                'user_email': entry.user.email,
-                'user_nombre': entry.user.get_full_name() or entry.user.email,
-                'user_rol': getattr(getattr(entry.user, 'role', None), 'nombre', ''),
-                'colegio_rbd': entry.user.rbd_colegio,
-                'created_at': entry.created_at.isoformat(),
-            }
-            for entry in qs[:300]
-        ],
+        'entries': entries,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def password_history_export_csv(request):
+    """Exporta el historial de contraseñas filtrado a CSV."""
+    qs = _password_history_queryset(request)
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    filename = f"historial_passwords_{timezone.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response.write('\ufeff')
+
+    writer = csv.writer(response)
+    writer.writerow(['ID', 'Usuario', 'Email', 'Rol', 'RBD', 'Tipo acción', 'Fecha'])
+    for entry in qs[:5000]:
+        row = _serialize_password_entry(entry)
+        writer.writerow([
+            row['id'],
+            row['user_nombre'],
+            row['user_email'],
+            row['user_rol'],
+            row['colegio_rbd'] or '',
+            row['action_label'],
+            entry.created_at.strftime('%d/%m/%Y %H:%M:%S'),
+        ])
+
+    return response
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def password_history_force_change(request):
+    """
+    POST /api/seguridad/password-history/forzar-cambio/
+    Body: {"user_id": 123}
+    """
+    if not _is_admin(request.user):
+        raise PermissionDenied('Solo administradores pueden forzar cambio de contraseña.')
+
+    has_access, _is_global = SecurityMonitoringService.validate_monitoring_access(request.user)
+    if not has_access:
+        raise PermissionDenied('Sin permisos de monitoreo.')
+
+    user_id = request.data.get('user_id')
+    if not user_id:
+        raise ValidationError({'user_id': 'ID de usuario requerido.'})
+
+    try:
+        target = User.objects.get(pk=int(user_id))
+    except (User.DoesNotExist, ValueError, TypeError):
+        raise ValidationError({'user_id': 'Usuario no encontrado.'})
+
+    target.requiere_cambio_password = True
+    target.save(update_fields=['requiere_cambio_password'])
+
+    from django.contrib.auth.hashers import make_password
+    PasswordHistory.objects.create(
+        user=target,
+        password_hash=make_password(f'force-change-{target.id}-{timezone.now().timestamp()}'),
+        tipo_accion='cambio_forzado',
+    )
+
+    logger.info('Cambio de password forzado — admin=%s target=%s', request.user.email, target.email)
+
+    return Response({
+        'detail': f'El usuario {target.email} deberá cambiar su contraseña en el próximo inicio de sesión.',
+        'user_id': target.id,
     })
 
 

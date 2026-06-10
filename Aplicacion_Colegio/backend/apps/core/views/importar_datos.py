@@ -49,6 +49,40 @@ def importar_datos(request):
 
     dashboard_data = ImportacionCSVService.get_importar_datos_dashboard(colegio.rbd)
 
+    vista = (request.GET.get("vista") or "").strip().lower()
+    tipo = (request.GET.get("tipo") or "").strip().lower()
+    insert_tipo = ""
+    if vista == "insertar" and tipo in {"estudiante", "profesor", "apoderado"}:
+        insert_tipo = tipo
+
+    csv_post_url = ""
+    tipo_usuario = ""
+    plantilla_csv = ""
+    if vista == "csv":
+        csv_map = {
+            "estudiantes": (
+                "Estudiantes",
+                "importar_estudiantes_csv",
+                ImportacionCSVService.generar_plantilla_estudiantes,
+            ),
+            "profesores": (
+                "Profesores",
+                "importar_profesores_csv",
+                ImportacionCSVService.generar_plantilla_profesores,
+            ),
+            "apoderados": (
+                "Apoderados",
+                "importar_apoderados_csv",
+                ImportacionCSVService.generar_plantilla_apoderados,
+            ),
+        }
+        csv_entry = csv_map.get(tipo)
+        if csv_entry:
+            tipo_usuario, csv_url_name, plantilla_fn = csv_entry
+            from django.urls import reverse
+            csv_post_url = reverse(csv_url_name)
+            plantilla_csv = plantilla_fn()
+
     context, redirect_response = build_dashboard_context(
         request,
         pagina_actual="importar_datos",
@@ -56,6 +90,10 @@ def importar_datos(request):
     )
     if redirect_response:
         return redirect_response
+
+    hero_subtitle_import = (
+        f"Carga manual o masiva de estudiantes, profesores y apoderados de {colegio.nombre}"
+    )
 
     context.update({
         "colegio": colegio,
@@ -65,6 +103,14 @@ def importar_datos(request):
         "total_estudiantes": dashboard_data["total_estudiantes"],
         "total_profesores": dashboard_data["total_profesores"],
         "total_apoderados": dashboard_data["total_apoderados"],
+        "vista": vista,
+        "insert_tipo": insert_tipo,
+        "csv_tipo": tipo if vista == "csv" else "",
+        "tipo_usuario": tipo_usuario,
+        "csv_post_url": csv_post_url,
+        "plantilla_csv": plantilla_csv,
+        "hero_subtitle_import": hero_subtitle_import,
+        "adm_portal": context.get("rol") in {"admin_general", "Administrador general"},
     })
 
     return render(request, "dashboard.html", context)

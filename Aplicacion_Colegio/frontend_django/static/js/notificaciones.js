@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getPortalRole() {
         const body = document.body;
+        if (body.classList.contains('vista-admin-global')) return 'admin';
         if (body.classList.contains('vista-apoderado')) return 'apoderado';
         if (body.classList.contains('vista-alumno') || body.classList.contains('perfil-alumno')) {
             return 'estudiante';
@@ -121,6 +122,29 @@ document.addEventListener('DOMContentLoaded', () => {
             return 'profesor';
         }
         return 'default';
+    }
+
+    function resolveNotificationLinkByContent(tipo, titulo, mensaje) {
+        const t = (tipo || '').toLowerCase();
+        const combined = `${String(titulo || '').toLowerCase()} ${String(mensaje || '').toLowerCase()}`;
+
+        if (combined.includes('suscripci') || (combined.includes('vence') && combined.includes('rbd'))) {
+            return '/dashboard/?pagina=reportes_financieros';
+        }
+        if (combined.includes('colegio registrado') || combined.includes('nuevo colegio')) {
+            return '/seleccionar-escuela/';
+        }
+        if (
+            combined.includes('acceso no autorizado')
+            || (combined.includes('intento') && (combined.includes('sesión') || combined.includes('inicio de sesión')))
+        ) {
+            return '/dashboard/?pagina=monitoreo_seguridad';
+        }
+
+        if (t === 'alerta') return '/dashboard/?pagina=monitoreo_seguridad';
+        if (t === 'sistema') return '/dashboard/?pagina=inicio';
+
+        return resolveDefaultNotificationLink(t);
     }
 
     function resolveDefaultNotificationLink(tipo) {
@@ -160,6 +184,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 alerta: '/dashboard/?pagina=inicio',
                 sistema: '/dashboard/?pagina=inicio',
                 default: '/dashboard/?pagina=inicio',
+            },
+            admin: {
+                calificacion: '/dashboard/?pagina=inicio',
+                asistencia: '/dashboard/?pagina=inicio',
+                evaluacion: '/dashboard/?pagina=inicio',
+                alerta: '/dashboard/?pagina=auditoria',
+                sistema: '/dashboard/?pagina=auditoria',
+                comunicado_nuevo: '/dashboard/?pagina=inicio',
+                comunicado: '/dashboard/?pagina=inicio',
+                mensaje_nuevo: '/dashboard/?pagina=inicio',
+                mensaje: '/dashboard/?pagina=inicio',
+                tarea_nueva: '/dashboard/?pagina=inicio',
+                tarea_entregada: '/dashboard/?pagina=inicio',
+                default: '/dashboard/?pagina=notificaciones',
             },
             default: {
                 default: '/dashboard/?pagina=notificaciones',
@@ -268,11 +306,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function normalizeNotificationLink(rawLink, notification) {
         const tipo = (notification && notification.tipo) || '';
+        const titulo = notification && notification.titulo;
+        const mensaje = notification && notification.mensaje;
         let link = canonicalizeNotificationHref(rawLink);
         const role = getPortalRole();
 
-        if (!link) {
-            return resolveDefaultNotificationLink(tipo);
+        if (!link || link === '#') {
+            return resolveNotificationLinkByContent(tipo, titulo, mensaje);
         }
 
         if (isClaseDashboardLink(link)) {
@@ -280,8 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         link = normalizeMensajeriaNotificationLink(link, tipo);
-        if (!link) {
-            return resolveDefaultNotificationLink(tipo);
+        if (!link || link === '#') {
+            return resolveNotificationLinkByContent(tipo, titulo, mensaje);
         }
 
         const apoderadoLegacy = link.match(/^\/apoderado\/estudiante\/(\d+)\/(asistencia|notas)\/?$/);
@@ -651,6 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggle = () => {
         if (isOpen()) close();
         else open();
+        btn.setAttribute('aria-expanded', isOpen() ? 'true' : 'false');
     };
 
     if (!dropdown.classList.contains('d-none')) {
@@ -672,21 +713,29 @@ document.addEventListener('DOMContentLoaded', () => {
     list.addEventListener('click', (event) => {
         const item = event.target.closest('.notif-item');
         if (!item) return;
-        const notificationId = Number(item.dataset.id);
-        if (!Number.isFinite(notificationId)) return;
-        const clicked = notifications.find((n) => n.id === notificationId);
-        if (!clicked) return;
+        event.preventDefault();
 
-        const targetHref = normalizeNotificationLink(clicked.enlace, clicked);
-        if (targetHref && targetHref !== '#' && item.getAttribute('href') !== targetHref) {
-            event.preventDefault();
-            if (!clicked.leido) markNotificationRead(notificationId);
-            close();
-            window.location.assign(targetHref);
-            return;
+        const notificationId = Number(item.dataset.id);
+        const clicked = Number.isFinite(notificationId)
+            ? notifications.find((n) => n.id === notificationId)
+            : null;
+
+        const targetHref = clicked
+            ? normalizeNotificationLink(clicked.enlace, clicked)
+            : canonicalizeNotificationHref(item.getAttribute('href'));
+
+        let destination = targetHref;
+        if (!destination || destination === '#') {
+            const estado = clicked && clicked.leido ? 'leidas' : 'no_leidas';
+            destination = `/dashboard/?pagina=notificaciones&estado=${estado}&notif=${notificationId || ''}`;
         }
 
-        if (!clicked.leido) markNotificationRead(notificationId);
+        if (clicked && !clicked.leido && Number.isFinite(notificationId)) {
+            markNotificationRead(notificationId);
+        }
+
+        close();
+        window.location.assign(destination);
     });
 
     dropdown.addEventListener('click', (event) => event.stopPropagation());

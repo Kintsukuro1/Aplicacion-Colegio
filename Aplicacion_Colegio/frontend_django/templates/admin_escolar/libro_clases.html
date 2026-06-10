@@ -1,0 +1,386 @@
+{% load static %}
+{% load custom_filters %}
+
+<link rel="stylesheet" href="{% static 'css/admin_escolar/evaluaciones_notas.css' %}?v=20260610-admin-libro">
+<link rel="stylesheet" href="{% static 'css/profesor/libro_clases.css' %}?v=20260610-admin-libro">
+<link rel="stylesheet" href="{% static 'css/admin_escolar/libro_clases_admin.css' %}?v=20260610-admin-libro">
+
+<div class="ae-notas ae-libro">
+
+    <p class="ae-notas-meta" role="status">
+        Libro de clases institucional · ciclo <strong>{{ ciclo_activo.nombre|default:"—" }}</strong>
+        · actualizado al cargar: {{ actualizado_en }}
+    </p>
+
+    <section class="ae-notas-kpi" aria-label="Indicadores del libro de clases">
+        <article class="ae-kpi">
+            <span class="ae-kpi__icon" aria-hidden="true">📚</span>
+            <div>
+                <strong class="ae-kpi__val">{{ admin_kpi.total_clases }}</strong>
+                <span class="ae-kpi__lbl">Clases activas</span>
+            </div>
+        </article>
+        <article class="ae-kpi ae-kpi--accent">
+            <span class="ae-kpi__icon" aria-hidden="true">📖</span>
+            <div>
+                <strong class="ae-kpi__val">{{ admin_kpi.clases_con_libro }}</strong>
+                <span class="ae-kpi__lbl">Con libro activo</span>
+            </div>
+        </article>
+        <article class="ae-kpi">
+            <span class="ae-kpi__icon" aria-hidden="true">📝</span>
+            <div>
+                <strong class="ae-kpi__val">{{ admin_kpi.total_evaluaciones }}</strong>
+                <span class="ae-kpi__lbl">Evaluaciones</span>
+            </div>
+        </article>
+        <article class="ae-kpi">
+            <span class="ae-kpi__icon" aria-hidden="true">📊</span>
+            <div>
+                <strong class="ae-kpi__val">{% if admin_kpi.promedio_colegio %}{{ admin_kpi.promedio_colegio }}{% else %}—{% endif %}</strong>
+                <span class="ae-kpi__lbl">Promedio colegio</span>
+            </div>
+        </article>
+        <article class="ae-kpi ae-kpi--warn">
+            <span class="ae-kpi__icon" aria-hidden="true">📋</span>
+            <div>
+                <strong class="ae-kpi__val">{{ admin_kpi.clases_sin_libro }}</strong>
+                <span class="ae-kpi__lbl">Sin evaluaciones</span>
+            </div>
+        </article>
+    </section>
+
+    <section class="ae-notas-nav" aria-label="Herramientas relacionadas">
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=notas">
+            <span class="ae-nav-card__icon">📝</span>
+            <span class="ae-nav-card__title">Evaluaciones y notas</span>
+            <span class="ae-nav-card__hint">Supervisar evaluaciones y cobertura</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=reporte_cursos">
+            <span class="ae-nav-card__icon">📈</span>
+            <span class="ae-nav-card__title">Rendimiento por cursos</span>
+            <span class="ae-nav-card__hint">Comparativo por nivel</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=reportes">
+            <span class="ae-nav-card__icon">📋</span>
+            <span class="ae-nav-card__title">Reportes académicos</span>
+            <span class="ae-nav-card__hint">Informes exportables</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=gestionar_cursos">
+            <span class="ae-nav-card__icon">🏫</span>
+            <span class="ae-nav-card__title">Cursos</span>
+            <span class="ae-nav-card__hint">Organización y matrícula</span>
+        </a>
+    </section>
+
+    {% if admin_insights %}
+    <section class="ae-notas-insights" aria-label="Alertas">
+        {% for insight in admin_insights %}
+        <div class="ae-insight ae-insight--{{ insight.tipo }}">{{ insight.texto }}</div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <section class="ae-notas-filters" aria-label="Seleccionar clase">
+        <form method="GET" class="ae-filters-form" id="formFiltrosLibro">
+            <input type="hidden" name="pagina" value="libro_clases">
+            <div class="ae-field">
+                <label for="filtro_curso_nombre">Curso</label>
+                <select id="filtro_curso_nombre" onchange="filtrarClasesPorCurso(this.value)">
+                    <option value="">Todos los cursos</option>
+                    {% regroup clases|ordenar_por_curso by curso.nombre as clases_por_curso %}
+                    {% for grupo in clases_por_curso %}
+                    <option value="{{ grupo.grouper }}">{{ grupo.grouper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ae-field ae-field--grow">
+                <label for="clase_id">Clase (curso · asignatura)</label>
+                <select name="clase_id" id="clase_id" onchange="this.form.submit()">
+                    <option value="">— Panorama del colegio —</option>
+                    {% include 'profesor/_clase_select_options.html' with filtro_clase_id=filtro_clase_id %}
+                </select>
+            </div>
+            <div class="ae-filters-actions">
+                <button type="submit" class="ae-btn ae-btn--primary">Abrir matriz</button>
+                <a href="{% url 'dashboard' %}?pagina=libro_clases" class="ae-btn ae-btn--ghost">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    {% if not clase_seleccionada %}
+    <section class="ae-notas-panel" aria-label="Resumen de libros por clase">
+        <header class="ae-panel-head">
+            <h2>Libros de clases con calificaciones</h2>
+            <p>{{ clases_con_libro_count }} clase(s) con evaluaciones registradas. Abre la matriz completa desde aquí.</p>
+        </header>
+        {% if libro_resumen_clases %}
+        <div class="ae-scroll">
+            <table class="ae-table">
+                <thead>
+                    <tr>
+                        <th>Curso · Asignatura</th>
+                        <th>Docente</th>
+                        <th>Evaluaciones</th>
+                        <th>Calificaciones</th>
+                        <th>Promedio</th>
+                        <th class="ae-td-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in libro_resumen_clases %}
+                    <tr>
+                        <td>
+                            <span class="ae-materia-dot" style="--ae-color: {{ item.color }};"></span>
+                            <strong>{{ item.curso }}</strong> · {{ item.asignatura }}
+                        </td>
+                        <td>{{ item.profesor }}</td>
+                        <td>{{ item.num_evaluaciones }}</td>
+                        <td>{{ item.num_calificaciones }}</td>
+                        <td>
+                            {% if item.promedio %}
+                            <span class="ae-badge ae-badge--{% if item.promedio >= 4.0 %}ok{% else %}warn{% endif %}">{{ item.promedio }}</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="ae-td-end">
+                            <a class="ae-link" href="{% url 'dashboard' %}?pagina=libro_clases&amp;clase_id={{ item.clase_id }}">Ver matriz</a>
+                            <a class="ae-link ae-link--muted" href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ item.clase_id }}">Evaluaciones</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="ae-empty">
+            <span aria-hidden="true">📖</span>
+            <p>Aún no hay clases con evaluaciones registradas en el ciclo activo.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    {% else %}
+    <nav class="ae-breadcrumb" aria-label="Ruta">
+        <a href="{% url 'dashboard' %}?pagina=libro_clases">Libro de clases</a>
+        <span>/</span>
+        <span>{{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</span>
+    </nav>
+
+    <section class="ae-clase-hero ae-libro-hero" style="--ae-asig: {{ clase_seleccionada.asignatura.color|default:'#6366f1' }};">
+        <div class="ae-clase-hero__main">
+            <span class="ae-clase-hero__icon" aria-hidden="true">{{ clase_seleccionada.asignatura.nombre|slice:":1" }}</span>
+            <div>
+                <h2>Matriz oficial · {{ clase_seleccionada.curso.nombre }} · {{ clase_seleccionada.asignatura.nombre }}</h2>
+                <p>
+                    Docente: <strong>{{ clase_seleccionada.profesor.get_full_name|default:"Sin asignar" }}</strong>
+                    · {{ total_evaluaciones }} evaluación{{ total_evaluaciones|pluralize:"es" }}
+                    · {{ total_estudiantes }} estudiante{{ total_estudiantes|pluralize }}
+                </p>
+            </div>
+        </div>
+        <div class="ae-clase-hero__stats">
+            <div class="ae-mini-stat">
+                <span class="ae-mini-stat__val">{% if promedio_general %}{{ promedio_general }}{% else %}—{% endif %}</span>
+                <span class="ae-mini-stat__lbl">Promedio clase</span>
+            </div>
+            <div class="ae-mini-stat">
+                <span class="ae-mini-stat__val">{{ alumnos_aprobados }}</span>
+                <span class="ae-mini-stat__lbl">Aprobados</span>
+            </div>
+            <div class="ae-mini-stat ae-mini-stat--warn">
+                <span class="ae-mini-stat__val">{{ alumnos_riesgo_count }}</span>
+                <span class="ae-mini-stat__lbl">En seguimiento</span>
+            </div>
+            <div class="ae-mini-stat">
+                <span class="ae-mini-stat__val">{{ alumnos_sin_notas }}</span>
+                <span class="ae-mini-stat__lbl">Sin notas</span>
+            </div>
+        </div>
+        <div class="ae-clase-hero__actions">
+            <a class="ae-btn ae-btn--ghost" href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase_seleccionada.id }}">Evaluaciones</a>
+            <a class="ae-btn ae-btn--ghost" href="{% url 'dashboard' %}?pagina=reporte_cursos&amp;curso_id={{ clase_seleccionada.curso.id_curso }}">Rendimiento curso</a>
+            {% if clase_seleccionada.profesor_id %}
+            <a class="ae-btn ae-btn--ghost" href="{% url 'comunicados:crear' %}?destinatario=profesores&amp;tipo=comunicado&amp;titulo=Libro de clases: {{ clase_seleccionada.asignatura.nombre }} - {{ clase_seleccionada.curso.nombre }}">Contactar docente</a>
+            {% endif %}
+            <button type="button" class="ae-btn ae-btn--primary" onclick="exportarExcel()">Exportar CSV</button>
+        </div>
+    </section>
+
+    {% if evaluaciones and matriz_calificaciones %}
+
+    {% if alumnos_riesgo %}
+    <section class="ae-libro-riesgo" aria-label="Alumnos en seguimiento">
+        <p class="ae-libro-riesgo__title">Alumnos que requieren seguimiento académico (promedio &lt; 4.0)</p>
+        <ul class="ae-libro-riesgo__list">
+            {% for alumno in alumnos_riesgo|slice:":10" %}
+            <li><span>{{ alumno.nombre }}</span> <strong>{{ alumno.promedio }}</strong></li>
+            {% endfor %}
+            {% if alumnos_riesgo_count > 10 %}
+            <li class="ae-libro-riesgo__more">+{{ alumnos_riesgo_count|add:"-10" }} más en la matriz</li>
+            {% endif %}
+        </ul>
+    </section>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <div class="lc-charts ae-libro-charts">
+        <div class="lc-chart-card">
+            <h3>Rendimiento por evaluación</h3>
+            <div class="chart-container"><canvas id="rendimientoChart"></canvas></div>
+        </div>
+        <div class="lc-chart-card lc-chart-card--donut">
+            <h3>Estado de aprobación</h3>
+            <div class="chart-container"><canvas id="aprobacionChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="lc-table-panel ae-libro-matrix">
+        <div class="lc-table-panel__head">
+            <div>
+                <h3 class="lc-table-panel__title">Libro de calificaciones</h3>
+                <p class="lc-table-panel__sub">Datos reales · desplaza horizontalmente si hay muchas evaluaciones</p>
+            </div>
+        </div>
+        <div class="tabla-scroll">
+            <table class="tabla-libro" id="libroAdminTable">
+                <thead>
+                    <tr>
+                        <th class="col-numero">#</th>
+                        <th class="col-estudiante">Estudiante</th>
+                        {% for evaluacion in evaluaciones %}
+                        <th class="col-evaluacion" title="{{ evaluacion.nombre }} ({{ evaluacion.ponderacion }}%)">
+                            <div class="eval-header">
+                                <span class="eval-nombre">{{ evaluacion.nombre|truncatechars:14 }}</span>
+                                <span class="eval-fecha">{{ evaluacion.fecha_evaluacion|date:"d/m" }}</span>
+                                <span class="eval-pond">{{ evaluacion.ponderacion }}%</span>
+                            </div>
+                        </th>
+                        {% endfor %}
+                        <th class="col-promedio">Promedio</th>
+                        <th class="col-estado">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in matriz_calificaciones %}
+                    <tr data-promedio="{% if fila.promedio %}{{ fila.promedio }}{% endif %}" data-nombre="{{ fila.estudiante.get_full_name }}">
+                        <td class="col-numero">{{ forloop.counter }}</td>
+                        <td class="col-estudiante">{{ fila.estudiante.get_full_name }}</td>
+                        {% for nota in fila.notas %}
+                        <td class="col-nota">
+                            {% if nota %}
+                            <span class="nota {% if nota >= 5.0 %}nota-alta{% elif nota >= 4.0 %}nota-media{% else %}nota-baja{% endif %}">{{ nota }}</span>
+                            {% else %}<span class="nota-vacia">—</span>{% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="col-promedio">
+                            {% if fila.promedio %}
+                            <span class="promedio {% if fila.promedio >= 4.0 %}aprobado{% else %}reprobado{% endif %}">{{ fila.promedio }}</span>
+                            {% else %}<span class="promedio-vacio">—</span>{% endif %}
+                        </td>
+                        <td class="col-estado"><span class="badge badge-{{ fila.estado|lower|cut:' ' }}">{{ fila.estado }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="fila-promedios">
+                        <td colspan="2" class="label-promedios">Promedio por evaluación</td>
+                        {% for promedio in promedios_evaluaciones %}
+                        <td class="col-nota">
+                            {% if promedio %}<span class="promedio-eval {% if promedio >= 4.0 %}aprobado{% else %}reprobado{% endif %}">{{ promedio }}</span>{% else %}<span class="promedio-vacio">—</span>{% endif %}
+                        </td>
+                        {% endfor %}
+                        <td colspan="2"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="lc-actions ae-libro-actions">
+        <button type="button" class="lc-btn lc-btn--secondary" onclick="window.print()">Imprimir</button>
+        <button type="button" class="lc-btn lc-btn--primary" onclick="exportarExcel()">Exportar CSV</button>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof Chart === 'undefined') return;
+        var ctxR = document.getElementById('rendimientoChart');
+        if (ctxR) {
+            new Chart(ctxR, {
+                type: 'line',
+                data: {
+                    labels: [{% for eval in evaluaciones %}"{{ eval.nombre|escapejs }}",{% endfor %}],
+                    datasets: [{
+                        label: 'Promedio',
+                        data: [{% for p in promedios_evaluaciones %}{{ p|default:0 }},{% endfor %}],
+                        fill: true,
+                        backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                        borderColor: '#6366f1',
+                        borderWidth: 2,
+                        tension: 0.35
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { min: 1, max: 7, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+        var ctxA = document.getElementById('aprobacionChart');
+        if (ctxA) {
+            new Chart(ctxA, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Aprobados', 'En seguimiento', 'Sin notas'],
+                    datasets: [{
+                        data: [{{ alumnos_aprobados }}, {{ alumnos_riesgo_count }}, {{ alumnos_sin_notas }}],
+                        backgroundColor: ['#86efac', '#fca5a5', '#e2e8f0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '62%',
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+    });
+
+    function exportarExcel() {
+        var table = document.getElementById('libroAdminTable');
+        if (!table) return;
+        var csv = [];
+        var headers = [];
+        table.querySelectorAll('thead th').forEach(function(col) {
+            var h = col.querySelector('.eval-header');
+            var text = h ? (h.querySelector('.eval-nombre')?.textContent.trim() || '') : col.textContent.trim();
+            headers.push('"' + text.replace(/"/g, '""') + '"');
+        });
+        csv.push(headers.join(';'));
+        table.querySelectorAll('tbody tr').forEach(function(row) {
+            if (row.classList.contains('fila-promedios')) return;
+            var cells = [];
+            row.querySelectorAll('td').forEach(function(td) {
+                cells.push('"' + td.textContent.trim().replace(/"/g, '""') + '"');
+            });
+            if (cells.length) csv.push(cells.join(';'));
+        });
+        var blob = new Blob(['\ufeff' + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Libro_Admin_{{ clase_seleccionada.curso.nombre|escapejs }}_{{ clase_seleccionada.asignatura.nombre|escapejs }}.csv'.replace(/\s+/g, '_');
+        link.click();
+    }
+    </script>
+
+    {% else %}
+    <div class="ae-empty">
+        <span aria-hidden="true">📝</span>
+        <p>Esta clase aún no tiene evaluaciones en el libro. Regístralas desde Evaluaciones y notas.</p>
+        <a class="ae-btn ae-btn--primary" href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase_seleccionada.id }}">Ir a evaluaciones</a>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+{% include 'profesor/_filtrar_clases_por_curso_script.html' %}

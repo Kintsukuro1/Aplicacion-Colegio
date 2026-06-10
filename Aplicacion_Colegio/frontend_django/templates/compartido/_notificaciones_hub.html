@@ -162,4 +162,24 @@
         } catch (e) { /* ignore */ }
     });
 })();
+
+(function () {
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get('notif');
+    const fromHash = (window.location.hash || '').replace(/^#notif-/, '');
+    const targetId = fromQuery || fromHash;
+    if (!targetId) return;
+
+    const card = document.getElementById('notif-' + targetId)
+        || document.querySelector('[data-notif-id="' + targetId + '"]');
+    if (!card) return;
+
+    window.requestAnimationFrame(function () {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('nh-card--focus');
+        window.setTimeout(function () {
+            card.classList.remove('nh-card--focus');
+        }, 2400);
+    });
+})();
 </script>

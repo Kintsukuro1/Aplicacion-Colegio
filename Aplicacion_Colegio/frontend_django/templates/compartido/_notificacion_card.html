@@ -1,5 +1,6 @@
 <a href="{{ n.url|default:n.enlace|default:'#' }}"
    class="nh-card {% if not n.leido %}is-unread{% endif %} {% if n.es_urgente %}is-urgent{% endif %}"
+   id="notif-{{ n.id }}"
    data-notif-id="{{ n.id }}"
    data-notif-tipo="{{ n.tipo }}">
     <div class="nh-card__icon nh-card__icon--{{ n.mod|default:'default' }}" aria-hidden="true">{{ n.icono }}</div>

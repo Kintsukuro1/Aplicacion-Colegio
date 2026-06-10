@@ -172,12 +172,18 @@ body.pagina-inicio:has(.perfil-alumno) {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow: hidden;
     position: sticky;
     top: 0;
     align-self: flex-start;
 }
 
 .alumno-sidebar__top {
+    flex-shrink: 0;
     padding: 16px 14px 12px;
 }
 
@@ -251,8 +257,11 @@ body.pagina-inicio:has(.perfil-alumno) {
 }
 
 .alumno-sidebar__nav {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     padding: 8px 10px;
 }
 
@@ -321,11 +330,13 @@ body.pagina-inicio:has(.perfil-alumno) {
 
 
 .alumno-sidebar__footer {
+    flex-shrink: 0;
     padding: 12px 10px 16px;
     border-top: 1px solid var(--alumno-sidebar-border);
     display: flex;
     flex-direction: column;
     gap: 4px;
+    background: var(--alumno-sidebar-bg);
 }
 
 .alumno-sidebar__logout-form {
@@ -853,11 +864,15 @@ body.pagina-inicio:has(.perfil-alumno) {
     .alumno-sidebar {
         width: 100%;
         min-height: auto;
+        height: auto;
+        max-height: none;
+        overflow: visible;
         position: relative;
     }
 
     .alumno-sidebar__nav {
         max-height: 220px;
+        min-height: 0;
     }
 
     .alumno-main-header {

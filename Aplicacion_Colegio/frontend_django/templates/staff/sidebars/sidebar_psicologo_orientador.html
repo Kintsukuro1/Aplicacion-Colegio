@@ -1,0 +1,69 @@
+{% load static %}
+<aside class="pers-sidebar staff-sidebar adm-sidebar" aria-label="Navegación psicólogo orientador">
+    <div class="pers-sidebar__top">
+        <div class="pers-sidebar__brand">
+            {% include 'includes/_portal_brand_logo.html' with logo_alt="Raccademy Colegio" extra_class='portal-brand-logo--sidebar' %}
+            <span class="pers-sidebar__brand-text">Orientación Escolar</span>
+        </div>
+        <div class="pers-sidebar__profile">
+            <div class="pers-sidebar__avatar" aria-hidden="true">
+                {% if iniciales %}{{ iniciales }}{% else %}{{ user.nombre|first|upper }}{{ user.apellido_paterno|first|upper }}{% endif %}
+            </div>
+            <p class="pers-sidebar__name">{{ nombre_usuario|default:user.get_full_name }}</p>
+            <p class="pers-sidebar__course">Psicólogo Orientador</p>
+        </div>
+    </div>
+
+    <nav class="pers-sidebar__nav">
+        {% if 'inicio' in paginas_habilitadas %}
+        <p class="pers-sidebar__section-label">Principal</p>
+        <ul class="pers-sidebar__list">
+            <li class="pers-sidebar__item{% if pagina_actual == 'inicio' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🏠</span>
+                    <span>Inicio</span>
+                </a>
+            </li>
+        </ul>
+        <div class="pers-sidebar__divider" aria-hidden="true"></div>
+        {% endif %}
+
+        <p class="pers-sidebar__section-label">Atención</p>
+        <ul class="pers-sidebar__list">
+            {% if 'entrevistas' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'entrevistas' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=entrevistas">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🗣️</span>
+                    <span>Entrevistas</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'derivaciones' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'derivaciones' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=derivaciones">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">🔄</span>
+                    <span>Derivaciones</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'citaciones_casos' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'citaciones_casos' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=citaciones_casos">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">👥</span>
+                    <span>Citaciones y Casos</span>
+                </a>
+            </li>
+            {% endif %}
+            {% if 'ficha_estudiante' in paginas_habilitadas %}
+            <li class="pers-sidebar__item{% if pagina_actual == 'ficha_estudiante' %} pers-sidebar__item--active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=ficha_estudiante">
+                    <span class="pers-sidebar__emoji" aria-hidden="true">📋</span>
+                    <span>Ficha Estudiante</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    {% include 'staff/_staff_sidebar_footer.html' %}
+</aside>

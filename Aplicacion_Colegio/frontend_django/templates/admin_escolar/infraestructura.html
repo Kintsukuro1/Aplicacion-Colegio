@@ -1,13 +1,9 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/admin_escolar/infraestructura.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_escolar/admin_escolar_premium.css' %}?v=20260609-infra-v2">
+<link rel="stylesheet" href="{% static 'css/admin_escolar/infraestructura.css' %}?v=20260609-infra-v2">
 
-<div class="infraestructura-container">
-    <div class="page-header">
-        <h1>🏗️ Gestión de Infraestructura</h1>
-        <p>Administra los espacios físicos de tu establecimiento</p>
-    </div>
+<div class="ae-premium ae-dashboard infraestructura-container">
 
-    <!-- Mensajes -->
     {% if messages %}
         {% for message in messages %}
             <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
@@ -16,147 +12,179 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Estadísticas -->
-    <div class="estadisticas-grid">
-        <div class="stat-card blue">
-            <div class="stat-icon">🏢</div>
-            <div class="stat-info">
-                <div class="stat-label">Total Espacios</div>
-                <div class="stat-value">{{ estadisticas.total_espacios|default:0 }}</div>
-            </div>
-        </div>
-        
-        <div class="stat-card green">
-            <div class="stat-icon">🚪</div>
-            <div class="stat-info">
-                <div class="stat-label">Salas de Clases</div>
-                <div class="stat-value">{{ estadisticas.total_salas|default:0 }}</div>
-            </div>
-        </div>
-        
-        <div class="stat-card purple">
-            <div class="stat-icon">👥</div>
-            <div class="stat-info">
-                <div class="stat-label">Capacidad Total</div>
-                <div class="stat-value">{{ estadisticas.capacidad_total|default:0|floatformat:0 }}</div>
-            </div>
-        </div>
-        
-        <div class="stat-card orange">
-            <div class="stat-icon">📐</div>
-            <div class="stat-info">
-                <div class="stat-label">Área Total</div>
-                <div class="stat-value">{{ estadisticas.area_total|default:0|floatformat:1 }} m²</div>
-            </div>
-        </div>
-        
-        <div class="stat-card cyan">
-            <div class="stat-icon">🔼</div>
-            <div class="stat-info">
-                <div class="stat-label">Total Pisos</div>
-                <div class="stat-value">{{ estadisticas.total_pisos|default:0 }}</div>
-            </div>
-        </div>
-        
-        <div class="stat-card success">
-            <div class="stat-icon">✅</div>
-            <div class="stat-info">
-                <div class="stat-label">Operativos</div>
-                <div class="stat-value">{{ estadisticas.espacios_operativos|default:0 }}</div>
-            </div>
-        </div>
-    </div>
+    {% with total=estadisticas.total_espacios|default:0 oper=estadisticas.espacios_operativos|default:0 maint=estadisticas.espacios_mantenimiento|default:0 off=estadisticas.espacios_fuera_servicio|default:0 %}
 
-    <!-- Botón para agregar nueva sala -->
-    <div style="margin: 30px 0;">
-        <button class="btn-primary" onclick="abrirModalCrear()">
-            <span>➕</span>
-            <span>Agregar Sala/Espacio</span>
-        </button>
-    </div>
+    <section class="ae-infra-layout" aria-label="Resumen inteligente de infraestructura">
+        <div class="ae-panel">
+            <p class="ae-eyebrow">Panorama del establecimiento</p>
+            <h2 class="ae-panel__title">Inventario físico</h2>
+            <p class="ae-panel__subtitle mb-4">Métricas clave para planificar uso de salas, capacidad y mantenimiento.</p>
 
-    <!-- Listado de infraestructura por tipo -->
+            <div class="ae-infra-kpi-row">
+                <div class="ae-infra-kpi-mini">
+                    <div class="ae-infra-kpi-mini__lbl">Espacios activos</div>
+                    <div class="ae-infra-kpi-mini__val">{{ total }}</div>
+                    <div class="ae-infra-kpi-mini__hint">{{ estadisticas.total_salas|default:0 }} salas de clases</div>
+                </div>
+                <div class="ae-infra-kpi-mini">
+                    <div class="ae-infra-kpi-mini__lbl">Capacidad total</div>
+                    <div class="ae-infra-kpi-mini__val">{{ estadisticas.capacidad_total|default:0|floatformat:0 }}</div>
+                    <div class="ae-infra-kpi-mini__hint">
+                        {% if total > 0 %}
+                            ~{% widthratio estadisticas.capacidad_total|default:0 total 1 %} est. / espacio
+                        {% else %}
+                            Sin espacios registrados
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="ae-infra-kpi-mini">
+                    <div class="ae-infra-kpi-mini__lbl">Superficie útil</div>
+                    <div class="ae-infra-kpi-mini__val">{{ estadisticas.area_total|default:0|floatformat:0 }}<span class="text-base font-bold"> m²</span></div>
+                    <div class="ae-infra-kpi-mini__hint">Área acumulada registrada</div>
+                </div>
+                <div class="ae-infra-kpi-mini">
+                    <div class="ae-infra-kpi-mini__lbl">Requieren atención</div>
+                    <div class="ae-infra-kpi-mini__val">{{ maint|add:off }}</div>
+                    <div class="ae-infra-kpi-mini__hint">{{ maint }} mant. · {{ off }} fuera de servicio</div>
+                </div>
+            </div>
+
+            {% if infraestructura_agrupada %}
+            <div class="ae-infra-chips" id="infraTipoChips">
+                <button type="button" class="ae-infra-chip is-active" data-tipo-chip="">Todos ({{ total }})</button>
+                {% for tipo, items in infraestructura_agrupada.items %}
+                <button type="button" class="ae-infra-chip" data-tipo-chip="{{ tipo }}">{{ tipo }} ({{ items|length }})</button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <aside class="ae-infra-health" aria-label="Salud operativa">
+            <h3 class="ae-infra-health__title">Salud operativa del campus</h3>
+            {% if total > 0 %}
+            <div class="ae-infra-health__bar" role="img" aria-label="Distribución por estado">
+                {% widthratio oper total 100 as pct_ok %}
+                {% widthratio maint total 100 as pct_maint %}
+                {% widthratio off total 100 as pct_off %}
+                <span class="ae-infra-health__seg--ok" style="width: {{ pct_ok }}%;"></span>
+                <span class="ae-infra-health__seg--maint" style="width: {{ pct_maint }}%;"></span>
+                <span class="ae-infra-health__seg--off" style="width: {{ pct_off }}%;"></span>
+            </div>
+            <div class="ae-infra-health__legend">
+                <span class="leg-ok">{{ oper }} operativos ({{ pct_ok }}%)</span>
+                <span class="leg-maint">{{ maint }} en mantenimiento</span>
+                <span class="leg-off">{{ off }} fuera de servicio</span>
+            </div>
+            {% if maint|add:off > 0 %}
+            <p class="ae-infra-tip ae-infra-tip--warn">
+                Hay {{ maint|add:off }} espacio{{ maint|add:off|pluralize:"s" }} con estado no operativo. Prioriza revisión antes de asignar horarios o eventos.
+            </p>
+            {% else %}
+            <p class="ae-infra-tip">
+                Todos los espacios registrados están operativos. Puedes enfocarte en optimizar capacidad y distribución por pisos.
+            </p>
+            {% endif %}
+            {% else %}
+            <p class="ae-infra-tip">Aún no hay espacios cargados. Comienza registrando salas de clases y recursos comunes.</p>
+            {% endif %}
+        </aside>
+    </section>
+
     {% if not infraestructura %}
-        <div class="empty-state">
-            <div class="empty-icon">🏢</div>
+        <div class="ae-empty">
+            <div class="ae-empty__icon" aria-hidden="true">🏢</div>
             <h3>No hay infraestructura registrada</h3>
-            <p>Comienza agregando las salas y espacios de tu establecimiento</p>
+            <p>Comienza agregando las salas y espacios de tu establecimiento.</p>
+            <button type="button" class="ae-btn-add mt-4" onclick="abrirModalCrear()">➕ Agregar primer espacio</button>
         </div>
     {% else %}
-        {% for tipo, items in infraestructura_agrupada.items %}
-            <div class="tipo-section">
-                <h2 class="tipo-title">
-                    {% if tipo == 'Sala de Clases' %}🚪
-                    {% elif tipo == 'Laboratorio' %}🔬
-                    {% elif tipo == 'Biblioteca' %}📚
-                    {% elif tipo == 'Gimnasio' %}🏃
-                    {% elif tipo == 'Comedor' %}🍽️
-                    {% elif tipo == 'Auditorio' %}🎭
-                    {% elif tipo == 'Sala de Profesores' %}👨‍🏫
-                    {% elif tipo == 'Oficina Administrativa' %}💼
-                    {% elif tipo == 'Baños' %}🚻
-                    {% elif tipo == 'Patio' %}🌳
-                    {% elif tipo == 'Cancha Deportiva' %}⚽
-                    {% else %}🏢{% endif %}
-                    {{ tipo }}
-                    <span class="badge-count">{{ items|length }}</span>
-                </h2>
-                
-                <div class="infraestructura-grid">
+
+    <section class="ae-infra-toolbar" aria-label="Filtros y acciones">
+        <div class="ae-infra-search">
+            <span class="ae-infra-search__icon" aria-hidden="true"><i class="bi bi-search"></i></span>
+            <input type="search" id="infraSearch" placeholder="Buscar por nombre, tipo o piso…" autocomplete="off" aria-label="Buscar espacios">
+        </div>
+        <select id="infraFilterTipo" class="ae-infra-filter" aria-label="Filtrar por tipo">
+            <option value="">Todos los tipos</option>
+            {% for tipo, items in infraestructura_agrupada.items %}
+            <option value="{{ tipo }}">{{ tipo }} ({{ items|length }})</option>
+            {% endfor %}
+        </select>
+        <select id="infraFilterEstado" class="ae-infra-filter" aria-label="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option value="Operativo">Operativo</option>
+            <option value="En Mantenimiento">En Mantenimiento</option>
+            <option value="Fuera de Servicio">Fuera de Servicio</option>
+        </select>
+        <select id="infraFilterPiso" class="ae-infra-filter" aria-label="Filtrar por piso">
+            <option value="">Todos los pisos</option>
+            {% for item in infraestructura %}
+                {% ifchanged item.piso %}
+                <option value="{{ item.piso }}">Piso {{ item.piso }}</option>
+                {% endifchanged %}
+            {% endfor %}
+        </select>
+        <span class="ae-infra-toolbar__meta"><span id="infraVisibleCount">{{ total }}</span> de {{ total }} visibles</span>
+        <button type="button" class="ae-btn-add" onclick="abrirModalCrear()">
+            <i class="bi bi-plus-lg"></i> Agregar espacio
+        </button>
+    </section>
+
+    <section class="ae-panel ae-infra-table" aria-label="Catálogo de espacios">
+        <div class="ae-panel__head">
+            <div>
+                <p class="ae-eyebrow">Catálogo</p>
+                <h2 class="ae-panel__title">Espacios del establecimiento</h2>
+                <p class="ae-panel__subtitle">Vista tabular ordenada — más clara para inventarios grandes.</p>
+            </div>
+        </div>
+
+        <div class="ae-table-wrap">
+            <table class="ae-table" id="infraTable">
+                <thead>
+                    <tr>
+                        <th>Espacio</th>
+                        <th>Tipo</th>
+                        <th>Piso</th>
+                        <th>Capacidad</th>
+                        <th>Área</th>
+                        <th>Estado</th>
+                        <th>Notas</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tipo, items in infraestructura_agrupada.items %}
+                    <tr class="tipo-group" data-tipo-group="{{ tipo }}">
+                        <td colspan="8">
+                            {% if tipo == 'Sala de Clases' %}🚪{% elif tipo == 'Laboratorio' %}🔬{% elif tipo == 'Biblioteca' %}📚{% elif tipo == 'Gimnasio' %}🏃{% elif tipo == 'Comedor' %}🍽️{% elif tipo == 'Auditorio' %}🎭{% elif tipo == 'Sala de Profesores' %}👨‍🏫{% elif tipo == 'Oficina Administrativa' %}💼{% elif tipo == 'Baños' %}🚻{% elif tipo == 'Patio' %}🌳{% elif tipo == 'Cancha Deportiva' %}⚽{% else %}🏢{% endif %}
+                            {{ tipo }} · {{ items|length }} espacio{{ items|length|pluralize:"s" }}
+                        </td>
+                    </tr>
                     {% for item in items %}
-                        <div class="infra-card estado-{{ item.estado|lower|cut:' '|cut:'ó' }}">
-                            <div class="infra-header">
-                                <h3>{{ item.nombre }}</h3>
-                                <span class="badge-estado {{ item.estado|lower|cut:' '|cut:'ó' }}">
-                                    {{ item.estado }}
-                                </span>
-                            </div>
-                            
-                            <div class="infra-details">
-                                <div class="detail-row">
-                                    <span class="detail-icon">🔼</span>
-                                    <span class="detail-label">Piso:</span>
-                                    <span class="detail-value">{{ item.piso }}</span>
-                                </div>
-                                
-                                <div class="detail-row">
-                                    <span class="detail-icon">👥</span>
-                                    <span class="detail-label">Capacidad:</span>
-                                    <span class="detail-value">{{ item.capacidad_estudiantes }} estudiantes</span>
-                                </div>
-                                
-                                {% if item.area_m2 %}
-                                    <div class="detail-row">
-                                        <span class="detail-icon">📐</span>
-                                        <span class="detail-label">Área:</span>
-                                        <span class="detail-value">{{ item.area_m2|floatformat:2 }} m²</span>
-                                    </div>
-                                {% endif %}
-                                
-                                {% if item.ancho_metros and item.largo_metros %}
-                                    <div class="detail-row">
-                                        <span class="detail-icon">📏</span>
-                                        <span class="detail-label">Dimensiones:</span>
-                                        <span class="detail-value">
-                                            {{ item.ancho_metros|floatformat:2 }} × 
-                                            {{ item.largo_metros|floatformat:2 }}
-                                            {% if item.alto_metros %} × {{ item.alto_metros|floatformat:2 }}{% endif %}
-                                            m
-                                        </span>
-                                    </div>
-                                {% endif %}
-                                
-                                {% if item.observaciones %}
-                                    <div class="detail-row full-width">
-                                        <span class="detail-icon">📝</span>
-                                        <span class="detail-label">Observaciones:</span>
-                                        <span class="detail-value">{{ item.observaciones|linebreaks }}</span>
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="infra-actions">
-                                <button class="btn-edit" 
+                    <tr class="infra-row"
+                        data-tipo="{{ item.tipo }}"
+                        data-estado="{{ item.estado }}"
+                        data-piso="{{ item.piso }}"
+                        data-search="{{ item.nombre|lower }} {{ item.tipo|lower }} piso {{ item.piso }}">
+                        <td><strong class="text-purple-950">{{ item.nombre }}</strong></td>
+                        <td><span class="ae-badge ae-badge--muted">{{ item.tipo }}</span></td>
+                        <td>Piso {{ item.piso }}</td>
+                        <td>{{ item.capacidad_estudiantes }} est.</td>
+                        <td>{% if item.area_m2 %}{{ item.area_m2|floatformat:1 }} m²{% else %}—{% endif %}</td>
+                        <td>
+                            <span class="ae-status-badge {% if item.estado == 'Operativo' %}ae-status-badge--ok{% elif 'Mantenimiento' in item.estado %}ae-status-badge--maint{% else %}ae-status-badge--off{% endif %}">
+                                {{ item.estado }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if item.observaciones %}
+                            <span class="ae-infra-obs" title="{{ item.observaciones }}">{{ item.observaciones }}</span>
+                            {% else %}<span class="text-slate-400">—</span>{% endif %}
+                        </td>
+                        <td>
+                            <div class="ae-infra-actions">
+                                <button type="button" class="ae-btn-edit"
                                     data-id="{{ item.id }}"
                                     data-nombre="{{ item.nombre }}"
                                     data-tipo="{{ item.tipo }}"
@@ -168,43 +196,48 @@
                                     data-estado="{{ item.estado }}"
                                     data-observaciones="{{ item.observaciones|default:'' }}"
                                     onclick="abrirModalEditar(this)">
-                                    ✏️ Editar
+                                    <i class="bi bi-pencil"></i> Editar
                                 </button>
-                                <form method="POST" action="{% url 'gestionar_infraestructura' %}" class="d-inline-block" onsubmit="return confirm('¿Eliminar este espacio?');">
+                                <form method="POST" action="{% url 'gestionar_infraestructura' %}" class="m-0" onsubmit="return confirm('¿Eliminar este espacio?');">
                                     {% csrf_token %}
                                     <input type="hidden" name="accion" value="eliminar">
                                     <input type="hidden" name="id" value="{{ item.id }}">
-                                    <button type="submit" class="btn-delete">🗑️ Eliminar</button>
+                                    <button type="submit" class="ae-btn-delete"><i class="bi bi-trash"></i></button>
                                 </form>
                             </div>
-                        </div>
+                        </td>
+                    </tr>
                     {% endfor %}
-                </div>
-            </div>
-        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p id="infraEmptyFilter" class="ae-infra-empty-filter" hidden>No hay espacios que coincidan con los filtros aplicados.</p>
+        </div>
+    </section>
+
     {% endif %}
+    {% endwith %}
 </div>
 
 <!-- Modal Crear -->
 <div class="modal-overlay" id="modalCrear">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>➕ Agregar Sala/Espacio</h2>
-            <button class="modal-close" onclick="cerrarModal('modalCrear')">×</button>
+            <h2>Agregar sala / espacio</h2>
+            <button type="button" class="modal-close" onclick="cerrarModal('modalCrear')" aria-label="Cerrar">×</button>
         </div>
-        
+
         <form method="POST" action="{% url 'gestionar_infraestructura' %}" id="formCrear">
             {% csrf_token %}
             <input type="hidden" name="accion" value="crear">
-            
+
             <div class="form-grid">
                 <div class="form-group">
                     <label>Nombre <span class="required">*</span></label>
                     <input type="text" name="nombre" required placeholder="Ej: Sala 101">
                 </div>
-                
                 <div class="form-group">
-                    <label>Tipo de Espacio <span class="required">*</span></label>
+                    <label>Tipo de espacio <span class="required">*</span></label>
                     <select name="tipo" required>
                         <option value="">Seleccionar...</option>
                         <option value="Sala de Clases">🚪 Sala de Clases</option>
@@ -221,55 +254,49 @@
                         <option value="Otro">🏢 Otro</option>
                     </select>
                 </div>
-                
                 <div class="form-group">
                     <label>Piso <span class="required">*</span></label>
                     <input type="number" name="piso" required min="-2" max="20" value="1" placeholder="1">
                     <small>Use números negativos para subterráneos</small>
                 </div>
-                
                 <div class="form-group">
-                    <label>Capacidad de Estudiantes <span class="required">*</span></label>
+                    <label>Capacidad de estudiantes <span class="required">*</span></label>
                     <input type="number" name="capacidad" required min="1" placeholder="30">
                 </div>
-                
                 <div class="form-group">
                     <label>Ancho (metros)</label>
                     <input type="number" name="ancho" step="0.01" min="0" placeholder="8.5" oninput="calcularArea('formCrear')">
                 </div>
-                
                 <div class="form-group">
                     <label>Largo (metros)</label>
                     <input type="number" name="largo" step="0.01" min="0" placeholder="10.0" oninput="calcularArea('formCrear')">
                 </div>
-                
                 <div class="form-group">
                     <label>Alto (metros)</label>
                     <input type="number" name="alto" step="0.01" min="0" placeholder="3.0">
                 </div>
-                
                 <div class="form-group">
                     <label>Estado <span class="required">*</span></label>
                     <select name="estado" required>
-                        <option value="Operativo">✅ Operativo</option>
-                        <option value="En Mantenimiento">🔧 En Mantenimiento</option>
-                        <option value="Fuera de Servicio">❌ Fuera de Servicio</option>
+                        <option value="Operativo">Operativo</option>
+                        <option value="En Mantenimiento">En Mantenimiento</option>
+                        <option value="Fuera de Servicio">Fuera de Servicio</option>
                     </select>
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label>Observaciones</label>
                 <textarea name="observaciones" rows="3" placeholder="Notas adicionales sobre el espacio..."></textarea>
             </div>
-            
+
             <div class="area-preview d-none" id="areaPreviewCrear">
                 <strong>Área calculada:</strong> <span id="areaValueCrear">0</span> m²
             </div>
-            
+
             <div class="form-actions">
-                <button type="button" class="btn-secondary" onclick="cerrarModal('modalCrear')">Cancelar</button>
-                <button type="submit" class="btn-primary">Crear Espacio</button>
+                <button type="button" class="ae-btn-secondary" onclick="cerrarModal('modalCrear')">Cancelar</button>
+                <button type="submit" class="ae-btn-primary">Crear espacio</button>
             </div>
         </form>
     </div>
@@ -279,23 +306,22 @@
 <div class="modal-overlay" id="modalEditar">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>✏️ Editar Sala/Espacio</h2>
-            <button class="modal-close" onclick="cerrarModal('modalEditar')">×</button>
+            <h2>Editar sala / espacio</h2>
+            <button type="button" class="modal-close" onclick="cerrarModal('modalEditar')" aria-label="Cerrar">×</button>
         </div>
-        
+
         <form method="POST" action="{% url 'gestionar_infraestructura' %}" id="formEditar">
             {% csrf_token %}
             <input type="hidden" name="accion" value="editar">
             <input type="hidden" name="id" id="edit_id">
-            
+
             <div class="form-grid">
                 <div class="form-group">
                     <label>Nombre <span class="required">*</span></label>
                     <input type="text" name="nombre" id="edit_nombre" required>
                 </div>
-                
                 <div class="form-group">
-                    <label>Tipo de Espacio <span class="required">*</span></label>
+                    <label>Tipo de espacio <span class="required">*</span></label>
                     <select name="tipo" id="edit_tipo" required>
                         <option value="">Seleccionar...</option>
                         <option value="Sala de Clases">🚪 Sala de Clases</option>
@@ -312,54 +338,48 @@
                         <option value="Otro">🏢 Otro</option>
                     </select>
                 </div>
-                
                 <div class="form-group">
                     <label>Piso <span class="required">*</span></label>
                     <input type="number" name="piso" id="edit_piso" required min="-2" max="20">
                 </div>
-                
                 <div class="form-group">
-                    <label>Capacidad de Estudiantes <span class="required">*</span></label>
+                    <label>Capacidad de estudiantes <span class="required">*</span></label>
                     <input type="number" name="capacidad" id="edit_capacidad" required min="1">
                 </div>
-                
                 <div class="form-group">
                     <label>Ancho (metros)</label>
                     <input type="number" name="ancho" id="edit_ancho" step="0.01" min="0" oninput="calcularArea('formEditar')">
                 </div>
-                
                 <div class="form-group">
                     <label>Largo (metros)</label>
                     <input type="number" name="largo" id="edit_largo" step="0.01" min="0" oninput="calcularArea('formEditar')">
                 </div>
-                
                 <div class="form-group">
                     <label>Alto (metros)</label>
                     <input type="number" name="alto" id="edit_alto" step="0.01" min="0">
                 </div>
-                
                 <div class="form-group">
                     <label>Estado <span class="required">*</span></label>
                     <select name="estado" id="edit_estado" required>
-                        <option value="Operativo">✅ Operativo</option>
-                        <option value="En Mantenimiento">🔧 En Mantenimiento</option>
-                        <option value="Fuera de Servicio">❌ Fuera de Servicio</option>
+                        <option value="Operativo">Operativo</option>
+                        <option value="En Mantenimiento">En Mantenimiento</option>
+                        <option value="Fuera de Servicio">Fuera de Servicio</option>
                     </select>
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label>Observaciones</label>
                 <textarea name="observaciones" id="edit_observaciones" rows="3"></textarea>
             </div>
-            
+
             <div class="area-preview d-none" id="areaPreviewEditar">
                 <strong>Área calculada:</strong> <span id="areaValueEditar">0</span> m²
             </div>
-            
+
             <div class="form-actions">
-                <button type="button" class="btn-secondary" onclick="cerrarModal('modalEditar')">Cancelar</button>
-                <button type="submit" class="btn-primary">Guardar Cambios</button>
+                <button type="button" class="ae-btn-secondary" onclick="cerrarModal('modalEditar')">Cancelar</button>
+                <button type="submit" class="ae-btn-primary">Guardar cambios</button>
             </div>
         </form>
     </div>
@@ -372,7 +392,7 @@ function abrirModalCrear() {
 
 function abrirModalEditar(button) {
     const data = button.dataset;
-    
+
     document.getElementById('edit_id').value = data.id;
     document.getElementById('edit_nombre').value = data.nombre;
     document.getElementById('edit_tipo').value = data.tipo;
@@ -383,9 +403,9 @@ function abrirModalEditar(button) {
     document.getElementById('edit_alto').value = data.alto || '';
     document.getElementById('edit_estado').value = data.estado;
     document.getElementById('edit_observaciones').value = data.observaciones || '';
-    
+
     calcularArea('formEditar');
-    
+
     document.getElementById('modalEditar').classList.add('active');
 }
 
@@ -397,12 +417,12 @@ function calcularArea(formId) {
     const form = document.getElementById(formId);
     const ancho = parseFloat(form.querySelector('[name="ancho"]').value) || 0;
     const largo = parseFloat(form.querySelector('[name="largo"]').value) || 0;
-    
+
     if (ancho > 0 && largo > 0) {
         const area = ancho * largo;
         const previewId = formId === 'formCrear' ? 'areaPreviewCrear' : 'areaPreviewEditar';
         const valueId = formId === 'formCrear' ? 'areaValueCrear' : 'areaValueEditar';
-        
+
         document.getElementById(previewId).style.display = 'block';
         document.getElementById(valueId).textContent = area.toFixed(2);
     } else {
@@ -411,7 +431,6 @@ function calcularArea(formId) {
     }
 }
 
-// Cerrar modal al hacer clic fuera
 document.querySelectorAll('.modal-overlay').forEach(modal => {
     modal.addEventListener('click', function(e) {
         if (e.target === this) {
@@ -419,4 +438,70 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
         }
     });
 });
+
+(function () {
+    var searchEl = document.getElementById('infraSearch');
+    var tipoEl = document.getElementById('infraFilterTipo');
+    var estadoEl = document.getElementById('infraFilterEstado');
+    var pisoEl = document.getElementById('infraFilterPiso');
+    var countEl = document.getElementById('infraVisibleCount');
+    var emptyEl = document.getElementById('infraEmptyFilter');
+    var chips = document.querySelectorAll('[data-tipo-chip]');
+
+    if (!searchEl) return;
+
+    function applyInfraFilters() {
+        var q = (searchEl.value || '').trim().toLowerCase();
+        var tipo = tipoEl ? tipoEl.value : '';
+        var estado = estadoEl ? estadoEl.value : '';
+        var piso = pisoEl ? pisoEl.value : '';
+        var visible = 0;
+
+        document.querySelectorAll('#infraTable tbody tr.infra-row').forEach(function (row) {
+            var hay = (row.getAttribute('data-search') || '').indexOf(q) !== -1 || !q;
+            var matchTipo = !tipo || row.getAttribute('data-tipo') === tipo;
+            var matchEstado = !estado || row.getAttribute('data-estado') === estado;
+            var matchPiso = !piso || String(row.getAttribute('data-piso')) === piso;
+            var show = hay && matchTipo && matchEstado && matchPiso;
+            row.hidden = !show;
+            if (show) visible += 1;
+        });
+
+        document.querySelectorAll('#infraTable tbody tr.tipo-group').forEach(function (group) {
+            var groupTipo = group.getAttribute('data-tipo-group');
+            var hasVisible = false;
+            document.querySelectorAll('#infraTable tbody tr.infra-row[data-tipo="' + groupTipo + '"]').forEach(function (row) {
+                if (!row.hidden) hasVisible = true;
+            });
+            group.hidden = !hasVisible;
+        });
+
+        if (countEl) countEl.textContent = String(visible);
+        if (emptyEl) emptyEl.hidden = visible > 0;
+    }
+
+    [searchEl, tipoEl, estadoEl, pisoEl].forEach(function (el) {
+        if (el) el.addEventListener('input', applyInfraFilters);
+        if (el && el.tagName === 'SELECT') el.addEventListener('change', function () {
+            if (el === tipoEl) {
+                chips.forEach(function (c) {
+                    var match = (c.getAttribute('data-tipo-chip') || '') === (tipoEl.value || '');
+                    c.classList.toggle('is-active', match);
+                });
+            }
+            applyInfraFilters();
+        });
+    });
+
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            chips.forEach(function (c) { c.classList.remove('is-active'); });
+            chip.classList.add('is-active');
+            if (tipoEl) {
+                tipoEl.value = chip.getAttribute('data-tipo-chip') || '';
+                applyInfraFilters();
+            }
+        });
+    });
+})();
 </script>
