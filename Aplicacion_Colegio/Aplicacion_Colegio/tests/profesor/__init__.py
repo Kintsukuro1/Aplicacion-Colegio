@@ -1,3 +1,0 @@
-"""
-Tests de Profesor - Inicialización
-"""

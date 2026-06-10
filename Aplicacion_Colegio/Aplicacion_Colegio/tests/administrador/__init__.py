@@ -1,3 +1,0 @@
-"""
-Tests de Administrador - Inicialización
-"""
