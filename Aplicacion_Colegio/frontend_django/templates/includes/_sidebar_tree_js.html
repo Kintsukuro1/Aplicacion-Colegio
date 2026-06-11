@@ -83,6 +83,9 @@
         var savedState = loadState();
 
         groups.forEach(function(group) {
+            if (group.dataset.navTreeInitialized === "true") return;
+            group.dataset.navTreeInitialized = "true";
+
             var btn = group.querySelector('.nav-tree__toggle');
             var key = group.dataset.group;
 
