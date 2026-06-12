@@ -1,3 +1,6 @@
+{% if pagina_actual == 'inicio' or pagina_actual == 'mis_clases' or pagina_actual == 'mi_horario' or pagina_actual == 'mis_evaluaciones' or pagina_actual == 'mis_notas' or pagina_actual == 'asistencia' or pagina_actual == 'mi_asistencia' or pagina_actual == 'mis_tareas' or pagina_actual == 'mis_anotaciones' or pagina_actual == 'mis_certificados' or pagina_actual == 'perfil' or pagina_actual == 'notificaciones' or pagina_actual == 'mensajes' or pagina_actual == 'comunicados' or '/mensajeria/' in request.path or '/comunicados/' in request.path %}
+{# Layout estudiante (_alumno_wrap_start): sidebar en estudiante/_sidebar.html #}
+{% else %}
 <aside class="sidebar">
     <div class="sidebar-header">
         <h2>🎓 Portal Académico</h2>
@@ -231,3 +234,4 @@
 </aside>
 
 {% include 'includes/_sidebar_tree_js.html' %}
+{% endif %}

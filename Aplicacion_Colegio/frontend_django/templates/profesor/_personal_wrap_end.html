@@ -1,6 +1,10 @@
+{% if rol == 'admin_general' or rol == 'Administrador general' %}
+{% include 'admin/_admin_wrap_end.html' %}
+{% else %}
 </div>
 </div>
 </div>
 </div>
 {% load static %}
 <script src="{% static 'js/notificaciones.js' %}?v=20260602-clase-links"></script>
+{% endif %}

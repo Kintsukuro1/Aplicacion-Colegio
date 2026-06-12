@@ -1,7 +1,10 @@
 {% load static %}
+{% if rol == 'admin_general' or rol == 'Administrador general' %}
+{% include 'admin/_admin_wrap_start.html' %}
+{% else %}
 {# layout docente: sidebar + paleta lavanda (vista-personal) #}
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
-<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260609-sidebar-scroll">
+<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260610-tree-admin">
 <link rel="stylesheet" href="{% static 'css/profesor/profesor_hero.css' %}?v=20260528-lavanda">
 <link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260604-prof-notif">
 <script>document.body.classList.add('vista-personal');</script>
@@ -19,4 +22,5 @@
 <div class="pers-main__body pers-page-content">
 {% if prof_hero and not prof_hero_manual %}
 {% include 'profesor/_profesor_hero_from_ctx.html' %}
+{% endif %}
 {% endif %}
