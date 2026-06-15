@@ -19,6 +19,15 @@ def _request(method="GET", role="Profesor"):
     req.user.colegio.rbd = 123
     req.user.role = Mock()
     req.user.role.nombre = role
+    req.user.get_full_name.return_value = "Juan Docente"
+    
+    # Prevent Django from treating mock objects as database query expressions
+    for obj in [req.user, req.user.colegio]:
+        for attr in ["resolve_expression", "get_source_expressions", "filterable"]:
+            try:
+                delattr(obj, attr)
+            except AttributeError:
+                pass
     return req
 
 
@@ -67,12 +76,18 @@ class TestClassDetailService:
         req = _request(role="Profesor")
 
         clase = Mock()
+        for attr in ["resolve_expression", "get_source_expressions", "filterable"]:
+            try:
+                delattr(clase, attr)
+            except AttributeError:
+                pass
         clase.id = 1
         clase.profesor = req.user
         clase.colegio = req.user.colegio
         clase.asignatura = Mock()
         clase.curso = Mock()
         clase.curso.ciclo_academico = "CICLO"
+        mock_clase.objects.select_related.side_effect = lambda *args, **kwargs: mock_clase.objects.select_related.return_value
         mock_clase.objects.select_related.return_value.get.return_value = clase
 
         bloque = Mock()
@@ -98,22 +113,35 @@ class TestClassDetailService:
              patch("backend.apps.academico.models.MaterialClase") as mock_material, \
              patch("backend.apps.academico.models.Tarea") as mock_tarea, \
              patch("backend.apps.academico.models.EntregaTarea") as mock_entrega, \
-             patch("backend.apps.mensajeria.models.Anuncio") as mock_anuncio:
+             patch("backend.apps.mensajeria.models.Anuncio") as mock_anuncio, \
+             patch("backend.apps.cursos.models.ClaseEstudiante") as mock_clase_est, \
+             patch("backend.apps.academico.models.Asistencia") as mock_asistencia, \
+             patch("backend.apps.mensajeria.services.MensajeriaService") as mock_mensajeria, \
+             patch("backend.common.utils.dashboard_helpers.build_dashboard_context") as mock_build_context:
+            mock_build_context.return_value = ({}, None)
+            mock_mensajeria.get_clase_mensajes_panel_context.return_value = {}
+            mock_clase_est._base_manager.filter.return_value.count.return_value = 1
+            mock_clase_est._base_manager.filter.return_value.values_list.return_value = []
             eval_qs = MagicMock()
             eval_qs.order_by.return_value.__getitem__.return_value = []
             mock_eval.objects.filter.return_value = eval_qs
+            mock_eval.objects.filter.return_value.count.return_value = 0
 
             materiales_qs = Mock()
             materiales_qs.select_related.return_value.order_by.return_value = materiales_qs
+            materiales_qs.order_by.return_value.first.return_value = None
             materiales_qs.count.return_value = 0
             mock_material.objects.filter.return_value = materiales_qs
 
             tarea = Mock()
+            tarea.fecha_entrega = None
             mock_tarea.objects.filter.return_value.order_by.return_value = [tarea]
             mock_entrega.objects.filter.return_value.count.return_value = 0
             from unittest.mock import MagicMock
             pendientes_qs = MagicMock()
-            pendientes_slice = Mock()
+            pendientes_qs.count.return_value = 0
+            pendientes_slice = MagicMock()
+            pendientes_slice.__iter__.return_value = iter([])
             pendientes_slice.count.return_value = 0
             pendientes_qs.__getitem__.return_value = pendientes_slice
             mock_entrega.objects.filter.return_value.select_related.return_value.order_by.return_value = pendientes_qs
@@ -124,7 +152,7 @@ class TestClassDetailService:
             result = ClassDetailService.handle_request(req, 1)
 
         assert result == "OK"
-        assert mock_render.call_args.args[1] == "profesor/detalle_clase.html"
+        assert mock_render.call_args.args[1] == "dashboard.html"
 
     @patch("backend.apps.core.services.class_detail_service.redirect")
     @patch("backend.apps.core.services.class_detail_service.messages")
@@ -183,12 +211,19 @@ class TestClassDetailService:
         mock_perfil.objects.get.return_value = perfil
 
         clase = Mock()
+        for attr in ["resolve_expression", "get_source_expressions", "filterable"]:
+            try:
+                delattr(clase, attr)
+            except AttributeError:
+                pass
         clase.id = 1
         clase.profesor = Mock()
+        clase.profesor.get_full_name.return_value = "Juan Docente"
         clase.colegio = req.user.colegio
         clase.asignatura = Mock()
         clase.curso = Mock()
         clase.curso.ciclo_academico = "CICLO"
+        mock_clase.objects.select_related.side_effect = lambda *args, **kwargs: mock_clase.objects.select_related.return_value
         mock_clase.objects.select_related.return_value.get.return_value = clase
 
         bloque1 = Mock()
@@ -222,10 +257,15 @@ class TestClassDetailService:
              patch("backend.apps.academico.models.MaterialClase") as mock_material, \
              patch("backend.apps.academico.models.Tarea") as mock_tarea, \
              patch("backend.apps.academico.models.EntregaTarea") as mock_entrega, \
-             patch("backend.apps.mensajeria.models.Anuncio") as mock_anuncio:
-            eval_qs_prox = MagicMock()
-            eval_qs_prox.order_by.return_value.__getitem__.return_value = []
-            mock_eval.objects.filter.side_effect = [eval_qs_prox, Mock(count=Mock(return_value=4))]
+             patch("backend.apps.mensajeria.models.Anuncio") as mock_anuncio, \
+             patch("backend.apps.academico.models.Asistencia") as mock_asistencia:
+            mock_asistencia.objects.filter.return_value.aggregate.return_value = {'total': 0, 'presentes': 0}
+            eval_res = MagicMock()
+            eval_res.count.return_value = 4
+            eval_res.order_by.return_value = eval_res
+            eval_res.order_by.return_value.__getitem__.return_value = []
+            eval_res.order_by.return_value.__iter__.return_value = iter([])
+            mock_eval.objects.filter.return_value = eval_res
 
             mock_calif.objects.filter.return_value.count.return_value = 2
 
@@ -238,6 +278,7 @@ class TestClassDetailService:
             tarea.get_estado.return_value = "pendiente"
             tarea.get_icono_estado.return_value = "📝"
             tarea.get_texto_estado.return_value = "Pendiente"
+            tarea.fecha_entrega = None
             mock_tarea.objects.filter.return_value.order_by.return_value = [tarea]
             mock_entrega.objects.filter.return_value.first.return_value = Mock()
 
@@ -267,12 +308,18 @@ class TestClassDetailService:
         req.GET.get.return_value = "1"
 
         clase = Mock()
+        for attr in ["resolve_expression", "get_source_expressions", "filterable"]:
+            try:
+                delattr(clase, attr)
+            except AttributeError:
+                pass
         clase.id = 2
         clase.profesor = req.user
         clase.colegio = req.user.colegio
         clase.asignatura = Mock()
         clase.curso = Mock()
         clase.curso.ciclo_academico = "CICLO"
+        mock_clase.objects.select_related.side_effect = lambda *args, **kwargs: mock_clase.objects.select_related.return_value
         mock_clase.objects.select_related.return_value.get.return_value = clase
 
         from unittest.mock import MagicMock
@@ -293,10 +340,13 @@ class TestClassDetailService:
              patch("backend.apps.academico.models.MaterialClase") as mock_material, \
              patch("backend.apps.academico.models.Tarea") as mock_tarea, \
              patch("backend.apps.academico.models.EntregaTarea") as mock_entrega, \
-             patch("backend.apps.mensajeria.models.Anuncio") as mock_anuncio:
+             patch("backend.apps.mensajeria.models.Anuncio") as mock_anuncio, \
+             patch("backend.apps.academico.models.Asistencia") as mock_asistencia:
+            mock_asistencia.objects.filter.return_value.aggregate.return_value = {'total': 0, 'presentes': 0}
             eval_qs = MagicMock()
             eval_qs.order_by.return_value.__getitem__.return_value = []
             mock_eval.objects.filter.return_value = eval_qs
+            mock_eval.objects.filter.return_value.count.return_value = 0
 
             materiales_qs = Mock()
             materiales_qs.select_related.return_value.order_by.return_value = materiales_qs
@@ -304,6 +354,7 @@ class TestClassDetailService:
             mock_material.objects.filter.return_value = materiales_qs
 
             tarea = Mock()
+            tarea.fecha_entrega = None
             mock_tarea.objects.filter.return_value.order_by.return_value = [tarea]
             mock_entrega.objects.filter.return_value.first.return_value = None
 
@@ -314,3 +365,44 @@ class TestClassDetailService:
 
         assert result == "PROF_ALUMNO"
         assert mock_render.call_args.args[1] == "estudiante/detalle_clase.html"
+
+    @patch("backend.apps.core.services.class_detail_service.redirect")
+    @patch("backend.apps.core.services.class_detail_service.messages")
+    def test_handle_request_post_student_entregar_tarea_redirects(
+        self,
+        mock_messages,
+        mock_redirect,
+    ):
+        req = _request(method="POST", role="Alumno")
+        req.POST.get.side_effect = lambda key, default=None: {
+            "accion": "entregar_tarea",
+            "tarea_id": "99",
+            "comentario": "Listo"
+        }.get(key, default)
+        
+        mock_file = Mock()
+        mock_file.name = "entrega.pdf"
+        mock_file.size = 100
+        req.FILES.get.return_value = mock_file
+        mock_redirect.return_value = "REDIRECT_STUDENT"
+
+        with patch("backend.apps.core.views.estudiante.tareas._validate_uploaded_file") as mock_val,              patch("backend.apps.core.services.dashboard_context_service.DashboardContextService._resolve_estudiante_curso_actual") as mock_resolve_curso,              patch("backend.apps.core.services.orm_access_service.ORMAccessService.get") as mock_orm_get,              patch("backend.apps.academico.services.tarea_entrega_service.TareaEntregaService.upsert_entrega") as mock_upsert,              patch("backend.apps.academico.models.Tarea") as mock_tarea_cls:
+             
+             mock_resolve_curso.return_value = Mock()
+             tarea = Mock()
+             tarea.esta_vencida.return_value = False
+             mock_orm_get.return_value = tarea
+             mock_upsert.return_value = (Mock(), True)
+
+             result = ClassDetailService.handle_request(req, 14)
+
+        assert result == "REDIRECT_STUDENT"
+        mock_val.assert_called_once_with(mock_file)
+        mock_upsert.assert_called_once_with(
+            tarea=tarea,
+            estudiante=req.user,
+            archivo=mock_file,
+            comentario="Listo",
+        )
+        mock_redirect.assert_called_once_with("/estudiante/clase/14/?tab=assignments")
+        mock_messages.success.assert_called_once()

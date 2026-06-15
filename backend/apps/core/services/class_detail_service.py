@@ -123,6 +123,63 @@ class ClassDetailService:
                 except Exception as e:
                     messages.error(request, f'Error al cambiar visibilidad: {str(e)}')
 
+        if request.method == 'POST' and is_student:
+            accion = request.POST.get('accion')
+
+            if accion == 'entregar_tarea':
+                tarea_id = request.POST.get('tarea_id')
+                archivo = request.FILES.get('archivo')
+                comentario = request.POST.get('comentario', '')
+
+                try:
+                    from backend.apps.core.views.estudiante.tareas import _validate_uploaded_file
+                    _validate_uploaded_file(archivo)
+
+                    from backend.apps.core.services.dashboard_context_service import DashboardContextService
+                    from backend.apps.core.services.orm_access_service import ORMAccessService
+                    
+                    curso_actual = DashboardContextService._resolve_estudiante_curso_actual(user)
+                    
+                    try:
+                        tarea = ORMAccessService.get(
+                            Tarea,
+                            id_tarea=tarea_id,
+                            es_publica=True,
+                            activa=True,
+                            colegio_id=user.rbd_colegio,
+                            clase__curso=curso_actual,
+                        )
+                    except Exception:
+                        messages.error(request, '❌ No se encontró la tarea seleccionada.')
+                        return redirect(f'/estudiante/clase/{clase_id}/?tab=assignments')
+
+                    from backend.apps.academico.services.tarea_entrega_service import TareaEntregaService
+                    entrega, created = TareaEntregaService.upsert_entrega(
+                        tarea=tarea,
+                        estudiante=user,
+                        archivo=archivo,
+                        comentario=comentario,
+                    )
+
+                    if not created:
+                        if tarea.esta_vencida():
+                            messages.warning(
+                                request,
+                                '⚠️ La tarea está vencida. La entrega se marcará como tardía.',
+                            )
+                        messages.success(request, '✓ Entrega actualizada correctamente.')
+                    else:
+                        if tarea.esta_vencida():
+                            messages.warning(request, '⚠️ Entrega registrada como tardía.')
+                        else:
+                            messages.success(request, '✓ Tarea entregada correctamente.')
+                except ValueError as ve:
+                    messages.error(request, str(ve))
+                except Exception as e:
+                    messages.error(request, f'Error al entregar tarea: {e}')
+
+                return redirect(f'/estudiante/clase/{clase_id}/?tab=assignments')
+
         try:
             if is_student:
                 perfil = PerfilEstudiante.objects.get(user=user)
@@ -252,15 +309,19 @@ class ClassDetailService:
                 es_publica=True
             ).order_by('-fecha_entrega')
 
+            from backend.apps.core.views.estudiante.tareas import _get_estado_entrega, _get_estado_tiempo
             tareas = []
             for tarea in tareas_query:
                 entrega = EntregaTarea.objects.filter(tarea=tarea, estudiante=user).first()
+                estado, icono_estado, texto_estado = _get_estado_entrega(tarea, entrega)
                 tareas.append({
                     'tarea': tarea,
                     'entrega': entrega,
-                    'estado': tarea.get_estado(user) if hasattr(tarea, 'get_estado') else 'pendiente',
-                    'icono_estado': tarea.get_icono_estado(user) if hasattr(tarea, 'get_icono_estado') else '📝',
-                    'texto_estado': tarea.get_texto_estado(user) if hasattr(tarea, 'get_texto_estado') else 'Pendiente',
+                    'estado': estado,
+                    'icono_estado': icono_estado,
+                    'texto_estado': texto_estado,
+                    'estado_tiempo': _get_estado_tiempo(tarea),
+                    'dias_restantes': tarea.dias_restantes(),
                 })
         else:
             from backend.apps.cursos.models import ClaseEstudiante

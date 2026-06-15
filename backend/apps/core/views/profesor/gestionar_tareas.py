@@ -49,6 +49,26 @@ def _parse_fecha_entrega(value):
     return parsed
 
 
+def _normalizar_nota(raw_value):
+    """Normaliza la nota ingresada al rango 1.0–7.0 (escala chilena).
+
+    Si el usuario escribe un entero como 65, se interpreta como 6.5.
+    Si escribe 45, se interpreta como 4.5, etc.
+    Valores que ya están en rango (e.g. 6.5, 4.0) se mantienen.
+    """
+    nota = Decimal(str(raw_value).strip().replace(',', '.'))
+    if nota > Decimal('7'):
+        nota = nota / Decimal('10')
+    # Redondear a 1 decimal
+    nota = nota.quantize(Decimal('0.1'))
+    # Clamp al rango válido
+    if nota < Decimal('1.0'):
+        nota = Decimal('1.0')
+    if nota > Decimal('7.0'):
+        nota = Decimal('7.0')
+    return nota
+
+
 def _build_preguntas_desde_request(request):
     preguntas = []
 
@@ -395,7 +415,7 @@ def ver_entregas_tarea(request, tarea_id):
             
             try:
                 entrega = EntregaTarea.objects.get(id_entrega=entrega_id, tarea=tarea)
-                entrega.calificacion = Decimal(calificacion_val)
+                entrega.calificacion = _normalizar_nota(calificacion_val)
                 entrega.retroalimentacion = retroalimentacion
                 entrega.estado = 'revisada'
                 entrega.revisada_por = request.user
@@ -422,7 +442,7 @@ def ver_entregas_tarea(request, tarea_id):
                         count = 0
                         for entrega in entregas_qs:
                             if calificacion_val:
-                                entrega.calificacion = Decimal(calificacion_val)
+                                entrega.calificacion = _normalizar_nota(calificacion_val)
                             if retroalimentacion:
                                 entrega.retroalimentacion = retroalimentacion
                             entrega.estado = 'revisada'
@@ -497,3 +517,80 @@ def ver_entregas_tarea(request, tarea_id):
     }
     
     return render(request, 'profesor/entregas_tarea.html', context)
+
+
+@login_required
+def ver_detalle_entrega(request, entrega_id):
+    """Vista para ver el detalle de una entrega individual y calificarla."""
+    from backend.apps.academico.models import EntregaTarea
+
+    try:
+        entrega = EntregaTarea.objects.select_related(
+            'tarea', 'tarea__clase', 'tarea__clase__curso',
+            'tarea__clase__asignatura', 'estudiante'
+        ).get(id_entrega=entrega_id)
+    except EntregaTarea.DoesNotExist:
+        messages.error(request, 'No se encontró la entrega solicitada.')
+        return redirect('dashboard')
+
+    tarea = entrega.tarea
+    clase = tarea.clase
+
+    # Verificar que es profesor de esta clase
+    if request.user.id != clase.profesor_id:
+        messages.error(request, 'No tienes permiso para ver esta entrega.')
+        return redirect('dashboard')
+
+    # POST handler for grading
+    if request.method == 'POST':
+        calificacion_val = request.POST.get('calificacion')
+        retroalimentacion = (request.POST.get('retroalimentacion') or '').strip()
+
+        try:
+            nota_final = _normalizar_nota(calificacion_val)
+            entrega.calificacion = nota_final
+            entrega.retroalimentacion = retroalimentacion
+            entrega.estado = 'revisada'
+            entrega.revisada_por = request.user
+            entrega.save()
+            messages.success(
+                request,
+                f'Se calificó la entrega de {entrega.estudiante.get_full_name()} con nota {nota_final}.'
+            )
+            return redirect('ver_detalle_entrega', entrega_id=entrega.id_entrega)
+        except Exception as e:
+            messages.error(request, f'Error al calificar la entrega: {str(e)}')
+
+    sidebar_template, rol_nombre = _resolve_sidebar_and_role(request.user)
+    navigation_access = DashboardService.get_navigation_access(
+        rol_nombre,
+        user=request.user,
+        school_id=request.user.rbd_colegio,
+    )
+
+    from backend.apps.core.services.profesor_hero_service import ProfesorHeroService
+
+    ent_ctx = {
+        'pagina_hero': 'detalle_entrega',
+        'tarea': tarea,
+        'hero_sub_clase': f"{clase.curso.nombre} · {clase.asignatura.nombre}",
+    }
+    context = {
+        'prof_hero': ProfesorHeroService.for_clase_page(clase, ent_ctx),
+        'clase': clase,
+        'tarea': tarea,
+        'entrega': entrega,
+        'estudiante': entrega.estudiante,
+        'sidebar_template': sidebar_template,
+        'content_template': '',
+        'rol': rol_nombre,
+        'nombre_usuario': request.user.get_full_name(),
+        'id_usuario': request.user.id,
+        'escuela_rbd': request.user.rbd_colegio,
+        'escuela_nombre': request.user.colegio.nombre if hasattr(request.user, 'colegio') and request.user.colegio else 'Sistema',
+        'year': datetime.now().year,
+        'pagina_actual': 'mis_clases',
+        **navigation_access,
+    }
+
+    return render(request, 'profesor/detalle_entrega.html', context)

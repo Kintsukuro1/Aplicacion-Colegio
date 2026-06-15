@@ -186,7 +186,7 @@
                             </div>
                         </div>
                         <div class="material-acciones">
-                            {% if es_profesor and not ver_como_alumno and not detalle_clase_vista_previa %}
+                            {% if es_profesor and not ver_como_alumno and not material.es_demo %}
                             <div class="dropdown-menu-container">
                                 <button class="btn-icon dropdown-toggle" onclick="toggleDropdown(this)" title="Opciones">
                                     ⚙️
@@ -213,7 +213,7 @@
                                     </form>
                                 </div>
                             </div>
-                            {% elif not detalle_clase_vista_previa %}
+                            {% elif not material.es_demo %}
                             <a href="{{ material.archivo.url }}" class="btn-icon" download title="Descargar">
                                 ⬇️
                             </a>
@@ -299,7 +299,7 @@
                         </div>
                         <div class="tarea-acciones">
                             {% if es_profesor and not ver_como_alumno %}
-                            {% if detalle_clase_vista_previa %}
+                            {% if item.es_demo %}
                             <span class="btn-secondary-small" style="opacity:0.55;cursor:default">Ver entregas</span>
                             {% else %}
                             <a href="{% url 'ver_entregas_tarea' item.tarea.id_tarea %}" class="btn-secondary-small">
@@ -354,10 +354,10 @@
                                 ⬇️ Descargar
                             </a>
                             {% endif %}
-                            {% if detalle_clase_vista_previa %}
+                            {% if entrega.es_demo %}
                             <span class="btn-primary-small" style="opacity:0.55;cursor:default">Calificar</span>
                             {% else %}
-                            <a href="{% url 'ver_entregas_tarea' entrega.tarea.id_tarea %}" class="btn-primary-small">
+                            <a href="{% url 'ver_detalle_entrega' entrega.id_entrega %}" class="btn-primary-small">
                                 Calificar
                             </a>
                             {% endif %}
@@ -490,7 +490,7 @@
                                 </a>
                             </div>
                             {% endif %}
-                            {% if es_profesor and not ver_como_alumno and not detalle_clase_vista_previa %}
+                            {% if es_profesor and not ver_como_alumno and not anuncio.es_demo %}
                             <div class="anuncio-actions">
                                 <button onclick="editarAnuncio({{ anuncio.id_anuncio }})" class="anuncio-btn anuncio-btn-edit">✏️ Editar</button>
                                 {# Fix: POST a ver_detalle_clase; no existía la URL eliminar_anuncio #}

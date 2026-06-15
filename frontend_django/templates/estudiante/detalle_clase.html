@@ -7,12 +7,23 @@
     <title>{{ asignatura.nombre }} — Detalle</title>
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
     <link rel="stylesheet" href="{% static 'css/estudiante/detalle_clase.css' %}?v=20260602-intel">
+    <link rel="stylesheet" href="{% static 'css/estudiante/tareas.css' %}?v=20260602">
 </head>
 <body class="da-page"
       data-asignatura="{{ asignatura.nombre|lower }}"
       data-model-color="{{ asignatura.color|default:'#94A3B8' }}">
 
     <div class="da-container">
+        {% if messages %}
+        <div class="da-messages" style="margin-bottom: 1rem;">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: var(--da-radius-sm); margin-bottom: 8px; font-weight: 500; font-size: 0.88rem; background: {% if message.tags == 'success' %}#dcfce7; color: #166534; border: 1px solid #bbf7d0;{% elif message.tags == 'warning' %}#fef3c7; color: #92400e; border: 1px solid #fde68a;{% else %}#fee2e2; color: #991b1b; border: 1px solid #fecaca;{% endif %}">
+                <span>{{ message }}</span>
+                <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: inherit; line-height: 1;">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         <nav class="da-back" aria-label="Volver">
             <a href="{% url 'dashboard' %}?pagina=mis_clases" class="da-back__pill">
                 <svg class="da-back__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -205,27 +216,135 @@
                     <section class="da-card">
                         <h2 class="da-card__title">Tareas</h2>
                         {% if tareas %}
-                        <ul class="da-assignments">
+                        <div class="tk-task-list" id="tkTaskList">
                             {% for item in tareas %}
-                            <li class="da-assignment">
-                                <div class="da-assignment__head">
-                                    <h3 class="da-assignment__title">{{ item.tarea.titulo }}</h3>
-                                    <span class="da-assignment__badge">{{ item.texto_estado }}</span>
-                                </div>
-                                {% if item.tarea.instrucciones %}
-                                <p class="da-assignment__desc">{{ item.tarea.instrucciones|truncatewords:24 }}</p>
-                                {% endif %}
-                                <p class="da-assignment__meta">
-                                    Fecha límite:
-                                    {% if item.tarea.fecha_entrega %}
-                                        {{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}
-                                    {% else %}
-                                        Sin fecha
+                            <article class="tk-task-card
+                                {% if item.estado_tiempo == 'urgente' %}urgente{% elif item.estado_tiempo == 'vencida' %}vencida{% endif %}
+                                {% if item.estado == 'corregida' %} tk-task-card--graded status-graded
+                                {% elif item.estado == 'atrasada' %} tk-task-card--overdue status-overdue
+                                {% elif item.estado == 'entregada' %} tk-task-card--submitted status-submitted
+                                {% else %} tk-task-card--pending status-pending{% endif %}"
+                                data-filter-group="{% if item.estado == 'corregida' %}graded{% elif item.estado == 'atrasada' %}overdue{% elif item.estado == 'entregada' %}submitted{% else %}pending{% endif %}"
+                                data-subject="{{ item.tarea.clase.asignatura.nombre|lower }}">
+
+                                <div class="tk-task-card__body">
+                                    <div class="tk-task-card__row">
+                                        <div class="tk-task-card__info">
+                                            <h3 class="tk-task-card__title">{{ item.tarea.titulo }}</h3>
+                                            <div class="tk-task-card__meta">
+                                                <span class="tk-meta-item">{{ item.tarea.clase.asignatura.nombre }}</span>
+                                                <span class="tk-meta-sep" aria-hidden="true">·</span>
+                                                <span class="tk-meta-item">{{ item.tarea.fecha_entrega|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="tk-task-card__status">
+                                            {% if item.estado == 'corregida' %}
+                                            <span class="tk-badge tk-badge--graded">{{ item.icono_estado }} {{ item.texto_estado }}</span>
+                                            {% if item.entrega.calificacion %}
+                                            <span class="tk-grade-pill">{{ item.entrega.calificacion }}</span>
+                                            {% endif %}
+                                            {% elif item.estado == 'entregada' %}
+                                            <span class="tk-badge tk-badge--submitted">{{ item.icono_estado }} {{ item.texto_estado }}</span>
+                                            {% elif item.estado == 'atrasada' %}
+                                            <span class="tk-badge tk-badge--overdue">{{ item.icono_estado }} {{ item.texto_estado }}</span>
+                                            {% else %}
+                                            <span class="tk-badge tk-badge--pending">{{ item.icono_estado }} {{ item.texto_estado }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {% if item.tarea.instrucciones %}
+                                    <p class="tk-task-card__excerpt">{{ item.tarea.instrucciones }}</p>
                                     {% endif %}
-                                </p>
-                            </li>
+
+                                    <div class="tk-task-card__footer">
+                                        <span class="tk-task-card__time">
+                                            {% if item.estado_tiempo != 'vencida' %}
+                                            {{ item.dias_restantes }} día{{ item.dias_restantes|pluralize }} restante{{ item.dias_restantes|pluralize }}
+                                            {% else %}
+                                            Fecha de entrega vencida
+                                            {% endif %}
+                                        </span>
+
+                                        <div class="tk-task-card__actions">
+                                            {% if item.entrega %}
+                                            <button type="button" class="tk-btn-toggle" aria-expanded="false" data-target="tk-detail-{{ item.tarea.id_tarea }}">
+                                                Ver detalles de entrega <span class="tk-btn-toggle__chev" aria-hidden="true">▾</span>
+                                            </button>
+                                            {% else %}
+                                            <button type="button" class="tk-btn-primary" onclick="mostrarModalEntregar({{ item.tarea.id_tarea }}, '{{ item.tarea.titulo|escapejs }}', false)">
+                                                Entregar tarea
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {% if item.tarea.archivo_instrucciones %}
+                                    <p class="tk-task-card__file">
+                                        <a href="{{ item.tarea.archivo_instrucciones.url }}" download>Descargar instrucciones</a>
+                                    </p>
+                                    {% endif %}
+                                </div>
+
+                                {% if item.entrega %}
+                                <div class="tk-task-detail" id="tk-detail-{{ item.tarea.id_tarea }}" hidden>
+                                    <div class="tk-task-detail__inner">
+                                        <div class="tk-task-detail__head">
+                                            <h4 class="tk-task-detail__title">Tu entrega</h4>
+                                            {% if item.entrega.calificacion %}
+                                            <span class="tk-task-detail__grade">{{ item.entrega.calificacion }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <dl class="entrega-detalles tk-data-list">
+                                            <div class="tk-data-row">
+                                                <dt class="tk-data-label">Fecha de entrega</dt>
+                                                <dd class="tk-data-value">{{ item.entrega.fecha_entrega|date:"d/m/Y H:i" }}</dd>
+                                            </div>
+                                            {% if item.entrega.archivo %}
+                                            <div class="tk-data-row">
+                                                <dt class="tk-data-label">Archivo</dt>
+                                                <dd class="tk-data-value">
+                                                    <a href="{{ item.entrega.archivo.url }}" download>Descargar mi entrega</a>
+                                                </dd>
+                                            </div>
+                                            {% endif %}
+                                            {% if item.entrega.comentario_estudiante %}
+                                            <div class="tk-data-row tk-data-row--full">
+                                                <dt class="tk-data-label">Tu comentario</dt>
+                                                <dd class="tk-data-value">{{ item.entrega.comentario_estudiante }}</dd>
+                                            </div>
+                                            {% endif %}
+                                            {% if item.entrega.calificacion %}
+                                            <div class="tk-data-row tk-data-row--calificacion calificacion-recibida">
+                                                <dt class="tk-data-label">Calificación</dt>
+                                                <dd class="tk-data-value"><span class="nota-valor">{{ item.entrega.calificacion }}</span></dd>
+                                            </div>
+                                            {% endif %}
+                                        </dl>
+                                        {% if item.entrega.retroalimentacion %}
+                                        <div class="retroalimentacion-box">
+                                            <div class="retroalimentacion-box__head">
+                                                <span class="retroalimentacion-box__icon" aria-hidden="true">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                </span>
+                                                <strong class="retroalimentacion-box__title">Retroalimentación del profesor</strong>
+                                            </div>
+                                            <p class="retroalimentacion-box__text">{{ item.entrega.retroalimentacion }}</p>
+                                        </div>
+                                        {% endif %}
+                                        {% if not item.tarea.esta_vencida %}
+                                        <button type="button" class="tk-btn-secondary-small" onclick="mostrarModalEntregar({{ item.tarea.id_tarea }}, '{{ item.tarea.titulo|escapejs }}', true)">
+                                            Reemplazar entrega
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </article>
                             {% endfor %}
-                        </ul>
+                        </div>
                         {% else %}
                         <p class="da-empty">No hay tareas pendientes en este momento.</p>
                         {% endif %}
@@ -464,7 +583,99 @@
                 if (chevron) chevron.textContent = open ? '▶' : '▼';
             });
         });
+
+        // Initialize task cards background and border colors
+        document.querySelectorAll('.tk-task-card').forEach(function (card) {
+            card.style.setProperty('--tk-accent', theme.accent);
+            card.style.setProperty('--tk-accent-bg', 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', 0.04)');
+        });
+
+        // Handle click for collapsing details
+        document.querySelectorAll('.tk-btn-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var targetId = btn.getAttribute('data-target');
+                var panel = document.getElementById(targetId);
+                if (!panel) return;
+                var open = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+                panel.hidden = open;
+                var chev = btn.querySelector('.tk-btn-toggle__chev');
+                if (chev) chev.textContent = open ? '▾' : '▴';
+                btn.classList.toggle('tk-btn-toggle--open', !open);
+            });
+        });
+
+        // Activate tab based on URL query parameter
+        var urlParams = new URLSearchParams(window.location.search);
+        var activeTab = urlParams.get('tab');
+        if (activeTab) {
+            var tabBtn = document.querySelector('.da-tabs__btn[data-tab="' + activeTab + '"]');
+            if (tabBtn) {
+                tabBtn.click();
+            }
+        }
     })();
+
+    // Global modal functions
+    function mostrarModalEntregar(tareaId, tareaNombre, esReemplazo) {
+        document.getElementById('tarea_id').value = tareaId;
+        document.getElementById('tarea_nombre').textContent = tareaNombre;
+        document.getElementById('modal-titulo').textContent = esReemplazo ? 'Reemplazar entrega' : 'Entregar tarea';
+        document.getElementById('modalEntregarTarea').style.display = 'block';
+    }
+
+    function cerrarModalEntregar() {
+        document.getElementById('modalEntregarTarea').style.display = 'none';
+    }
+
+    window.addEventListener('click', function (event) {
+        var modal = document.getElementById('modalEntregarTarea');
+        if (event.target == modal) {
+            cerrarModalEntregar();
+        }
+    });
     </script>
+
+    <!-- Modal de Entrega -->
+    <div id="modalEntregarTarea" class="modal tk-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-titulo">Entregar Tarea</h2>
+                <span class="close" onclick="cerrarModalEntregar()">&times;</span>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="entregar_tarea">
+                <input type="hidden" id="tarea_id" name="tarea_id">
+
+                <div class="form-group">
+                    <label>Tarea</label>
+                    <p id="tarea_nombre" style="font-weight: 600; margin: 0; color: #1e293b;"></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="archivo">Archivo de entrega *</label>
+                    <input type="file" id="archivo" name="archivo" required
+                           accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.zip,.rar,.7z,.odt,.csv,.mp4,.py,.java,.js,.html,.css">
+                    <small class="file-info">
+                        <strong>Tamaño máximo: 50 MB</strong><br>
+                        <strong>Formatos permitidos:</strong> Documentos (PDF, Word, Excel, PowerPoint, TXT),
+                        Imágenes (JPG, PNG), Archivos comprimidos (ZIP, RAR, 7Z), Código fuente (PY, JAVA, JS, HTML, CSS), Videos (MP4)
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="comentario">Comentario (opcional)</label>
+                    <textarea id="comentario" name="comentario" rows="4" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px;"
+                              placeholder="Agrega algún comentario sobre tu entrega..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="cerrarModalEntregar()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Entregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
