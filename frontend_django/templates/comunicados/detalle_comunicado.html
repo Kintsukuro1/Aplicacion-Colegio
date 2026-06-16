@@ -4,6 +4,16 @@
 {% block title %}{{ comunicado.titulo }} - Comunicados{% endblock %}
 
 {% block content %}
+{% if use_staff_detail %}
+<link rel="stylesheet" href="{% static 'css/profesor/comunicados.css' %}?v=20260616-staff">
+<link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados_staff.css' %}?v=20260616-staff">
+<link rel="stylesheet" href="{% static 'css/comunicados/detalle_comunicado_staff.css' %}?v=20260616-staff">
+
+<div class="com-prof-wrap com-staff-com-wrap">
+    {% include 'comunicados/_detalle_comunicado_staff.html' %}
+</div>
+
+{% else %}
 <link rel="stylesheet" href="{% static 'css/comunicados/detalle_comunicado.css' %}">
 
 <div class="detalle-container">
@@ -122,4 +132,5 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 {% endblock %}

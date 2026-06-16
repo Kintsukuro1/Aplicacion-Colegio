@@ -15,190 +15,226 @@
     </div>
 
     <nav class="pers-sidebar__nav">
-        {% if 'inicio' in paginas_habilitadas %}
-        <p class="pers-sidebar__section-label">Principal</p>
-        <ul class="pers-sidebar__list">
-            <li class="pers-sidebar__item{% if pagina_actual == 'inicio' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=inicio">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🏠</span>
+        <ul class="nav-tree">
+            {% if 'inicio' in paginas_habilitadas %}
+            <li class="nav-tree__item {% if pagina_actual == 'inicio' %}active{% endif %}">
+                <a href="{% url 'dashboard' %}?pagina=inicio" class="nav-tree__link">
+                    <span class="icon">🏠</span>
                     <span>Inicio</span>
                 </a>
             </li>
-        </ul>
-        <div class="pers-sidebar__divider" aria-hidden="true"></div>
-        {% endif %}
+            {% endif %}
 
-        <p class="pers-sidebar__section-label">Mi escuela</p>
-        <ul class="pers-sidebar__list">
-            {% if 'mi_escuela' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'mi_escuela' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=mi_escuela">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🏫</span>
-                    <span>Información General</span>
-                </a>
+            {# ── MI ESCUELA ── #}
+            <li class="nav-tree__group" data-group="ae-escuela">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Mi escuela</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'mi_escuela' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'mi_escuela' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=mi_escuela" class="nav-tree__link">
+                            <span class="icon">🏫</span>
+                            <span>Información General</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'infraestructura' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'infraestructura' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=infraestructura" class="nav-tree__link">
+                            <span class="icon">🏗️</span>
+                            <span>Infraestructura</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% endif %}
-            {% if 'infraestructura' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'infraestructura' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=infraestructura">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🏗️</span>
-                    <span>Infraestructura</span>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-        <div class="pers-sidebar__divider" aria-hidden="true"></div>
 
-        <p class="pers-sidebar__section-label">Gestión</p>
-        <ul class="pers-sidebar__list">
-            {% if 'gestionar_estudiantes' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'gestionar_estudiantes' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=gestionar_estudiantes">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">👨‍🎓</span>
-                    <span>Estudiantes</span>
-                </a>
+            {# ── GESTIÓN ── #}
+            <li class="nav-tree__group" data-group="ae-gestion">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Gestión</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'gestionar_estudiantes' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'gestionar_estudiantes' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=gestionar_estudiantes" class="nav-tree__link">
+                            <span class="icon">👨‍🎓</span>
+                            <span>Estudiantes</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'gestionar_cursos' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'gestionar_cursos' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=gestionar_cursos" class="nav-tree__link">
+                            <span class="icon">🎒</span>
+                            <span>Cursos</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'gestionar_asignaturas' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'gestionar_asignaturas' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=gestionar_asignaturas" class="nav-tree__link">
+                            <span class="icon">📚</span>
+                            <span>Asignaturas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'gestionar_finanzas' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'gestionar_finanzas' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=gestionar_finanzas" class="nav-tree__link">
+                            <span class="icon">💰</span>
+                            <span>Finanzas y Pagos</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% endif %}
-            {% if 'gestionar_cursos' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'gestionar_cursos' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=gestionar_cursos">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🎒</span>
-                    <span>Cursos</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'gestionar_asignaturas' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'gestionar_asignaturas' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=gestionar_asignaturas">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">📚</span>
-                    <span>Asignaturas</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'gestionar_finanzas' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'gestionar_finanzas' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=gestionar_finanzas">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">💰</span>
-                    <span>Finanzas y Pagos</span>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-        <div class="pers-sidebar__divider" aria-hidden="true"></div>
 
-        <p class="pers-sidebar__section-label">Académico</p>
-        <ul class="pers-sidebar__list">
-            {% if 'asistencia' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'asistencia' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=asistencia">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">📅</span>
-                    <span>Registro Asistencia</span>
-                </a>
+            {# ── ACADÉMICO ── #}
+            <li class="nav-tree__group" data-group="ae-academico">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Académico</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if 'asistencia' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'asistencia' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=asistencia" class="nav-tree__link">
+                            <span class="icon">📅</span>
+                            <span>Registro Asistencia</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'notas' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'notas' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=notas" class="nav-tree__link">
+                            <span class="icon">📝</span>
+                            <span>Evaluaciones y Notas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'libro_clases' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'libro_clases' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=libro_clases" class="nav-tree__link">
+                            <span class="icon">📖</span>
+                            <span>Libro de Clases</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'reportes' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'reportes' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=reportes" class="nav-tree__link">
+                            <span class="icon">📊</span>
+                            <span>Reportes</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'reporte_cursos' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'reporte_cursos' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=reporte_cursos" class="nav-tree__link">
+                            <span class="icon">📈</span>
+                            <span>Rendimiento por Cursos</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'calendario_eventos' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'calendario_eventos' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=calendario_eventos" class="nav-tree__link">
+                            <span class="icon">🗓️</span>
+                            <span>Calendario Escolar</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'solicitud_reuniones' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'solicitud_reuniones' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=solicitud_reuniones" class="nav-tree__link">
+                            <span class="icon">🤝</span>
+                            <span>Solicitud Reuniones</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% endif %}
-            {% if 'notas' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'notas' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=notas">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">📝</span>
-                    <span>Evaluaciones y Notas</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'libro_clases' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'libro_clases' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=libro_clases">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">📖</span>
-                    <span>Libro de Clases</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'reportes' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'reportes' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=reportes">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">📊</span>
-                    <span>Reportes</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'reporte_cursos' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'reporte_cursos' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=reporte_cursos">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">📈</span>
-                    <span>Rendimiento por Cursos</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'calendario_eventos' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'calendario_eventos' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=calendario_eventos">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🗓️</span>
-                    <span>Calendario Escolar</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'solicitud_reuniones' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'solicitud_reuniones' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=solicitud_reuniones">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🤝</span>
-                    <span>Solicitud Reuniones</span>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-        <div class="pers-sidebar__divider" aria-hidden="true"></div>
 
-        <p class="pers-sidebar__section-label">Comunicación</p>
-        <ul class="pers-sidebar__list">
-            {% if menu_access.comunicados %}
-            <li class="pers-sidebar__item">
-                <a href="{% url 'comunicados:lista' %}">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">📢</span>
-                    <span>Comunicados</span>
-                </a>
+            {# ── COMUNICACIÓN ── #}
+            <li class="nav-tree__group" data-group="ae-comunicacion">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Comunicación</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if menu_access.comunicados %}
+                    <li class="nav-tree__item">
+                        <a href="{% url 'comunicados:lista' %}" class="nav-tree__link">
+                            <span class="icon">📢</span>
+                            <span>Comunicados</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% endif %}
-        </ul>
-        <div class="pers-sidebar__divider" aria-hidden="true"></div>
 
-        <p class="pers-sidebar__section-label">Gestión de datos</p>
-        <ul class="pers-sidebar__list">
-            <li class="pers-sidebar__item{% if pagina_actual == 'importar_datos' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'importar_datos' %}">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">📥</span>
-                    <span>Importar / Insertar Datos</span>
-                </a>
+            {# ── GESTIÓN DE DATOS ── #}
+            <li class="nav-tree__group" data-group="ae-datos">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Gestión de datos</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    <li class="nav-tree__item {% if pagina_actual == 'importar_datos' %}active{% endif %}">
+                        <a href="{% url 'importar_datos' %}" class="nav-tree__link">
+                            <span class="icon">📥</span>
+                            <span>Importar / Insertar Datos</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
-        </ul>
-        <div class="pers-sidebar__divider" aria-hidden="true"></div>
 
-        <p class="pers-sidebar__section-label">Sistema</p>
-        <ul class="pers-sidebar__list">
-            {% if menu_access.monitoreo_seguridad %}
-            <li class="pers-sidebar__item">
-                <a href="{% url 'monitoreo_seguridad' %}">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🔐</span>
-                    <span>Monitoreo de Seguridad</span>
-                </a>
+            {# ── SISTEMA ── #}
+            <li class="nav-tree__group" data-group="ae-sistema">
+                <button type="button" class="nav-tree__toggle" aria-expanded="false">
+                    <span class="nav-tree__toggle-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="nav-tree__toggle-label">Sistema</span>
+                    <span class="nav-tree__toggle-badge"></span>
+                </button>
+                <ul class="nav-tree__children">
+                    {% if menu_access.monitoreo_seguridad %}
+                    <li class="nav-tree__item {% if pagina_actual == 'monitoreo_seguridad' %}active{% endif %}">
+                        <a href="{% url 'monitoreo_seguridad' %}" class="nav-tree__link">
+                            <span class="icon">🔐</span>
+                            <span>Monitoreo de Seguridad</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'active_sessions' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'active_sessions' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=active_sessions" class="nav-tree__link">
+                            <span class="icon">🧭</span>
+                            <span>Sesiones Activas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if 'password_history' in paginas_habilitadas %}
+                    <li class="nav-tree__item {% if pagina_actual == 'password_history' %}active{% endif %}">
+                        <a href="{% url 'dashboard' %}?pagina=password_history" class="nav-tree__link">
+                            <span class="icon">🛡️</span>
+                            <span>Historial Contraseñas</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </li>
-            {% endif %}
-            {% if 'active_sessions' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'active_sessions' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=active_sessions">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🧭</span>
-                    <span>Sesiones Activas</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if 'password_history' in paginas_habilitadas %}
-            <li class="pers-sidebar__item{% if pagina_actual == 'password_history' %} pers-sidebar__item--active{% endif %}">
-                <a href="{% url 'dashboard' %}?pagina=password_history">
-                    <span class="pers-sidebar__emoji" aria-hidden="true">🛡️</span>
-                    <span>Historial Contraseñas</span>
-                </a>
-            </li>
-            {% endif %}
         </ul>
     </nav>
 
     {% include 'staff/_staff_sidebar_footer.html' %}
-</aside>
+
+{% include 'includes/_sidebar_tree_js.html' %}

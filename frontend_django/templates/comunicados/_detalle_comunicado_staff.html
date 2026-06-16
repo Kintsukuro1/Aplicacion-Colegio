@@ -1,0 +1,130 @@
+<section class="com-prof-page com-staff-detail-page" aria-label="Detalle del comunicado">
+
+  <nav class="com-staff-detail-crumb" aria-label="Navegación">
+    <a href="{% url 'comunicados:lista' %}" class="com-staff-create-back">
+      <span aria-hidden="true">←</span> Comunicados
+    </a>
+    <span class="com-staff-detail-crumb__sep" aria-hidden="true">/</span>
+    <span class="com-staff-detail-crumb__current">Detalle</span>
+  </nav>
+
+  <div class="com-staff-detail-layout">
+    <article class="com-staff-detail-article com-staff-detail-article--{{ comunicado.tipo }}{% if comunicado.es_prioritario %} com-staff-detail-article--prioritario{% endif %}" aria-label="{{ comunicado.titulo }}">
+      <span class="com-staff-detail-article__stripe" aria-hidden="true"></span>
+
+      <div class="com-staff-detail-article__inner">
+        <div class="com-staff-detail-badges">
+          <span class="com-prof-badge com-prof-badge--{{ comunicado.tipo }}">{{ comunicado.get_tipo_display }}</span>
+          {% if comunicado.es_prioritario %}
+          <span class="com-prof-badge com-prof-badge--prioritario">Prioritario</span>
+          {% endif %}
+          {% if comunicado.es_destacado %}
+          <span class="com-prof-badge com-prof-badge--destacado">Destacado</span>
+          {% endif %}
+          {% if comunicado.requiere_confirmacion %}
+          <span class="com-prof-badge com-prof-badge--confirm">Con seguimiento</span>
+          {% endif %}
+        </div>
+
+        <h1 class="com-staff-detail-title">{{ comunicado.titulo }}</h1>
+
+        <dl class="com-staff-detail-meta">
+          <div class="com-staff-detail-meta__item">
+            <dt>Publicado</dt>
+            <dd>{{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}</dd>
+          </div>
+          <div class="com-staff-detail-meta__item">
+            <dt>Autor</dt>
+            <dd>{{ comunicado.publicado_por.get_full_name }}</dd>
+          </div>
+          {% if comunicado.destinatario %}
+          <div class="com-staff-detail-meta__item">
+            <dt>Destinatarios</dt>
+            <dd>{{ comunicado.get_destinatario_display }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+
+        <div class="com-staff-detail-content">
+          {{ comunicado.contenido|linebreaks }}
+        </div>
+
+        {% if comunicado.fecha_evento %}
+        <section class="com-staff-detail-box com-staff-detail-box--event" aria-label="Información del evento">
+          <h2 class="com-staff-detail-box__title">Información del evento</h2>
+          <ul class="com-staff-detail-box__list">
+            <li><strong>Fecha y hora:</strong> {{ comunicado.fecha_evento|date:"d/m/Y H:i" }}</li>
+            {% if comunicado.lugar_evento %}
+            <li><strong>Lugar:</strong> {{ comunicado.lugar_evento }}</li>
+            {% endif %}
+          </ul>
+        </section>
+        {% endif %}
+
+        {% if comunicado.archivo_adjunto or comunicado.adjuntos.exists %}
+        <section class="com-staff-detail-box" aria-label="Archivos adjuntos">
+          <h2 class="com-staff-detail-box__title">Archivos adjuntos</h2>
+
+          {% if comunicado.archivo_adjunto %}
+          <div class="com-staff-detail-file">
+            <div class="com-staff-detail-file__info">
+              <span class="com-staff-detail-file__icon" aria-hidden="true">📄</span>
+              <span class="com-staff-detail-file__name">{{ comunicado.archivo_adjunto.name|truncatechars:60 }}</span>
+            </div>
+            <a href="{{ comunicado.archivo_adjunto.url }}" download class="com-prof-btn com-prof-btn--ghost com-staff-detail-file__btn">Descargar</a>
+          </div>
+          {% endif %}
+
+          {% for adjunto in comunicado.adjuntos.all %}
+          <div class="com-staff-detail-file">
+            <div class="com-staff-detail-file__info">
+              <span class="com-staff-detail-file__icon" aria-hidden="true">📎</span>
+              <span class="com-staff-detail-file__name">
+                {{ adjunto.nombre_archivo }}
+                <small>{{ adjunto.get_tamanio_legible }}</small>
+              </span>
+            </div>
+            <a href="{{ adjunto.archivo.url }}" download class="com-prof-btn com-prof-btn--ghost com-staff-detail-file__btn">Descargar</a>
+          </div>
+          {% endfor %}
+        </section>
+        {% endif %}
+      </div>
+    </article>
+
+    <aside class="com-staff-detail-aside" aria-label="Acciones y estado">
+      <div class="com-staff-detail-status">
+        <span class="com-staff-detail-status__icon" aria-hidden="true">✓</span>
+        <div>
+          <h2 class="com-staff-detail-status__title">Publicado</h2>
+          <p class="com-staff-detail-status__text">Visible para los destinatarios seleccionados</p>
+        </div>
+      </div>
+
+      <div class="com-staff-detail-actions">
+        <h3 class="com-staff-detail-actions__title">Acciones</h3>
+        <a href="{% url 'comunicados:lista' %}" class="com-prof-btn com-prof-btn--ghost com-staff-detail-actions__btn">Ver todos los comunicados</a>
+        {% if can_create_comunicado %}
+        <a href="{% url 'comunicados:crear' %}" class="com-prof-btn com-prof-btn--primary com-staff-detail-actions__btn com-staff-detail-actions__btn--primary">+ Nuevo comunicado</a>
+        {% endif %}
+        {% if can_view_stats and comunicado.requiere_confirmacion %}
+        <a href="{% url 'comunicados:estadisticas' comunicado.id_comunicado %}" class="com-prof-btn com-prof-btn--ghost com-staff-detail-actions__btn">Ver estadísticas</a>
+        {% endif %}
+      </div>
+
+      <div class="com-staff-detail-summary">
+        <h3 class="com-staff-detail-summary__title">Resumen</h3>
+        <ul class="com-staff-detail-summary__list">
+          <li><span>Tipo</span><strong>{{ comunicado.get_tipo_display }}</strong></li>
+          <li><span>Audiencia</span><strong>{{ comunicado.get_destinatario_display }}</strong></li>
+          {% if comunicado.es_prioritario %}
+          <li><span>Prioridad</span><strong>Alta</strong></li>
+          {% endif %}
+          {% if comunicado.es_destacado %}
+          <li><span>Lista</span><strong>Destacado</strong></li>
+          {% endif %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>

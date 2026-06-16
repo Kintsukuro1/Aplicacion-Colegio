@@ -13,6 +13,7 @@ from django_ratelimit.decorators import ratelimit
 from datetime import datetime
 
 from backend.apps.security.services import SecurityMonitoringService
+from backend.apps.core.services.dashboard_auth_service import DashboardAuthService
 
 
 @login_required()
@@ -121,15 +122,25 @@ def monitoreo_seguridad(request):
     axes_config = SecurityMonitoringService.get_axes_settings()
     
     # ========================================================================
-    # PASO 9: Determinar sidebar según rol
+    # PASO 9: Determinar sidebar y navegación según rol
     # ========================================================================
     rol = 'admin' if es_admin_general else 'admin_escolar'
-    
+
     sidebar_map = {
         'admin': 'sidebars/sidebar_admin.html',
         'admin_escolar': 'sidebars/sidebar_admin_escuela.html',
     }
-    
+
+    navigation_access = DashboardAuthService.get_navigation_access(
+        rol=rol,
+        user=request.user,
+        school_id=escuela_rbd,
+    )
+    iniciales = (
+        (request.user.nombre[:1] if request.user.nombre else '')
+        + (request.user.apellido_paterno[:1] if request.user.apellido_paterno else '')
+    ).upper() or '?'
+
     # ========================================================================
     # PASO 10: Preparar contexto completo
     # ========================================================================
@@ -141,19 +152,23 @@ def monitoreo_seguridad(request):
         'total_intentos_fallidos': estadisticas['total_intentos_fallidos'],
         'total_ips_bloqueadas': estadisticas['total_ips_bloqueadas'],
         'logs_archivo': logs_archivo,
-        
+
         # Configuración de axes
         'axes_failure_limit': axes_config['failure_limit'],
         'axes_cooloff_time': axes_config['cooloff_time'],
-        
+
         # Información del usuario y escuela
         'es_admin_general': es_admin_general,
         'rol': rol,
+        'user': request.user,
         'nombre_usuario': request.user.get_full_name(),
+        'iniciales': iniciales,
         'id_usuario': request.user.id,
         'escuela_rbd': escuela_rbd,
         'escuela_nombre': escuela_nombre,
         'sidebar_template': sidebar_map.get(rol, 'sidebars/sidebar_admin.html'),
+        'paginas_habilitadas': navigation_access['paginas_habilitadas'],
+        'menu_access': navigation_access['menu_access'],
         'year': datetime.now().year,
         'pagina_actual': 'monitoreo_seguridad',
     }

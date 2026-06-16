@@ -1,0 +1,122 @@
+/* Comunicados — portal staff (admin escolar y funcionarios) */
+
+body.vista-staff .com-staff-com-page {
+    min-width: 0;
+}
+
+body.vista-staff .com-staff-com-guide {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border-color: #ddd6fe;
+}
+
+body.vista-staff .com-staff-com-guide .com-prof-guide__title {
+    color: #553c9a;
+}
+
+body.vista-staff .com-staff-com-kpi {
+    background: #ffffff;
+    border: 1px solid #e9d5ff;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(107, 70, 193, 0.06);
+}
+
+body.vista-staff .com-prof-insight--info {
+    border-color: #bfdbfe;
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+}
+
+body.vista-staff .com-staff-com-intel {
+    background: #ffffff;
+    border: 1px solid #e9d5ff;
+    border-radius: 16px;
+    padding: 1.1rem 1.25rem;
+}
+
+body.vista-staff .com-staff-com-intel__cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+body.vista-staff .com-staff-com-chips .com-prof-chips__chip {
+    cursor: pointer;
+    font: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+body.vista-staff .com-staff-com-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #6b46c1;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+#comStaffPanel {
+    scroll-margin-top: 24px;
+}
+
+body.vista-staff .com-staff-com-panel {
+    background: #ffffff;
+    border: 1px solid #e9d5ff;
+    border-radius: 18px;
+    padding: 1.1rem 1.25rem 1.25rem;
+    box-shadow: 0 4px 18px rgba(107, 70, 193, 0.05);
+}
+
+body.vista-staff .com-staff-com-chips .com-prof-chips__chip--active {
+    background: linear-gradient(135deg, #7c3aed 0%, #6b46c1 100%);
+    border-color: #6b46c1;
+}
+
+body.vista-staff .com-staff-com-create {
+    background: linear-gradient(135deg, #7c3aed 0%, #6b46c1 100%) !important;
+    border-color: #6b46c1 !important;
+    box-shadow: 0 4px 14px rgba(107, 70, 193, 0.28);
+}
+
+body.vista-staff .com-staff-com-list .com-prof-item {
+    border: 1px solid #ede9fe;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.vista-staff .com-staff-com-list .com-prof-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(107, 70, 193, 0.1);
+}
+
+body.vista-staff .com-staff-com-empty {
+    border: 1px dashed #ddd6fe;
+    border-radius: 16px;
+    background: #faf5ff;
+}
+
+body.vista-staff .staff-page-body .header-comunicados,
+body.vista-staff .staff-page-body .comunicados-container {
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+@media (max-width: 900px) {
+    body.vista-staff .com-prof-insights.com-staff-com-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    body.vista-staff .com-prof-insights.com-staff-com-kpis {
+        grid-template-columns: 1fr;
+    }
+
+    body.vista-staff .com-prof-panel__head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
