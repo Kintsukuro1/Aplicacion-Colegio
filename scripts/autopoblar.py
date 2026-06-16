@@ -2063,13 +2063,13 @@ def poblar_notificaciones():
         conversacion=conversacion,
         emisor=profesor,
         receptor=estudiante,
-        contenido='Recuerda revisar la tarea y prepararte para la evaluacion de hoy.',
+        contenido='Recuerda revisar la tarea y prepararte para la evaluación de hoy.',
     )
     Mensaje.objects.create(
         conversacion=conversacion,
         emisor=estudiante,
         receptor=profesor,
-        contenido='Profesor, ya subi mi tarea. Quedo atento a comentarios.',
+        contenido='Profesor, ya subí mi tarea. Quedo atento a comentarios.',
     )
 
     # Conversación demo para Pedro (1° Básico A)

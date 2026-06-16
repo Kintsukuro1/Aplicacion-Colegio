@@ -1,0 +1,598 @@
+{% load static %}
+{% include 'profesor/_personal_wrap_start.html' %}
+<link rel="stylesheet" href="{% static 'css/profesor/entregas_tarea.css' %}">
+
+<style>
+    /* Detalle Entrega — Premium individual view */
+    .de-container {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        padding: 20px;
+        max-width: 960px;
+        margin: 0 auto;
+    }
+
+    .de-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    .de-breadcrumb a {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    .de-breadcrumb a:hover {
+        color: #6366f1;
+        text-decoration: underline;
+    }
+    .de-breadcrumb span {
+        color: #94a3b8;
+    }
+
+    /* Student header card */
+    .de-student-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 28px 32px;
+        color: #fff;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.25);
+    }
+    .de-student-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        flex-shrink: 0;
+        backdrop-filter: blur(4px);
+    }
+    .de-student-info h1 {
+        margin: 0 0 4px 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+    }
+    .de-student-meta {
+        opacity: 0.9;
+        font-size: 0.9rem;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    /* Status badges */
+    .de-status-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+    .de-badge {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .de-badge--entregada { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .de-badge--revisada { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+    .de-badge--tarde { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .de-badge--pendiente { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .de-badge--nota {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        border: none;
+        font-size: 0.95rem;
+        padding: 6px 16px;
+    }
+
+    /* Content cards */
+    .de-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 24px 28px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        margin-bottom: 20px;
+        border: 1px solid #f1f5f9;
+    }
+    .de-card h2 {
+        margin: 0 0 16px 0;
+        font-size: 1.08rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Submission content */
+    .de-field {
+        margin-bottom: 14px;
+    }
+    .de-field-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+    }
+    .de-field-value {
+        font-size: 0.95rem;
+        color: #334155;
+        line-height: 1.6;
+    }
+
+    /* File attachment */
+    .de-file-box {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+    .de-file-box:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+    .de-file-icon {
+        font-size: 1.8rem;
+        flex-shrink: 0;
+    }
+    .de-file-info {
+        flex: 1;
+    }
+    .de-file-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.92rem;
+    }
+    .de-file-size {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-top: 2px;
+    }
+    .de-file-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .de-btn-download {
+        padding: 8px 16px;
+        background: #4f46e5;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .de-btn-download:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+    }
+
+    /* Image preview */
+    .de-preview-img {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        margin-top: 12px;
+        object-fit: contain;
+        background: #f8fafc;
+    }
+
+    /* Grading form */
+    .de-grade-form {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .de-grade-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .de-grade-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    .de-grade-group label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 6px;
+    }
+    .de-grade-group input,
+    .de-grade-group textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .de-grade-group input:focus,
+    .de-grade-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+    }
+    .de-grade-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    .de-grade-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        padding-top: 10px;
+    }
+    .de-btn-save {
+        padding: 10px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .de-btn-save:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(102,126,234,0.35);
+    }
+    .de-btn-back {
+        padding: 10px 20px;
+        background: #fff;
+        color: #475569;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.92rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .de-btn-back:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    /* Existing grade display */
+    .de-existing-grade {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+        border: 1px solid #a7f3d0;
+        border-radius: 12px;
+        margin-bottom: 16px;
+    }
+    .de-existing-grade-value {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .de-existing-grade-label {
+        font-size: 0.82rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+    .de-existing-grade-status {
+        font-size: 0.88rem;
+        color: #065f46;
+        font-weight: 700;
+    }
+
+    /* Retroalimentacion display */
+    .de-feedback-box {
+        padding: 16px 20px;
+        background: #f8fafc;
+        border-left: 4px solid #667eea;
+        border-radius: 0 10px 10px 0;
+        margin-top: 12px;
+    }
+    .de-feedback-box p {
+        margin: 0;
+        color: #475569;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
+    /* Task instructions collapsible */
+    .de-instructions-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+        color: #4f46e5;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 8px 0;
+        transition: color 0.2s;
+    }
+    .de-instructions-toggle:hover {
+        color: #6366f1;
+    }
+    .de-instructions-content {
+        padding: 14px 0 0 0;
+        color: #475569;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+
+    /* Alert messages */
+    .de-alert {
+        padding: 12px 18px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .de-alert--success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    .de-alert--error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    /* No-file state */
+    .de-no-file {
+        padding: 20px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px dashed #e2e8f0;
+    }
+
+    @media (max-width: 640px) {
+        .de-student-header {
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+        .de-student-meta {
+            justify-content: center;
+        }
+        .de-grade-row {
+            flex-direction: column;
+        }
+        .de-file-box {
+            flex-direction: column;
+            text-align: center;
+        }
+        .de-grade-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="de-container">
+    {# Breadcrumb #}
+    <div class="de-breadcrumb">
+        <a href="{% url 'dashboard' %}?pagina=mis_clases">← Mis Clases</a>
+        <span>/</span>
+        <a href="{% url 'ver_detalle_clase' clase.id %}">{{ clase.asignatura.nombre }}</a>
+        <span>/</span>
+        <a href="{% url 'ver_entregas_tarea' tarea.id_tarea %}">{{ tarea.titulo }}</a>
+        <span>/</span>
+        <span>{{ estudiante.get_full_name }}</span>
+    </div>
+
+    {# Django messages #}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="de-alert de-alert--{{ message.tags }}">
+        {% if message.tags == 'success' %}✅{% else %}⚠️{% endif %}
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {# Student header #}
+    <div class="de-student-header">
+        <div class="de-student-avatar">👤</div>
+        <div class="de-student-info">
+            <h1>{{ estudiante.get_full_name }}</h1>
+            <div class="de-student-meta">
+                <span>📧 {{ estudiante.email }}</span>
+                <span>📚 {{ clase.curso.nombre }} · {{ clase.asignatura.nombre }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# Status badges #}
+    <div class="de-status-row">
+        {% if entrega.estado == 'revisada' %}
+            <span class="de-badge de-badge--revisada">✅ Revisada</span>
+        {% elif entrega.estado == 'tarde' %}
+            <span class="de-badge de-badge--tarde">⏰ Entrega Tardía</span>
+        {% elif entrega.estado == 'entregada' %}
+            <span class="de-badge de-badge--entregada">📤 Entregada</span>
+        {% else %}
+            <span class="de-badge de-badge--pendiente">⏳ Pendiente</span>
+        {% endif %}
+        {% if entrega.calificacion %}
+            <span class="de-badge de-badge--nota">Nota: {{ entrega.calificacion }}</span>
+        {% endif %}
+        <span class="de-badge" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;">
+            📅 Entregado: {{ entrega.fecha_entrega|date:"d/m/Y H:i" }}
+        </span>
+    </div>
+
+    {# Existing grade display (if already graded) #}
+    {% if entrega.calificacion %}
+    <div class="de-existing-grade">
+        <div>
+            <div class="de-existing-grade-value">{{ entrega.calificacion }}</div>
+            <div class="de-existing-grade-label">Calificación actual</div>
+        </div>
+        <div>
+            <div class="de-existing-grade-status">✅ Calificada</div>
+        </div>
+    </div>
+    {% if entrega.retroalimentacion %}
+    <div class="de-feedback-box">
+        <strong style="font-size:0.82rem;color:#667eea;">💬 Retroalimentación entregada:</strong>
+        <p>{{ entrega.retroalimentacion }}</p>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {# Submission content card #}
+    <div class="de-card">
+        <h2>📄 Contenido de la Entrega</h2>
+
+        {% if entrega.comentario_estudiante %}
+        <div class="de-field">
+            <div class="de-field-label">Comentario del estudiante</div>
+            <div class="de-field-value">{{ entrega.comentario_estudiante }}</div>
+        </div>
+        {% endif %}
+
+        {% if entrega.archivo %}
+        <div class="de-field">
+            <div class="de-field-label">Archivo adjunto</div>
+            <div class="de-file-box">
+                <div class="de-file-icon">📎</div>
+                <div class="de-file-info">
+                    <div class="de-file-name">{{ entrega.archivo.name|cut:"tareas/entregas/" }}</div>
+                    <div class="de-file-size">{{ entrega.get_tamanio_archivo }}</div>
+                </div>
+                <div class="de-file-actions">
+                    <a href="{{ entrega.archivo.url }}" class="de-btn-download" download>
+                        ⬇️ Descargar
+                    </a>
+                    <a href="{{ entrega.archivo.url }}" class="de-btn-download" target="_blank" style="background:#10b981;">
+                        👁️ Ver
+                    </a>
+                </div>
+            </div>
+
+            {# Image preview for common image formats #}
+            {% with filename=entrega.archivo.name %}
+            {% if ".jpg" in filename or ".jpeg" in filename or ".png" in filename or ".gif" in filename or ".webp" in filename or ".JPG" in filename or ".PNG" in filename or ".JPEG" in filename %}
+            <img src="{{ entrega.archivo.url }}" alt="Vista previa de la entrega" class="de-preview-img">
+            {% endif %}
+            {% endwith %}
+        </div>
+        {% else %}
+        <div class="de-no-file">
+            📭 El estudiante no adjuntó ningún archivo en esta entrega.
+            {% if entrega.comentario_estudiante %}
+            <br><small>Solo envió un comentario de texto.</small>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    {# Task instructions (collapsible) #}
+    <div class="de-card">
+        <h2>📋 Información de la Tarea</h2>
+        <div class="de-field">
+            <div class="de-field-label">Tarea</div>
+            <div class="de-field-value" style="font-weight:600;">{{ tarea.titulo }}</div>
+        </div>
+        <div class="de-field">
+            <div class="de-field-label">Fecha límite de entrega</div>
+            <div class="de-field-value">{{ tarea.fecha_entrega|date:"d/m/Y H:i" }}</div>
+        </div>
+        {% if tarea.instrucciones %}
+        <div class="de-field">
+            <div class="de-instructions-toggle" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.de-toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
+                <span class="de-toggle-icon">▶</span> Ver instrucciones de la tarea
+            </div>
+            <div class="de-instructions-content" style="display:none;">
+                {{ tarea.instrucciones }}
+                {% if tarea.archivo_instrucciones %}
+                <div style="margin-top:12px;">
+                    <a href="{{ tarea.archivo_instrucciones.url }}" class="de-btn-download" download style="font-size:0.82rem;">
+                        📎 Archivo adjunto de la tarea
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Grading form card #}
+    <div class="de-card">
+        <h2>✏️ {% if entrega.calificacion %}Editar Calificación{% else %}Calificar Entrega{% endif %}</h2>
+        <form method="post" class="de-grade-form" id="gradeForm">
+            {% csrf_token %}
+            <div class="de-grade-row">
+                <div class="de-grade-group">
+                    <label for="calificacion">Calificación *</label>
+                    <input type="text" id="calificacion" name="calificacion"
+                           required inputmode="decimal"
+                           value="{% if entrega.calificacion %}{{ entrega.calificacion }}{% endif %}"
+                           placeholder="Ej: 65 o 6.5"
+                           autocomplete="off">
+                </div>
+            </div>
+            <div class="de-grade-group">
+                <label for="retroalimentacion">Retroalimentación para el estudiante</label>
+                <textarea id="retroalimentacion" name="retroalimentacion"
+                          placeholder="Escribe comentarios, observaciones y sugerencias para el estudiante...">{{ entrega.retroalimentacion|default:'' }}</textarea>
+            </div>
+            <div class="de-grade-actions">
+                <a href="{% url 'ver_entregas_tarea' tarea.id_tarea %}" class="de-btn-back">
+                    ← Volver a entregas
+                </a>
+                <button type="submit" class="de-btn-save">
+                    💾 Guardar Calificación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% include 'profesor/_personal_wrap_end.html' %}
+

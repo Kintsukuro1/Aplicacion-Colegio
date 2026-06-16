@@ -272,6 +272,7 @@ def gestionar_asistencia(request, colegio, admin_mode=False):
             'registro_dia': registro_dia,
             'filtro_fecha_display': filtro_fecha_display,
             'fecha_hoy': date.today().strftime('%Y-%m-%d'),
+            'admin_mode': admin_mode,
         }
         if admin_mode:
             from backend.apps.cursos.models import Curso

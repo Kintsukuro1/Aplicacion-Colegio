@@ -88,6 +88,7 @@ from backend.apps.core.views.admin_general.api import (
 from backend.apps.core.views.admin_escolar.reportes_api import exportar_reporte_cursos_csv
 from backend.apps.core.views.profesor.gestionar_tareas import (
     gestionar_tareas_profesor,
+    ver_detalle_entrega,
     ver_entregas_tarea,
 )
 from backend.apps.core.views.profesor.asistencia import (
@@ -251,6 +252,7 @@ urlpatterns = [
     # Profesor - Tareas
     path('profesor/gestionar-tareas/<int:clase_id>/', gestionar_tareas_profesor, name='gestionar_tareas_profesor'),
     path('profesor/entregas-tarea/<int:tarea_id>/', ver_entregas_tarea, name='ver_entregas_tarea'),
+    path('profesor/entrega/<int:entrega_id>/', ver_detalle_entrega, name='ver_detalle_entrega'),
     
     # Profesor - Asistencia
     path('profesor/clase/<int:clase_id>/asistencia/', registro_asistencia_clase, name='registro_asistencia_clase'),

@@ -2,7 +2,7 @@
 
 {% load custom_filters %}
 
-{% if rol != 'admin_escolar' and rol != 'Administrador escolar' and not admin_general_school_view %}
+{% if not admin_mode and not admin_general_school_view and rol != 'admin_escolar' and rol != 'Administrador escolar' and rol != 'admin_general' and rol != 'Administrador general' and rol != 'admin' %}
 {% include 'profesor/_personal_wrap_start.html' %}
 {% endif %}
 
@@ -14,7 +14,7 @@
 
 <div class="asistencia-container">
 
-    {% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}
+    {% if admin_mode or rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'admin_general' or rol == 'Administrador general' or rol == 'admin' %}
     {% if insights_asistencia %}
     <section class="asig-insights as-insights-admin" aria-label="Información útil">
         {% for insight in insights_asistencia %}
@@ -39,7 +39,7 @@
 
 
 
-            {% if rol == 'admin_escolar' %}
+            {% if admin_mode or rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'admin_general' or rol == 'Administrador general' or rol == 'admin' %}
 
             <div class="filtro-group">
 
@@ -75,8 +75,8 @@
 
                 </label>
 
-                <select id="clase_id" name="clase_id"{% if rol != 'admin_escolar' and rol != 'Administrador escolar' %} required{% endif %} onchange="onClaseAsistenciaChange(this)">
-                    <option value="">{% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}-- Todas las asignaturas del curso --{% else %}-- Seleccione una clase --{% endif %}</option>
+                <select id="clase_id" name="clase_id"{% if not admin_mode and rol != 'admin_escolar' and rol != 'Administrador escolar' and rol != 'admin_general' and rol != 'Administrador general' and rol != 'admin' %} required{% endif %} onchange="onClaseAsistenciaChange(this)">
+                    <option value="">{% if admin_mode or rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'admin_general' or rol == 'Administrador general' or rol == 'admin' %}-- Todas las asignaturas del curso --{% else %}-- Seleccione una clase --{% endif %}</option>
                     {% include 'profesor/_clase_select_options.html' with clases=clases_todas|default:clases filtro_clase_id=filtro_clase_id %}
                 </select>
 
@@ -100,7 +100,7 @@
 
             <div class="filtro-actions">
 
-                <button type="submit" class="btn-filtrar">
+                <button type="submit" class="btn-filtrar" style="display: none;">
 
                     <i class="fas fa-filter"></i> Cargar
 
@@ -608,11 +608,9 @@ window.addEventListener('beforeunload', function (e) {
 
 
 
-{% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}
 {% include 'profesor/_filtrar_clases_por_curso_script.html' %}
-{% endif %}
 
-{% if rol != 'admin_escolar' and rol != 'Administrador escolar' and not admin_general_school_view %}
+{% if not admin_mode and not admin_general_school_view and rol != 'admin_escolar' and rol != 'Administrador escolar' and rol != 'admin_general' and rol != 'Administrador general' and rol != 'admin' %}
 {% include 'profesor/_personal_wrap_end.html' %}
 {% endif %}
 

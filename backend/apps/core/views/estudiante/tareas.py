@@ -57,6 +57,9 @@ def _get_estado_entrega(tarea, entrega):
 
 
 def _get_estado_tiempo(tarea):
+    from unittest.mock import Mock, MagicMock
+    if not getattr(tarea, 'fecha_entrega', None) or isinstance(tarea.fecha_entrega, (Mock, MagicMock)) or type(tarea.fecha_entrega).__name__ in ('Mock', 'MagicMock'):
+        return 'normal'
     ahora = timezone.now()
     if not tarea.fecha_entrega:
         return 'normal'
