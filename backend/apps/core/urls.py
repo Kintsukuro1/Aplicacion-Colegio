@@ -17,7 +17,7 @@ from backend.apps.core.views.dashboard_graficos import (
     api_notificaciones,
     dashboard_graficos,
 )
-from backend.apps.core.views.seleccionar_escuela import seleccionar_escuela, entrar_escuela
+from backend.apps.core.views.seleccionar_escuela import seleccionar_escuela, entrar_escuela, salir_escuela
 from backend.apps.core.views.importar_datos import importar_datos
 from backend.apps.core.views.estudiante.tareas import (
     calendario_tareas_estudiante,
@@ -339,6 +339,7 @@ urlpatterns = [
     # Selección de escuela (Admin General)
     path('seleccionar-escuela/', seleccionar_escuela, name='seleccionar_escuela'),
     path('entrar-escuela/<int:rbd>/', entrar_escuela, name='entrar_escuela'),
+    path('salir-escuela/', salir_escuela, name='salir_escuela'),
 
     # Gestión de Datos - Importar/Insertar
     path('importar-datos/', importar_datos, name='importar_datos'),

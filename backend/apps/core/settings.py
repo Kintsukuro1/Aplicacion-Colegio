@@ -158,6 +158,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'backend.apps.core.context_processors.asset_version',
                 'backend.apps.core.context_processors.portal_branding',
+                'backend.apps.core.context_processors.admin_school_context',
             ],
         },
     },
@@ -313,7 +314,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Bump al cambiar CSS/JS del portal (evita Ctrl+F5 manual en cada página).
-ASSET_VERSION = '20260618e'
+ASSET_VERSION = '20260618h'
 
 # Marca del portal: empresa (SaaS) vs establecimiento educacional.
 PORTAL_PLATFORM_NAME = config('PORTAL_PLATFORM_NAME', default='Raccademy')

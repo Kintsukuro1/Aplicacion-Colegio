@@ -1,0 +1,34 @@
+{% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}
+{% if compact %}
+<div class="adm-sidebar-school" id="admin-sidebar-school" data-admin-school-sync="sidebar" role="status" aria-label="{% if escuela_rbd and escuela_nombre != 'Sistema' %}Colegio en gestión: {{ escuela_nombre }}{% else %}Sin colegio activo{% endif %}"{% if not escuela_rbd or escuela_nombre == 'Sistema' %} hidden{% endif %}>
+    <p class="adm-sidebar-school__label">Colegio en gestión</p>
+    <p class="adm-sidebar-school__name" data-school-field="nombre">{{ escuela_nombre|default:"" }}</p>
+    <span class="adm-badge adm-badge--mono adm-sidebar-school__rbd" data-school-field="rbd">{% if escuela_rbd %}RBD {{ escuela_rbd }}{% endif %}</span>
+    <a href="{% url 'seleccionar_escuela' %}" class="adm-sidebar-school__link">Cambiar colegio</a>
+    <a href="{% url 'salir_escuela' %}" class="adm-sidebar-school__link adm-sidebar-school__link--muted">Salir</a>
+</div>
+{% else %}
+<div class="adm-school-context card-panel" id="admin-school-context-bar" data-admin-school-sync="bar" role="status" aria-label="{% if escuela_rbd and escuela_nombre != 'Sistema' %}Colegio en gestión: {{ escuela_nombre }}{% else %}Sin colegio activo{% endif %}"{% if not escuela_rbd or escuela_nombre == 'Sistema' %} hidden{% endif %}>
+    <div class="adm-school-context__main">
+        <span class="adm-school-context__icon" aria-hidden="true">🏫</span>
+        <div>
+            <p class="adm-school-context__label">Colegio en gestión</p>
+            <p class="adm-school-context__name" data-school-field="nombre">{{ escuela_nombre|default:"" }}</p>
+        </div>
+    </div>
+    <div class="adm-school-context__meta">
+        <span class="adm-badge adm-badge--mono" data-school-field="rbd">{% if escuela_rbd %}RBD {{ escuela_rbd }}{% endif %}</span>
+        {% if admin_general_school_view %}
+        <span class="adm-badge adm-badge--success">Panel escolar</span>
+        {% else %}
+        <span class="adm-badge adm-badge--view">Sesión activa</span>
+        {% endif %}
+    </div>
+    <div class="adm-school-context__actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary btn-secondary--sm">Ir al panel</a>
+        <a href="{% url 'seleccionar_escuela' %}" class="adm-school-context__link">Cambiar colegio</a>
+        <a href="{% url 'salir_escuela' %}" class="adm-school-context__link adm-school-context__link--muted">Salir del colegio</a>
+    </div>
+</div>
+{% endif %}
+{% endif %}

@@ -1,3 +1,6 @@
 <div class="adm-portal staff-portal staff-page-shell">
 {% include 'staff/_staff_page_hero.html' %}
+{% if staff_slug == 'admin_general' or admin_general_school_view %}
+{% include 'includes/_admin_school_context_bar.html' %}
+{% endif %}
 <div class="staff-page-body">

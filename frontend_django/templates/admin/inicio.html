@@ -8,9 +8,7 @@
 
     {% include 'admin/_admin_hero.html' with hero_greeting=1 hero_kpi=1 hero_eyebrow="Consola global SaaS" hero_subtitle="Gestión multi-colegio, suscripciones y ecosistema Raccademy" hero_aria="Inicio administrador general" metrics_aria="Indicadores del ecosistema" m1_icon="🏫" m1_value=colegios_activos|default:"0" m1_label="Colegios activos" m1_mod="clases" m2_icon="👥" m2_value=total_usuarios|default:"0" m2_label="Usuarios totales" m2_mod="tareas" m3_icon="💰" m3_value=ingresos_totales|default_if_none:mrr m3_label="MRR ($)" m3_mod="money" m4_icon="✅" m4_value=suscripciones_activas|default:total_active_subs|default:"—" m4_label="Suscripciones activas" m4_mod="asistencia" %}
 
-
-
-    <section class="adm-card card-panel" aria-label="Accesos rápidos">
+    {% include 'includes/_admin_school_context_bar.html' %}
 
         <div class="adm-card__head">
 

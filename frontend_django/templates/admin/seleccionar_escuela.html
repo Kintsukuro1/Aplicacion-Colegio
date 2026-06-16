@@ -2,7 +2,8 @@
 
 <div class="adm-portal adm-seleccionar">
     {% if escuela_rbd %}
-    {% include 'admin/_admin_hero.html' with hero_kpi="1" hero_eyebrow="Multi-colegio" hero_title="Seleccionar escuela" hero_subtitle="Contexto activo: {{ escuela_nombre }} — cambia de establecimiento cuando lo necesites" hero_aria="Seleccionar escuela" hero_show_date="1" m1_value=escuelas|length m1_label="Colegios" m1_mod="clases" m2_value=planes|length m2_label="Planes" m2_mod="tareas" m3_value=regiones|length m3_label="Regiones" m3_mod="asistencia" m4_value=escuela_rbd m4_label="RBD activo" m4_mod="neutral" %}
+    {% include 'admin/_admin_hero.html' with hero_kpi="1" hero_eyebrow="Multi-colegio" hero_title="Seleccionar escuela" hero_subtitle=escuela_nombre hero_hint="Contexto activo — cambia de establecimiento cuando lo necesites" hero_aria="Seleccionar escuela" hero_show_date="1" m1_value=escuelas|length m1_label="Colegios" m1_mod="clases" m2_value=planes|length m2_label="Planes" m2_mod="tareas" m3_value=regiones|length m3_label="Regiones" m3_mod="asistencia" m4_value=escuela_rbd m4_label="RBD activo" m4_mod="neutral" %}
+    {% include 'includes/_admin_school_context_bar.html' %}
     {% else %}
     {% include 'admin/_admin_hero.html' with hero_kpi="1" hero_eyebrow="Multi-colegio" hero_title="Seleccionar escuela" hero_subtitle="Elige el establecimiento que deseas administrar en esta sesión" hero_aria="Seleccionar escuela" hero_show_date="1" m1_value=escuelas|length m1_label="Colegios" m1_mod="clases" m2_value=planes|length m2_label="Planes" m2_mod="tareas" m3_value=regiones|length m3_label="Regiones" m3_mod="asistencia" m4_value="Ninguno" m4_label="Sesión activa" m4_mod="neutral" %}
     {% endif %}

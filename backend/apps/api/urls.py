@@ -127,6 +127,7 @@ from backend.apps.api.comunicacion_analitica_views import (
     mis_comunicados,
     teacher_trends_report,
 )
+from backend.apps.api.admin_context_views import admin_active_school_context
 from backend.apps.api.seguridad_views import (
     active_sessions_list,
     change_password_secure,
@@ -299,6 +300,7 @@ urlpatterns = [
     path('seguridad/auditoria-datos-sensibles/', sensitive_data_audit_log, name='sensitive_data_audit_log'),
     path('seguridad/desbloquear-ip/', unblock_ip, name='unblock_ip'),
     path('seguridad/cambiar-password/', change_password_secure, name='change_password_secure'),
+    path('admin/contexto-colegio/', admin_active_school_context, name='admin_active_school_context'),
     # ── Semana 9-10: Finanzas, Reuniones, Ciclos ──
     path('finanzas/dashboard/', financial_dashboard, name='financial_dashboard'),
     path('finanzas/morosos/', financial_morosos_report, name='financial_morosos_report'),

@@ -221,7 +221,15 @@ class DashboardAuthService:
             session_rbd = session.get('admin_rbd_activo') if session else None
             if session_rbd:
                 escuela_rbd = session_rbd
-                escuela_nombre = session.get('admin_colegio_nombre', 'Escuela')
+                from backend.apps.institucion.models import Colegio
+                colegio_activo = Colegio.objects.filter(rbd=session_rbd).only('nombre', 'rbd').first()
+                if colegio_activo:
+                    escuela_nombre = colegio_activo.nombre
+                    if session.get('admin_colegio_nombre') != colegio_activo.nombre:
+                        session['admin_colegio_nombre'] = colegio_activo.nombre
+                        session.modified = True
+                else:
+                    escuela_nombre = session.get('admin_colegio_nombre', 'Escuela')
             elif not escuela_rbd:
                 escuela_rbd = None
                 escuela_nombre = 'Sistema'

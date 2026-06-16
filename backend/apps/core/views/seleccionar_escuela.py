@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, get_object_or_404, render
+from django.urls import reverse
 from django.utils import timezone
 
 from backend.apps.core.services.escuela_management_service import EscuelaManagementService
@@ -118,23 +119,38 @@ def entrar_escuela(request, rbd):
     if not PolicyService.has_capability(request.user, 'SYSTEM_ADMIN'):
         messages.error(request, 'Acceso denegado.')
         return redirect('dashboard')
-    
+
     try:
         colegio = EscuelaManagementService.entrar_escuela(request.user, rbd)
-        
-        # Guardar en sesión
-        request.session['admin_rbd_activo'] = rbd
+
+        request.session['admin_rbd_activo'] = int(colegio.rbd)
         request.session['admin_colegio_nombre'] = colegio.nombre
         request.session.modified = True
-        
+        request.session.save()
+
         messages.success(request, f'Has ingresado a {colegio.nombre}')
 
         next_destino = (request.GET.get('next') or '').strip()
         if next_destino == 'importar_datos':
             return redirect('importar_datos')
 
-        return redirect('dashboard')
-        
+        return redirect(f"{reverse('dashboard')}?school_ctx={colegio.rbd}")
+
     except Exception:
         messages.error(request, 'Colegio no encontrado')
         return redirect('seleccionar_escuela')
+
+
+@login_required(login_url='accounts:login')
+def salir_escuela(request):
+    """Quita el colegio activo de la sesión del administrador general."""
+    if not PolicyService.has_capability(request.user, 'SYSTEM_ADMIN'):
+        messages.error(request, 'Acceso denegado.')
+        return redirect('dashboard')
+
+    request.session.pop('admin_rbd_activo', None)
+    request.session.pop('admin_colegio_nombre', None)
+    request.session.modified = True
+    request.session.save()
+    messages.info(request, 'Has salido del contexto escolar. Estás en la consola global.')
+    return redirect('dashboard')

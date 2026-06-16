@@ -1,0 +1,5 @@
+{% load static %}
+{% if admin_school_bootstrap %}
+{{ admin_school_bootstrap|json_script:"admin-school-bootstrap" }}
+<script src="{% static 'js/admin/admin_school_context_sync.js' %}?v={{ asset_version }}"></script>
+{% endif %}
