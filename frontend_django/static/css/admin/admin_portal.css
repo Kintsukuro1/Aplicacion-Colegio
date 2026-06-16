@@ -729,6 +729,13 @@ body.vista-admin-global .adm-table tbody tr:hover td {
     color: #312e81;
 }
 
+.adm-metric-card__hint {
+    margin: 6px 0 0;
+    font-size: 0.78rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
 .adm-progress {
     height: 6px;
     background: #f3e8ff;
@@ -3017,59 +3024,389 @@ body.vista-admin-global .adm-security-page .adm-log-item__ua {
 }
 
 /* —— P5 Sesiones activas —— */
+body.vista-admin-global .adm-active-sessions,
+body.vista-staff .adm-active-sessions {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.adm-sessions-metrics {
+    margin-top: 0;
+}
+
+.adm-sessions-context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+    border: 0.5px solid #ddd6fe;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    color: #4b5563;
+}
+
+.adm-sessions-context__icon {
+    font-size: 1rem;
+}
+
+.adm-sessions-context__sep {
+    color: #c4b5fd;
+}
+
+.adm-sessions-grid {
+    align-items: start;
+}
+
+.adm-sessions-main,
+.adm-sessions-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.adm-sessions-toolbar {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.adm-card__subtitle {
+    margin: 4px 0 0;
+    font-size: 0.84rem;
+    color: #6b7280;
+    font-weight: 400;
+}
+
+.adm-sessions-filters {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 0.8fr) minmax(140px, 0.8fr) auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.adm-sessions-filters__count {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+
+.adm-sessions-count {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.adm-sessions-table td {
+    vertical-align: top;
+}
+
+.adm-sessions-user-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 180px;
+}
+
+.adm-sessions-user__name {
+    font-weight: 700;
+    color: #111827;
+    font-size: 0.88rem;
+}
+
+.adm-sessions-user {
+    font-size: 0.82rem;
+    color: #6b7280;
+}
+
+.adm-sessions-device {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.84rem;
+}
+
+.adm-sessions-ua {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.72rem;
+    color: #9ca3af;
+    line-height: 1.35;
+    max-width: 220px;
+    word-break: break-word;
+}
+
+.adm-sessions-time {
+    display: block;
+    font-size: 0.84rem;
+    color: #374151;
+}
+
+.adm-sessions-loading {
+    color: #6b7280;
+}
+
+.adm-sessions-summary-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.adm-sessions-summary-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 0.5px solid #f3f4f6;
+    font-size: 0.84rem;
+    color: #4b5563;
+}
+
+.adm-sessions-summary-list li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.adm-sessions-summary-list strong {
+    font-size: 1.05rem;
+    color: #312e81;
+}
+
+.adm-sessions-blocked-list {
+    list-style: none;
+    margin: 0;
+    padding: 12px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.adm-sessions-blocked-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.adm-sessions-blocked-list__empty {
+    padding: 12px 16px 16px;
+    margin: 0;
+    font-size: 0.84rem;
+    color: #6b7280;
+}
+
+.adm-sessions-guide-list {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 0.84rem;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.adm-sessions-guide-list strong {
+    color: #111827;
+}
+
+.adm-sessions-guide-link {
+    display: inline-flex;
+    margin-top: 14px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #6b46c1;
+    text-decoration: none;
+}
+
+.adm-sessions-guide-link:hover {
+    color: #553c9a;
+    text-decoration: underline;
+}
+
 .adm-active-sessions .adm-badge--info {
     background: #DBEAFE;
     color: #1E3A8A;
 }
 
+.adm-active-sessions .adm-badge--neutral {
+    background: #F3F4F6;
+    color: #374151;
+}
+
+@media (max-width: 1024px) {
+    .adm-sessions-filters {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .adm-sessions-filters__count {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .adm-sessions-filters {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* —— P6 Historial contraseñas —— */
+body.vista-admin-global .adm-password-history,
+body.vista-staff .adm-password-history {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.adm-pw-metrics {
+    margin-top: 0;
+}
+
 .adm-pw-mineduc {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 12px 16px;
-    background: #EFF6FF;
-    border-left: 3px solid #3B82F6;
-    border-radius: 8px;
-    font-size: 13px;
+    gap: 12px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+    border: 0.5px solid #bfdbfe;
+    border-left: 3px solid #3b82f6;
+    border-radius: 12px;
+    font-size: 0.86rem;
     color: #374151;
-    line-height: 1.45;
+    line-height: 1.5;
 }
 
 .adm-pw-mineduc__icon {
-    color: #3B82F6;
-    font-size: 16px;
+    color: #3b82f6;
+    font-size: 1.1rem;
     flex-shrink: 0;
+    margin-top: 2px;
 }
 
 .adm-pw-mineduc p {
     margin: 0;
 }
 
+.adm-pw-grid {
+    align-items: start;
+}
+
+.adm-pw-main,
+.adm-pw-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.adm-pw-toolbar {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
 .adm-pw-filters {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr auto auto;
-    gap: 12px;
+    grid-template-columns: minmax(200px, 1.2fr) minmax(100px, 0.6fr) minmax(160px, 0.9fr) minmax(130px, 0.7fr) minmax(130px, 0.7fr) auto auto;
+    gap: 14px;
     align-items: end;
+}
+
+.adm-pw-filters__search {
+    grid-column: span 1;
+}
+
+.adm-pw-filters__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.adm-pw-filters__count {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+
+.adm-pw-table td {
+    vertical-align: top;
 }
 
 .adm-pw-table__action {
     text-align: right;
+    white-space: nowrap;
+}
+
+.adm-pw-breakdown {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.adm-pw-breakdown li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 0.5px solid #f3f4f6;
+    font-size: 0.84rem;
+    color: #4b5563;
+}
+
+.adm-pw-breakdown li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.adm-pw-breakdown strong {
+    font-size: 1.05rem;
+    color: #312e81;
+}
+
+.adm-empty-state__hint {
+    margin: 8px 0 0;
+    font-size: 0.84rem;
+    color: #6b7280;
+    font-weight: 400;
 }
 
 .adm-pw-modal-note {
     margin: 12px 0 0;
-    color: #6B7280;
+    color: #6b7280;
     font-size: 13px;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
     .adm-pw-filters {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .adm-pw-filters__actions {
+        grid-column: 1 / -1;
+    }
+
+    .adm-pw-filters__count {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
     }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
     .adm-pw-filters {
         grid-template-columns: 1fr;
     }

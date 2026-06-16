@@ -313,7 +313,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Bump al cambiar CSS/JS del portal (evita Ctrl+F5 manual en cada página).
-ASSET_VERSION = '20260618c'
+ASSET_VERSION = '20260618e'
 
 # Marca del portal: empresa (SaaS) vs establecimiento educacional.
 PORTAL_PLATFORM_NAME = config('PORTAL_PLATFORM_NAME', default='Raccademy')
