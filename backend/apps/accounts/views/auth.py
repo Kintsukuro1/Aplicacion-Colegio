@@ -40,14 +40,15 @@ def login_view(request):
             remember_me = form.cleaned_data.get('remember_me', False)
             captcha_response = request.POST.get("h-captcha-response", "")
             
-            # Login unificado: detecta staff vs estudiante/apoderado por capabilities
+            # Login unificado con perfil seleccionado: estudiante, apoderado o personal
+            perfil = request.POST.get('perfil') or request.POST.get('rol') or 'estudiante'
             result = AuthService.perform_login(
                 request=request,
                 username=username,
                 password=password,
                 captcha_response=captcha_response,
                 remember_me=remember_me,
-                login_type='unified',
+                login_type=perfil,
             )
             
             # Manejar resultado

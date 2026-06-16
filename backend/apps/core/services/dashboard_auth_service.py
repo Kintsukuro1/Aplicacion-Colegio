@@ -247,7 +247,7 @@ class DashboardAuthService:
                 )
             except PrerequisiteException:
                 # Permitir acceso a dashboard/checklist/wizard para administradores
-                # cuando la escuela estÃ¡ en onboarding y tiene setup incompleto.
+                # cuando la escuela está en onboarding y tiene setup incompleto.
                 if not (can_configure_school or is_system_admin):
                     raise
                 logger.info(

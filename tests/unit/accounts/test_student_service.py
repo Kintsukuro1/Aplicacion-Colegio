@@ -92,7 +92,7 @@ class TestStudentServiceCrud:
         Role.objects.get.return_value = rol_estudiante
         User.objects.filter.return_value.exists.return_value = False
 
-        estudiante = Mock(id=1, nombre='Juan', apellido_paterno='PÃ©rez')
+        estudiante = Mock(id=1, nombre='Juan', apellido_paterno='Pérez')
         User.return_value = estudiante
 
         perfil = Mock()
@@ -102,7 +102,7 @@ class TestStudentServiceCrud:
             'email': 'juan@test.com',
             'rut': '12.345.678-9',
             'nombre': 'Juan',
-            'apellido_paterno': 'PÃ©rez',
+            'apellido_paterno': 'Pérez',
         }
 
         with patch('backend.common.services.permission_service.PermissionService.has_permission', return_value=True), \
@@ -146,7 +146,7 @@ class TestStudentServiceCrud:
         User = Mock()
         PerfilEstudiante = Mock()
 
-        estudiante = Mock(id=1, email='old@test.com', nombre='Juan', apellido_paterno='PÃ©rez')
+        estudiante = Mock(id=1, email='old@test.com', nombre='Juan', apellido_paterno='Pérez')
         User.objects.get.return_value = estudiante
 
         perfil = Mock()
@@ -154,8 +154,8 @@ class TestStudentServiceCrud:
 
         data = {
             'nombre': 'Juan Actualizado',
-            'apellido_paterno': 'PÃ©rez',
-            'apellido_materno': 'GonzÃ¡lez',
+            'apellido_paterno': 'Pérez',
+            'apellido_materno': 'González',
             'email': 'old@test.com',
             'rut': '12345678-9',
             'estado_academico': 'Activo',
@@ -183,7 +183,7 @@ class TestStudentServiceCrud:
         estudiante = Mock(id=1)
         User.objects.get.return_value = estudiante
 
-        curso = Mock(nombre='1Âº BÃ¡sico A')
+        curso = Mock(nombre='1º Básico A')
         curso.ciclo_academico = Mock()
         Curso.objects.get.return_value = curso
 
@@ -207,7 +207,7 @@ class TestStudentServiceCrud:
 
     def test_reset_password_success(self, admin_user_mock):
         User = Mock()
-        estudiante = Mock(id=1, rut='12.345.678-9', nombre='Juan', apellido_paterno='PÃ©rez')
+        estudiante = Mock(id=1, rut='12.345.678-9', nombre='Juan', apellido_paterno='Pérez')
         User.objects.get.return_value = estudiante
 
         with patch('backend.common.services.permission_service.PermissionService.has_permission', return_value=True), \

@@ -1,4 +1,4 @@
-﻿{% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -81,6 +81,7 @@
 
                 <form method="POST" action="{% url 'accounts:login' %}" class="login-form" id="loginForm">
                     {% csrf_token %}
+                    <input type="hidden" name="perfil" id="perfilInput" value="{% if rol == 'apoderado' %}apoderado{% elif rol == 'personal' or rol == 'staff' or tipo_usuario == 'staff' %}personal{% else %}estudiante{% endif %}">
 
                     <div class="form-field">
                         <label class="form-field__label" for="username">Usuario o correo</label>
@@ -169,6 +170,7 @@
     <script>
         (function () {
             var tabs = document.querySelectorAll('.login-tab');
+            var perfilInput = document.getElementById('perfilInput');
             tabs.forEach(function (tab) {
                 tab.addEventListener('click', function () {
                     tabs.forEach(function (t) {
@@ -177,6 +179,9 @@
                     });
                     tab.classList.add('login-tab--active');
                     tab.setAttribute('aria-selected', 'true');
+                    if (perfilInput) {
+                        perfilInput.value = tab.getAttribute('data-tab');
+                    }
                 });
             });
 

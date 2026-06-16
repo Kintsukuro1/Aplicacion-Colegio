@@ -344,7 +344,14 @@ def registro_asistencia_clase(request, clase_id):
 
     if request.method == 'POST':
         fecha_str = request.POST.get('fecha')
-        vista_previa = vista_previa or request.POST.get('vista_previa') == '1'
+        # En POST, determinamos si es una vista previa real (sin persistencia):
+        # 1. Si viene el campo oculto vista_previa=1 en el POST.
+        # 2. O bien, si no se envió la asistencia de ningún estudiante real (con ID positivo).
+        has_real_submissions = any(
+            key.startswith('estado_') and key.split('_', 1)[1].isdigit()
+            for key in request.POST
+        )
+        vista_previa = request.POST.get('vista_previa') == '1' or not has_real_submissions
         try:
             fecha = AttendanceService.parse_date_from_string(fecha_str)
         except ValueError:

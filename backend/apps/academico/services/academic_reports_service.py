@@ -340,6 +340,28 @@ class AcademicReportsService:
         porcentaje_ausencias = round((total_ausentes / total_registros * 100), 1) if total_registros > 0 else 0
         porcentaje_tardanzas = round((total_tardanzas / total_registros * 100), 1) if total_registros > 0 else 0
 
+        # Obtener evolución temporal de asistencia diaria
+        asistencias_diarias = Asistencia.objects.filter(
+            clase=clase,
+            fecha__gte=fecha_inicio,
+            fecha__lte=fecha_fin
+        ).values('fecha').annotate(
+            total=Count('id_asistencia'),
+            presentes=Count('id_asistencia', filter=Q(estado='P')),
+            tardanzas=Count('id_asistencia', filter=Q(estado='T'))
+        ).order_by('fecha')
+
+        evolucion_temporal = []
+        for a in asistencias_diarias:
+            f = a['fecha']
+            tot = a['total']
+            pres = a['presentes'] + a['tardanzas']
+            pct = round((pres / tot * 100), 1) if tot > 0 else 0
+            evolucion_temporal.append({
+                'fecha': f.strftime('%d/%m/%Y') if hasattr(f, 'strftime') else str(f),
+                'porcentaje': pct
+            })
+
         return {
             'clase': clase,
             'periodo': {
@@ -347,6 +369,7 @@ class AcademicReportsService:
                 'fin': fecha_fin
             },
             'asistencia_por_estudiante': estudiantes_report,
+            'evolucion_temporal': evolucion_temporal,
             'estadisticas_generales': {
                 'total_registros': total_registros,
                 'presentes': total_presentes,
@@ -358,6 +381,7 @@ class AcademicReportsService:
                 'porcentaje_tardanzas': porcentaje_tardanzas
             }
         }
+
 
     @staticmethod
     @PermissionService.require_permission_any([

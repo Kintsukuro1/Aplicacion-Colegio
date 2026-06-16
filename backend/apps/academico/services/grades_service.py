@@ -1127,7 +1127,7 @@ class GradesService:
             return {
                 'success': True,
                 'message': f'Calificaciones guardadas ({registered_count})',
-                'redirect_url': f"{reverse('dashboard')}?pagina=notas&modo=calificar&evaluacion_id={evaluacion.id_evaluacion}",
+                'redirect_url': f"{reverse('dashboard')}?pagina=notas&modo=calificar&clase_id={evaluacion.clase_id}&evaluacion_id={evaluacion.id_evaluacion}",
                 'registered_count': registered_count
             }
             

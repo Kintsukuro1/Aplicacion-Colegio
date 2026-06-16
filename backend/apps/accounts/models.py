@@ -167,7 +167,7 @@ class UserManager(TenantManager, BaseUserManager):
         if not email and legacy_username:
             email = legacy_username
         if not email:
-            raise ValueError("El usuario debe tener un correo electrÃ³nico")
+            raise ValueError("El usuario debe tener un correo electrónico")
 
         if not extra_fields.get('nombre'):
             fallback_nombre = str(legacy_username or email).split('@')[0]

@@ -335,7 +335,7 @@ class MatriculasService:
                 error_type='SCHOOL_NOT_CONFIGURED',
                 context={
                     'rbd': escuela_rbd,
-                    'message': f'No se encontrÃ³ el colegio con RBD {escuela_rbd}'
+                    'message': f'No se encontró el colegio con RBD {escuela_rbd}'
                 }
             )
 
@@ -353,7 +353,7 @@ class MatriculasService:
                 context={
                     'colegio_rbd': escuela_rbd,
                     'colegio_nombre': colegio.nombre,
-                    'message': f'El colegio {colegio.nombre} no tiene un ciclo acadÃ©mico activo'
+                    'message': f'El colegio {colegio.nombre} no tiene un ciclo académico activo'
                 }
             )
         return ciclo_activo

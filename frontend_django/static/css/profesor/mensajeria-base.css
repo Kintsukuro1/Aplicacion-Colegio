@@ -1,4 +1,4 @@
-﻿/* Mensajes â€” vista estudiante (mm-) */
+﻿/* Mensajes — vista estudiante (mm-) */
 
 .mm-page {
     width: 100%;
@@ -142,7 +142,7 @@
 }
 
 .mm-refine__summary::before {
-    content: 'â–¸';
+    content: '▸';
     margin-right: 8px;
     color: #64748b;
     transition: transform 0.15s;
@@ -263,7 +263,7 @@
     background: #f8fafc;
 }
 
-/* Pills de asignatura (color vÃ­a --mm-accent / --mm-accent-text) */
+/* Pills de asignatura (color vía --mm-accent / --mm-accent-text) */
 .mm-subject-pill {
     display: inline-block;
     max-width: 100%;
@@ -663,7 +663,7 @@
     display: none;
 }
 
-/* Aside â€” profesores por materia */
+/* Aside — profesores por materia */
 .mm-aside-card__title {
     margin: 0 0 6px;
     font-size: 0.95rem;

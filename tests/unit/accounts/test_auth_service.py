@@ -163,3 +163,52 @@ class TestAuthService:
         assert result['success'] is False
         assert result['error'] is not None
         assert 'captcha' in result['error']['context']['field'].lower()
+
+    def test_validate_role_for_login_type_estudiante_success(self):
+        user = Mock()
+        user.role = Mock(nombre='Estudiante')
+        user.id = 1
+        error = AuthService.validate_role_for_login_type(user, 'estudiante')
+        assert error is None
+
+    def test_validate_role_for_login_type_estudiante_failure(self):
+        user = Mock()
+        user.role = Mock(nombre='Apoderado')
+        user.id = 1
+        user.email = 'test@colegio.cl'
+        error = AuthService.validate_role_for_login_type(user, 'estudiante')
+        assert error is not None
+        assert error['context']['required_scope'] == 'estudiante'
+
+    def test_validate_role_for_login_type_apoderado_success(self):
+        user = Mock()
+        user.role = Mock(nombre='Apoderado')
+        user.id = 1
+        error = AuthService.validate_role_for_login_type(user, 'apoderado')
+        assert error is None
+
+    def test_validate_role_for_login_type_apoderado_failure(self):
+        user = Mock()
+        user.role = Mock(nombre='Estudiante')
+        user.id = 1
+        user.email = 'test@colegio.cl'
+        error = AuthService.validate_role_for_login_type(user, 'apoderado')
+        assert error is not None
+        assert error['context']['required_scope'] == 'apoderado'
+
+    def test_validate_role_for_login_type_personal_success(self):
+        user = Mock()
+        user.role = Mock(nombre='Profesor')
+        user.id = 1
+        error = AuthService.validate_role_for_login_type(user, 'personal')
+        assert error is None
+
+    def test_validate_role_for_login_type_personal_failure(self):
+        user = Mock()
+        user.role = Mock(nombre='Estudiante')
+        user.id = 1
+        user.email = 'test@colegio.cl'
+        error = AuthService.validate_role_for_login_type(user, 'personal')
+        assert error is not None
+        assert error['context']['required_scope'] == 'personal'
+

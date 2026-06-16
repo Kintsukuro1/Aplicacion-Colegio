@@ -916,3 +916,50 @@ body.vista-personal .pers-page-content > .reportes-container {
     width: 100%;
     max-width: none;
 }
+
+/* Nuevos estilos para gráficos interactivos */
+.rep-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.rep-chart-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 4px 20px rgba(49, 46, 129, 0.05);
+    border: 1px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+}
+
+.rep-chart-card h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1e1b4b;
+}
+
+.rep-chart-subtitle {
+    margin: 0 0 1.5rem 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.rep-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@media (min-width: 992px) {
+    .rep-chart-card--wide {
+        grid-column: span 2;
+    }
+}
