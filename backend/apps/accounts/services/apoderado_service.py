@@ -1,14 +1,14 @@
 ﻿"""
-ApoderadoService - Servicio para gestiÃ³n CRUD de apoderados
+ApoderadoService - Servicio para gestión CRUD de apoderados
 
-Este servicio centraliza la lÃ³gica de negocio para:
+Este servicio centraliza la lógica de negocio para:
 - Crear nuevos apoderados con perfil completo
 - Editar datos de apoderados existentes
 - Desactivar apoderados (soft delete)
 - Relacionar apoderados con estudiantes
-- Resetear contraseÃ±as de apoderados
+- Resetear contraseñas de apoderados
 - Listar y filtrar apoderados
-- Calcular estadÃ­sticas
+- Calcular estadísticas
 """
 
 import logging
@@ -29,10 +29,10 @@ logger = logging.getLogger('accounts')
 
 class ApoderadoService:
     """
-    Servicio para gestiÃ³n completa de apoderados (CRUD + relaciones)
+    Servicio para gestión completa de apoderados (CRUD + relaciones)
     """
     
-    # Roles permitidos para gestiÃ³n de apoderados
+    # Roles permitidos para gestión de apoderados
     ALLOWED_ROLES = ['Administrador general', 'Administrador escolar']
     
     # Contraseña temporal por defecto (se genera de forma segura)
@@ -40,28 +40,28 @@ class ApoderadoService:
 
     @staticmethod
     def execute(operation: str, params: Dict[str, Any]) -> Any:
-        """Punto de entrada estÃ¡ndar para comandos del servicio (fase 3.1)."""
+        """Punto de entrada estándar para comandos del servicio (fase 3.1)."""
         ApoderadoService.validate(operation, params)
         return ApoderadoService._execute(operation, params)
 
     @staticmethod
     def validate(operation: str, params: Dict[str, Any]) -> None:
-        """Valida parÃ¡metros mÃ­nimos requeridos por operaciÃ³n."""
+        """Valida parámetros mínimos requeridos por operación."""
         user = params.get('user')
         if user is None:
-            raise ValueError('ParÃ¡metro requerido: user')
+            raise ValueError('Parámetro requerido: user')
 
         if operation in ['create_apoderado', 'update_apoderado'] and params.get('data') is None:
-            raise ValueError('ParÃ¡metro requerido: data')
+            raise ValueError('Parámetro requerido: data')
 
         if operation in ['update_apoderado', 'deactivate_apoderado', 'reset_password'] and params.get('apoderado_id') is None:
-            raise ValueError('ParÃ¡metro requerido: apoderado_id')
+            raise ValueError('Parámetro requerido: apoderado_id')
 
         if params.get('escuela_rbd') is None:
-            raise ValueError('ParÃ¡metro requerido: escuela_rbd')
+            raise ValueError('Parámetro requerido: escuela_rbd')
 
         if operation not in ['create_apoderado', 'update_apoderado', 'deactivate_apoderado', 'reset_password']:
-            raise ValueError(f'OperaciÃ³n no soportada: {operation}')
+            raise ValueError(f'Operación no soportada: {operation}')
 
     @staticmethod
     def _execute(operation: str, params: Dict[str, Any]) -> Any:
@@ -74,11 +74,11 @@ class ApoderadoService:
             return ApoderadoService._execute_deactivate_apoderado(params)
         if operation == 'reset_password':
             return ApoderadoService._execute_reset_password(params)
-        raise ValueError(f'OperaciÃ³n no soportada: {operation}')
+        raise ValueError(f'Operación no soportada: {operation}')
 
     @staticmethod
     def _validate_school_integrity(escuela_rbd: str, action: str) -> None:
-        """Valida integridad del colegio antes de operaciones crÃ­ticas de apoderados."""
+        """Valida integridad del colegio antes de operaciones críticas de apoderados."""
         IntegrityService.validate_school_integrity_or_raise(
             school_id=int(escuela_rbd),
             action=action,
@@ -87,13 +87,13 @@ class ApoderadoService:
     @staticmethod
     def _validar_prerequisitos_colegio(rbd_colegio: int) -> Optional[dict]:
         """
-        Valida que el colegio exista y tenga ciclo acadÃ©mico activo.
+        Valida que el colegio exista y tenga ciclo académico activo.
         
         Args:
             rbd_colegio: RBD del colegio a validar
             
         Returns:
-            None si todo estÃ¡ correcto, dict con error si hay problemas.
+            None si todo está correcto, dict con error si hay problemas.
         """
         from backend.apps.institucion.models import Colegio, CicloAcademico
         
@@ -106,7 +106,7 @@ class ApoderadoService:
                 context={'rbd_colegio': rbd_colegio, 'message': f'El colegio con RBD {rbd_colegio} no existe en el sistema'}
             )
         
-        # Validar que existe ciclo acadÃ©mico activo
+        # Validar que existe ciclo académico activo
         ciclo_activo = CicloAcademico.objects.filter(colegio=colegio, estado='ACTIVO').first()
         if not ciclo_activo:
             return ErrorResponseBuilder.build(
@@ -140,13 +140,13 @@ class ApoderadoService:
     @staticmethod
     def generate_temp_password(rut: Optional[str]) -> str:
         """
-        Genera una contraseÃ±a temporal basada en el RUT o usa contraseÃ±a por defecto
+        Genera una contraseña temporal basada en el RUT o usa contraseña por defecto
         
         Args:
-            rut: RUT del apoderado (puede incluir puntos y guiÃ³n)
+            rut: RUT del apoderado (puede incluir puntos y guión)
             
         Returns:
-            str: ContraseÃ±a temporal
+            str: Contraseña temporal
         """
         alphabet = string.ascii_letters + string.digits
         return ''.join(secrets.choice(alphabet) for _ in range(14))
@@ -154,12 +154,12 @@ class ApoderadoService:
     @staticmethod
     def validate_unique_email(email: str, User, exclude_id: Optional[int] = None) -> Tuple[bool, Optional[str]]:
         """
-        Verifica que el email no estÃ© en uso
+        Verifica que el email no esté en uso
         
         Args:
             email: Email a validar
             User: Modelo User de Django
-            exclude_id: ID de usuario a excluir (para ediciÃ³n)
+            exclude_id: ID de usuario a excluir (para edición)
             
         Returns:
             Tuple[bool, Optional[str]]: (es_unico, mensaje_error)
@@ -176,12 +176,12 @@ class ApoderadoService:
     @staticmethod
     def validate_unique_rut(rut: str, User, exclude_id: Optional[int] = None) -> Tuple[bool, Optional[str]]:
         """
-        Verifica que el RUT no estÃ© en uso
+        Verifica que el RUT no esté en uso
         
         Args:
             rut: RUT a validar
             User: Modelo User de Django
-            exclude_id: ID de usuario a excluir (para ediciÃ³n)
+            exclude_id: ID de usuario a excluir (para edición)
             
         Returns:
             Tuple[bool, Optional[str]]: (es_unico, mensaje_error)
@@ -203,7 +203,7 @@ class ApoderadoService:
         """Convierte string a booleano."""
         if not valor:
             return False
-        return valor.lower() in ('true', '1', 'si', 'sÃ­', 'yes', 't', 'on')
+        return valor.lower() in ('true', '1', 'si', 'sí', 'yes', 't', 'on')
 
     @staticmethod
     def create_profile_for_user(user):
@@ -256,7 +256,7 @@ class ApoderadoService:
         Crea un nuevo apoderado con su perfil completo
         
         Args:
-            user: Usuario que realiza la acciÃ³n
+            user: Usuario que realiza la acción
             data: Diccionario con datos del formulario
             escuela_rbd: RBD del colegio
             User: Modelo User de Django
@@ -264,7 +264,7 @@ class ApoderadoService:
             Apoderado: Modelo Apoderado
             
         Returns:
-            Tuple[bool, str, Optional[str]]: (exito, mensaje, contraseÃ±a_temporal)
+            Tuple[bool, str, Optional[str]]: (exito, mensaje, contraseña_temporal)
         
         Raises:
             PrerequisiteException: Si el colegio no cumple prerequisitos
@@ -278,7 +278,7 @@ class ApoderadoService:
         try:
             ApoderadoService._validate_school_integrity(escuela_rbd, 'CREATE_APODERADO')
 
-            # VALIDACIÃ“N DEFENSIVA: Verificar prerequisitos del colegio
+            # VALIDACIÓN DEFENSIVA: Verificar prerequisitos del colegio
             error_prerequisito = ApoderadoService._validar_prerequisitos_colegio(int(escuela_rbd))
             if error_prerequisito:
                 raise PrerequisiteException(
@@ -295,12 +295,12 @@ class ApoderadoService:
             email = data.get('email', '').strip().lower()
             rut = data.get('rut', '').strip()
             
-            # Validar email Ãºnico
+            # Validar email único
             is_unique, error_msg = ApoderadoService.validate_unique_email(email, User)
             if not is_unique:
                 return False, error_msg, None
             
-            # Validar RUT Ãºnico
+            # Validar RUT único
             is_unique, error_msg = ApoderadoService.validate_unique_rut(rut, User)
             if not is_unique:
                 return False, error_msg, None
@@ -317,7 +317,7 @@ class ApoderadoService:
                 is_active=True
             )
             
-            # Generar y establecer contraseÃ±a temporal
+            # Generar y establecer contraseña temporal
             password_temp = ApoderadoService.generate_temp_password(rut)
             apoderado_user.set_password(password_temp)
             apoderado_user.save()
@@ -348,7 +348,7 @@ class ApoderadoService:
                 f"Apoderado creado - ID: {apoderado_user.id}, Nombre: {apoderado_user.nombre} {apoderado_user.apellido_paterno}"
             )
             
-            return True, "âœ” Apoderado creado exitosamente. ContraseÃ±a temporal generada.", password_temp
+            return True, "✔ Apoderado creado exitosamente. Contraseña temporal generada.", password_temp
             
         except Role.DoesNotExist:
             return False, "Rol apoderado no encontrado en el sistema", None
@@ -381,7 +381,7 @@ class ApoderadoService:
         Actualiza datos de un apoderado existente
         
         Args:
-            user: Usuario que realiza la acciÃ³n
+            user: Usuario que realiza la acción
             apoderado_id: ID del apoderado a actualizar
             data: Diccionario con datos del formulario
             escuela_rbd: RBD del colegio
@@ -407,13 +407,13 @@ class ApoderadoService:
                 perfil_apoderado__isnull=False
             )
             
-            # Actualizar datos bÃ¡sicos
+            # Actualizar datos básicos
             apoderado_user.nombre = data.get('nombre', '').strip()
             apoderado_user.apellido_paterno = data.get('apellido_paterno', '').strip()
             apoderado_user.apellido_materno = data.get('apellido_materno', '').strip() or None
             apoderado_user.rut = data.get('rut', '').strip() or None
             
-            # Validar y actualizar email si cambiÃ³
+            # Validar y actualizar email si cambió
             nuevo_email = data.get('email', '').strip().lower()
             if nuevo_email != apoderado_user.email:
                 is_unique, error_msg = ApoderadoService.validate_unique_email(
@@ -446,7 +446,7 @@ class ApoderadoService:
             
             logger.info(f"Apoderado actualizado - ID: {apoderado_user.id}")
             
-            return True, "âœ” Apoderado actualizado exitosamente"
+            return True, "✔ Apoderado actualizado exitosamente"
             
         except User.DoesNotExist:
             return False, "Apoderado no encontrado"
@@ -477,7 +477,7 @@ class ApoderadoService:
         Desactiva un apoderado (soft delete)
         
         Args:
-            user: Usuario que realiza la acciÃ³n
+            user: Usuario que realiza la acción
             apoderado_id: ID del apoderado a desactivar
             escuela_rbd: RBD del colegio
             User: Modelo User de Django
@@ -500,7 +500,7 @@ class ApoderadoService:
                 perfil_apoderado__isnull=False
             )
             
-            # VALIDACIÃ“N DEFENSIVA: Verificar que no tiene relaciones activas con estudiantes
+            # VALIDACIÓN DEFENSIVA: Verificar que no tiene relaciones activas con estudiantes
             relaciones_activas = apoderado_user.apoderado_estudiantes.filter(
                 estudiante__is_active=True
             ).count()
@@ -523,7 +523,7 @@ class ApoderadoService:
             
             logger.info(f"Apoderado desactivado - ID: {apoderado_user.id}")
             
-            return True, "âœ” Apoderado desactivado exitosamente"
+            return True, "✔ Apoderado desactivado exitosamente"
             
         except User.DoesNotExist:
             return False, "Apoderado no encontrado"
@@ -549,16 +549,16 @@ class ApoderadoService:
     @staticmethod
     def _execute_reset_password(params: Dict[str, Any]) -> Tuple[bool, str, Optional[str]]:
         """
-        Resetea la contraseÃ±a de un apoderado
+        Resetea la contraseña de un apoderado
         
         Args:
-            user: Usuario que realiza la acciÃ³n
+            user: Usuario que realiza la acción
             apoderado_id: ID del apoderado
             escuela_rbd: RBD del colegio
             User: Modelo User de Django
             
         Returns:
-            Tuple[bool, str, Optional[str]]: (exito, mensaje, nueva_contraseÃ±a)
+            Tuple[bool, str, Optional[str]]: (exito, mensaje, nueva_contraseña)
         """
         apoderado_id = params['apoderado_id']
         escuela_rbd = params['escuela_rbd']
@@ -573,25 +573,25 @@ class ApoderadoService:
                 perfil_apoderado__isnull=False
             )
             
-            # Generar nueva contraseÃ±a temporal
+            # Generar nueva contraseña temporal
             password_temp = ApoderadoService.generate_temp_password(apoderado_user.rut)
             apoderado_user.set_password(password_temp)
             apoderado_user.save()
             
-            logger.info(f"ContraseÃ±a reseteada - Apoderado ID: {apoderado_user.id}")
+            logger.info(f"Contraseña reseteada - Apoderado ID: {apoderado_user.id}")
             
-            return True, f"âœ” ContraseÃ±a reseteada. Nueva contraseÃ±a temporal: {password_temp}", password_temp
+            return True, f"✔ Contraseña reseteada. Nueva contraseña temporal: {password_temp}", password_temp
             
         except User.DoesNotExist:
             return False, "Apoderado no encontrado", None
         except Exception as e:
-            logger.error(f"Error al resetear contraseÃ±a: {str(e)}")
-            return False, f"Error al resetear contraseÃ±a: {str(e)}", None
+            logger.error(f"Error al resetear contraseña: {str(e)}")
+            return False, f"Error al resetear contraseña: {str(e)}", None
     
     @staticmethod
     def get_apoderados_stats(escuela_rbd: str, User, Apoderado) -> Dict:
         """
-        Obtiene estadÃ­sticas de apoderados de un colegio
+        Obtiene estadísticas de apoderados de un colegio
         
         Args:
             escuela_rbd: RBD del colegio
@@ -599,7 +599,7 @@ class ApoderadoService:
             Apoderado: Modelo Apoderado
             
         Returns:
-            Dict: EstadÃ­sticas
+            Dict: Estadísticas
         """
         try:
             total = User.objects.filter(
@@ -621,7 +621,7 @@ class ApoderadoService:
             }
             
         except Exception as e:
-            logger.error(f"Error al obtener estadÃ­sticas de apoderados: {str(e)}")
+            logger.error(f"Error al obtener estadísticas de apoderados: {str(e)}")
             return {
                 'total_apoderados': 0,
                 'apoderados_activos': 0,

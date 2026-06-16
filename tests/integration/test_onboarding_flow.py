@@ -1,6 +1,6 @@
 ﻿"""
-Tests de integraciÃ³n para el flujo completo del sistema de onboarding
-Valida el proceso end-to-end desde colegio vacÃ­o hasta configuraciÃ³n completa
+Tests de integración para el flujo completo del sistema de onboarding
+Valida el proceso end-to-end desde colegio vacío hasta configuración completa
 """
 import pytest
 from datetime import datetime, timedelta
@@ -25,11 +25,11 @@ User = get_user_model()
 
 
 class OnboardingFlowIntegrationTest(TestCase):
-    """Tests de integraciÃ³n para el flujo completo de onboarding"""
+    """Tests de integración para el flujo completo de onboarding"""
     
     def setUp(self):
-        """ConfiguraciÃ³n inicial para cada test"""
-        # Crear colegio vacÃ­o
+        """Configuración inicial para cada test"""
+        # Crear colegio vacío
         self.colegio = Colegio.objects.create(
             rbd='12345',
             nombre='Colegio Test',
@@ -66,12 +66,12 @@ class OnboardingFlowIntegrationTest(TestCase):
         self.assertEqual(progress, 0)
     
     def test_02_create_ciclo_academico(self):
-        """Test 2: Crear ciclo acadÃ©mico completa el primer paso"""
+        """Test 2: Crear ciclo académico completa el primer paso"""
         # Antes: paso incompleto
         status_before = OnboardingService.get_setup_status(self.colegio.rbd)
         self.assertFalse(status_before['steps'][0]['completado'])
         
-        # Crear ciclo acadÃ©mico
+        # Crear ciclo académico
         ciclo = CicloAcademico.objects.create(
             colegio=self.colegio,
             nombre='Primer Semestre 2024',
@@ -81,7 +81,7 @@ class OnboardingFlowIntegrationTest(TestCase):
             estado=CICLO_ESTADO_ACTIVO
         )
         
-        # DespuÃ©s: paso completo
+        # Después: paso completo
         status_after = OnboardingService.get_setup_status(self.colegio.rbd)
         self.assertTrue(status_after['steps'][0]['completado'])
         self.assertFalse(status_after['setup_complete'])
@@ -103,7 +103,7 @@ class OnboardingFlowIntegrationTest(TestCase):
         )
         
         # Crear nivel
-        nivel = NivelEducativo.objects.create(nombre='BÃ¡sica')
+        nivel = NivelEducativo.objects.create(nombre='Básica')
         
         # Crear curso
         curso = Curso.objects.create(
@@ -135,7 +135,7 @@ class OnboardingFlowIntegrationTest(TestCase):
             estado=CICLO_ESTADO_ACTIVO
         )
         
-        nivel = NivelEducativo.objects.create(nombre='BÃ¡sica')
+        nivel = NivelEducativo.objects.create(nombre='Básica')
         curso = Curso.objects.create(
             colegio=self.colegio,
             ciclo=ciclo,
@@ -163,7 +163,7 @@ class OnboardingFlowIntegrationTest(TestCase):
         self.assertEqual(progress, 75)
     
     def test_05_complete_setup(self):
-        """Test 5: Crear estudiantes completa la configuraciÃ³n"""
+        """Test 5: Crear estudiantes completa la configuración"""
         # Prerequisites: todo lo anterior
         ciclo = CicloAcademico.objects.create(
             colegio=self.colegio,
@@ -174,7 +174,7 @@ class OnboardingFlowIntegrationTest(TestCase):
             estado=CICLO_ESTADO_ACTIVO
         )
         
-        nivel = NivelEducativo.objects.create(nombre='BÃ¡sica')
+        nivel = NivelEducativo.objects.create(nombre='Básica')
         curso = Curso.objects.create(
             colegio=self.colegio,
             ciclo=ciclo,
@@ -202,7 +202,7 @@ class OnboardingFlowIntegrationTest(TestCase):
             role=rol_estudiante
         )
         
-        # Verificar configuraciÃ³n completa
+        # Verificar configuración completa
         status = OnboardingService.get_setup_status(self.colegio.rbd)
         self.assertTrue(status['setup_complete'])
         
@@ -243,7 +243,7 @@ class OnboardingFlowIntegrationTest(TestCase):
         self.assertContains(response, 'Asistente de Configur')
     
     def test_10_dashboard_shows_setup_banner(self):
-        """Test 10: Dashboard muestra banner de configuraciÃ³n incompleta"""
+        """Test 10: Dashboard muestra banner de configuración incompleta"""
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
         
@@ -251,11 +251,11 @@ class OnboardingFlowIntegrationTest(TestCase):
         self.assertContains(response, 'setup-alert-banner')
     
     def test_11_notification_created_on_incomplete_setup(self):
-        """Test 11: Se crea notificaciÃ³n automÃ¡tica con setup incompleto"""
+        """Test 11: Se crea notificación automática con setup incompleto"""
         from backend.apps.notificaciones.models import Notificacion
         from backend.common.services.onboarding_notification_service import OnboardingNotificationService
         
-        # Crear notificaciÃ³n
+        # Crear notificación
         notif = OnboardingNotificationService.notify_if_needed(self.admin, self.colegio.rbd)
         
         # Debe haberse creado
@@ -263,12 +263,12 @@ class OnboardingFlowIntegrationTest(TestCase):
         self.assertEqual(notif.tipo, 'sistema')
         self.assertIn('Configur', notif.titulo)
         
-        # Segunda llamada no debe crear otra notificaciÃ³n (cooldown)
+        # Segunda llamada no debe crear otra notificación (cooldown)
         notif2 = OnboardingNotificationService.notify_if_needed(self.admin, self.colegio.rbd)
         self.assertIsNone(notif2)
     
     def test_12_legacy_school_detection(self):
-        """Test 12: DetecciÃ³n correcta de colegios legacy"""
+        """Test 12: Detección correcta de colegios legacy"""
         # Crear colegio con todos los datos
         ciclo = CicloAcademico.objects.create(
             colegio=self.colegio,
@@ -279,7 +279,7 @@ class OnboardingFlowIntegrationTest(TestCase):
             estado=CICLO_ESTADO_ACTIVO
         )
         
-        nivel = NivelEducativo.objects.create(nombre='BÃ¡sica')
+        nivel = NivelEducativo.objects.create(nombre='Básica')
         curso = Curso.objects.create(
             colegio=self.colegio,
             ciclo=ciclo,
@@ -306,16 +306,16 @@ class OnboardingFlowIntegrationTest(TestCase):
             role=rol_estudiante
         )
         
-        # Debe ser detectado como legacy (configuraciÃ³n completa)
+        # Debe ser detectado como legacy (configuración completa)
         is_legacy = OnboardingService.is_legacy_school(self.colegio.rbd)
         self.assertTrue(is_legacy)
 
 
 class OnboardingWizardIntegrationTest(TestCase):
-    """Tests de integraciÃ³n para el wizard de configuraciÃ³n"""
+    """Tests de integración para el wizard de configuración"""
     
     def setUp(self):
-        """ConfiguraciÃ³n inicial"""
+        """Configuración inicial"""
         self.colegio = Colegio.objects.create(
             rbd='54321',
             nombre='Colegio Wizard Test',
@@ -335,7 +335,7 @@ class OnboardingWizardIntegrationTest(TestCase):
         self.client.force_login(self.admin)
     
     def test_wizard_step_1_ciclo(self):
-        """Test: Wizard paso 1 - Crear ciclo acadÃ©mico"""
+        """Test: Wizard paso 1 - Crear ciclo académico"""
         response = self.client.post(reverse('setup_wizard'), {
             'nombre': 'Primer Semestre 2024',
             'anio': 2024,
@@ -358,7 +358,7 @@ class OnboardingWizardIntegrationTest(TestCase):
     def test_wizard_completes_full_flow(self):
         """Test: Wizard completa flujo completo paso a paso"""
         # Prerequisito: crear nivel
-        nivel = NivelEducativo.objects.create(nombre='BÃ¡sica')
+        nivel = NivelEducativo.objects.create(nombre='Básica')
         
         # Paso 1: Ciclo
         self.client.post(reverse('setup_wizard'), {
@@ -383,7 +383,7 @@ class OnboardingWizardIntegrationTest(TestCase):
             'password': 'Px9!Nube2026',
             'password_confirm': 'Px9!Nube2026',
             'first_name': 'Juan',
-            'last_name': 'PÃ©rez',
+            'last_name': 'Pérez',
             'rut': '12345678-5'
         })
         
@@ -393,20 +393,20 @@ class OnboardingWizardIntegrationTest(TestCase):
             'estudiante_email': 'estudiante1@test.cl',
             'estudiante_password': 'Ez7!Roca2040',
             'estudiante_password_confirm': 'Ez7!Roca2040',
-            'estudiante_first_name': 'MarÃ­a',
-            'estudiante_last_name': 'GonzÃ¡lez',
+            'estudiante_first_name': 'María',
+            'estudiante_last_name': 'González',
             'estudiante_rut': '22222222-2',
             'apoderado_username': 'apoderado1',
             'apoderado_email': 'apoderado1@test.cl',
             'apoderado_password': 'Ap0!Bosque55',
             'apoderado_password_confirm': 'Ap0!Bosque55',
             'apoderado_first_name': 'Pedro',
-            'apoderado_last_name': 'GonzÃ¡lez',
+            'apoderado_last_name': 'González',
             'apoderado_rut': '11111111-1',
             'parentesco': 'padre'
         })
         
-        # Verificar configuraciÃ³n completa
+        # Verificar configuración completa
         status = OnboardingService.get_setup_status(self.colegio.rbd)
         self.assertTrue(status['setup_complete'])
         

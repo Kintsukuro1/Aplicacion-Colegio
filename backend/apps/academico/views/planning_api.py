@@ -64,7 +64,7 @@ def planning_api_save(request):
             # Edición
             plan = PlanningCurricularService.update_planificacion(
                 user=request.user,
-                colegio_id=colegio.id,
+                colegio_id=colegio.rbd,
                 planificacion_id=int(id_planificacion),
                 titulo=titulo,
                 objetivo_general=objetivo_general,
@@ -82,7 +82,7 @@ def planning_api_save(request):
             
             plan = PlanningCurricularService.create_planificacion(
                 user=request.user,
-                colegio_id=colegio.id,
+                colegio_id=colegio.rbd,
                 clase_id=int(clase_id),
                 titulo=titulo,
                 objetivo_general=objetivo_general,
@@ -131,7 +131,7 @@ def planning_api_delete(request):
 
         PlanningCurricularService.delete_planificacion(
             user=request.user,
-            colegio_id=colegio.id,
+            colegio_id=colegio.rbd,
             planificacion_id=int(id_planificacion)
         )
         return JsonResponse({'success': True, 'message': 'Planificación eliminada correctamente.'})
@@ -162,7 +162,7 @@ def planning_api_enviar(request):
 
         plan = PlanningCurricularService.enviar_planificacion(
             user=request.user,
-            colegio_id=colegio.id,
+            colegio_id=colegio.rbd,
             planificacion_id=int(id_planificacion)
         )
         return JsonResponse({
@@ -215,7 +215,7 @@ def planning_api_revisar(request):
 
         plan = PlanningCurricularService.revisar_planificacion(
             coordinador=user,
-            colegio_id=colegio.id,
+            colegio_id=colegio.rbd,
             planificacion_id=int(id_planificacion),
             aprobar=aprobar,
             observaciones=observaciones
@@ -248,7 +248,7 @@ def planning_api_get_oas(request):
 
     try:
         oas = ObjetivoAprendizaje.objects.filter(
-            colegio_id=colegio.id,
+            colegio_id=colegio.rbd,
             asignatura_id=int(asignatura_id),
             activo=True
         ).order_by('codigo')
@@ -280,7 +280,7 @@ def banco_rubricas_list(request):
 
     try:
         rubricas = PlanningCurricularService.list_banco_rubricas(
-            colegio_id=colegio.id,
+            colegio_id=colegio.rbd,
             asignatura_id=int(asignatura_id)
         )
 
@@ -333,7 +333,7 @@ def banco_rubrica_clone(request):
 
         cloned = PlanningCurricularService.clone_rubrica(
             user=request.user,
-            colegio_id=colegio.id,
+            colegio_id=colegio.rbd,
             rubrica_id=int(rubrica_id),
             asignatura_id=int(asignatura_id)
         )
@@ -368,7 +368,7 @@ def banco_evaluaciones_list(request):
 
     try:
         evaluaciones = PlanningCurricularService.list_banco_evaluaciones(
-            colegio_id=colegio.id,
+            colegio_id=colegio.rbd,
             asignatura_id=int(asignatura_id)
         )
 
@@ -413,7 +413,7 @@ def banco_evaluacion_clone(request):
 
         cloned = PlanningCurricularService.clone_evaluacion(
             user=request.user,
-            colegio_id=colegio.id,
+            colegio_id=colegio.rbd,
             evaluacion_id=int(evaluacion_id),
             target_clase_id=int(target_clase_id),
             fecha_evaluacion=fecha_evaluacion

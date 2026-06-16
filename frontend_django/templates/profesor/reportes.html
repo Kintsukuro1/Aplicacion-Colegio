@@ -208,7 +208,7 @@
                         {% for item in reporte_data.asistencia_por_estudiante %}
                         <tr>
                             <td class="col-estudiante">{{ item.estudiante.get_full_name }}</td>
-                            <td>{{ item.total_clases|default:item.total|default:0 }}</td>
+                            <td>{{ item.total_clases|default:0 }}</td>
                             <td class="col-presente">{{ item.presentes }}</td>
                             <td class="col-ausente">{{ item.ausentes }}</td>
                             <td class="col-tardanza">{{ item.tardanzas }}</td>

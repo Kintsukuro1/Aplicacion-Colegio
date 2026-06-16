@@ -1,5 +1,5 @@
 <script>
-function filtrarClasesPorCurso(cursoId) {
+function filtrarClasesPorCurso(cursoVal) {
     var claseSelect = document.getElementById('clase_id');
     if (!claseSelect) return;
 
@@ -52,6 +52,28 @@ function onCursoAsistenciaChange(select) {
 
     filtrarClasesPorCurso(select.value);
     claseSelect.value = '';
+    form.submit();
+}
+
+function onCursoChange(select) {
+    var form = document.getElementById('formFiltros');
+    var claseSelect = document.getElementById('clase_id');
+    if (!form || !claseSelect) return;
+
+    filtrarClasesPorCurso(select.value);
+
+    if (select.value === '') {
+        claseSelect.value = '';
+    } else {
+        var firstVisibleOpt = Array.from(claseSelect.options).find(function(opt) {
+            return opt.value && !opt.hidden;
+        });
+        if (firstVisibleOpt) {
+            claseSelect.value = firstVisibleOpt.value;
+        } else {
+            claseSelect.value = '';
+        }
+    }
     form.submit();
 }
 

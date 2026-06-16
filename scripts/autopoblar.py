@@ -123,7 +123,7 @@ from backend.apps.cursos.models import Curso, Asignatura, Clase, BloqueHorario
 from backend.apps.matriculas.models import Matricula, Cuota, Pago, EstadoCuenta, Beca
 from backend.apps.academico.models import (
     Evaluacion, Calificacion, Asistencia, Tarea, EntregaTarea,
-    MaterialClase, Planificacion
+    MaterialClase, Planificacion, ObjetivoAprendizaje
 )
 from backend.apps.comunicados.models import Comunicado
 from backend.apps.mensajeria.models import Anuncio, Conversacion, Mensaje
@@ -288,22 +288,35 @@ def limpiar_base_datos():
 
     total_registros_eliminados = 0
 
-    for tabla in tablas_ordenadas:
-        if tabla in tablas_existentes and tabla not in tablas_sistema:
+    if not _is_sqlite():
+        # PostgreSQL: limpiar de forma masiva y rápida con TRUNCATE CASCADE
+        tablas_a_truncar = [f'"{tabla}"' for tabla in tablas_ordenadas if tabla in tablas_existentes and tabla not in tablas_sistema]
+        if tablas_a_truncar:
             try:
-                cursor.execute(f"SELECT COUNT(*) FROM \"{tabla}\"")
-                count = cursor.fetchone()[0]
-                if count > 0:
-                    cursor.execute(f"DELETE FROM \"{tabla}\"")
-                    print(f"  ✓ {tabla}: {count} registros eliminados")
-                    total_registros_eliminados += count
-                else:
-                    print(f"  ⏭️  {tabla}: tabla vacía")
+                # TRUNCATE CASCADE vacía las tablas y maneja dependencias foráneas automáticamente
+                cursor.execute(f"TRUNCATE TABLE {', '.join(tablas_a_truncar)} RESTART IDENTITY CASCADE;")
+                print("  Tablas vaciadas y secuencias reiniciadas con TRUNCATE CASCADE (PostgreSQL)")
+                total_registros_eliminados = 1  # Indicador de éxito
             except Exception as e:
-                print(f"  ⚠️  {tabla}: error al limpiar - {str(e)}")
+                print(f"  Error al truncar tablas con CASCADE: {str(e)}")
+                raise e
+    else:
+        # SQLite: usar DELETE individual
+        for tabla in tablas_ordenadas:
+            if tabla in tablas_existentes and tabla not in tablas_sistema:
+                try:
+                    cursor.execute(f"SELECT COUNT(*) FROM \"{tabla}\"")
+                    count = cursor.fetchone()[0]
+                    if count > 0:
+                        cursor.execute(f"DELETE FROM \"{tabla}\"")
+                        print(f"  {tabla}: {count} registros eliminados")
+                        total_registros_eliminados += count
+                    else:
+                        print(f"  {tabla}: tabla vacia")
+                except Exception as e:
+                    print(f"  {tabla}: error al limpiar - {str(e)}")
 
-    # Resetear secuencias de auto-incremento (solo SQLite)
-    if _is_sqlite():
+        # Resetear secuencias de auto-incremento (solo SQLite)
         for tabla in tablas_ordenadas:
             if tabla in tablas_existentes:
                 try:
@@ -322,7 +335,7 @@ def limpiar_base_datos():
     cursor.close()
     connection.close()
 
-    print(f"\n✅ Limpieza completada - Total registros eliminados: {total_registros_eliminados}\n")
+    print("\nLimpieza completada\n")
 
 def poblar_roles():
     """Crear roles del sistema"""
@@ -2597,6 +2610,126 @@ def poblar_firmas_digitales():
     print(f"  ✓ {firmas_creadas} firmas digitales creadas")
     print("✅ Firmas Digitales creadas\n")
 
+def poblar_objetivos_aprendizaje():
+    """Crear Objetivos de Aprendizaje (OAs) del MINEDUC/personalizados para cada asignatura"""
+    print("Creando Objetivos de Aprendizaje (OAs)...")
+    colegios = Colegio.objects.all()
+    if not colegios.exists():
+        print("  No se encontraron colegios en la BD")
+        return
+
+    niveles = [
+        "1° Básico", "2° Básico", "3° Básico", "4° Básico",
+        "5° Básico", "6° Básico", "7° Básico", "8° Básico",
+        "1° Medio", "2° Medio", "3° Medio", "4° Medio"
+    ]
+
+    templates_por_asignatura = {
+        'Lenguaje y Comunicación': [
+            ('OA 01', 'Leer textos estructurados de manera fluida y expresiva, manteniendo velocidad y entonación adecuadas.'),
+            ('OA 02', 'Comprender textos aplicando estrategias de comprensión lectora, extrayendo información explícita e implícita.'),
+            ('OA 03', 'Escribir textos con coherencia, cohesión y ortografía correctas de acuerdo al nivel.'),
+            ('OA 04', 'Analizar críticamente textos de diversos medios y géneros, evaluando posturas y sesgos.'),
+            ('OA 05', 'Expresarse de forma oral con claridad, coherencia y argumentos sólidos en exposiciones y debates.'),
+        ],
+        'Matemática': [
+            ('OA 01', 'Demostrar comprensión de los números, operaciones aritméticas y sus propiedades aplicados a la resolución de problemas.'),
+            ('OA 02', 'Resolver problemas matemáticos utilizando herramientas algebraicas, ecuaciones y funciones.'),
+            ('OA 03', 'Desarrollar y aplicar fórmulas para calcular magnitudes geométricas, áreas y volúmenes.'),
+            ('OA 04', 'Analizar, describir y representar propiedades y transformaciones de figuras bidimensionales y tridimensionales.'),
+            ('OA 05', 'Organizar, representar e interpretar datos estadísticos y resolver problemas de probabilidad.'),
+        ],
+        'Ciencias Naturales': [
+            ('OA 01', 'Explicar fenómenos naturales y el comportamiento de la materia a través de la investigación experimental.'),
+            ('OA 02', 'Comprender la estructura y función de los seres vivos y sus interacciones con el ecosistema.'),
+            ('OA 03', 'Describir los componentes y dinámicas de la Tierra y el Universo basándose en evidencias científicas.'),
+            ('OA 04', 'Evaluar el impacto de la actividad humana en el medio ambiente y proponer medidas de conservación.'),
+            ('OA 05', 'Desarrollar habilidades de investigación científica, formulando hipótesis y registrando observaciones.'),
+        ],
+        'Historia, Geografía y Ciencias Sociales': [
+            ('OA 01', 'Analizar procesos históricos relevantes de Chile y el mundo, comprendiendo su multicausalidad y legado.'),
+            ('OA 02', 'Explicar dinámicas geográficas, la organización del espacio y la interacción sociedad-naturaleza.'),
+            ('OA 03', 'Comprender la organización democrática, los derechos ciudadanos y la importancia del bien común.'),
+            ('OA 04', 'Interpretar y contrastar diversas fuentes de información histórica y geográfica para formular conclusiones.'),
+            ('OA 05', 'Valorar la diversidad cultural y el patrimonio histórico nacional y de la comunidad local.'),
+        ],
+        'Inglés': [
+            ('OA 01', 'Comprender textos orales sencillos e identificar ideas principales y detalles en diversos contextos.'),
+            ('OA 02', 'Expresarse de forma oral para interactuar, presentarse y dar información personal en situaciones cotidianas.'),
+            ('OA 03', 'Leer y comprender textos escritos adaptados al nivel, reconociendo vocabulario y estructuras clave.'),
+            ('OA 04', 'Escribir mensajes y textos breves sobre temas familiares utilizando estructuras gramaticales básicas.'),
+            ('OA 05', 'Valorar la lengua inglesa como medio de comunicación global y de acercamiento a otras culturas.'),
+        ],
+        'Artes Visuales': [
+            ('OA 01', 'Crear trabajos visuales basados en la apreciación de manifestaciones artísticas y la experimentación de técnicas.'),
+            ('OA 02', 'Describir y comparar trabajos de arte personales y de diversos creadores utilizando terminología artística.'),
+            ('OA 03', 'Experimentar con diversos materiales, soportes, herramientas y procedimientos en producciones visuales.'),
+            ('OA 04', 'Evaluar la efectividad de las producciones visuales propias y ajenas en relación a su propósito expresivo.'),
+            ('OA 05', 'Apreciar y respetar el patrimonio artístico cultural local, nacional y universal.'),
+        ],
+        'Música': [
+            ('OA 01', 'Escuchar música de forma abundante de diversos géneros y estilos, expresando sensaciones e ideas.'),
+            ('OA 02', 'Cantar y tocar instrumentos musicales sencillos en forma individual y grupal, cuidando afinación y ritmo.'),
+            ('OA 03', 'Improvisar y crear patrones rítmicos y melódicos utilizando diversos recursos sonoros.'),
+            ('OA 04', 'Describir elementos del lenguaje musical presentes en las obras escuchadas o interpretadas.'),
+            ('OA 05', 'Presentar interpretaciones musicales ante la comunidad escolar, valorando el trabajo colaborativo.'),
+        ],
+        'Educación Física': [
+            ('OA 01', 'Demostrar habilidades motrices básicas en una variedad de juegos, deportes y actividades físicas.'),
+            ('OA 02', 'Practicar actividades físicas de intensidad moderada a vigorosa de forma regular y segura.'),
+            ('OA 03', 'Ejecutar acciones motrices individuales y colectivas aplicando principios de juego limpio y seguridad.'),
+            ('OA 04', 'Reconocer los beneficios de la actividad física para la salud y el bienestar personal.'),
+            ('OA 05', 'Desarrollar hábitos de higiene, hidratación y alimentación saludable asociados al esfuerzo físico.'),
+        ],
+        'Tecnología': [
+            ('OA 01', 'Crear diseños de objetos o sistemas tecnológicos para resolver problemas cotidianos usando software de diseño.'),
+            ('OA 02', 'Planificar la elaboración de un objeto tecnológico, seleccionando materiales, herramientas y medidas de seguridad.'),
+            ('OA 03', 'Elaborar un producto tecnológico aplicando técnicas seguras de transformación de materiales.'),
+            ('OA 04', 'Probar y evaluar la calidad y funcionalidad de las soluciones tecnológicas diseñadas en base a criterios establecidos.'),
+            ('OA 05', 'Analizar el impacto social y ambiental de la tecnología y proponer prácticas de uso responsable.'),
+        ]
+    }
+
+    count = 0
+    for colegio in colegios:
+        asignaturas = Asignatura.objects.filter(colegio=colegio)
+        for asignatura in asignaturas:
+            match_name = None
+            for key in templates_por_asignatura.keys():
+                if key.lower().replace("á","a").replace("é","e").replace("í","i").replace("ó","o").replace("ú","u") in asignatura.nombre.lower().replace("á","a").replace("é","e").replace("í","i").replace("ó","o").replace("ú","u"):
+                    match_name = key
+                    break
+
+            if not match_name:
+                templates = [
+                    ('OA 01', 'Comprender y aplicar conceptos fundamentales de la asignatura.'),
+                    ('OA 02', 'Desarrollar habilidades prácticas y de investigación del área.'),
+                    ('OA 03', 'Analizar críticamente problemas e información del entorno en relación al curso.'),
+                    ('OA 04', 'Comunicar ideas y hallazgos utilizando vocabulario técnico de la materia.'),
+                    ('OA 05', 'Valorar la importancia del área de estudio en la sociedad y la vida cotidiana.'),
+                ]
+            else:
+                templates = templates_por_asignatura[match_name]
+
+            for nivel in niveles:
+                for codigo, descripcion in templates:
+                    full_desc = f"{descripcion} (Orientado a nivel {nivel})"
+                    _, created = ObjetivoAprendizaje.objects.get_or_create(
+                        colegio=colegio,
+                        asignatura=asignatura,
+                        codigo=f"{asignatura.codigo or 'ASIG'}_{codigo.replace(' ', '')}",
+                        nivel=nivel,
+                        defaults={
+                            'descripcion': full_desc,
+                            'activo': True
+                        }
+                    )
+                    if created:
+                        count += 1
+                        
+    print(f"  OAs creados: {count}")
+    print("Objetivos de Aprendizaje creados\n")
+
 def poblar_planificaciones():
     """Crear planificaciones/leccionarios de ejemplo"""
     print("📋 Creando Planificaciones de Clase...")
@@ -2631,6 +2764,17 @@ def poblar_planificaciones():
                 estado='activa',
                 activa=True
             )
+            
+            # Asociar OAs
+            nivel_clean = clase.curso.nombre.replace(" A", "").replace(" B", "")
+            oas_to_link = ObjetivoAprendizaje.objects.filter(
+                colegio=colegio,
+                asignatura=clase.asignatura,
+                nivel=nivel_clean,
+                activo=True
+            )[:2]
+            for oa in oas_to_link:
+                planificacion.objetivos_aprendizaje.add(oa)
             
             # Agregar objetivos específicos
             from backend.apps.academico.models import PlanificacionObjetivo, PlanificacionActividad, PlanificacionRecurso
@@ -3758,6 +3902,7 @@ def main():
         poblar_anuncios()
         poblar_comunicados()
         poblar_notificaciones()
+        poblar_objetivos_aprendizaje()
         poblar_planificaciones()
         poblar_firmas_digitales()
         poblar_planes()  # Crear planes de suscripción

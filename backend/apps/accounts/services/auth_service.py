@@ -230,7 +230,7 @@ class AuthService:
         
         Args:
             user: Usuario autenticado
-            login_type (str): 'staff', 'student' o 'unified'
+            login_type (str): 'staff', 'student', 'unified', 'estudiante', 'apoderado', 'personal'
             
         Returns:
             Optional[Dict]: None si válido, Dict con error si inválido
@@ -280,6 +280,39 @@ class AuthService:
                     'required_scope': 'student',
                     'login_type': login_type,
                     'message': 'Acceso denegado. Este portal es solo para estudiantes y apoderados.'
+                })
+        elif login_type == 'estudiante':
+            if user_role != 'Estudiante':
+                security_logger.warning(
+                    f"[SEGURIDAD] Intento de acceso de {user_role} al portal de estudiantes - Usuario: {user.email}"
+                )
+                return ErrorResponseBuilder.build('PERMISSION_DENIED', context={
+                    'user_role': user_role,
+                    'required_scope': 'estudiante',
+                    'login_type': login_type,
+                    'message': 'Acceso denegado. Este portal es solo para estudiantes.'
+                })
+        elif login_type == 'apoderado':
+            if user_role != 'Apoderado':
+                security_logger.warning(
+                    f"[SEGURIDAD] Intento de acceso de {user_role} al portal de estudiantes - Usuario: {user.email}"
+                )
+                return ErrorResponseBuilder.build('PERMISSION_DENIED', context={
+                    'user_role': user_role,
+                    'required_scope': 'apoderado',
+                    'login_type': login_type,
+                    'message': 'Acceso denegado. Este portal es solo para apoderados.'
+                })
+        elif login_type == 'personal':
+            if user_role in ['Estudiante', 'Apoderado']:
+                security_logger.warning(
+                    f"[SEGURIDAD] Intento de acceso de {user_role} al portal de staff - Usuario: {user.email}"
+                )
+                return ErrorResponseBuilder.build('PERMISSION_DENIED', context={
+                    'user_role': user_role,
+                    'required_scope': 'personal',
+                    'login_type': login_type,
+                    'message': 'Acceso denegado. Este portal es solo para personal académico.'
                 })
         
         return None

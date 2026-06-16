@@ -28,8 +28,13 @@ function submitCrearEvaluacion() {
 
 // Calificar evaluación
 function calificarEvaluacion(evaluacionId) {
-    // TODO: Redirigir a página de calificación o abrir modal
-    window.location.href = `?pagina=notas&modo=calificar&evaluacion_id=${evaluacionId}`;
+    const urlParams = new URLSearchParams(window.location.search);
+    const claseId = urlParams.get('clase_id');
+    let url = `?pagina=notas&modo=calificar&evaluacion_id=${evaluacionId}`;
+    if (claseId) {
+        url += `&clase_id=${claseId}`;
+    }
+    window.location.href = url;
 }
 
 // Editar evaluación

@@ -49,6 +49,17 @@ from backend.apps.academico.views.academic_report_views import (
     exportar_reporte_pdf,
     exportar_reporte_excel,
 )
+from backend.apps.academico.views.planning_api import (
+    planning_api_save,
+    planning_api_delete,
+    planning_api_enviar,
+    planning_api_revisar,
+    planning_api_get_oas,
+    banco_rubricas_list,
+    banco_rubrica_clone,
+    banco_evaluaciones_list,
+    banco_evaluacion_clone,
+)
 from backend.apps.core.views.admin_escolar.importar_datos_acciones import (
     editar_apoderado,
     editar_estudiante,
@@ -451,6 +462,17 @@ urlpatterns = [
 
     # Seleccion de comunicados
     path("comunicados/", include("backend.apps.comunicados.urls")),
+
+    # Planificación Curricular & Banco de Recursos (FASE 2.2)
+    path('profesor/planificacion/save/', planning_api_save, name='planning_api_save'),
+    path('profesor/planificacion/delete/', planning_api_delete, name='planning_api_delete'),
+    path('profesor/planificacion/enviar/', planning_api_enviar, name='planning_api_enviar'),
+    path('profesor/planificacion/revisar/', planning_api_revisar, name='planning_api_revisar'),
+    path('profesor/planificacion/get-oas/', planning_api_get_oas, name='planning_api_get_oas'),
+    path('profesor/banco/rubricas/', banco_rubricas_list, name='banco_rubricas_list'),
+    path('profesor/banco/rubricas/clonar/', banco_rubrica_clone, name='banco_rubrica_clone'),
+    path('profesor/banco/evaluaciones/', banco_evaluaciones_list, name='banco_evaluaciones_list'),
+    path('profesor/banco/evaluaciones/clonar/', banco_evaluacion_clone, name='banco_evaluacion_clone'),
 ]
 
 if settings.DEBUG and getattr(settings, 'DEBUG_TOOLBAR_ENABLED', False):

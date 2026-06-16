@@ -1,8 +1,8 @@
 ﻿"""
-Formularios para el wizard de configuraciÃ³n inicial del colegio.
+Formularios para el wizard de configuración inicial del colegio.
 
-Implementa validaciÃ³n robusta para todos los pasos del setup wizard,
-incluyendo validaciÃ³n de contraseÃ±as, emails, RUTs y datos de negocio.
+Implementa validación robusta para todos los pasos del setup wizard,
+incluyendo validación de contraseñas, emails, RUTs y datos de negocio.
 """
 from datetime import date
 from django import forms
@@ -28,7 +28,7 @@ def _build_temp_user_for_password(username_value='', email_value=''):
 
 
 class CicloAcademicoForm(forms.Form):
-    """Formulario para crear ciclo acadÃ©mico (Paso 1 del wizard)"""
+    """Formulario para crear ciclo académico (Paso 1 del wizard)"""
     
     nombre = forms.CharField(
         max_length=100,
@@ -38,17 +38,17 @@ class CicloAcademicoForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Ej: Ciclo Escolar 2026'
         }),
-        help_text="IdentificaciÃ³n del perÃ­odo acadÃ©mico"
+        help_text="Identificación del período académico"
     )
     
     anio = forms.IntegerField(
         required=True,
-        label="AÃ±o",
+        label="Año",
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
             'placeholder': '2026'
         }),
-        help_text="AÃ±o del ciclo acadÃ©mico"
+        help_text="Año del ciclo académico"
     )
     
     fecha_inicio = forms.DateField(
@@ -68,23 +68,23 @@ class CicloAcademicoForm(forms.Form):
             'class': 'form-control',
             'type': 'date'
         }),
-        help_text="Fecha de tÃ©rmino del ciclo escolar"
+        help_text="Fecha de término del ciclo escolar"
     )
     
     def clean_anio(self):
-        """Validar que el aÃ±o sea vÃ¡lido"""
+        """Validar que el año sea válido"""
         anio = self.cleaned_data.get('anio')
         current_year = date.today().year
         
         if anio < 2020 or anio > current_year + 2:
             raise ValidationError(
-                f"El aÃ±o debe estar entre 2020 y {current_year + 2}"
+                f"El año debe estar entre 2020 y {current_year + 2}"
             )
         
         return anio
     
     def clean(self):
-        """ValidaciÃ³n cruzada de fechas"""
+        """Validación cruzada de fechas"""
         cleaned_data = super().clean()
         fecha_inicio = cleaned_data.get('fecha_inicio')
         fecha_fin = cleaned_data.get('fecha_fin')
@@ -95,11 +95,11 @@ class CicloAcademicoForm(forms.Form):
                     "La fecha de inicio debe ser anterior a la fecha de fin"
                 )
             
-            # Validar duraciÃ³n mÃ­nima (6 meses)
+            # Validar duración mínima (6 meses)
             duracion_dias = (fecha_fin - fecha_inicio).days
             if duracion_dias < 180:
                 raise ValidationError(
-                    "El ciclo acadÃ©mico debe tener una duraciÃ³n mÃ­nima de 6 meses"
+                    "El ciclo académico debe tener una duración mínima de 6 meses"
                 )
         
         return cleaned_data
@@ -150,15 +150,15 @@ class CursoCreationForm(forms.Form):
             'class': 'form-control',
             'placeholder': '1'
         }),
-        help_text="NÃºmero de cursos paralelos a crear (letras consecutivas)"
+        help_text="Número de cursos paralelos a crear (letras consecutivas)"
     )
     
     def clean_letra(self):
-        """Validar que la letra sea vÃ¡lida"""
+        """Validar que la letra sea válida"""
         letra = self.cleaned_data.get('letra', '').upper()
         
         if not letra.isalpha():
-            raise ValidationError("La letra debe ser un carÃ¡cter alfabÃ©tico")
+            raise ValidationError("La letra debe ser un carácter alfabético")
         
         if not 'A' <= letra <= 'Z':
             raise ValidationError("La letra debe estar entre A y Z")
@@ -179,18 +179,18 @@ class ProfesorCreationForm(forms.Form):
             'placeholder': 'profesor.apellido',
             'autocomplete': 'off'
         }),
-        help_text="MÃ­nimo 4 caracteres. Solo letras, nÃºmeros y . _ -"
+        help_text="Mínimo 4 caracteres. Solo letras, números y . _ -"
     )
     
     email = forms.EmailField(
         required=True,
-        label="Correo ElectrÃ³nico",
+        label="Correo Electrónico",
         validators=[EmailValidator()],
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
             'placeholder': 'profesor@colegio.cl'
         }),
-        help_text="Correo electrÃ³nico institucional del profesor"
+        help_text="Correo electrónico institucional del profesor"
     )
     
     rut = forms.CharField(
@@ -201,7 +201,7 @@ class ProfesorCreationForm(forms.Form):
             'class': 'form-control',
             'placeholder': '12345678-9'
         }),
-        help_text="RUT con guiÃ³n (ej: 12345678-9)"
+        help_text="RUT con guión (ej: 12345678-9)"
     )
     
     first_name = forms.CharField(
@@ -220,23 +220,23 @@ class ProfesorCreationForm(forms.Form):
         label="Apellido",
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'PÃ©rez GonzÃ¡lez'
+            'placeholder': 'Pérez González'
         })
     )
     
     password = forms.CharField(
         required=True,
-        label="ContraseÃ±a",
+        label="Contraseña",
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'autocomplete': 'new-password'
         }),
-        help_text="MÃ­nimo 12 caracteres con mayÃºsculas, minÃºsculas, nÃºmeros y sÃ­mbolos"
+        help_text="Mínimo 12 caracteres con mayúsculas, minúsculas, números y símbolos"
     )
     
     password_confirm = forms.CharField(
         required=True,
-        label="Confirmar ContraseÃ±a",
+        label="Confirmar Contraseña",
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'autocomplete': 'new-password'
@@ -248,30 +248,30 @@ class ProfesorCreationForm(forms.Form):
         super().__init__(*args, **kwargs)
     
     def clean_username(self):
-        """Validar username Ãºnico y formato"""
+        """Validar username único y formato"""
         username = self.cleaned_data.get('username') or ''
         
-        # Validar formato (solo letras, nÃºmeros y _ . -)
+        # Validar formato (solo letras, números y _ . -)
         if not re.match(r'^[a-zA-Z0-9._-]+$', username):
             raise ValidationError(
-                "El nombre de usuario solo puede contener letras, nÃºmeros y los caracteres . _ -"
+                "El nombre de usuario solo puede contener letras, números y los caracteres . _ -"
             )
         
         # Verificar unicidad
         if USER_HAS_USERNAME_FIELD and User.objects.filter(username=username).exists():
             raise ValidationError(
-                "Este nombre de usuario ya estÃ¡ en uso. Por favor, elige otro."
+                "Este nombre de usuario ya está en uso. Por favor, elige otro."
             )
         
         return username.lower()
     
     def clean_email(self):
-        """Validar email Ãºnico"""
+        """Validar email único"""
         email = self.cleaned_data.get('email')
         
         if User.objects.filter(email=email).exists():
             raise ValidationError(
-                "Este correo electrÃ³nico ya estÃ¡ registrado. Por favor, usa otro."
+                "Este correo electrónico ya está registrado. Por favor, usa otro."
             )
         
         return email.lower()
@@ -283,31 +283,31 @@ class ProfesorCreationForm(forms.Form):
         # Normalizar formato
         rut = rut.replace('.', '').replace(' ', '').strip()
         
-        # Validar formato bÃ¡sico (nnnnnnnn-d)
+        # Validar formato básico (nnnnnnnn-d)
         if not re.match(r'^\d{7,8}-[0-9Kk]$', rut):
             raise ValidationError(
-                "Formato de RUT invÃ¡lido. Debe ser: 12345678-9"
+                "Formato de RUT inválido. Debe ser: 12345678-9"
             )
         
         # Verificar unicidad
         if User.objects.filter(rut=rut).exists():
             raise ValidationError(
-                "Este RUT ya estÃ¡ registrado en el sistema."
+                "Este RUT ya está registrado en el sistema."
             )
         
-        # Validar dÃ­gito verificador
+        # Validar dígito verificador
         rut_numeros, dv_ingresado = rut.split('-')
         dv_calculado = self._calcular_dv(rut_numeros)
         
         if dv_calculado.upper() != dv_ingresado.upper():
             raise ValidationError(
-                "El dÃ­gito verificador del RUT es invÃ¡lido."
+                "El dígito verificador del RUT es inválido."
             )
         
         return rut
     
     def _calcular_dv(self, rut_sin_dv):
-        """Calcular dÃ­gito verificador del RUT chileno"""
+        """Calcular dígito verificador del RUT chileno"""
         suma = 0
         multiplo = 2
         
@@ -326,14 +326,14 @@ class ProfesorCreationForm(forms.Form):
             return str(dv)
     
     def clean_password(self):
-        """Validar contraseÃ±a usando los validadores de Django"""
+        """Validar contraseña usando los validadores de Django"""
         password = self.cleaned_data.get('password')
         
-        # Django ejecutarÃ¡ automÃ¡ticamente los validadores en AUTH_PASSWORD_VALIDATORS
+        # Django ejecutará automáticamente los validadores en AUTH_PASSWORD_VALIDATORS
         # incluyendo nuestros validadores personalizados
         from django.contrib.auth.password_validation import validate_password
         
-        # Crear un usuario temporal para validaciÃ³n
+        # Crear un usuario temporal para validación
         temp_user = _build_temp_user_for_password(
             username_value=self.cleaned_data.get('username', ''),
             email_value=self.cleaned_data.get('email', ''),
@@ -347,7 +347,7 @@ class ProfesorCreationForm(forms.Form):
         return password
     
     def clean(self):
-        """ValidaciÃ³n cruzada: contraseÃ±as coinciden"""
+        """Validación cruzada: contraseñas coinciden"""
         cleaned_data = super().clean()
         password = cleaned_data.get('password')
         password_confirm = cleaned_data.get('password_confirm')
@@ -355,7 +355,7 @@ class ProfesorCreationForm(forms.Form):
         if password and password_confirm:
             if password != password_confirm:
                 raise ValidationError({
-                    'password_confirm': "Las contraseÃ±as no coinciden"
+                    'password_confirm': "Las contraseñas no coinciden"
                 })
         
         return cleaned_data
@@ -411,13 +411,13 @@ class EstudianteApoderadoForm(forms.Form):
     
     apoderado_password = forms.CharField(
         required=True,
-        label="ContraseÃ±a del Apoderado",
+        label="Contraseña del Apoderado",
         widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
     
     apoderado_password_confirm = forms.CharField(
         required=True,
-        label="Confirmar ContraseÃ±a",
+        label="Confirmar Contraseña",
         widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
     
@@ -469,17 +469,17 @@ class EstudianteApoderadoForm(forms.Form):
     
     estudiante_password = forms.CharField(
         required=True,
-        label="ContraseÃ±a del Estudiante",
+        label="Contraseña del Estudiante",
         widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
     
     estudiante_password_confirm = forms.CharField(
         required=True,
-        label="Confirmar ContraseÃ±a",
+        label="Confirmar Contraseña",
         widget=forms.PasswordInput(attrs={'class': 'form-control'})
     )
     
-    # RelaciÃ³n
+    # Relación
     parentesco = forms.ChoiceField(
         required=True,
         label="Parentesco",
@@ -487,7 +487,7 @@ class EstudianteApoderadoForm(forms.Form):
             ('padre', 'Padre'),
             ('madre', 'Madre'),
             ('abuelo', 'Abuelo/a'),
-            ('tio', 'TÃ­o/a'),
+            ('tio', 'Tío/a'),
             ('tutor', 'Tutor Legal'),
             ('otro', 'Otro')
         ],
@@ -504,11 +504,11 @@ class EstudianteApoderadoForm(forms.Form):
         
         if not re.match(r'^[a-zA-Z0-9._-]+$', username):
             raise ValidationError(
-                "El nombre de usuario solo puede contener letras, nÃºmeros y . _ -"
+                "El nombre de usuario solo puede contener letras, números y . _ -"
             )
         
         if USER_HAS_USERNAME_FIELD and User.objects.filter(username=username).exists():
-            raise ValidationError("Este nombre de usuario ya estÃ¡ en uso")
+            raise ValidationError("Este nombre de usuario ya está en uso")
         
         return username.lower()
     
@@ -517,7 +517,7 @@ class EstudianteApoderadoForm(forms.Form):
         email = self.cleaned_data.get('apoderado_email')
         
         if User.objects.filter(email=email).exists():
-            raise ValidationError("Este correo ya estÃ¡ registrado")
+            raise ValidationError("Este correo ya está registrado")
         
         return email.lower()
     
@@ -531,11 +531,11 @@ class EstudianteApoderadoForm(forms.Form):
         
         if not re.match(r'^[a-zA-Z0-9._-]+$', username):
             raise ValidationError(
-                "El nombre de usuario solo puede contener letras, nÃºmeros y . _ -"
+                "El nombre de usuario solo puede contener letras, números y . _ -"
             )
         
         if USER_HAS_USERNAME_FIELD and User.objects.filter(username=username).exists():
-            raise ValidationError("Este nombre de usuario ya estÃ¡ en uso")
+            raise ValidationError("Este nombre de usuario ya está en uso")
         
         return username.lower()
     
@@ -545,7 +545,7 @@ class EstudianteApoderadoForm(forms.Form):
         
         if email:
             if User.objects.filter(email=email).exists():
-                raise ValidationError("Este correo ya estÃ¡ registrado")
+                raise ValidationError("Este correo ya está registrado")
             return email.lower()
         
         return email
@@ -562,22 +562,22 @@ class EstudianteApoderadoForm(forms.Form):
         rut = rut.replace('.', '').replace(' ', '').strip()
         
         if not re.match(r'^\d{7,8}-[0-9Kk]$', rut):
-            raise ValidationError("Formato de RUT invÃ¡lido. Debe ser: 12345678-9")
+            raise ValidationError("Formato de RUT inválido. Debe ser: 12345678-9")
         
         if User.objects.filter(rut=rut).exists():
-            raise ValidationError("Este RUT ya estÃ¡ registrado")
+            raise ValidationError("Este RUT ya está registrado")
         
-        # Validar dÃ­gito verificador
+        # Validar dígito verificador
         rut_numeros, dv_ingresado = rut.split('-')
         dv_calculado = self._calcular_dv(rut_numeros)
         
         if dv_calculado.upper() != dv_ingresado.upper():
-            raise ValidationError("El dÃ­gito verificador del RUT es invÃ¡lido")
+            raise ValidationError("El dígito verificador del RUT es inválido")
         
         return rut
     
     def _calcular_dv(self, rut_sin_dv):
-        """Calcular dÃ­gito verificador del RUT"""
+        """Calcular dígito verificador del RUT"""
         suma = 0
         multiplo = 2
         
@@ -599,22 +599,22 @@ class EstudianteApoderadoForm(forms.Form):
         """Validaciones cruzadas"""
         cleaned_data = super().clean()
         
-        # Validar contraseÃ±as del apoderado
+        # Validar contraseñas del apoderado
         apod_pass = cleaned_data.get('apoderado_password')
         apod_confirm = cleaned_data.get('apoderado_password_confirm')
         
         if apod_pass and apod_confirm and apod_pass != apod_confirm:
             raise ValidationError({
-                'apoderado_password_confirm': "Las contraseÃ±as del apoderado no coinciden"
+                'apoderado_password_confirm': "Las contraseñas del apoderado no coinciden"
             })
         
-        # Validar contraseÃ±as del estudiante
+        # Validar contraseñas del estudiante
         est_pass = cleaned_data.get('estudiante_password')
         est_confirm = cleaned_data.get('estudiante_password_confirm')
         
         if est_pass and est_confirm and est_pass != est_confirm:
             raise ValidationError({
-                'estudiante_password_confirm': "Las contraseÃ±as del estudiante no coinciden"
+                'estudiante_password_confirm': "Las contraseñas del estudiante no coinciden"
             })
         
         # Validar que apoderado y estudiante no tengan el mismo RUT
@@ -626,7 +626,7 @@ class EstudianteApoderadoForm(forms.Form):
                 "El apoderado y el estudiante no pueden tener el mismo RUT"
             )
         
-        # Validar contraseÃ±as con validadores de Django
+        # Validar contraseñas con validadores de Django
         from django.contrib.auth.password_validation import validate_password
         
         if apod_pass:
@@ -638,7 +638,7 @@ class EstudianteApoderadoForm(forms.Form):
                 validate_password(apod_pass, user=temp_user)
             except ValidationError as e:
                 raise ValidationError({
-                    'apoderado_password': f"ContraseÃ±a del apoderado: {', '.join(e.messages)}"
+                    'apoderado_password': f"Contraseña del apoderado: {', '.join(e.messages)}"
                 })
         
         if est_pass:
@@ -650,7 +650,7 @@ class EstudianteApoderadoForm(forms.Form):
                 validate_password(est_pass, user=temp_user)
             except ValidationError as e:
                 raise ValidationError({
-                    'estudiante_password': f"ContraseÃ±a del estudiante: {', '.join(e.messages)}"
+                    'estudiante_password': f"Contraseña del estudiante: {', '.join(e.messages)}"
                 })
         
         return cleaned_data
