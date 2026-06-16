@@ -8,9 +8,9 @@ function filtrarClasesPorCurso(cursoVal) {
             opt.hidden = false;
             return;
         }
-        var visible = !cursoVal || 
-                      String(opt.dataset.cursoId || '') === String(cursoVal) || 
-                      String(opt.dataset.curso || '') === String(cursoVal);
+        var visible = !cursoId
+            || String(opt.dataset.cursoId || '') === String(cursoId)
+            || String(opt.dataset.curso || '') === String(cursoId);
         opt.hidden = !visible;
     });
 
@@ -23,28 +23,30 @@ function filtrarClasesPorCurso(cursoVal) {
 }
 
 function syncCursoFromClase(claseSelect) {
-    var cursoSelect = document.getElementById('filtro_curso_id') || document.getElementById('filtro_curso_nombre');
+    var cursoSelect = document.getElementById('filtro_curso_id')
+        || document.getElementById('filtro_curso_nombre');
     if (!cursoSelect || !claseSelect) return;
     var opt = claseSelect.options[claseSelect.selectedIndex];
     if (opt && opt.value) {
-        if (cursoSelect.id === 'filtro_curso_id' && opt.dataset.cursoId) {
+        if (opt.dataset.cursoId && cursoSelect.id === 'filtro_curso_id') {
             cursoSelect.value = opt.dataset.cursoId;
-            filtrarClasesPorCurso(opt.dataset.cursoId);
-        } else if (cursoSelect.id === 'filtro_curso_nombre' && opt.dataset.curso) {
+        } else if (opt.dataset.curso && cursoSelect.id === 'filtro_curso_nombre') {
             cursoSelect.value = opt.dataset.curso;
-            filtrarClasesPorCurso(opt.dataset.curso);
         }
+        filtrarClasesPorCurso(cursoSelect.value);
     }
 }
 
 function onClaseAsistenciaChange(claseSelect) {
     syncCursoFromClase(claseSelect);
-    var form = document.getElementById('formFiltros');
+    var form = document.getElementById('formFiltros')
+        || document.getElementById('formFiltrosLibro');
     if (form) form.submit();
 }
 
 function onCursoAsistenciaChange(select) {
-    var form = document.getElementById('formFiltros');
+    var form = document.getElementById('formFiltros')
+        || document.getElementById('formFiltrosLibro');
     var claseSelect = document.getElementById('clase_id');
     if (!form || !claseSelect) return;
 
@@ -76,7 +78,8 @@ function onCursoChange(select) {
 }
 
 function initAsistenciaFiltros() {
-    var cursoFiltro = document.getElementById('filtro_curso_id') || document.getElementById('filtro_curso_nombre');
+    var cursoFiltro = document.getElementById('filtro_curso_id')
+        || document.getElementById('filtro_curso_nombre');
     var claseSelect = document.getElementById('clase_id');
     if (!cursoFiltro || !claseSelect) return;
 

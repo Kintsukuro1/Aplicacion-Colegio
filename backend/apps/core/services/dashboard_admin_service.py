@@ -956,9 +956,22 @@ class DashboardAdminService:
             'curso__nombre', 'asignatura__nombre'
         )
 
+        from backend.apps.cursos.models import Curso
+        cursos = Curso.objects.filter(
+            id_curso__in=clases.values_list('curso_id', flat=True).distinct(),
+        ).order_by('nombre')
+
         filtro_clase_id = (request_get_params.get('clase_id') or '').strip()
+        filtro_curso_id = (request_get_params.get('curso_id') or '').strip()
         modo = request_get_params.get('modo', 'evaluaciones')
         evaluacion_filtro_id = request_get_params.get('evaluacion_id', 'all')
+
+        clases_para_atencion = clases
+        if filtro_curso_id:
+            try:
+                clases_para_atencion = clases.filter(curso_id=int(filtro_curso_id))
+            except (ValueError, TypeError):
+                filtro_curso_id = ''
 
         evaluaciones = []
         estudiantes_con_notas = []
@@ -1006,7 +1019,7 @@ class DashboardAdminService:
         evaluaciones_incompletas_global = 0
         estudiantes_por_curso = {}
 
-        for clase in clases:
+        for clase in clases_para_atencion:
             curso_id = clase.curso_id
             if curso_id not in estudiantes_por_curso:
                 estudiantes_por_curso[curso_id] = DashboardAdminService._count_estudiantes_curso(
@@ -1056,11 +1069,126 @@ class DashboardAdminService:
         clases_atencion.sort(key=lambda x: (x['pendientes'], x['motivo'] == 'Sin evaluaciones'), reverse=True)
         clases_atencion = clases_atencion[:12]
 
+        curso_seleccionado = None
+        clases_resumen_curso = []
+        curso_kpi = None
+
+        if filtro_curso_id:
+            try:
+                curso_seleccionado = cursos.filter(id_curso=int(filtro_curso_id)).first()
+            except (ValueError, TypeError):
+                curso_seleccionado = None
+
+        if curso_seleccionado:
+            from django.db.models import Q
+
+            resumen_qs = clases_para_atencion.annotate(
+                num_evaluaciones=Count(
+                    'evaluaciones',
+                    filter=Q(evaluaciones__activa=True),
+                    distinct=True,
+                ),
+                num_calificaciones=Count(
+                    'evaluaciones__calificaciones',
+                    filter=Q(evaluaciones__activa=True),
+                ),
+                promedio_clase=Avg(
+                    'evaluaciones__calificaciones__nota',
+                    filter=Q(evaluaciones__activa=True),
+                ),
+            ).order_by('asignatura__nombre')
+
+            curso_num_est = estudiantes_por_curso.get(curso_seleccionado.id_curso, 0)
+            total_eval_curso = 0
+            total_calif_curso = 0
+            incompletas_curso = 0
+            promedios_curso = []
+
+            for clase_resumen in resumen_qs:
+                if not curso_num_est:
+                    curso_num_est = ClaseEstudiante.objects.filter(
+                        clase=clase_resumen,
+                        activo=True,
+                    ).values('estudiante_id').distinct().count()
+
+                evals_resumen = list(
+                    Evaluacion.objects.filter(clase=clase_resumen, activa=True).annotate(
+                        num_notas=Count('calificaciones')
+                    )
+                )
+                incompletas_clase = sum(
+                    1 for ev in evals_resumen
+                    if curso_num_est and ev.num_notas < curso_num_est
+                )
+                num_evals = clase_resumen.num_evaluaciones or 0
+                num_califs = clase_resumen.num_calificaciones or 0
+                prom = (
+                    round(float(clase_resumen.promedio_clase), 2)
+                    if clase_resumen.promedio_clase is not None
+                    else None
+                )
+
+                if num_evals:
+                    if incompletas_clase:
+                        estado = 'warn'
+                        estado_label = f'{incompletas_clase} incompleta(s)'
+                    else:
+                        estado = 'ok'
+                        estado_label = 'Al día'
+                else:
+                    estado = 'muted'
+                    estado_label = 'Sin evaluaciones'
+
+                cobertura = 0
+                if num_evals and curso_num_est:
+                    esperadas = num_evals * curso_num_est
+                    if esperadas:
+                        cobertura = round((num_califs / esperadas) * 100, 1)
+
+                clases_resumen_curso.append({
+                    'clase_id': clase_resumen.id,
+                    'asignatura': clase_resumen.asignatura.nombre,
+                    'profesor': (
+                        clase_resumen.profesor.get_full_name()
+                        if clase_resumen.profesor else 'Sin docente'
+                    ),
+                    'profesor_id': clase_resumen.profesor_id,
+                    'color': clase_resumen.asignatura.color or '#6366f1',
+                    'num_evaluaciones': num_evals,
+                    'num_calificaciones': num_califs,
+                    'promedio': prom,
+                    'total_estudiantes': curso_num_est,
+                    'cobertura_pct': cobertura,
+                    'incompletas': incompletas_clase,
+                    'estado': estado,
+                    'estado_label': estado_label,
+                })
+
+                total_eval_curso += num_evals
+                total_calif_curso += num_califs
+                incompletas_curso += incompletas_clase
+                if prom is not None:
+                    promedios_curso.append(prom)
+
+            curso_kpi = {
+                'total_clases': len(clases_resumen_curso),
+                'total_evaluaciones': total_eval_curso,
+                'total_calificaciones': total_calif_curso,
+                'promedio': (
+                    round(sum(promedios_curso) / len(promedios_curso), 2)
+                    if promedios_curso else None
+                ),
+                'evaluaciones_incompletas': incompletas_curso,
+                'total_estudiantes': curso_num_est,
+            }
+
         if filtro_clase_id:
             try:
                 clase_seleccionada = clases.filter(id=int(filtro_clase_id)).first()
             except (ValueError, TypeError):
                 clase_seleccionada = None
+            if clase_seleccionada and not filtro_curso_id:
+                filtro_curso_id = str(clase_seleccionada.curso_id)
 
         if clase_seleccionada:
             evaluaciones_qs = Evaluacion.objects.filter(
@@ -1218,7 +1346,9 @@ class DashboardAdminService:
 
         return {
             'clases': clases,
+            'cursos': cursos,
             'filtro_clase_id': filtro_clase_id,
+            'filtro_curso_id': filtro_curso_id,
             'modo': modo,
             'evaluacion_filtro_id': evaluacion_filtro_id,
             'evaluaciones': evaluaciones,
@@ -1247,14 +1377,29 @@ class DashboardAdminService:
             },
             'admin_insights': admin_insights,
             'clases_atencion': clases_atencion,
+            'curso_seleccionado': curso_seleccionado,
+            'clases_resumen_curso': clases_resumen_curso,
+            'curso_kpi': curso_kpi,
             'notas_intel_alertas': notas_intel_alertas,
             'notas_intel_sugerencias': [],
             'ciclo_activo': ciclo_activo,
             'actualizado_en': timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M'),
-            'notas_hero_evaluaciones': len(evaluaciones) if clase_seleccionada else total_evaluaciones_escuela,
-            'notas_hero_calificaciones': total_calificaciones_clase if clase_seleccionada else total_calificaciones_escuela,
-            'notas_hero_promedio': promedio_clase if promedio_clase is not None else (promedio_colegio or '—'),
-            'notas_hero_pendientes': evaluaciones_incompletas if clase_seleccionada else evaluaciones_incompletas_global,
+            'notas_hero_evaluaciones': (
+                len(evaluaciones) if clase_seleccionada
+                else (curso_kpi['total_evaluaciones'] if curso_kpi else total_evaluaciones_escuela)
+            ),
+            'notas_hero_calificaciones': (
+                total_calificaciones_clase if clase_seleccionada
+                else (curso_kpi['total_calificaciones'] if curso_kpi else total_calificaciones_escuela)
+            ),
+            'notas_hero_promedio': (
+                promedio_clase if promedio_clase is not None
+                else (curso_kpi['promedio'] if curso_kpi and curso_kpi.get('promedio') is not None else (promedio_colegio or '—'))
+            ),
+            'notas_hero_pendientes': (
+                evaluaciones_incompletas if clase_seleccionada
+                else (curso_kpi['evaluaciones_incompletas'] if curso_kpi else evaluaciones_incompletas_global)
+            ),
         }
 
     @staticmethod

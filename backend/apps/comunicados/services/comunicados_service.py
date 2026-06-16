@@ -282,6 +282,79 @@ class ComunicadosService:
         }
 
     @staticmethod
+    def get_staff_comunicados_list_context(
+        comunicados,
+        *,
+        is_admin: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Métricas e inteligencia para lista premium de funcionarios (admin escolar, etc.).
+        """
+        from datetime import timedelta
+        from django.utils import timezone
+
+        ctx = ComunicadosService.get_profesor_comunicados_list_context(comunicados)
+        items = list(comunicados)
+        now = timezone.now()
+        semana_inicio = now - timedelta(days=7)
+        publicados_semana = sum(
+            1 for c in items
+            if getattr(c, 'fecha_publicacion', None) and c.fecha_publicacion >= semana_inicio
+        )
+        ctx['com_stats']['publicados_semana'] = publicados_semana
+
+        if is_admin:
+            alertas = []
+            total = ctx['com_stats']['total']
+            urgentes = ctx['com_stats']['urgentes']
+            confirmacion = ctx['com_stats']['confirmacion']
+            citaciones = ctx['com_stats']['citaciones']
+            proximos = ctx.get('com_proximos_eventos') or []
+
+            if total == 0:
+                alertas.append(
+                    'Aún no hay comunicados publicados. Usa «Nuevo comunicado» para la primera circular.'
+                )
+            if publicados_semana:
+                alertas.append(
+                    f'{publicados_semana} publicado{"s" if publicados_semana != 1 else ""} '
+                    f'en los últimos 7 días.'
+                )
+            if urgentes:
+                alertas.append(
+                    f'{urgentes} marcado{"s" if urgentes != 1 else ""} como urgente o prioritario.'
+                )
+            if confirmacion:
+                alertas.append(
+                    f'{confirmacion} requiere{"n" if confirmacion != 1 else ""} '
+                    f'confirmación de lectura — revisa estadísticas tras publicar.'
+                )
+            if citaciones:
+                alertas.append(
+                    f'{citaciones} citación{"es" if citaciones != 1 else ""} '
+                    f'con posible fecha de reunión.'
+                )
+            if proximos:
+                alertas.append(
+                    f'{len(proximos)} evento{"s" if len(proximos) != 1 else ""} '
+                    f'programado{"s" if len(proximos) != 1 else ""} próximamente.'
+                )
+            ctx['com_alertas'] = alertas[:5]
+            ctx['com_guide_title'] = 'Centro de comunicaciones'
+            ctx['com_guide_text'] = (
+                'Gestiona circulares, citaciones y avisos del establecimiento. '
+                'Los indicadores consideran todo el historial; el listado respeta el filtro activo.'
+            )
+        else:
+            ctx['com_guide_title'] = 'Bandeja institucional'
+            ctx['com_guide_text'] = (
+                'Circulares, citaciones y avisos oficiales. '
+                'Los contadores reflejan tu bandeja completa; el listado respeta el filtro de tipo.'
+            )
+
+        return ctx
+
+    @staticmethod
     def _get_leidos_ids_for_user(user, comunicado_ids) -> set:
         from ..models import ConfirmacionLectura
 
