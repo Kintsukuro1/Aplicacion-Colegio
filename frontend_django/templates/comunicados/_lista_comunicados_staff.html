@@ -1,0 +1,229 @@
+<section class="com-prof-page com-staff-com-page" aria-label="Comunicados institucionales">
+
+  <div class="com-prof-guide com-staff-com-guide" aria-label="Guía">
+    <h3 class="com-prof-guide__title">{{ com_guide_title|default:"Centro de comunicaciones" }}</h3>
+    <p class="com-prof-guide__text">
+      {{ com_guide_text|default:"Circulares, citaciones y avisos oficiales del establecimiento." }}
+    </p>
+  </div>
+
+  {% if com_alertas or com_prioridad or com_proximos_eventos %}
+  <section class="com-prof-intel com-staff-com-intel" aria-label="Resumen operativo">
+    <h3 class="com-prof-intel__title">Resumen operativo</h3>
+    {% if com_alertas %}
+    <ul class="com-prof-intel__alertas">
+      {% for alerta in com_alertas %}
+      <li><span aria-hidden="true">💡</span> {{ alerta }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="com-staff-com-intel__cols">
+      {% if com_prioridad %}
+      <div class="com-prof-intel__prioridad">
+        <h4 class="com-prof-intel__sub">Revisar primero</h4>
+        <ul class="com-prof-intel__lista">
+          {% for c in com_prioridad %}
+          <li>
+            <a href="{% url 'comunicados:detalle' c.id_comunicado %}" class="com-prof-intel__link">
+              <span class="com-prof-intel__tarea">{{ c.titulo|truncatechars:52 }}</span>
+              <span class="com-prof-intel__meta">{{ c.get_tipo_display }}</span>
+            </a>
+            {% if c.fecha_evento %}
+            <span class="com-prof-intel__pill com-prof-intel__pill--soon">Evento {{ c.fecha_evento|date:"d/m" }}</span>
+            {% elif c.es_prioritario %}
+            <span class="com-prof-intel__pill com-prof-intel__pill--warn">Prioritario</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if com_proximos_eventos %}
+      <div class="com-prof-intel__agenda">
+        <h4 class="com-prof-intel__sub">Próximos eventos</h4>
+        <ul class="com-prof-intel__agenda-list">
+          {% for c in com_proximos_eventos %}
+          <li>
+            <span class="com-prof-intel__fecha">{{ c.fecha_evento|date:"d/m/Y H:i" }}</span>
+            <a href="{% url 'comunicados:detalle' c.id_comunicado %}">{{ c.titulo|truncatechars:40 }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="com-prof-panel com-staff-com-panel" id="comStaffPanel">
+    <div class="com-prof-panel__head">
+      <nav class="com-prof-chips com-staff-com-chips" aria-label="Filtrar por tipo" id="comStaffChips">
+        <button type="button" class="com-prof-chips__chip{% if not tipo_filtro %} com-prof-chips__chip--active{% endif %}" data-com-filter="">
+          Todos{% if com_stats.total %} <span class="com-prof-chips__n">{{ com_stats.total }}</span>{% endif %}
+        </button>
+        {% for value, label in tipos %}
+        <button type="button" class="com-prof-chips__chip com-prof-chips__chip--{{ value }}{% if tipo_filtro == value %} com-prof-chips__chip--active{% endif %}" data-com-filter="{{ value }}">
+          {{ label }}
+        </button>
+        {% endfor %}
+      </nav>
+      {% if can_create_comunicado %}
+      <a href="{% url 'comunicados:crear' %}" class="com-prof-btn com-prof-btn--primary com-staff-com-create">+ Nuevo comunicado</a>
+      {% endif %}
+    </div>
+
+    <section class="com-prof-refine com-staff-com-refine" aria-label="Refinar vista">
+      <form method="get" class="com-prof-refine__grid" id="comStaffFilterForm">
+        <div class="com-prof-refine__field com-prof-refine__field--grow">
+          <label class="com-prof-refine__label" for="comStaffSearch">Buscar</label>
+          <input type="search" class="com-prof-refine__control" id="comStaffSearch" placeholder="Buscar por título o contenido…" autocomplete="off">
+        </div>
+        <div class="com-prof-refine__field com-prof-refine__actions">
+          <button type="button" class="com-prof-btn com-prof-btn--ghost com-prof-hidden" id="comStaffClearSearch">Limpiar búsqueda</button>
+        </div>
+      </form>
+        {% if tipo_filtro %}
+      <p class="com-prof-refine__note" role="status">
+        {% if comunicados %}
+        Mostrando <strong>{{ comunicados|length }}</strong>{% if com_stats.total %} de {{ com_stats.total }}{% endif %} con filtro activo.
+        {% elif com_stats.total %}
+        Sin coincidencias para este tipo. <button type="button" class="com-staff-com-link-btn" data-com-filter="">Ver todos</button>.
+        {% endif %}
+      </p>
+      {% endif %}
+    </section>
+
+    {% if comunicados_all or comunicados %}
+    <div class="com-prof-list-head">
+      <h2 class="com-prof-list-head__title">Comunicados recientes</h2>
+      <span class="com-prof-list-head__count" id="comStaffListMeta">{{ comunicados_all|length|default:comunicados|length }}</span>
+    </div>
+    <div class="com-prof-list com-staff-com-list" id="comStaffList" role="list">
+      {% for comunicado in comunicados_all|default:comunicados %}
+      {% include 'profesor/_comunicado_item.html' %}
+      {% endfor %}
+    </div>
+    <p class="com-prof-no-results com-prof-hidden" id="comStaffFilterEmpty" role="status">Sin resultados con este filtro.</p>
+    <p class="com-prof-no-results com-prof-hidden" id="comStaffNoResults" role="status">Ningún comunicado coincide con la búsqueda.</p>
+
+    {% else %}
+    <div class="com-prof-empty com-staff-com-empty" role="status">
+      <span class="com-prof-empty__icon" aria-hidden="true">📭</span>
+      <h2 class="com-prof-empty__title">
+        {% if tipo_filtro %}Sin resultados con este filtro{% else %}Sin comunicados publicados{% endif %}
+      </h2>
+      <p class="com-prof-empty__text">
+        {% if tipo_filtro and com_stats.total %}
+        Prueba otro tipo o <button type="button" class="com-staff-com-link-btn" data-com-filter="">ver todos los comunicados</button>.
+        {% elif can_create_comunicado %}
+        Publica la primera circular o aviso con el botón «Nuevo comunicado».
+        {% else %}
+        Cuando la dirección publique avisos, aparecerán aquí.
+        {% endif %}
+      </p>
+      {% if can_create_comunicado and not tipo_filtro %}
+      <a href="{% url 'comunicados:crear' %}" class="com-prof-btn com-prof-btn--primary">Crear comunicado</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+(function () {
+  function debounce(fn, wait) {
+    var timer;
+    return function () {
+      var ctx = this, args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () { fn.apply(ctx, args); }, wait);
+    };
+  }
+
+  var list = document.getElementById('comStaffList');
+  var chipsNav = document.getElementById('comStaffChips');
+  var meta = document.getElementById('comStaffListMeta');
+  var filterEmpty = document.getElementById('comStaffFilterEmpty');
+  var searchInput = document.getElementById('comStaffSearch');
+  var activeTipo = '';
+
+  function readTipoFromUrl() {
+    return new URLSearchParams(window.location.search).get('tipo') || '';
+  }
+
+  function setTipoInUrl(tipo) {
+    var url = new URL(window.location.href);
+    if (tipo) url.searchParams.set('tipo', tipo);
+    else url.searchParams.delete('tipo');
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  }
+
+  function setActiveChip(tipo) {
+    if (!chipsNav) return;
+    chipsNav.querySelectorAll('[data-com-filter]').forEach(function (chip) {
+      var value = chip.getAttribute('data-com-filter') || '';
+      chip.classList.toggle('com-prof-chips__chip--active', value === tipo);
+    });
+  }
+
+  function applyTipoFilter(tipo) {
+    activeTipo = tipo || '';
+    setActiveChip(activeTipo);
+    setTipoInUrl(activeTipo);
+    updateVisibleItems();
+  }
+
+  function updateVisibleItems() {
+    var q = searchInput ? searchInput.value : '';
+    var n = filterList(list, q);
+    var clearBtn = document.getElementById('comStaffClearSearch');
+    var noResults = document.getElementById('comStaffNoResults');
+    if (clearBtn) clearBtn.classList.toggle('com-prof-hidden', !q);
+    if (noResults) noResults.classList.toggle('com-prof-hidden', !q || n > 0);
+    if (meta) meta.textContent = String(n);
+    if (filterEmpty) filterEmpty.classList.toggle('com-prof-hidden', !activeTipo || n > 0);
+  }
+
+  function filterList(listEl, query) {
+    if (!listEl) return 0;
+    var q = (query || '').toLowerCase().trim();
+    var visible = 0;
+    listEl.querySelectorAll('.com-prof-item').forEach(function (el) {
+      var itemTipo = el.getAttribute('data-com-tipo') || '';
+      var matchesTipo = !activeTipo || itemTipo === activeTipo;
+      var hay = el.getAttribute('data-com-search') || '';
+      var show = matchesTipo && (!q || hay.indexOf(q) !== -1);
+      el.classList.toggle('com-prof-hidden', !show);
+      if (show) visible++;
+    });
+    return visible;
+  }
+
+  if (chipsNav) {
+    chipsNav.addEventListener('click', function (event) {
+      var chip = event.target.closest('[data-com-filter]');
+      if (!chip || chip.classList.contains('com-staff-com-link-btn')) return;
+      event.preventDefault();
+      applyTipoFilter(chip.getAttribute('data-com-filter') || '');
+    });
+  }
+
+  document.querySelectorAll('.com-staff-com-link-btn[data-com-filter]').forEach(function (btn) {
+    btn.addEventListener('click', function (event) {
+      event.preventDefault();
+      applyTipoFilter('');
+    });
+  });
+
+  if (searchInput) searchInput.addEventListener('input', debounce(updateVisibleItems, 200));
+  var clearSearch = document.getElementById('comStaffClearSearch');
+  if (clearSearch) {
+    clearSearch.addEventListener('click', function () {
+      if (searchInput) searchInput.value = '';
+      updateVisibleItems();
+    });
+  }
+
+  applyTipoFilter(readTipoFromUrl());
+})();
+</script>

@@ -1,158 +1,356 @@
 {% extends 'dashboard.html' %}
 {% load static %}
 
-{% block title %}Crear Comunicado - Panel de Control{% endblock %}
+{% block title %}Nuevo Comunicado - Portal Académico{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/comunicados/crear_comunicado.css' %}">
+<link rel="stylesheet" href="{% static 'css/profesor/comunicados.css' %}?v=20260616-staff">
+<link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados_staff.css' %}?v=20260616-staff">
+<link rel="stylesheet" href="{% static 'css/comunicados/crear_comunicado_staff.css' %}?v=20260616-staff">
 
-<div class="crear-container">
-    <a href="{% url 'comunicados:lista' %}" class="back-link">
-        ← Volver a comunicados
-    </a>
+<div class="com-prof-wrap com-staff-com-wrap">
+<section class="com-prof-page com-staff-create-page" aria-label="Crear comunicado">
 
-    <div class="form-container">
-        <div class="form-header">
-            <h1>➕ Crear Nuevo Comunicado</h1>
-        </div>
+  <a href="{% url 'comunicados:lista' %}" class="com-staff-create-back">
+    <span aria-hidden="true">←</span> Volver a comunicados
+  </a>
 
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
+  <div class="com-prof-guide com-staff-com-guide com-staff-create-guide">
+    <h3 class="com-prof-guide__title">Redacción guiada</h3>
+    <p class="com-prof-guide__text">
+      Completa las secciones del formulario. Al publicar, el comunicado quedará visible de inmediato para los destinatarios seleccionados.
+    </p>
+  </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="tipo">Tipo de Comunicado <span class="required">*</span></label>
-                    <select name="tipo" id="tipo" class="form-control" required>
-                        <option value="">Selecciona un tipo</option>
-                        {% for value, label in tipos %}
-                        <option value="{{ value }}" {% if default_tipo == value %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+  <div class="com-staff-create-layout">
+    <div class="com-staff-create-form-panel">
+      <form method="post" enctype="multipart/form-data" class="com-staff-create-form" id="comCreateForm">
+        {% csrf_token %}
 
-                <div class="form-group">
-                    <label for="destinatario">Destinatarios <span class="required">*</span></label>
-                    <select name="destinatario" id="destinatario" class="form-control" required onchange="toggleCursosGrid()">
-                        <option value="">Selecciona destinatarios</option>
-                        {% for value, label in destinatarios %}
-                        <option value="{{ value }}" {% if default_destinatario == value %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+        <fieldset class="com-staff-create-section">
+          <legend class="com-staff-create-section__head">
+            <span class="com-staff-create-section__icon" aria-hidden="true">1</span>
+            <div>
+              <h2 class="com-staff-create-section__title">Audiencia</h2>
+              <p class="com-staff-create-section__sub">Tipo de comunicado y destinatarios</p>
             </div>
+          </legend>
 
-            <div id="cursosGrid" class="cursos-grid {% if default_destinatario == 'curso_especifico' %}visible{% endif %}">
-                {% for curso in cursos %}
-                <div class="curso-checkbox">
-                    <input type="checkbox" name="cursos" value="{{ curso.id_curso }}" id="curso_{{ curso.id_curso }}" {% if default_curso_id == curso.id_curso|stringformat:"s" %}checked{% endif %}>
-                    <label for="curso_{{ curso.id_curso }}">{{ curso.nombre_curso }}</label>
-                </div>
+          <div class="com-staff-create-grid com-staff-create-grid--2">
+            <div class="com-staff-create-field">
+              <label class="com-staff-create-label" for="tipo">
+                Tipo de comunicado <span class="com-staff-create-required">*</span>
+              </label>
+              <select name="tipo" id="tipo" class="com-staff-create-control" required>
+                <option value="">Selecciona un tipo</option>
+                {% for value, label in tipos %}
+                <option value="{{ value }}" {% if default_tipo == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
+              </select>
             </div>
 
-            <div class="form-group">
-                <label for="titulo">Título <span class="required">*</span></label>
-                <input type="text" name="titulo" id="titulo" class="form-control" required maxlength="200" value="{{ default_titulo }}">
+            <div class="com-staff-create-field">
+              <label class="com-staff-create-label" for="destinatario">
+                Destinatarios <span class="com-staff-create-required">*</span>
+              </label>
+              <select name="destinatario" id="destinatario" class="com-staff-create-control" required>
+                <option value="">Selecciona destinatarios</option>
+                {% for value, label in destinatarios %}
+                <option value="{{ value }}" {% if default_destinatario == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div id="cursosGrid" class="com-staff-create-cursos {% if default_destinatario == 'curso_especifico' %}com-staff-create-cursos--visible{% endif %}" aria-live="polite">
+            <p class="com-staff-create-cursos__hint">Selecciona uno o más cursos:</p>
+            <div class="com-staff-create-cursos__grid">
+              {% for curso in cursos %}
+              <label class="com-staff-create-curso">
+                <input type="checkbox" name="cursos" value="{{ curso.id_curso }}" id="curso_{{ curso.id_curso }}" {% if default_curso_id == curso.id_curso|stringformat:"s" %}checked{% endif %}>
+                <span class="com-staff-create-curso__label">{{ curso.nombre_curso }}</span>
+              </label>
+              {% empty %}
+              <p class="com-staff-create-cursos__empty">No hay cursos activos disponibles.</p>
+              {% endfor %}
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="com-staff-create-section">
+          <legend class="com-staff-create-section__head">
+            <span class="com-staff-create-section__icon" aria-hidden="true">2</span>
+            <div>
+              <h2 class="com-staff-create-section__title">Contenido</h2>
+              <p class="com-staff-create-section__sub">Título y cuerpo del mensaje</p>
+            </div>
+          </legend>
+
+          <div class="com-staff-create-field">
+            <label class="com-staff-create-label" for="titulo">
+              Título <span class="com-staff-create-required">*</span>
+            </label>
+            <input type="text" name="titulo" id="titulo" class="com-staff-create-control" required maxlength="200" value="{{ default_titulo }}" placeholder="Ej.: Reunión de apoderados — 3° básico">
+            <div class="com-staff-create-meta">
+              <span class="com-staff-create-help">Usa un título claro y específico</span>
+              <span class="com-staff-create-counter" id="tituloCounter">0 / 200</span>
+            </div>
+          </div>
+
+          <div class="com-staff-create-field">
+            <label class="com-staff-create-label" for="contenido">
+              Contenido <span class="com-staff-create-required">*</span>
+            </label>
+            <textarea name="contenido" id="contenido" class="com-staff-create-control com-staff-create-control--area" required placeholder="Describe el comunicado con el mayor detalle posible: fecha, hora, lugar, requisitos y contacto.">{{ default_contenido }}</textarea>
+            <span class="com-staff-create-help">Incluye información práctica para que nadie tenga dudas</span>
+          </div>
+        </fieldset>
+
+        <fieldset class="com-staff-create-section com-staff-create-section--event" id="eventSection">
+          <legend class="com-staff-create-section__head">
+            <span class="com-staff-create-section__icon" aria-hidden="true">3</span>
+            <div>
+              <h2 class="com-staff-create-section__title">Evento</h2>
+              <p class="com-staff-create-section__sub">Opcional — recomendado para citaciones y eventos</p>
+            </div>
+          </legend>
+
+          <div class="com-staff-create-grid com-staff-create-grid--2">
+            <div class="com-staff-create-field">
+              <label class="com-staff-create-label" for="fecha_evento">Fecha y hora</label>
+              <input type="datetime-local" name="fecha_evento" id="fecha_evento" class="com-staff-create-control">
+              <span class="com-staff-create-help">Aparecerá en calendario y recordatorios</span>
             </div>
 
-            <div class="form-group">
-                <label for="contenido">Contenido <span class="required">*</span></label>
-                <textarea name="contenido" id="contenido" class="form-control" required>{{ default_contenido }}</textarea>
-                <span class="help-text">Describe el comunicado con el mayor detalle posible</span>
+            <div class="com-staff-create-field">
+              <label class="com-staff-create-label" for="lugar_evento">Lugar</label>
+              <input type="text" name="lugar_evento" id="lugar_evento" class="com-staff-create-control" maxlength="200" placeholder="Ej.: Sala de usos múltiples">
             </div>
+          </div>
+        </fieldset>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="fecha_evento">Fecha y Hora del Evento (opcional)</label>
-                    <input type="datetime-local" name="fecha_evento" id="fecha_evento" class="form-control">
-                    <span class="help-text">Solo para eventos y citaciones</span>
-                </div>
-
-                <div class="form-group">
-                    <label for="lugar_evento">Lugar del Evento (opcional)</label>
-                    <input type="text" name="lugar_evento" id="lugar_evento" class="form-control" maxlength="200">
-                </div>
+        <fieldset class="com-staff-create-section">
+          <legend class="com-staff-create-section__head">
+            <span class="com-staff-create-section__icon" aria-hidden="true">4</span>
+            <div>
+              <h2 class="com-staff-create-section__title">Archivos adjuntos</h2>
+              <p class="com-staff-create-section__sub">Documentos de apoyo (opcional)</p>
             </div>
+          </legend>
 
-            <div class="form-group">
-                <label>Archivo Adjunto Principal (opcional)</label>
-                <div class="file-input-wrapper">
-                    <label class="file-input-label">
-                        <input type="file" name="archivo_adjunto" id="archivo_adjunto" onchange="updateFileName(this)">
-                        <span id="file-name">📎 Seleccionar archivo</span>
-                    </label>
-                </div>
+          <div class="com-staff-create-field">
+            <label class="com-staff-create-label">Archivo principal</label>
+            <label class="com-staff-create-file">
+              <input type="file" name="archivo_adjunto" id="archivo_adjunto">
+              <span class="com-staff-create-file__icon" aria-hidden="true">📎</span>
+              <span class="com-staff-create-file__text" id="file-name">Seleccionar archivo</span>
+            </label>
+          </div>
+
+          <div class="com-staff-create-field">
+            <label class="com-staff-create-label">Archivos adicionales</label>
+            <label class="com-staff-create-file">
+              <input type="file" name="archivos_adicionales" id="archivos_adicionales" multiple>
+              <span class="com-staff-create-file__icon" aria-hidden="true">📁</span>
+              <span class="com-staff-create-file__text" id="files-list">Seleccionar varios archivos</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="com-staff-create-section com-staff-create-section--options">
+          <legend class="com-staff-create-section__head">
+            <span class="com-staff-create-section__icon" aria-hidden="true">5</span>
+            <div>
+              <h2 class="com-staff-create-section__title">Opciones de publicación</h2>
+              <p class="com-staff-create-section__sub">Visibilidad y seguimiento</p>
             </div>
+          </legend>
 
-            <div class="form-group">
-                <label>Archivos Adicionales (opcional)</label>
-                <div class="file-input-wrapper">
-                    <label class="file-input-label">
-                        <input type="file" name="archivos_adicionales" id="archivos_adicionales" multiple onchange="updateFileList(this)">
-                        <span id="files-list">📎 Seleccionar archivos (puedes seleccionar varios)</span>
-                    </label>
-                </div>
-            </div>
+          <div class="com-staff-create-toggles">
+            <label class="com-staff-create-toggle">
+              <input type="checkbox" name="requiere_confirmacion" id="requiere_confirmacion">
+              <span class="com-staff-create-toggle__card">
+                <span class="com-staff-create-toggle__title">Requiere confirmación</span>
+                <span class="com-staff-create-toggle__desc">Los apoderados podrán confirmar asistencia</span>
+              </span>
+            </label>
 
-            <div class="form-group">
-                <label class="mb-3">Opciones Adicionales</label>
-                
-                <div class="checkbox-group">
-                    <input type="checkbox" name="requiere_confirmacion" id="requiere_confirmacion">
-                    <label for="requiere_confirmacion">✅ Requiere confirmación de asistencia</label>
-                </div>
+            <label class="com-staff-create-toggle">
+              <input type="checkbox" name="es_prioritario" id="es_prioritario">
+              <span class="com-staff-create-toggle__card com-staff-create-toggle__card--warn">
+                <span class="com-staff-create-toggle__title">Comunicado prioritario</span>
+                <span class="com-staff-create-toggle__desc">Destaca el aviso y envía notificación por correo</span>
+              </span>
+            </label>
 
-                <div class="checkbox-group">
-                    <input type="checkbox" name="es_prioritario" id="es_prioritario">
-                    <label for="es_prioritario">🚨 Comunicado prioritario (envía email)</label>
-                </div>
+            <label class="com-staff-create-toggle">
+              <input type="checkbox" name="es_destacado" id="es_destacado">
+              <span class="com-staff-create-toggle__card com-staff-create-toggle__card--accent">
+                <span class="com-staff-create-toggle__title">Destacar en la lista</span>
+                <span class="com-staff-create-toggle__desc">Aparecerá primero en el listado de comunicados</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
 
-                <div class="checkbox-group">
-                    <input type="checkbox" name="es_destacado" id="es_destacado">
-                    <label for="es_destacado">⭐ Destacar en la lista</label>
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <a href="{% url 'comunicados:lista' %}" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-primary">✓ Publicar Comunicado</button>
-            </div>
-        </form>
+        <div class="com-staff-create-actions">
+          <a href="{% url 'comunicados:lista' %}" class="com-prof-btn com-prof-btn--ghost">Cancelar</a>
+          <button type="submit" class="com-prof-btn com-prof-btn--primary com-staff-create-submit">
+            Publicar comunicado
+          </button>
+        </div>
+      </form>
     </div>
+
+    <aside class="com-staff-create-aside" aria-label="Ayuda contextual">
+      <div class="com-staff-create-preview" id="comPreview">
+        <span class="com-staff-create-preview__eyebrow">Vista previa</span>
+        <h3 class="com-staff-create-preview__title" id="previewTitle">Sin título aún</h3>
+        <p class="com-staff-create-preview__meta" id="previewMeta">Selecciona tipo y destinatarios</p>
+        <p class="com-staff-create-preview__excerpt" id="previewExcerpt">El contenido aparecerá aquí mientras redactas.</p>
+      </div>
+
+      <div class="com-staff-create-tip" id="tipoTip">
+        <h4 class="com-staff-create-tip__title">Consejo</h4>
+        <p class="com-staff-create-tip__text" id="tipoTipText">
+          Elige el tipo de comunicado para ver recomendaciones de redacción.
+        </p>
+      </div>
+
+      <div class="com-staff-create-checklist">
+        <h4 class="com-staff-create-checklist__title">Antes de publicar</h4>
+        <ul class="com-staff-create-checklist__list" id="publishChecklist">
+          <li data-check="tipo"><span class="com-staff-create-checklist__icon" aria-hidden="true">○</span> Tipo seleccionado</li>
+          <li data-check="destinatario"><span class="com-staff-create-checklist__icon" aria-hidden="true">○</span> Destinatarios definidos</li>
+          <li data-check="titulo"><span class="com-staff-create-checklist__icon" aria-hidden="true">○</span> Título redactado</li>
+          <li data-check="contenido"><span class="com-staff-create-checklist__icon" aria-hidden="true">○</span> Contenido completo</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>
 </div>
 
 <script>
-function toggleCursosGrid() {
-    const destinatario = document.getElementById('destinatario').value;
-    const cursosGrid = document.getElementById('cursosGrid');
-    
-    if (destinatario === 'curso_especifico') {
-        cursosGrid.classList.add('visible');
-    } else {
-        cursosGrid.classList.remove('visible');
-    }
-}
+(function () {
+  const tipoTips = {
+    comunicado: 'Comunicados generales: indica el motivo, plazos y a quién contactar ante dudas.',
+    evento: 'Para eventos: incluye fecha, hora, lugar, dress code y si requiere autorización.',
+    citacion: 'Citaciones: especifica curso, motivo de la reunión y confirmación de asistencia.',
+    noticia: 'Noticias: tono informativo positivo; destaca logros o novedades del establecimiento.',
+    urgente: 'Urgentes: sé breve y directo. Indica acción requerida y plazo inmediato.'
+  };
 
-function updateFileName(input) {
-    const fileNameSpan = document.getElementById('file-name');
-    if (input.files.length > 0) {
-        fileNameSpan.textContent = '📄 ' + input.files[0].name;
-    } else {
-        fileNameSpan.textContent = '📎 Seleccionar archivo';
-    }
-}
+  const tipoEl = document.getElementById('tipo');
+  const destEl = document.getElementById('destinatario');
+  const tituloEl = document.getElementById('titulo');
+  const contenidoEl = document.getElementById('contenido');
+  const cursosGrid = document.getElementById('cursosGrid');
+  const eventSection = document.getElementById('eventSection');
+  const tipoTipText = document.getElementById('tipoTipText');
+  const previewTitle = document.getElementById('previewTitle');
+  const previewMeta = document.getElementById('previewMeta');
+  const previewExcerpt = document.getElementById('previewExcerpt');
+  const tituloCounter = document.getElementById('tituloCounter');
+  const checklist = document.getElementById('publishChecklist');
 
-function updateFileList(input) {
-    const fileListSpan = document.getElementById('files-list');
-    if (input.files.length > 0) {
-        if (input.files.length === 1) {
-            fileListSpan.textContent = '📄 ' + input.files[0].name;
-        } else {
-            fileListSpan.textContent = '📄 ' + input.files.length + ' archivos seleccionados';
-        }
+  function toggleCursosGrid() {
+    if (destEl.value === 'curso_especifico') {
+      cursosGrid.classList.add('com-staff-create-cursos--visible');
     } else {
-        fileListSpan.textContent = '📎 Seleccionar archivos (puedes seleccionar varios)';
+      cursosGrid.classList.remove('com-staff-create-cursos--visible');
     }
-}
+  }
+
+  function updateEventHighlight() {
+    const t = tipoEl.value;
+    eventSection.classList.toggle('com-staff-create-section--highlight', t === 'evento' || t === 'citacion');
+  }
+
+  function updateTipoTip() {
+    tipoTipText.textContent = tipoTips[tipoEl.value] || 'Elige el tipo de comunicado para ver recomendaciones de redacción.';
+  }
+
+  function updatePreview() {
+    const titulo = tituloEl.value.trim();
+    previewTitle.textContent = titulo || 'Sin título aún';
+    const tipoLabel = tipoEl.options[tipoEl.selectedIndex]?.text || '';
+    const destLabel = destEl.options[destEl.selectedIndex]?.text || '';
+    previewMeta.textContent = (tipoLabel && destLabel && destEl.value)
+      ? tipoLabel + ' · ' + destLabel
+      : 'Selecciona tipo y destinatarios';
+    const excerpt = contenidoEl.value.trim();
+    previewExcerpt.textContent = excerpt
+      ? (excerpt.length > 160 ? excerpt.slice(0, 160) + '…' : excerpt)
+      : 'El contenido aparecerá aquí mientras redactas.';
+  }
+
+  function updateCounter() {
+    tituloCounter.textContent = tituloEl.value.length + ' / 200';
+  }
+
+  function updateChecklist() {
+    const checks = {
+      tipo: !!tipoEl.value,
+      destinatario: !!destEl.value,
+      titulo: tituloEl.value.trim().length >= 5,
+      contenido: contenidoEl.value.trim().length >= 20
+    };
+    checklist.querySelectorAll('li[data-check]').forEach(function (li) {
+      const key = li.getAttribute('data-check');
+      const done = checks[key];
+      li.classList.toggle('com-staff-create-checklist__item--done', done);
+      li.querySelector('.com-staff-create-checklist__icon').textContent = done ? '✓' : '○';
+    });
+  }
+
+  function updateFileName(input, targetId, emptyText) {
+    const span = document.getElementById(targetId);
+    if (!span) return;
+    if (input.files.length === 0) {
+      span.textContent = emptyText;
+      return;
+    }
+    if (input.multiple && input.files.length > 1) {
+      span.textContent = input.files.length + ' archivos seleccionados';
+    } else {
+      span.textContent = input.files[0].name;
+    }
+  }
+
+  destEl.addEventListener('change', function () {
+    toggleCursosGrid();
+    updatePreview();
+    updateChecklist();
+  });
+  tipoEl.addEventListener('change', function () {
+    updateEventHighlight();
+    updateTipoTip();
+    updatePreview();
+    updateChecklist();
+  });
+  tituloEl.addEventListener('input', function () {
+    updateCounter();
+    updatePreview();
+    updateChecklist();
+  });
+  contenidoEl.addEventListener('input', function () {
+    updatePreview();
+    updateChecklist();
+  });
+  document.getElementById('archivo_adjunto').addEventListener('change', function () {
+    updateFileName(this, 'file-name', 'Seleccionar archivo');
+  });
+  document.getElementById('archivos_adicionales').addEventListener('change', function () {
+    updateFileName(this, 'files-list', 'Seleccionar varios archivos');
+  });
+
+  toggleCursosGrid();
+  updateEventHighlight();
+  updateTipoTip();
+  updatePreview();
+  updateCounter();
+  updateChecklist();
+})();
 </script>
 {% endblock %}

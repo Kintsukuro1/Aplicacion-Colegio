@@ -23,19 +23,11 @@
 {% include 'profesor/_personal_wrap_end.html' %}
 
 {% else %}
-<link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados.css' %}">
+<link rel="stylesheet" href="{% static 'css/profesor/comunicados.css' %}?v=20260616-staff">
+<link rel="stylesheet" href="{% static 'css/comunicados/lista_comunicados_staff.css' %}?v=20260616-staff">
 
-<div class="comunicados-container">
-    <div class="header-comunicados">
-        <h1>📢 Comunicados y Circulares</h1>
-        {% if can_create_comunicado %}
-        <a href="{% url 'comunicados:crear' %}" class="btn-crear">
-            ➕ Nuevo Comunicado
-        </a>
-        {% endif %}
-    </div>
-
-    {% include 'comunicados/_lista_comunicados_contenido.html' %}
+<div class="com-prof-wrap com-staff-com-wrap">
+    {% include 'comunicados/_lista_comunicados_staff.html' %}
 </div>
 {% endif %}
 {% endblock %}

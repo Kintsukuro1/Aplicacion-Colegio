@@ -122,6 +122,14 @@ def lista_comunicados(request):
             colegio,
             {'comunicados': comunicados_lista},
         )
+    elif rol_normalizado not in ('apoderado', 'estudiante'):
+        context.update(
+            ComunicadosService.get_staff_comunicados_list_context(
+                list(comunicados_todos),
+                is_admin=can_create_comunicado or can_view_stats,
+            )
+        )
+        context['comunicados_all'] = list(comunicados_todos)
     return render(request, 'comunicados/lista_comunicados.html', context)
 
 
@@ -168,10 +176,31 @@ def detalle_comunicado(request, comunicado_id):
         school_id=request.user.rbd_colegio,
     )
 
-    shell_context = _build_dashboard_shell_context(request)
-    rol_normalizado = str(shell_context.get('rol', '')).lower()
+    can_create_comunicado = (
+        PolicyService.has_capability(
+            request.user,
+            'ANNOUNCEMENT_CREATE',
+            school_id=request.user.rbd_colegio,
+        )
+        and PolicyService.has_capability(
+            request.user,
+            'SYSTEM_CONFIGURE',
+            school_id=request.user.rbd_colegio,
+        )
+    )
+    can_view_stats = PolicyService.has_capability(
+        request.user,
+        'REPORT_VIEW_BASIC',
+        school_id=request.user.rbd_colegio,
+    )
+
+    user_context = DashboardService.get_user_context(request.user, request.session)
+    rol_normalizado = str(
+        user_context['data']['rol'] if user_context else getattr(request.user, 'rol', 'estudiante')
+    ).lower()
 
     if rol_normalizado == 'estudiante':
+        shell_context = _build_dashboard_shell_context(request)
         alumno_ctx = ComunicadosService.get_alumno_comunicados_context(
             request.user,
             request.GET,
@@ -185,12 +214,29 @@ def detalle_comunicado(request, comunicado_id):
         }
         return render(request, 'comunicados/detalle_comunicado_alumno.html', context)
 
+    use_staff_detail = rol_normalizado not in ('apoderado', 'profesor')
+    pagina = 'detalle_comunicado' if use_staff_detail else 'comunicados'
+    shell_context = _build_dashboard_shell_context(request, pagina_actual=pagina)
+
     context = {
         'comunicado': comunicado,
         'confirmacion': confirmacion,
         'is_admin_user': is_admin_user,
+        'can_create_comunicado': can_create_comunicado,
+        'can_view_stats': can_view_stats,
+        'use_staff_detail': use_staff_detail,
         **shell_context,
     }
+
+    if use_staff_detail:
+        comunicados = ComunicadosService.get_comunicados_for_user(request.user)
+        context.update(
+            ComunicadosService.get_staff_comunicados_list_context(
+                list(comunicados),
+                is_admin=is_admin_user or can_view_stats,
+            )
+        )
+
     return render(request, 'comunicados/detalle_comunicado.html', context)
 
 
@@ -212,7 +258,22 @@ def crear_comunicado(request):
         messages.error(request, 'No tienes permiso para crear comunicados.')
         return redirect('comunicados:lista')
 
-    shell_context = _build_dashboard_shell_context(request)
+    shell_context = _build_dashboard_shell_context(request, pagina_actual='crear_comunicado')
+
+    def build_form_context(cursos, **extra):
+        comunicados = ComunicadosService.get_comunicados_for_user(request.user)
+        return {
+            'tipos': Comunicado.TIPOS,
+            'destinatarios': Comunicado.DESTINATARIOS,
+            'cursos': cursos,
+            'total_cursos': len(cursos),
+            **ComunicadosService.get_staff_comunicados_list_context(
+                list(comunicados),
+                is_admin=True,
+            ),
+            **shell_context,
+            **extra,
+        }
 
     if request.method == 'POST':
         # Usar el service para crear el comunicado
@@ -222,12 +283,7 @@ def crear_comunicado(request):
             messages.error(request, result['error'])
             # Re-renderizar el formulario con errores
             cursos = ComunicadosService.get_active_courses_for_user(request.user)
-            context = {
-                'tipos': Comunicado.TIPOS,
-                'destinatarios': Comunicado.DESTINATARIOS,
-                'cursos': cursos,
-                **shell_context,
-            }
+            context = build_form_context(cursos)
             return render(request, 'comunicados/crear_comunicado.html', context)
 
         # Éxito
@@ -243,17 +299,14 @@ def crear_comunicado(request):
     default_contenido = request.GET.get('contenido', '')
     default_curso_id = request.GET.get('curso_id', '')
 
-    context = {
-        'tipos': Comunicado.TIPOS,
-        'destinatarios': Comunicado.DESTINATARIOS,
-        'cursos': cursos,
-        'default_tipo': default_tipo,
-        'default_destinatario': default_destinatario,
-        'default_titulo': default_titulo,
-        'default_contenido': default_contenido,
-        'default_curso_id': default_curso_id,
-        **shell_context,
-    }
+    context = build_form_context(
+        cursos,
+        default_tipo=default_tipo,
+        default_destinatario=default_destinatario,
+        default_titulo=default_titulo,
+        default_contenido=default_contenido,
+        default_curso_id=default_curso_id,
+    )
 
     return render(request, 'comunicados/crear_comunicado.html', context)
 

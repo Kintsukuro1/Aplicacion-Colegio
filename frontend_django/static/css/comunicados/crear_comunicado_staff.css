@@ -1,0 +1,509 @@
+/* Crear comunicado — portal staff (admin escolar) */
+
+body.vista-staff .com-staff-create-page {
+    min-width: 0;
+    gap: 0.85rem;
+}
+
+body.vista-staff .com-staff-create-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.15rem;
+    color: #6b46c1;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+body.vista-staff .com-staff-create-back:hover {
+    color: #553c9a;
+    transform: translateX(-3px);
+}
+
+body.vista-staff .com-staff-create-guide {
+    margin-bottom: 0.15rem;
+}
+
+body.vista-staff .com-staff-create-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+    gap: 1.15rem;
+    align-items: start;
+}
+
+body.vista-staff .com-staff-create-form-panel {
+    background: #ffffff;
+    border: 1px solid #e9d5ff;
+    border-radius: 18px;
+    box-shadow: 0 4px 22px rgba(107, 70, 193, 0.07);
+    overflow: hidden;
+}
+
+body.vista-staff .com-staff-create-form {
+    margin: 0;
+}
+
+body.vista-staff .com-staff-create-section {
+    margin: 0;
+    padding: 1.15rem 1.25rem 1.2rem;
+    border: none;
+    border-bottom: 1px solid #f3e8ff;
+    min-width: 0;
+}
+
+body.vista-staff .com-staff-create-section--options {
+    border-bottom: none;
+}
+
+body.vista-staff .com-staff-create-section--event.com-staff-create-section--highlight {
+    background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+    border-bottom-color: #fde68a;
+}
+
+body.vista-staff .com-staff-create-section__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0;
+    float: none;
+    width: 100%;
+}
+
+body.vista-staff .com-staff-create-section__icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #7c3aed 0%, #6b46c1 100%);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(107, 70, 193, 0.25);
+}
+
+body.vista-staff .com-staff-create-section__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #553c9a;
+    line-height: 1.25;
+}
+
+body.vista-staff .com-staff-create-section__sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+body.vista-staff .com-staff-create-grid {
+    display: grid;
+    gap: 0.85rem;
+}
+
+body.vista-staff .com-staff-create-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.vista-staff .com-staff-create-field {
+    min-width: 0;
+}
+
+body.vista-staff .com-staff-create-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b46c1;
+}
+
+body.vista-staff .com-staff-create-required {
+    color: #dc2626;
+}
+
+body.vista-staff .com-staff-create-control {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #ddd6fe;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    background: #faf5ff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    box-sizing: border-box;
+}
+
+body.vista-staff .com-staff-create-control:focus {
+    outline: none;
+    border-color: #7c3aed;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+body.vista-staff .com-staff-create-control--area {
+    min-height: 160px;
+    resize: vertical;
+    line-height: 1.55;
+}
+
+body.vista-staff select.com-staff-create-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%237c3aed' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+    padding-right: 2.25rem;
+}
+
+body.vista-staff .com-staff-create-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+}
+
+body.vista-staff .com-staff-create-help {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+body.vista-staff .com-staff-create-counter {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #7c3aed;
+}
+
+body.vista-staff .com-staff-create-cursos {
+    display: none;
+    margin-top: 0.85rem;
+    padding: 0.85rem;
+    border: 1px dashed #ddd6fe;
+    border-radius: 14px;
+    background: #faf5ff;
+}
+
+body.vista-staff .com-staff-create-cursos--visible {
+    display: block;
+}
+
+body.vista-staff .com-staff-create-cursos__hint {
+    margin: 0 0 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6b46c1;
+}
+
+body.vista-staff .com-staff-create-cursos__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.5rem;
+}
+
+body.vista-staff .com-staff-create-curso {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #e9d5ff;
+    border-radius: 10px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.vista-staff .com-staff-create-curso:hover {
+    border-color: #c4b5fd;
+    box-shadow: 0 2px 8px rgba(107, 70, 193, 0.08);
+}
+
+body.vista-staff .com-staff-create-curso input {
+    accent-color: #7c3aed;
+    width: 16px;
+    height: 16px;
+}
+
+body.vista-staff .com-staff-create-curso__label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+body.vista-staff .com-staff-create-cursos__empty {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+body.vista-staff .com-staff-create-file {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    border: 2px dashed #ddd6fe;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #faf5ff 0%, #ffffff 100%);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+body.vista-staff .com-staff-create-file:hover {
+    border-color: #a78bfa;
+    background: #f5f3ff;
+}
+
+body.vista-staff .com-staff-create-file input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+body.vista-staff .com-staff-create-file__icon {
+    font-size: 1.1rem;
+}
+
+body.vista-staff .com-staff-create-file__text {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+body.vista-staff .com-staff-create-toggles {
+    display: grid;
+    gap: 0.65rem;
+}
+
+body.vista-staff .com-staff-create-toggle {
+    display: block;
+    margin: 0;
+    cursor: pointer;
+}
+
+body.vista-staff .com-staff-create-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.vista-staff .com-staff-create-toggle__card {
+    display: block;
+    padding: 0.85rem 1rem;
+    border: 1px solid #e9d5ff;
+    border-radius: 14px;
+    background: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+body.vista-staff .com-staff-create-toggle__card--warn {
+    border-color: #fed7aa;
+    background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+}
+
+body.vista-staff .com-staff-create-toggle__card--accent {
+    border-color: #fde68a;
+    background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+}
+
+body.vista-staff .com-staff-create-toggle input:checked + .com-staff-create-toggle__card {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+    background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%);
+}
+
+body.vista-staff .com-staff-create-toggle__title {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #553c9a;
+}
+
+body.vista-staff .com-staff-create-toggle__desc {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+body.vista-staff .com-staff-create-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    padding: 1rem 1.25rem 1.25rem;
+    background: linear-gradient(180deg, #faf5ff 0%, #f5f3ff 100%);
+    border-top: 1px solid #e9d5ff;
+}
+
+body.vista-staff .com-staff-create-submit {
+    background: linear-gradient(135deg, #7c3aed 0%, #6b46c1 100%) !important;
+    border-color: #6b46c1 !important;
+    box-shadow: 0 4px 14px rgba(107, 70, 193, 0.28);
+    padding: 0.55rem 1.25rem !important;
+    font-size: 0.88rem !important;
+}
+
+body.vista-staff .com-staff-create-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(107, 70, 193, 0.32);
+}
+
+/* Panel lateral */
+body.vista-staff .com-staff-create-aside {
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+body.vista-staff .com-staff-create-preview,
+body.vista-staff .com-staff-create-tip,
+body.vista-staff .com-staff-create-checklist {
+    padding: 1rem;
+    border: 1px solid #e9d5ff;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 2px 12px rgba(107, 70, 193, 0.05);
+}
+
+body.vista-staff .com-staff-create-preview {
+    background: linear-gradient(180deg, #faf5ff 0%, #ffffff 100%);
+}
+
+body.vista-staff .com-staff-create-preview__eyebrow {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7c3aed;
+}
+
+body.vista-staff .com-staff-create-preview__title {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.35;
+}
+
+body.vista-staff .com-staff-create-preview__meta {
+    margin: 0 0 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #6b46c1;
+}
+
+body.vista-staff .com-staff-create-preview__excerpt {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+body.vista-staff .com-staff-create-tip {
+    background: linear-gradient(135deg, #eef2ff 0%, #ede9fe 100%);
+    border-color: #c4b5fd;
+}
+
+body.vista-staff .com-staff-create-tip__title,
+body.vista-staff .com-staff-create-checklist__title {
+    margin: 0 0 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #553c9a;
+}
+
+body.vista-staff .com-staff-create-tip__text {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.5;
+}
+
+body.vista-staff .com-staff-create-checklist__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+body.vista-staff .com-staff-create-checklist__list li {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+body.vista-staff .com-staff-create-checklist__item--done {
+    color: #059669;
+}
+
+body.vista-staff .com-staff-create-checklist__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+@media (max-width: 960px) {
+    body.vista-staff .com-staff-create-layout {
+        grid-template-columns: 1fr;
+    }
+
+    body.vista-staff .com-staff-create-aside {
+        position: static;
+        order: -1;
+    }
+
+    body.vista-staff .com-staff-create-preview {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    body.vista-staff .com-staff-create-grid--2 {
+        grid-template-columns: 1fr;
+    }
+
+    body.vista-staff .com-staff-create-section {
+        padding: 1rem;
+    }
+
+    body.vista-staff .com-staff-create-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    body.vista-staff .com-staff-create-actions .com-prof-btn {
+        width: 100%;
+        text-align: center;
+    }
+}
