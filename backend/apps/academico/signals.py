@@ -30,7 +30,7 @@ def notificar_tarea_nueva(sender, instance, created, **kwargs):
             destinatario=estudiante,
             tipo='tarea_nueva',
             titulo=f'Nueva tarea: {instance.titulo}',
-            mensaje=f'Se publico una tarea en {instance.clase.asignatura.nombre}.',
+            mensaje=f'Se publicó una tarea en {instance.clase.asignatura.nombre}.',
             enlace=enlace,
             prioridad='normal',
         )
@@ -72,7 +72,7 @@ def notificar_calificacion_publicada(sender, instance, created, **kwargs):
         destinatario=instance.estudiante,
         tipo='calificacion',
         titulo=f'Nueva nota en {instance.evaluacion.clase.asignatura.nombre}',
-        mensaje=f'Se registro una calificacion {instance.nota} en "{instance.evaluacion.nombre}".',
+        mensaje=f'Se registró una calificación {instance.nota} en "{instance.evaluacion.nombre}".',
         enlace='/dashboard/?pagina=mis_notas',
         prioridad='alta',
     )
@@ -91,7 +91,7 @@ def notificar_entrega_tarea(sender, instance, created, **kwargs):
         destinatario=profesor,
         tipo='tarea_entregada',
         titulo=f'Entrega recibida: {instance.tarea.titulo}',
-        mensaje=f'{instance.estudiante.get_full_name()} envio su tarea.',
+        mensaje=f'{instance.estudiante.get_full_name()} envió su tarea.',
         enlace=_build_clase_link(instance.tarea.clase_id, '&tab=entregas'),
         prioridad='normal',
     )

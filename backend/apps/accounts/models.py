@@ -382,14 +382,39 @@ class PerfilEstudiante(models.Model):
 
     def save(self, *args, **kwargs):  # type: ignore[override]
         if self.curso_actual_id is None and self.ciclo_actual_id and self.user_id and self.user.rbd_colegio:
-            from backend.apps.cursos.models import Curso
-            curso = Curso.objects.filter(
-                colegio_id=self.user.rbd_colegio,
+            # Intentar encontrar una matrícula activa para el estudiante en este ciclo
+            from backend.apps.matriculas.models import Matricula
+            from backend.apps.core.models import MatriculaMejorada
+
+            # 1. Buscar en Matricula (legacy/oficial)
+            matricula = Matricula.objects.filter(
+                estudiante_id=self.user_id,
                 ciclo_academico_id=self.ciclo_actual_id,
-                activo=True,
-            ).order_by('id_curso').first()
-            if curso:
-                self.curso_actual_id = curso
+                estado='ACTIVA',
+            ).select_related('curso').first()
+
+            if matricula and matricula.curso:
+                self.curso_actual_id = matricula.curso
+            else:
+                # 2. Buscar en MatriculaMejorada (Fase 3)
+                matricula_mejorada = MatriculaMejorada.objects.filter(
+                    estudiante_id=self.user_id,
+                    ciclo_academico_id=self.ciclo_actual_id,
+                    estado__es_activo=True,
+                ).select_related('curso').first()
+
+                if matricula_mejorada and matricula_mejorada.curso:
+                    self.curso_actual_id = matricula_mejorada.curso
+                else:
+                    # 3. Fallback: Primer curso activo del ciclo académico del colegio
+                    from backend.apps.cursos.models import Curso
+                    curso = Curso.objects.filter(
+                        colegio_id=self.user.rbd_colegio,
+                        ciclo_academico_id=self.ciclo_actual_id,
+                        activo=True,
+                    ).order_by('id_curso').first()
+                    if curso:
+                        self.curso_actual_id = curso
         super().save(*args, **kwargs)
 
     @property
