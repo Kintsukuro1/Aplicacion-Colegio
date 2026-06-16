@@ -156,6 +156,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'backend.apps.core.context_processors.asset_version',
             ],
         },
     },
@@ -309,6 +310,9 @@ LANGUAGE_CODE = config('LANGUAGE_CODE', default='es-cl')
 TIME_ZONE = config('TIME_ZONE', default='America/Santiago')
 USE_I18N = True
 USE_TZ = True
+
+# Bump al cambiar CSS/JS del portal (evita Ctrl+F5 manual en cada página).
+ASSET_VERSION = '20260618c'
 
 
 # Static files

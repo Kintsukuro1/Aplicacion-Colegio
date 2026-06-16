@@ -1,11 +1,11 @@
 {% load static %}
 {# Layout unificado funcionarios — identidad Premium Lavanda/Morado (clon Admin General) #}
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
-<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260610-tree-admin">
-<link rel="stylesheet" href="{% static 'css/profesor/profesor_hero.css' %}?v=20260609-staff">
-<link rel="stylesheet" href="{% static 'css/admin/admin_portal.css' %}?v=20260609-sidebar-scroll">
-<link rel="stylesheet" href="{% static 'css/staff/staff_portal.css' %}?v=20260609-staff-hero">
-<link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v=20260609-staff">
+<link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'css/profesor/profesor_hero.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'css/admin/admin_portal.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'css/staff/staff_portal.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'css/portal_notifications.css' %}?v={{ asset_version }}">
 <script>document.body.classList.add('vista-personal', 'vista-staff', 'vista-admin-global', 'vista-staff-{{ staff_slug|default:"funcionario" }}');</script>
 <script>
 (function () {

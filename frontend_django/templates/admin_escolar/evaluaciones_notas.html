@@ -1,8 +1,8 @@
 {% load static %}
 {% load custom_filters %}
 
-<link rel="stylesheet" href="{% static 'css/admin_escolar/evaluaciones_notas.css' %}?v=20260616-premium">
-<link rel="stylesheet" href="{% static 'css/profesor/notas.css' %}?v=20260616-premium-tables">
+<link rel="stylesheet" href="{% static 'css/admin_escolar/evaluaciones_notas.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'css/profesor/notas.css' %}?v={{ asset_version }}">
 
 <div class="ae-notas{% if clase_seleccionada or filtro_curso_id %} ae-notas--compact{% endif %}">
 
@@ -105,7 +105,7 @@
         {% if clases_resumen_curso %}
         <div class="ae-asig-grid">
             {% for item in clases_resumen_curso %}
-            <a class="ae-asig-card ae-asig-card--{{ item.estado }}" href="{% url 'dashboard' %}?pagina=notas&amp;curso_id={{ curso_seleccionado.id_curso }}&amp;clase_id={{ item.clase_id }}" style="--ae-asig: {{ item.color }};">
+            <a class="ae-asig-card ae-asig-card--{{ item.estado }}" href="{% url 'dashboard' %}?pagina=notas&amp;curso_id={{ curso_seleccionado.id_curso }}&amp;clase_id={{ item.clase_id }}" style="--ae-asig: {{ item.asignatura|color_asignatura:item.color }};">
                 <span class="ae-asig-card__stripe" aria-hidden="true"></span>
                 <div class="ae-asig-card__body">
                     <div class="ae-asig-card__top">
@@ -152,7 +152,7 @@
                     {% for item in clases_atencion %}
                     <tr>
                         <td>
-                            <span class="ae-materia-dot" style="--ae-color: {{ item.color }};"></span>
+                            <span class="ae-materia-dot" style="--ae-color: {{ item.asignatura|color_asignatura:item.color }};"></span>
                             <strong>{{ item.asignatura }}</strong>
                         </td>
                         <td>{{ item.profesor }}</td>
@@ -197,7 +197,7 @@
                     {% for item in clases_atencion %}
                     <tr>
                         <td>
-                            <span class="ae-materia-dot" style="--ae-color: {{ item.color }};"></span>
+                            <span class="ae-materia-dot" style="--ae-color: {{ item.asignatura|color_asignatura:item.color }};"></span>
                             <strong>{{ item.curso }}</strong> · {{ item.asignatura }}
                         </td>
                         <td>{{ item.profesor }}</td>
@@ -241,7 +241,7 @@
         <span>{{ clase_seleccionada.asignatura.nombre }}</span>
     </nav>
 
-    <section class="ae-clase-hero" style="--ae-asig: {{ clase_seleccionada.asignatura.color|default:'#6366f1' }};">
+    <section class="ae-clase-hero" style="--ae-asig: {{ clase_seleccionada.asignatura.nombre|color_asignatura:clase_seleccionada.asignatura.color }};">
         <div class="ae-clase-hero__main">
             <span class="ae-clase-hero__icon" aria-hidden="true">{{ clase_seleccionada.asignatura.nombre|slice:":1" }}</span>
             <div>

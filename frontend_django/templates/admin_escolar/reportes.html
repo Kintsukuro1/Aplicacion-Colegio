@@ -1,0 +1,171 @@
+{% load static %}
+{% load custom_filters %}
+
+<link rel="stylesheet" href="{% static 'css/admin_escolar/evaluaciones_notas.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'css/profesor/reportes.css' %}?v={{ asset_version }}">
+<link rel="stylesheet" href="{% static 'css/admin_escolar/reportes_admin.css' %}?v={{ asset_version }}">
+
+<div class="ae-notas ae-reportes{% if clase_seleccionada %} ae-notas--compact{% endif %}">
+
+    <p class="ae-notas-meta" role="status">
+        Reportes institucionales · ciclo <strong>{{ ciclo_activo.nombre|default:"—" }}</strong>
+        · actualizado al cargar: {{ actualizado_en }}
+    </p>
+
+    <section class="ae-notas-nav" aria-label="Herramientas relacionadas">
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=notas">
+            <span class="ae-nav-card__icon">📝</span>
+            <span class="ae-nav-card__title">Evaluaciones y notas</span>
+            <span class="ae-nav-card__hint">Supervisar evaluaciones y cobertura</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=libro_clases">
+            <span class="ae-nav-card__icon">📖</span>
+            <span class="ae-nav-card__title">Libro de clases</span>
+            <span class="ae-nav-card__hint">Matriz oficial de calificaciones</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=reporte_cursos">
+            <span class="ae-nav-card__icon">📈</span>
+            <span class="ae-nav-card__title">Rendimiento por cursos</span>
+            <span class="ae-nav-card__hint">Comparativo por nivel</span>
+        </a>
+        <a class="ae-nav-card" href="{% url 'dashboard' %}?pagina=asistencia">
+            <span class="ae-nav-card__icon">📅</span>
+            <span class="ae-nav-card__title">Asistencia</span>
+            <span class="ae-nav-card__hint">Registro y seguimiento diario</span>
+        </a>
+    </section>
+
+    {% if admin_insights %}
+    <section class="ae-notas-insights" aria-label="Alertas">
+        {% for insight in admin_insights %}
+        <div class="ae-insight ae-insight--{{ insight.tipo }}">{{ insight.texto }}</div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <section class="ae-notas-filters ae-reportes-filters" aria-label="Generar reporte">
+        <form method="GET" class="ae-filters-form ae-filters-form--reportes" id="formFiltros" autocomplete="off">
+            <input type="hidden" name="pagina" value="reportes">
+            <div class="ae-filters-row">
+                <div class="ae-field">
+                    <label for="tipo">Tipo de reporte</label>
+                    <select name="tipo" id="tipo">
+                        <option value="asistencia"{% if tipo_reporte == 'asistencia' %} selected{% endif %}>Asistencia</option>
+                        <option value="academico"{% if tipo_reporte == 'academico' %} selected{% endif %}>Rendimiento académico</option>
+                    </select>
+                </div>
+                <div class="ae-field">
+                    <label for="filtro_curso_id">Curso</label>
+                    <select id="filtro_curso_id" name="curso_id" onchange="onCursoReportesChange(this)">
+                        <option value="">Todos los cursos</option>
+                        {% for curso in cursos %}
+                        <option value="{{ curso.id_curso }}"{% if filtro_curso_id|stringformat:"s" == curso.id_curso|stringformat:"s" %} selected{% endif %}>{{ curso.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="ae-field ae-field--grow">
+                    <label for="clase_id">Clase (curso · asignatura)</label>
+                    <select name="clase_id" id="clase_id" onchange="onClaseReportesChange(this)" required>
+                        <option value="">— Seleccione una clase —</option>
+                        {% include 'profesor/_clase_select_options.html' with filtro_clase_id=filtro_clase_id clases=clases_para_filtro %}
+                    </select>
+                </div>
+            </div>
+            <div class="ae-filters-row">
+                <div class="ae-field">
+                    <label for="fecha_inicio">Desde</label>
+                    <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ fecha_inicio }}">
+                </div>
+                <div class="ae-field">
+                    <label for="fecha_fin">Hasta</label>
+                    <input type="date" name="fecha_fin" id="fecha_fin" value="{{ fecha_fin }}">
+                </div>
+                <div class="ae-filters-actions">
+                    <button type="submit" class="ae-btn ae-btn--primary">Generar reporte</button>
+                    <a href="{% url 'dashboard' %}?pagina=reportes" class="ae-btn ae-btn--ghost">Limpiar</a>
+                </div>
+            </div>
+            <p class="ae-filters-hint">Ajusta tipo, curso, clase y fechas; luego pulsa <strong>Generar reporte</strong> para actualizar los datos.</p>
+        </form>
+    </section>
+
+    {% if clase_seleccionada %}
+    <nav class="ae-breadcrumb" aria-label="Ruta">
+        <a href="{% url 'dashboard' %}?pagina=reportes">Reportes</a>
+        {% if filtro_curso_id %}
+        <span>/</span>
+        <a href="{% url 'dashboard' %}?pagina=reportes&amp;tipo={{ tipo_reporte }}&amp;curso_id={{ filtro_curso_id }}">{{ clase_seleccionada.curso.nombre }}</a>
+        {% endif %}
+        <span>/</span>
+        <span>{{ clase_seleccionada.asignatura.nombre }}</span>
+    </nav>
+
+    <section class="ae-clase-hero ae-reportes-hero" style="--ae-asig: {{ clase_seleccionada.asignatura.nombre|color_asignatura:clase_seleccionada.asignatura.color }};">
+        <div class="ae-clase-hero__main">
+            <span class="ae-clase-hero__icon" aria-hidden="true">{{ clase_seleccionada.asignatura.nombre|slice:":1" }}</span>
+            <div>
+                <h2>{% if tipo_reporte == 'academico' %}Rendimiento académico{% else %}Reporte de asistencia{% endif %} · {{ clase_seleccionada.curso.nombre }}</h2>
+                <p>
+                    <strong>{{ clase_seleccionada.asignatura.nombre }}</strong>
+                    · Docente: {{ clase_seleccionada.profesor.get_full_name|default:"Sin asignar" }}
+                    {% if fecha_inicio and fecha_fin %}· {{ fecha_inicio }} — {{ fecha_fin }}{% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="ae-clase-hero__actions">
+            {% if filtro_curso_id %}
+            <a href="{% url 'dashboard' %}?pagina=reportes&amp;tipo={{ tipo_reporte }}&amp;curso_id={{ filtro_curso_id }}" class="ae-btn ae-btn--ghost ae-btn--back">← Volver al curso</a>
+            {% endif %}
+            <a class="ae-btn ae-btn--ghost" href="{% url 'dashboard' %}?pagina=notas&amp;clase_id={{ clase_seleccionada.id }}&amp;curso_id={{ filtro_curso_id|default:clase_seleccionada.curso.id_curso }}">Evaluaciones</a>
+            <a class="ae-btn ae-btn--ghost" href="{% url 'dashboard' %}?pagina=libro_clases&amp;clase_id={{ clase_seleccionada.id }}&amp;curso_id={{ filtro_curso_id|default:clase_seleccionada.curso.id_curso }}">Libro de clases</a>
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="ae-reportes-results rep-page">
+        {% include 'profesor/_reportes_inner.html' %}
+    </div>
+
+    {% if not clase_seleccionada and reportes_acceso_rapido %}
+    {% include 'admin_escolar/_reportes_acceso_rapido.html' %}
+    {% endif %}
+</div>
+
+{% include 'profesor/_reportes_scripts.html' %}
+{% include 'profesor/_filtrar_clases_por_curso_script.html' %}
+<script>
+function onCursoReportesChange(select) {
+    filtrarClasesPorCurso(select.value);
+    var claseSelect = document.getElementById('clase_id');
+    if (!claseSelect) return;
+    claseSelect.value = '';
+}
+
+function onClaseReportesChange(claseSelect) {
+    syncCursoFromClase(claseSelect);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('formFiltros');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        var curso = document.getElementById('filtro_curso_id');
+        var clase = document.getElementById('clase_id');
+        if (!clase || !clase.value) {
+            e.preventDefault();
+            alert('Selecciona una clase antes de generar el reporte.');
+            if (clase) clase.focus();
+            return;
+        }
+        var opt = clase.options[clase.selectedIndex];
+        if (curso && curso.value && opt && opt.dataset && opt.dataset.cursoId
+            && String(opt.dataset.cursoId) !== String(curso.value)) {
+            e.preventDefault();
+            alert('La asignatura no pertenece al curso seleccionado. Elige la clase nuevamente.');
+            clase.value = '';
+            clase.focus();
+        }
+    });
+});
+</script>

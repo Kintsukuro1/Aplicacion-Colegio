@@ -1,0 +1,47 @@
+<section class="ae-notas-panel ae-notas-panel--premium ae-reportes-quick" aria-label="Acceso rápido inteligente">
+    <header class="ae-panel-head ae-panel-head--premium">
+        <div>
+            <h2>Acceso rápido</h2>
+            <p>
+                {% if tipo_reporte == 'academico' %}
+                Clases ordenadas por alertas académicas: promedio bajo o sin evaluaciones.
+                {% else %}
+                Clases ordenadas por alertas de asistencia (últimos 30 días).
+                {% endif %}
+                {% if reportes_acceso_rapido_total > reportes_acceso_rapido|length %}
+                Mostrando {{ reportes_acceso_rapido|length }} de {{ reportes_acceso_rapido_total }}.
+                {% endif %}
+            </p>
+        </div>
+    </header>
+    <div class="ae-asig-grid">
+        {% for item in reportes_acceso_rapido %}
+        <a class="ae-asig-card ae-asig-card--{{ item.estado }} ae-rep-card"
+           href="{% url 'dashboard' %}?pagina=reportes&amp;tipo={{ tipo_reporte }}&amp;clase_id={{ item.clase_id }}&amp;curso_id={{ item.curso_id }}"
+           style="--ae-asig: {{ item.color }};">
+            <span class="ae-asig-card__stripe" aria-hidden="true"></span>
+            <div class="ae-asig-card__body">
+                <div class="ae-asig-card__top">
+                    <span class="ae-asig-card__icon">{{ item.asignatura|slice:":1" }}</span>
+                    <span class="ae-badge ae-badge--{{ item.estado }}">{{ item.estado_label }}</span>
+                </div>
+                <h3 class="ae-asig-card__title">{{ item.asignatura }}</h3>
+                <p class="ae-asig-card__prof">{{ item.curso }} · {{ item.profesor }}</p>
+                <p class="ae-rep-card__insight">{{ item.insight }}</p>
+                <dl class="ae-asig-card__meta">
+                    {% if tipo_reporte == 'academico' %}
+                    <div><dt>Promedio</dt><dd>{% if item.promedio %}{{ item.promedio }}{% else %}—{% endif %}</dd></div>
+                    <div><dt>Evaluaciones</dt><dd>{{ item.num_evaluaciones }}</dd></div>
+                    <div><dt>Asistencia</dt><dd>{% if item.pct_asistencia %}{{ item.pct_asistencia }}%{% else %}—{% endif %}</dd></div>
+                    {% else %}
+                    <div><dt>Asistencia</dt><dd>{% if item.pct_asistencia %}{{ item.pct_asistencia }}%{% else %}—{% endif %}</dd></div>
+                    <div><dt>Ausentes</dt><dd>{{ item.ausentes_30d }}</dd></div>
+                    <div><dt>Registros</dt><dd>{{ item.registros_asistencia }}</dd></div>
+                    {% endif %}
+                </dl>
+            </div>
+            <span class="ae-asig-card__cta">Abrir reporte →</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>

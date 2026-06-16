@@ -12,6 +12,7 @@ from collections import defaultdict
 from backend.common.services import PermissionService
 from backend.common.utils.error_response import ErrorResponseBuilder
 from backend.apps.core.services.integrity_service import IntegrityService
+from backend.apps.core.subject_colors import resolve_asignatura_color
 from backend.common.exceptions import PrerequisiteException
 
 logger = logging.getLogger(__name__)
@@ -1042,7 +1043,7 @@ class DashboardAdminService:
                     'asignatura': clase.asignatura.nombre,
                     'profesor': clase.profesor.get_full_name() if clase.profesor else 'Sin docente',
                     'profesor_id': clase.profesor_id,
-                    'color': clase.asignatura.color or '#6366f1',
+                    'color': resolve_asignatura_color(clase.asignatura.nombre, clase.asignatura.color),
                     'pendientes': 0,
                     'motivo': 'Sin evaluaciones',
                     'total_estudiantes': num_est,
@@ -1060,7 +1061,7 @@ class DashboardAdminService:
                     'asignatura': clase.asignatura.nombre,
                     'profesor': clase.profesor.get_full_name() if clase.profesor else 'Sin docente',
                     'profesor_id': clase.profesor_id,
-                    'color': clase.asignatura.color or '#6366f1',
+                    'color': resolve_asignatura_color(clase.asignatura.nombre, clase.asignatura.color),
                     'pendientes': incompletas,
                     'motivo': f'{incompletas} evaluación(es) incompleta(s)',
                     'total_estudiantes': num_est,
@@ -1153,7 +1154,9 @@ class DashboardAdminService:
                         if clase_resumen.profesor else 'Sin docente'
                     ),
                     'profesor_id': clase_resumen.profesor_id,
-                    'color': clase_resumen.asignatura.color or '#6366f1',
+                    'color': resolve_asignatura_color(
+                        clase_resumen.asignatura.nombre, clase_resumen.asignatura.color
+                    ),
                     'num_evaluaciones': num_evals,
                     'num_calificaciones': num_califs,
                     'promedio': prom,
@@ -1427,7 +1430,20 @@ class DashboardAdminService:
             'curso__nombre', 'asignatura__nombre'
         )
 
+        from backend.apps.cursos.models import Curso
+        cursos = Curso.objects.filter(
+            id_curso__in=clases.values_list('curso_id', flat=True).distinct(),
+        ).order_by('nombre')
+
         filtro_clase_id = (request_get_params.get('clase_id') or '').strip()
+        filtro_curso_id = (request_get_params.get('curso_id') or '').strip()
+        clases_para_resumen = clases
+        if filtro_curso_id:
+            try:
+                clases_para_resumen = clases.filter(curso_id=int(filtro_curso_id))
+            except (ValueError, TypeError):
+                filtro_curso_id = ''
+
         clase_seleccionada = None
         matriz_calificaciones = []
         evaluaciones = []
@@ -1487,10 +1503,11 @@ class DashboardAdminService:
             libro_resumen_clases.append({
                 'clase_id': c.id,
                 'curso': c.curso.nombre,
+                'curso_id': c.curso_id,
                 'asignatura': c.asignatura.nombre,
                 'profesor': c.profesor.get_full_name() if c.profesor else 'Sin docente',
                 'profesor_id': c.profesor_id,
-                'color': c.asignatura.color or '#6366f1',
+                'color': resolve_asignatura_color(c.asignatura.nombre, c.asignatura.color),
                 'num_evaluaciones': c.num_evaluaciones,
                 'num_calificaciones': c.num_calificaciones,
                 'promedio': prom,
@@ -1498,11 +1515,99 @@ class DashboardAdminService:
 
         clases_sin_libro = clases.count() - clases_con_libro.count()
 
+        curso_seleccionado = None
+        clases_resumen_curso = []
+        curso_kpi = None
+
+        if filtro_curso_id:
+            try:
+                curso_seleccionado = cursos.filter(id_curso=int(filtro_curso_id)).first()
+            except (ValueError, TypeError):
+                curso_seleccionado = None
+
+        if curso_seleccionado:
+            resumen_qs = clases_para_resumen.annotate(
+                num_evaluaciones=Count(
+                    'evaluaciones',
+                    filter=Q(evaluaciones__activa=True),
+                    distinct=True,
+                ),
+                num_calificaciones=Count(
+                    'evaluaciones__calificaciones',
+                    filter=Q(evaluaciones__activa=True),
+                ),
+                promedio_clase=Avg(
+                    'evaluaciones__calificaciones__nota',
+                    filter=Q(evaluaciones__activa=True),
+                ),
+            ).order_by('asignatura__nombre')
+
+            total_eval_curso = 0
+            total_calif_curso = 0
+            clases_con_libro_curso = 0
+            promedios_curso = []
+
+            for clase_resumen in resumen_qs:
+                num_evals = clase_resumen.num_evaluaciones or 0
+                num_califs = clase_resumen.num_calificaciones or 0
+                prom = (
+                    round(float(clase_resumen.promedio_clase), 2)
+                    if clase_resumen.promedio_clase is not None
+                    else None
+                )
+                if num_evals:
+                    clases_con_libro_curso += 1
+                    estado = 'ok'
+                    estado_label = 'Con libro activo'
+                    if prom is not None and prom < 4.0:
+                        estado = 'warn'
+                        estado_label = 'Promedio bajo'
+                else:
+                    estado = 'muted'
+                    estado_label = 'Sin evaluaciones'
+
+                clases_resumen_curso.append({
+                    'clase_id': clase_resumen.id,
+                    'asignatura': clase_resumen.asignatura.nombre,
+                    'profesor': (
+                        clase_resumen.profesor.get_full_name()
+                        if clase_resumen.profesor else 'Sin docente'
+                    ),
+                    'profesor_id': clase_resumen.profesor_id,
+                    'color': resolve_asignatura_color(
+                        clase_resumen.asignatura.nombre, clase_resumen.asignatura.color
+                    ),
+                    'num_evaluaciones': num_evals,
+                    'num_calificaciones': num_califs,
+                    'promedio': prom,
+                    'estado': estado,
+                    'estado_label': estado_label,
+                })
+
+                total_eval_curso += num_evals
+                total_calif_curso += num_califs
+                if prom is not None:
+                    promedios_curso.append(prom)
+
+            curso_kpi = {
+                'total_clases': len(clases_resumen_curso),
+                'clases_con_libro': clases_con_libro_curso,
+                'total_evaluaciones': total_eval_curso,
+                'total_calificaciones': total_calif_curso,
+                'promedio': (
+                    round(sum(promedios_curso) / len(promedios_curso), 2)
+                    if promedios_curso else None
+                ),
+                'clases_sin_libro': len(clases_resumen_curso) - clases_con_libro_curso,
+            }
+
         if filtro_clase_id:
             try:
                 clase_seleccionada = clases.filter(id=int(filtro_clase_id)).first()
             except (ValueError, TypeError):
                 clase_seleccionada = None
+            if clase_seleccionada and not filtro_curso_id:
+                filtro_curso_id = str(clase_seleccionada.curso_id)
 
         if clase_seleccionada:
             gradebook_data = GradesService.build_gradebook_matrix(colegio, clase_seleccionada)
@@ -1539,8 +1644,13 @@ class DashboardAdminService:
 
         return {
             'clases': clases,
+            'cursos': cursos,
             'filtro_clase_id': filtro_clase_id,
+            'filtro_curso_id': filtro_curso_id,
             'clase_seleccionada': clase_seleccionada,
+            'curso_seleccionado': curso_seleccionado,
+            'clases_resumen_curso': clases_resumen_curso,
+            'curso_kpi': curso_kpi,
             'evaluaciones': evaluaciones,
             'matriz_calificaciones': matriz_calificaciones,
             'promedios_evaluaciones': promedios_evaluaciones,
@@ -1564,10 +1674,25 @@ class DashboardAdminService:
             'admin_insights': admin_insights,
             'ciclo_activo': ciclo_activo,
             'actualizado_en': timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M'),
-            'libro_hero_clases': clases_con_libro.count(),
-            'libro_hero_evaluaciones': total_evaluaciones if clase_seleccionada else total_evaluaciones_escuela,
-            'libro_hero_promedio': promedio_general if promedio_general is not None else (promedio_colegio or '—'),
-            'libro_hero_riesgo': len(alumnos_riesgo) if clase_seleccionada else '—',
+            'libro_hero_clases': (
+                curso_kpi['clases_con_libro'] if curso_kpi
+                else (clases_con_libro.count() if not clase_seleccionada else 1)
+            ),
+            'libro_hero_evaluaciones': (
+                total_evaluaciones if clase_seleccionada
+                else (curso_kpi['total_evaluaciones'] if curso_kpi else total_evaluaciones_escuela)
+            ),
+            'libro_hero_promedio': (
+                promedio_general if promedio_general is not None
+                else (
+                    curso_kpi['promedio'] if curso_kpi and curso_kpi.get('promedio') is not None
+                    else (promedio_colegio or '—')
+                )
+            ),
+            'libro_hero_riesgo': (
+                len(alumnos_riesgo) if clase_seleccionada
+                else '—'
+            ),
         }
 
     @staticmethod
@@ -1786,50 +1911,299 @@ class DashboardAdminService:
         DashboardAdminService._validate_school_integrity(escuela_rbd, 'DASHBOARD_ADMIN_REPORTES_CONTEXT')
 
         from backend.apps.institucion.models import Colegio
-        from backend.apps.cursos.models import Clase
+        from backend.apps.cursos.models import Clase, Curso
+        from backend.apps.institucion.models import CicloAcademico
         from backend.apps.academico.services.academic_reports_service import AcademicReportsService
+        from django.utils import timezone
         
         colegio = Colegio.objects.get(rbd=escuela_rbd)
+        ciclo_activo = CicloAcademico.objects.filter(
+            colegio=colegio, estado='ACTIVO'
+        ).order_by('-fecha_inicio').first()
         
         # Get all active classes for the school
         clases = Clase.objects.filter(
             colegio=colegio,
             activo=True
         ).select_related('asignatura', 'curso', 'profesor').order_by(
-            'asignatura__nombre', 'curso__nombre'
+            'curso__nombre', 'asignatura__nombre'
         )
+
+        cursos = Curso.objects.filter(
+            id_curso__in=clases.values_list('curso_id', flat=True).distinct(),
+        ).order_by('nombre')
         
         tipo_reporte = request_get_params.get('tipo', 'asistencia')
-        filtro_clase_id = request_get_params.get('clase_id', '')
+        if tipo_reporte not in ('asistencia', 'academico'):
+            tipo_reporte = 'asistencia'
+        filtro_clase_id = (request_get_params.get('clase_id') or '').strip()
+        request_curso_id = (request_get_params.get('curso_id') or '').strip()
+        filtro_curso_id = request_curso_id
         fecha_inicio = request_get_params.get('fecha_inicio', '')
         fecha_fin = request_get_params.get('fecha_fin', '')
         
         reporte_data = None
         clase_seleccionada = None
+        curso_seleccionado = None
+        admin_insights = []
+        clases_para_filtro = clases
+
+        if filtro_curso_id:
+            try:
+                curso_seleccionado = cursos.filter(id_curso=int(filtro_curso_id)).first()
+                if curso_seleccionado:
+                    clases_para_filtro = clases.filter(curso_id=curso_seleccionado.id_curso)
+                else:
+                    filtro_curso_id = ''
+            except (ValueError, TypeError):
+                filtro_curso_id = ''
+                curso_seleccionado = None
         
         if filtro_clase_id:
             try:
                 clase_id = int(filtro_clase_id)
                 clase_seleccionada = clases.filter(id=clase_id).first()
-                
+
                 if clase_seleccionada:
-                    fecha_inicio_parsed, fecha_fin_parsed = AcademicReportsService.parse_report_filters(fecha_inicio, fecha_fin)
-                    reporte_data = AcademicReportsService.generate_report_data(
-                        user, clase_seleccionada, tipo_reporte, fecha_inicio_parsed, fecha_fin_parsed
-                    )
-            
-            except (ValueError, TypeError) as e:
-                pass  # Silently handle errors
+                    if request_curso_id and str(clase_seleccionada.curso_id) != str(request_curso_id):
+                        clase_seleccionada = None
+                        reporte_data = None
+                        filtro_clase_id = ''
+                        admin_insights.append({
+                            'tipo': 'warn',
+                            'texto': (
+                                'La asignatura seleccionada no corresponde al curso elegido. '
+                                'Vuelve a elegir la clase del curso y pulsa Generar reporte.'
+                            ),
+                        })
+                    else:
+                        filtro_curso_id = str(clase_seleccionada.curso_id)
+                        curso_seleccionado = cursos.filter(
+                            id_curso=clase_seleccionada.curso_id
+                        ).first()
+                        clases_para_filtro = clases.filter(curso_id=clase_seleccionada.curso_id)
+
+                        fecha_inicio_parsed, fecha_fin_parsed = AcademicReportsService.parse_report_filters(
+                            fecha_inicio, fecha_fin
+                        )
+                        reporte_data = AcademicReportsService.generate_report_data(
+                            user, clase_seleccionada, tipo_reporte, fecha_inicio_parsed, fecha_fin_parsed
+                        )
+                else:
+                    filtro_clase_id = ''
+
+            except (ValueError, TypeError):
+                filtro_clase_id = ''
+                clase_seleccionada = None
+
+        reportes_hero_m1 = '—'
+        reportes_hero_m2 = '—'
+        reportes_hero_m3 = '—'
+        reportes_hero_m4 = '—'
+        reportes_hero_m1_label = 'Registros'
+        reportes_hero_m2_label = 'Asistencia'
+        reportes_hero_m3_label = 'Ausentes'
+        reportes_hero_m4_label = 'Tardanzas'
+
+        if reporte_data and tipo_reporte == 'asistencia':
+            stats = reporte_data.get('estadisticas_generales') or {}
+            reportes_hero_m1 = stats.get('total_registros', 0)
+            reportes_hero_m2 = f"{stats.get('porcentaje_asistencia', 0)}%"
+            reportes_hero_m3 = stats.get('ausentes', 0)
+            reportes_hero_m4 = stats.get('tardanzas', 0)
+            reportes_hero_m1_label = 'Registros'
+            reportes_hero_m2_label = '% Asistencia'
+            reportes_hero_m3_label = 'Ausentes'
+            reportes_hero_m4_label = 'Tardanzas'
+            if stats.get('porcentaje_asistencia', 100) < 85:
+                admin_insights.append({
+                    'tipo': 'warn',
+                    'texto': f'La asistencia del período es {stats.get("porcentaje_asistencia", 0)}% — revisa estudiantes en advertencia o crítico.',
+                })
+        elif reporte_data and tipo_reporte == 'academico':
+            reportes_hero_m1 = reporte_data.get('total_estudiantes', 0)
+            reportes_hero_m2 = reporte_data.get('promedio_curso', '—')
+            reportes_hero_m3 = f"{reporte_data.get('porcentaje_aprobacion', 0)}%"
+            reportes_hero_m4 = reporte_data.get('total_evaluaciones', 0)
+            reportes_hero_m1_label = 'Estudiantes'
+            reportes_hero_m2_label = 'Promedio'
+            reportes_hero_m3_label = '% Aprobación'
+            reportes_hero_m4_label = 'Evaluaciones'
+            if reporte_data.get('promedio_curso', 7) < 4.0:
+                admin_insights.append({
+                    'tipo': 'danger',
+                    'texto': f'Promedio del curso {reporte_data.get("promedio_curso")} — seguimiento académico recomendado.',
+                })
+
+        reportes_acceso_rapido = []
+        reportes_acceso_rapido_total = 0
+        if not clase_seleccionada:
+            acceso_limit = 24 if filtro_curso_id else 12
+            reportes_acceso_rapido, reportes_acceso_rapido_total = (
+                DashboardAdminService._build_reportes_acceso_rapido(
+                    clases, tipo_reporte, filtro_curso_id, limit=acceso_limit
+                )
+            )
         
         return {
             'clases': clases,
+            'clases_para_filtro': clases_para_filtro,
+            'cursos': cursos,
+            'curso_seleccionado': curso_seleccionado,
+            'filtro_curso_id': filtro_curso_id,
             'tipo_reporte': tipo_reporte,
             'filtro_clase_id': filtro_clase_id,
             'fecha_inicio': fecha_inicio,
             'fecha_fin': fecha_fin,
             'reporte_data': reporte_data,
             'clase_seleccionada': clase_seleccionada,
+            'admin_insights': admin_insights,
+            'ciclo_activo': ciclo_activo,
+            'actualizado_en': timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M'),
+            'reportes_hero_m1': reportes_hero_m1,
+            'reportes_hero_m2': reportes_hero_m2,
+            'reportes_hero_m3': reportes_hero_m3,
+            'reportes_hero_m4': reportes_hero_m4,
+            'reportes_hero_m1_label': reportes_hero_m1_label,
+            'reportes_hero_m2_label': reportes_hero_m2_label,
+            'reportes_hero_m3_label': reportes_hero_m3_label,
+            'reportes_hero_m4_label': reportes_hero_m4_label,
+            'reportes_acceso_rapido': reportes_acceso_rapido,
+            'reportes_acceso_rapido_total': reportes_acceso_rapido_total,
         }
+
+    @staticmethod
+    def _build_reportes_acceso_rapido(clases_qs, tipo_reporte, filtro_curso_id='', limit=12):
+        """Tarjetas de acceso rápido con métricas recientes y prioridad por alertas."""
+        from datetime import date, timedelta
+        from django.db.models import Avg, Count, Q
+        from backend.apps.academico.models import Asistencia
+
+        qs = clases_qs
+        if filtro_curso_id:
+            try:
+                qs = qs.filter(curso_id=int(filtro_curso_id))
+            except (ValueError, TypeError):
+                pass
+
+        clases_list = list(
+            qs.annotate(
+                num_evaluaciones=Count(
+                    'evaluaciones',
+                    filter=Q(evaluaciones__activa=True),
+                    distinct=True,
+                ),
+                promedio_clase=Avg(
+                    'evaluaciones__calificaciones__nota',
+                    filter=Q(evaluaciones__activa=True),
+                ),
+            ).select_related('asignatura', 'curso', 'profesor').order_by('curso__nombre', 'asignatura__nombre')
+        )
+        if not clases_list:
+            return [], 0
+
+        clase_ids = [c.id for c in clases_list]
+        fecha_fin = date.today()
+        fecha_inicio = fecha_fin - timedelta(days=30)
+
+        asist_map = {
+            row['clase_id']: row
+            for row in Asistencia.objects.filter(
+                clase_id__in=clase_ids,
+                fecha__gte=fecha_inicio,
+                fecha__lte=fecha_fin,
+            ).values('clase_id').annotate(
+                total=Count('id_asistencia'),
+                presentes=Count('id_asistencia', filter=Q(estado='P')),
+                ausentes=Count('id_asistencia', filter=Q(estado='A')),
+                tardanzas=Count('id_asistencia', filter=Q(estado='T')),
+            )
+        }
+
+        items = []
+        for clase in clases_list:
+            asist = asist_map.get(clase.id, {})
+            total_asist = asist.get('total') or 0
+            pct_asist = (
+                round((asist['presentes'] / total_asist) * 100, 1)
+                if total_asist and asist.get('presentes') is not None
+                else None
+            )
+            prom = (
+                round(float(clase.promedio_clase), 2)
+                if clase.promedio_clase is not None
+                else None
+            )
+            num_eval = clase.num_evaluaciones or 0
+
+            estado = 'ok'
+            estado_label = 'Al día'
+            insight = 'Reporte listo para revisar'
+            priority = 0
+
+            if tipo_reporte == 'academico':
+                if num_eval == 0:
+                    estado = 'muted'
+                    estado_label = 'Sin evaluaciones'
+                    insight = 'Sin notas registradas para generar rendimiento'
+                    priority = 1
+                elif prom is not None and prom < 4.0:
+                    estado = 'warn'
+                    estado_label = 'Promedio bajo'
+                    insight = f'Promedio {prom} — revisar seguimiento académico'
+                    priority = 3
+                elif num_eval < 2:
+                    estado = 'muted'
+                    estado_label = 'Poca evidencia'
+                    insight = f'Solo {num_eval} evaluación registrada'
+                    priority = 2
+                else:
+                    insight = f'Promedio {prom} con {num_eval} evaluaciones'
+            else:
+                if total_asist == 0:
+                    estado = 'muted'
+                    estado_label = 'Sin registros'
+                    insight = 'Sin asistencia en los últimos 30 días'
+                    priority = 1
+                elif pct_asist is not None and pct_asist < 85:
+                    estado = 'warn'
+                    estado_label = 'Asistencia baja'
+                    insight = f'{pct_asist}% asistencia · {asist.get("ausentes", 0)} ausencias'
+                    priority = 3
+                elif pct_asist is not None and pct_asist < 92:
+                    estado = 'warn'
+                    estado_label = 'En observación'
+                    insight = f'{pct_asist}% asistencia en 30 días'
+                    priority = 2
+                else:
+                    insight = f'{pct_asist}% asistencia · {total_asist} registros (30 días)'
+
+            items.append({
+                'clase_id': clase.id,
+                'curso_id': clase.curso_id,
+                'curso': clase.curso.nombre,
+                'asignatura': clase.asignatura.nombre,
+                'profesor': (
+                    clase.profesor.get_full_name() if clase.profesor else 'Sin docente'
+                ),
+                'color': resolve_asignatura_color(
+                    clase.asignatura.nombre, clase.asignatura.color
+                ),
+                'estado': estado,
+                'estado_label': estado_label,
+                'insight': insight,
+                'priority': priority,
+                'pct_asistencia': pct_asist,
+                'promedio': prom,
+                'num_evaluaciones': num_eval,
+                'registros_asistencia': total_asist,
+                'ausentes_30d': asist.get('ausentes', 0),
+                'tardanzas_30d': asist.get('tardanzas', 0),
+            })
+
+        items.sort(key=lambda x: (-x['priority'], x['curso'], x['asignatura']))
+        total = len(items)
+        return items[:limit], total
 
     @staticmethod
     def _count_estudiantes_curso(curso, ciclo=None):
@@ -1987,7 +2361,7 @@ class DashboardAdminService:
                     'clase_id': c.id,
                     'nombre': c.asignatura.nombre,
                     'promedio': prom,
-                    'color': c.asignatura.color or '#6366f1',
+                    'color': resolve_asignatura_color(c.asignatura.nombre, c.asignatura.color),
                     'profesor': c.profesor.get_full_name() if c.profesor else 'Sin docente',
                     'profesor_id': c.profesor.id if c.profesor else None,
                     'total_evaluaciones': c.evaluaciones.filter(activa=True).count()
@@ -1995,7 +2369,9 @@ class DashboardAdminService:
                 if prom is not None:
                     nombre_asignaturas.append(c.asignatura.nombre)
                     promedios_asignaturas.append(prom)
-                    colores_asignaturas.append(c.asignatura.color or '#6366f1')
+                    colores_asignaturas.append(
+                        resolve_asignatura_color(c.asignatura.nombre, c.asignatura.color)
+                    )
             
             asignaturas_con_nota = [item for item in lista_asignaturas_data if item['promedio'] is not None]
             mejores_asignaturas = sorted(asignaturas_con_nota, key=lambda x: x['promedio'], reverse=True)[:3]

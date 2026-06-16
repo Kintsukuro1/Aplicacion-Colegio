@@ -1,0 +1,120 @@
+<script>
+(function() {
+    const pdfBase = "{% url 'exportar_reporte_pdf' %}";
+    const excelBase = "{% url 'exportar_reporte_excel' %}";
+
+    function repQueryParams() {
+        const p = new URLSearchParams(window.location.search);
+        return {
+            tipo: p.get('tipo') || 'asistencia',
+            claseId: p.get('clase_id') || '',
+            fechaInicio: p.get('fecha_inicio') || document.getElementById('fecha_inicio')?.value || '',
+            fechaFin: p.get('fecha_fin') || document.getElementById('fecha_fin')?.value || ''
+        };
+    }
+
+    function repBuildExportUrl(base) {
+        const q = repQueryParams();
+        if (!q.claseId) return null;
+        const u = new URL(base, window.location.origin);
+        u.searchParams.set('tipo', q.tipo);
+        u.searchParams.set('clase_id', q.claseId);
+        if (q.fechaInicio) u.searchParams.set('fecha_inicio', q.fechaInicio);
+        if (q.fechaFin) u.searchParams.set('fecha_fin', q.fechaFin);
+        return u.toString();
+    }
+
+    function repDefaultDates() {
+        const ini = document.getElementById('fecha_inicio');
+        const fin = document.getElementById('fecha_fin');
+        if (!ini || !fin) return;
+        const today = new Date();
+        const pad = function(n) { return String(n).padStart(2, '0'); };
+        const fmt = function(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+        if (!fin.value) fin.value = fmt(today);
+        if (!ini.value) {
+            const d30 = new Date(today);
+            d30.setDate(d30.getDate() - 30);
+            ini.value = fmt(d30);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', repDefaultDates);
+
+    const form = document.getElementById('formFiltros');
+    if (form && !form.dataset.repSubmitBound) {
+        form.dataset.repSubmitBound = '1';
+        form.addEventListener('submit', function(e) {
+            const clase = document.getElementById('clase_id');
+            if (clase && !clase.value) {
+                e.preventDefault();
+                alert('Selecciona una clase antes de generar el reporte.');
+                clase.focus();
+            }
+        });
+    }
+
+    window.exportarPDF = async function() {
+        const url = repBuildExportUrl(pdfBase);
+        if (!url) { alert('Selecciona una clase primero.'); return; }
+        try {
+            const resp = await fetch(url, { credentials: 'same-origin' });
+            const ct = (resp.headers.get('content-type') || '').toLowerCase();
+            if (ct.includes('application/json')) {
+                const data = await resp.json();
+                if (data.requires_approval) {
+                    alert('La exportación PDF requiere aprobación de otro usuario.\nSolicitud #' + data.request_id + (data.message ? '\n' + data.message : ''));
+                    return;
+                }
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+            }
+            if (!resp.ok) {
+                alert('No se pudo exportar el PDF (código ' + resp.status + ').');
+                return;
+            }
+            const blob = await resp.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'reporte.pdf';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (err) {
+            alert('Error al exportar PDF. Intenta de nuevo.');
+        }
+    };
+
+    window.exportarExcel = async function() {
+        const url = repBuildExportUrl(excelBase);
+        if (!url) { alert('Selecciona una clase primero.'); return; }
+        try {
+            const resp = await fetch(url, { credentials: 'same-origin' });
+            const ct = (resp.headers.get('content-type') || '').toLowerCase();
+            if (ct.includes('application/json')) {
+                const data = await resp.json();
+                if (data.requires_approval) {
+                    alert('La exportación Excel requiere aprobación de otro usuario.\nSolicitud #' + data.request_id);
+                    return;
+                }
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+            }
+            if (!resp.ok) {
+                alert('No se pudo exportar (código ' + resp.status + ').');
+                return;
+            }
+            const blob = await resp.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'reporte.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (err) {
+            window.location.href = url;
+        }
+    };
+})();
