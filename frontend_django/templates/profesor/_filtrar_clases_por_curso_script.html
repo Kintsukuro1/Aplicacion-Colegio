@@ -8,7 +8,9 @@ function filtrarClasesPorCurso(cursoId) {
             opt.hidden = false;
             return;
         }
-        var visible = !cursoId || String(opt.dataset.cursoId || '') === String(cursoId);
+        var visible = !cursoId
+            || String(opt.dataset.cursoId || '') === String(cursoId)
+            || String(opt.dataset.curso || '') === String(cursoId);
         opt.hidden = !visible;
     });
 
@@ -21,23 +23,30 @@ function filtrarClasesPorCurso(cursoId) {
 }
 
 function syncCursoFromClase(claseSelect) {
-    var cursoSelect = document.getElementById('filtro_curso_id');
+    var cursoSelect = document.getElementById('filtro_curso_id')
+        || document.getElementById('filtro_curso_nombre');
     if (!cursoSelect || !claseSelect) return;
     var opt = claseSelect.options[claseSelect.selectedIndex];
-    if (opt && opt.value && opt.dataset.cursoId) {
-        cursoSelect.value = opt.dataset.cursoId;
-        filtrarClasesPorCurso(opt.dataset.cursoId);
+    if (opt && opt.value) {
+        if (opt.dataset.cursoId && cursoSelect.id === 'filtro_curso_id') {
+            cursoSelect.value = opt.dataset.cursoId;
+        } else if (opt.dataset.curso && cursoSelect.id === 'filtro_curso_nombre') {
+            cursoSelect.value = opt.dataset.curso;
+        }
+        filtrarClasesPorCurso(cursoSelect.value);
     }
 }
 
 function onClaseAsistenciaChange(claseSelect) {
     syncCursoFromClase(claseSelect);
-    var form = document.getElementById('formFiltros');
+    var form = document.getElementById('formFiltros')
+        || document.getElementById('formFiltrosLibro');
     if (form) form.submit();
 }
 
 function onCursoAsistenciaChange(select) {
-    var form = document.getElementById('formFiltros');
+    var form = document.getElementById('formFiltros')
+        || document.getElementById('formFiltrosLibro');
     var claseSelect = document.getElementById('clase_id');
     if (!form || !claseSelect) return;
 
@@ -47,7 +56,8 @@ function onCursoAsistenciaChange(select) {
 }
 
 function initAsistenciaFiltros() {
-    var cursoFiltro = document.getElementById('filtro_curso_id');
+    var cursoFiltro = document.getElementById('filtro_curso_id')
+        || document.getElementById('filtro_curso_nombre');
     var claseSelect = document.getElementById('clase_id');
     if (!cursoFiltro || !claseSelect) return;
 
