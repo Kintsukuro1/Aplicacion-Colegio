@@ -157,6 +157,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'backend.apps.core.context_processors.asset_version',
+                'backend.apps.core.context_processors.portal_branding',
             ],
         },
     },
@@ -313,6 +314,10 @@ USE_TZ = True
 
 # Bump al cambiar CSS/JS del portal (evita Ctrl+F5 manual en cada página).
 ASSET_VERSION = '20260618c'
+
+# Marca del portal: empresa (SaaS) vs establecimiento educacional.
+PORTAL_PLATFORM_NAME = config('PORTAL_PLATFORM_NAME', default='Raccademy')
+PORTAL_SCHOOL_NAME = config('PORTAL_SCHOOL_NAME', default='Colegio Santa María')
 
 
 # Static files
@@ -521,15 +526,20 @@ TENANT_ROOT_DOMAIN = config('TENANT_ROOT_DOMAIN', default='')
 # CONFIGURACIÓN DE CACHÉ Y RENDIMIENTO
 # ============================================================================
 
+_default_cache = {
+    'BACKEND': (
+        'django.core.cache.backends.redis.RedisCache'
+        if REDIS_URL
+        else 'django.core.cache.backends.locmem.LocMemCache'
+    ),
+    'LOCATION': REDIS_URL if REDIS_URL else 'unique-snowflake',
+    'TIMEOUT': 300,
+}
+if not REDIS_URL:
+    _default_cache['OPTIONS'] = {'MAX_ENTRIES': 1000}
+
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache' if REDIS_URL else 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': REDIS_URL if REDIS_URL else 'unique-snowflake',
-        'TIMEOUT': 300,
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000,
-        }
-    },
+    'default': _default_cache,
     'template_cache': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'template-cache',

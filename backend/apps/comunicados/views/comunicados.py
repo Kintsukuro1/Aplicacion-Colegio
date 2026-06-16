@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from ..models import Comunicado
 from ..services import ComunicadosService
 from backend.apps.core.services.dashboard_service import DashboardService
+from backend.common.utils.permissions import is_admin_general_school_view
 from backend.common.services.policy_service import PolicyService
 from datetime import datetime
 
@@ -43,6 +44,7 @@ def _build_dashboard_shell_context(request, pagina_actual: str = 'comunicados'):
         'escuela_nombre': escuela_nombre,
         'year': datetime.now().year,
         'pagina_actual': pagina_actual,
+        'admin_general_school_view': is_admin_general_school_view(rol, pagina_actual, escuela_rbd),
         **navigation_access,
     }
 

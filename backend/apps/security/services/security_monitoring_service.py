@@ -85,31 +85,38 @@ class SecurityMonitoringService:
         return (True, is_admin_general)
     
     @staticmethod
-    def get_user_school_info(user) -> Dict[str, Optional[str]]:
+    def get_user_school_info(user, session=None) -> Dict[str, Optional[str]]:
         """
-        Obtiene información de la escuela del usuario.
-        
-        Args:
-            user: Usuario
-        
-        Returns:
-            Dict con rbd_colegio y nombre_colegio
+        Obtiene información de la escuela del usuario (respeta colegio activo en sesión).
         """
         from backend.apps.institucion.models import Colegio
-        
+        from backend.apps.core.services.dashboard_auth_service import DashboardAuthService
+
+        rol = DashboardAuthService._resolve_dashboard_role(user)
+        is_system_admin = (
+            PolicyService.has_capability(user, 'SYSTEM_ADMIN') is True
+            and rol == 'admin_general'
+        )
+
         escuela_rbd = user.rbd_colegio
         escuela_nombre = 'Sistema'
-        
+
+        if is_system_admin and session:
+            session_rbd = session.get('admin_rbd_activo')
+            if session_rbd:
+                escuela_rbd = session_rbd
+                escuela_nombre = session.get('admin_colegio_nombre', 'Escuela')
+
         if escuela_rbd:
             try:
                 colegio = Colegio.objects.get(rbd=escuela_rbd)
                 escuela_nombre = colegio.nombre
             except Colegio.DoesNotExist:
                 pass
-        
+
         return {
             'rbd_colegio': escuela_rbd,
-            'nombre_colegio': escuela_nombre
+            'nombre_colegio': escuela_nombre,
         }
     
     # ========================================================================

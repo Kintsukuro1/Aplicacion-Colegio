@@ -1,14 +1,13 @@
-{% extends es_admin_general|yesno:"admin/_layout_standalone.html,dashboard.html" %}
+{% extends 'dashboard.html' %}
 {% load static %}
 
 {% block title %}Monitoreo de Seguridad - Portal Académico{% endblock %}
 
 {% block content %}
-{% if es_admin_general %}
-{% include 'admin/monitoreo_seguridad.html' %}
-{% else %}
 <div class="adm-portal adm-security-page">
+    {% if es_admin_general and not admin_general_school_view %}
+    {% include 'admin/_admin_hero.html' with hero_eyebrow="Seguridad" hero_title="Monitoreo de seguridad" hero_subtitle="Intentos fallidos, IPs bloqueadas y accesos recientes a la plataforma" hero_aria="Monitoreo de seguridad" hero_show_date="0" m1_value=total_intentos_fallidos|default:"0" m1_label="Fallidos 24h" m1_mod="riesgo" m2_value=total_ips_bloqueadas|default:"0" m2_label="IPs bloq." m2_mod="riesgo" m3_value=logs_acceso|length|default:"0" m3_label="Accesos" m3_mod="tareas" m4_value=axes_failure_limit m4_label="Máx. intentos" m4_mod="neutral" %}
+    {% endif %}
     {% include 'admin/_monitoreo_seguridad_body.html' %}
 </div>
-{% endif %}
 {% endblock %}

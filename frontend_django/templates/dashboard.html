@@ -187,12 +187,16 @@
                     {% include 'staff/_staff_content_shell.html' with staff_slug='soporte_tecnico_escolar' staff_label='Soporte Técnico Escolar' %}
                 {% elif rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
                     {% include 'staff/_staff_content_shell.html' with staff_slug='bibliotecario_digital' staff_label='Bibliotecario Digital' %}
+                {% elif admin_general_school_view %}
+                    {% include 'staff/_staff_content_shell.html' with staff_slug='admin_general' staff_label='Administrador General' %}
                 {% else %}
                     {% include content_template %}
                 {% endif %}
                 {% else %}
                 {% if rol == 'admin_escolar' or rol == 'Administrador escolar' %}
                     {% include 'staff/_staff_wrap_start.html' with staff_slug='admin_escolar' staff_label='Administrador Escolar' %}
+                {% elif admin_general_school_view %}
+                    {% include 'staff/_staff_wrap_start.html' with staff_slug='admin_general' staff_label='Administrador General' %}
                 {% elif rol == 'asesor_financiero' or rol == 'Asesor financiero' %}
                     {% include 'staff/_staff_wrap_start.html' with staff_slug='asesor_financiero' staff_label='Asesor Financiero' %}
                 {% elif rol == 'coordinador_academico' or rol == 'Coordinador académico' %}
@@ -206,11 +210,11 @@
                 {% elif rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
                     {% include 'staff/_staff_wrap_start.html' with staff_slug='bibliotecario_digital' staff_label='Bibliotecario Digital' %}
                 {% endif %}
-                {% if rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'asesor_financiero' or rol == 'Asesor financiero' or rol == 'coordinador_academico' or rol == 'Coordinador académico' or rol == 'inspector_convivencia' or rol == 'Inspector convivencia' or rol == 'psicologo_orientador' or rol == 'Psicólogo orientador' or rol == 'soporte_tecnico_escolar' or rol == 'Soporte técnico escolar' or rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
+                {% if rol == 'admin_escolar' or rol == 'Administrador escolar' or admin_general_school_view or rol == 'asesor_financiero' or rol == 'Asesor financiero' or rol == 'coordinador_academico' or rol == 'Coordinador académico' or rol == 'inspector_convivencia' or rol == 'Inspector convivencia' or rol == 'psicologo_orientador' or rol == 'Psicólogo orientador' or rol == 'soporte_tecnico_escolar' or rol == 'Soporte técnico escolar' or rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
                     {% include 'staff/_staff_page_frame_start.html' %}
                 {% endif %}
                 {% block content %}{% endblock %}
-                {% if rol == 'admin_escolar' or rol == 'Administrador escolar' or rol == 'asesor_financiero' or rol == 'Asesor financiero' or rol == 'coordinador_academico' or rol == 'Coordinador académico' or rol == 'inspector_convivencia' or rol == 'Inspector convivencia' or rol == 'psicologo_orientador' or rol == 'Psicólogo orientador' or rol == 'soporte_tecnico_escolar' or rol == 'Soporte técnico escolar' or rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
+                {% if rol == 'admin_escolar' or rol == 'Administrador escolar' or admin_general_school_view or rol == 'asesor_financiero' or rol == 'Asesor financiero' or rol == 'coordinador_academico' or rol == 'Coordinador académico' or rol == 'inspector_convivencia' or rol == 'Inspector convivencia' or rol == 'psicologo_orientador' or rol == 'Psicólogo orientador' or rol == 'soporte_tecnico_escolar' or rol == 'Soporte técnico escolar' or rol == 'bibliotecario_digital' or rol == 'Bibliotecario digital' %}
                     {% include 'staff/_staff_page_frame_end.html' %}
                     {% include 'staff/_staff_wrap_end.html' %}
                 {% endif %}

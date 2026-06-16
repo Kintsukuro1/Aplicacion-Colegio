@@ -1,4 +1,6 @@
 {% load static %}
+{# Layout Administrador General — omitir si el dashboard ya aplicó staff shell escolar #}
+{% if not admin_general_school_view %}
 {# Layout Administrador General — sidebar lavanda (misma estructura que portal docente) #}
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
 <link rel="stylesheet" href="{% static 'css/dashboard_personal.css' %}?v=20260610-tree-admin">
@@ -18,3 +20,4 @@
 {% include 'admin/_sidebar.html' %}
 <div class="pers-main">
 <div class="pers-main__body pers-page-content adm-page-content">
+{% endif %}

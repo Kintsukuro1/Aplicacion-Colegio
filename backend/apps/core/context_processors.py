@@ -8,3 +8,13 @@ def asset_version(_request):
     return {
         'asset_version': getattr(settings, 'ASSET_VERSION', '1'),
     }
+
+
+def portal_branding(_request):
+    """Nombres de plataforma (empresa) y colegio para textos del portal."""
+    from django.conf import settings
+
+    return {
+        'portal_platform_name': getattr(settings, 'PORTAL_PLATFORM_NAME', 'Raccademy'),
+        'portal_school_name': getattr(settings, 'PORTAL_SCHOOL_NAME', 'Colegio Santa María'),
+    }

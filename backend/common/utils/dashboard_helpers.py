@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 
 from backend.apps.core.services.dashboard_auth_service import DashboardAuthService
+from backend.common.utils.permissions import is_admin_general_school_view
 from backend.common.services.policy_service import PolicyService
 
 
@@ -64,6 +65,9 @@ def build_dashboard_context(request, pagina_actual: str, content_template: str):
             'sidebar_template': DashboardAuthService.get_sidebar_template(rol),
             'content_template': content_template,
             'year': datetime.now().year,
+            'admin_general_school_view': is_admin_general_school_view(
+                rol, pagina_actual, user_context_data.get('escuela_rbd')
+            ),
             **navigation_access,
         }
     else:

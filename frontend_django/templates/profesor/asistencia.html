@@ -2,7 +2,7 @@
 
 {% load custom_filters %}
 
-{% if rol != 'admin_escolar' and rol != 'Administrador escolar' %}
+{% if rol != 'admin_escolar' and rol != 'Administrador escolar' and not admin_general_school_view %}
 {% include 'profesor/_personal_wrap_start.html' %}
 {% endif %}
 
@@ -612,7 +612,7 @@ window.addEventListener('beforeunload', function (e) {
 {% include 'profesor/_filtrar_clases_por_curso_script.html' %}
 {% endif %}
 
-{% if rol != 'admin_escolar' and rol != 'Administrador escolar' %}
+{% if rol != 'admin_escolar' and rol != 'Administrador escolar' and not admin_general_school_view %}
 {% include 'profesor/_personal_wrap_end.html' %}
 {% endif %}
 

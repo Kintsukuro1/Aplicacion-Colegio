@@ -1,5 +1,7 @@
 {% if rol == 'admin_general' or rol == 'Administrador general' %}
+{% if not admin_general_school_view %}
 {% include 'admin/_admin_wrap_end.html' %}
+{% endif %}
 {% else %}
 </div>
 </div>

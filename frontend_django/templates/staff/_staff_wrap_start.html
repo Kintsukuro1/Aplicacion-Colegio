@@ -18,6 +18,8 @@
 <div class="dashboard-personal-layout">
 {% if staff_slug == 'admin_escolar' %}
     {% include 'staff/sidebars/sidebar_admin_escolar.html' %}
+{% elif staff_slug == 'admin_general' %}
+    {% include 'admin/_sidebar.html' %}
 {% elif staff_slug == 'asesor_financiero' %}
     {% include 'staff/sidebars/sidebar_asesor_financiero.html' %}
 {% elif staff_slug == 'coordinador_academico' %}

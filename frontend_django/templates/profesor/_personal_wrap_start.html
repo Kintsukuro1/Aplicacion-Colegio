@@ -1,6 +1,8 @@
 {% load static %}
 {% if rol == 'admin_general' or rol == 'Administrador general' %}
+{% if not admin_general_school_view %}
 {% include 'admin/_admin_wrap_start.html' %}
+{% endif %}
 {% else %}
 {# layout docente: sidebar + paleta lavanda (vista-personal) #}
 <link rel="stylesheet" href="{% static 'css/design-system.css' %}">

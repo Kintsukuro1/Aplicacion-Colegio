@@ -2,9 +2,13 @@
 {% include 'profesor/_personal_wrap_start.html' %}
 {% elif rol == 'admin_general' or rol == 'Administrador general' %}
 {% load static %}
+{% if not admin_general_school_view %}
 {% include 'admin/_admin_wrap_start.html' %}
 <div class="adm-portal adm-sr-page">
 {% include 'admin/_admin_hero.html' with hero_eyebrow="Comunidad escolar" hero_title="Solicitud de reuniones" hero_subtitle="Coordina citas entre apoderados y profesores del establecimiento" hero_aria="Solicitud de reuniones" hero_show_date="0" m1_value="—" m1_label="Pendientes" m1_mod="warn" m2_value="—" m2_label="Confirmadas" m2_mod="clases" m3_value="—" m3_label="Esta semana" m3_mod="tareas" m4_value="—" m4_label="Total" m4_mod="neutral" %}
+{% else %}
+<div class="adm-portal adm-sr-page">
+{% endif %}
 {% include 'admin_escolar/_reuniones_admin_guia.html' %}
 {% endif %}
 <div class="{% if rol == 'admin_general' or rol == 'Administrador general' %}adm-sr-content{% else %}content-wrapper{% endif %} sr-page">

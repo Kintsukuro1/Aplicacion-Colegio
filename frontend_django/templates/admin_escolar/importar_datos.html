@@ -1,8 +1,12 @@
 {% load static %}
 {% if rol == 'admin_general' or rol == 'Administrador general' %}
+{% if not admin_general_school_view %}
 {% include 'admin/_admin_wrap_start.html' %}
 <div class="adm-portal adm-importar-datos">
     {% include 'admin/_admin_hero.html' with hero_eyebrow="Gestión de datos" hero_title="Importar / exportar datos" hero_subtitle=hero_subtitle_import hero_aria="Importar exportar datos" hero_show_date="0" m1_value=total_estudiantes m1_label="Estudiantes" m1_mod="clases" m2_value=total_profesores m2_label="Profesores" m2_mod="tareas" m3_value=total_apoderados m3_label="Apoderados" m3_mod="asistencia" m4_value="CSV" m4_label="Formato" m4_mod="neutral" %}
+{% else %}
+<div class="adm-portal adm-importar-datos">
+{% endif %}
 {% elif rol == 'admin_escolar' or rol == 'Administrador escolar' %}
 <div class="adm-importar-datos">
 {% endif %}

@@ -16,6 +16,7 @@ from backend.common.exceptions import PrerequisiteException
 from backend.common.services.onboarding_service import OnboardingService
 from backend.common.services.onboarding_notification_service import OnboardingNotificationService
 from backend.common.services.policy_service import PolicyService
+from backend.common.utils.permissions import is_admin_general_school_view, ADMIN_ESCOLAR_SHELL_PAGES
 
 
 class DashboardOrchestratorService:
@@ -107,6 +108,9 @@ class DashboardOrchestratorService:
             'sidebar_template': DashboardService.get_sidebar_template(rol),
             'content_template': template_pagina,
             'year': datetime.now().year,
+            'admin_general_school_view': is_admin_general_school_view(
+                rol, pagina_solicitada, escuela_rbd
+            ),
         }
 
         navigation_access = DashboardService.get_navigation_access(
@@ -162,12 +166,7 @@ class DashboardOrchestratorService:
             context.update(role_context)
 
             # Cargar contexto escolar si administra una escuela y solicita una página escolar
-            if escuela_rbd and pagina_solicitada in {
-                'mi_escuela', 'infraestructura', 'gestionar_estudiantes', 'gestionar_cursos',
-                'gestionar_asignaturas', 'gestionar_profesores', 'gestionar_ciclos',
-                'asistencia', 'notas', 'libro_clases', 'reportes', 'reporte_cursos',
-                'gestionar_finanzas'
-            }:
+            if escuela_rbd and pagina_solicitada in ADMIN_ESCOLAR_SHELL_PAGES:
                 setup_status = OnboardingService.get_setup_status(escuela_rbd)
                 context['setup_status'] = setup_status
                 context['setup_incomplete'] = not setup_status['setup_complete']

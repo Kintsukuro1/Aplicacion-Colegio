@@ -4,7 +4,9 @@
 
 <div class="{% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}adm-portal{% else %}content-wrapper{% endif %} adm-active-sessions">
     {% if rol == 'admin_general' or rol == 'Administrador general' or es_admin_general %}
+    {% if not admin_general_school_view %}
     {% include 'admin/_admin_hero.html' with hero_eyebrow="Consola de seguridad" hero_title="Sesiones activas" hero_subtitle="Monitoreo de sesiones abiertas y revocación remota en la plataforma" hero_aria="Sesiones activas" hero_show_date="0" m1_value="—" m1_label="Sesiones" m1_mod="clases" m2_value="—" m2_label="Usuarios" m2_mod="tareas" m3_value="—" m3_label="Dispositivos" m3_mod="asistencia" m4_value="—" m4_label="Revocadas" m4_mod="neutral" %}
+    {% endif %}
     {% else %}
     <div class="page-header">
         <h1>Sesiones Activas</h1>

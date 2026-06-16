@@ -16,8 +16,8 @@
     <nav class="main-nav">
         <div class="nav-container">
             <div class="nav-logo">
-                {% include 'includes/_portal_brand_logo.html' with logo_alt='Raccademy' extra_class='portal-brand-logo--nav' %}
-                <span class="logo-text">Raccademy</span>
+                {% include 'includes/_portal_brand_logo.html' with logo_alt=portal_school_name extra_class='portal-brand-logo--nav' %}
+                <span class="logo-text">{{ portal_school_name }}</span>
             </div>
             <ul class="nav-links">
                 <li><a href="#features">Caracter&iacute;sticas de la plataforma</a></li>
@@ -116,7 +116,7 @@
         <section id="features" class="features-section">
             <div class="features-container">
                 <h2 class="section-title">Construido para el &eacute;xito acad&eacute;mico</h2>
-                <p class="section-subtitle">Explora las herramientas que hacen de Raccademy el coraz&oacute;n de nuestra comunidad de aprendizaje.</p>
+                <p class="section-subtitle">Explora las herramientas que hacen de {{ portal_school_name }} el coraz&oacute;n de nuestra comunidad de aprendizaje.</p>
 
                 <div class="features-grid">
                     <div class="feature-box">
@@ -160,9 +160,9 @@
             <div class="portal-container">
                 <div class="portal-card-unified">
                     <div class="portal-icon">
-                        {% include 'includes/_portal_brand_logo.html' with logo_alt='Raccademy' extra_class='portal-brand-logo--portal-section' %}
+                        {% include 'includes/_portal_brand_logo.html' with logo_alt=portal_school_name extra_class='portal-brand-logo--portal-section' %}
                     </div>
-                    <h2>Acceso al portal Raccademy</h2>
+                    <h2>Acceso al portal de {{ portal_school_name }}</h2>
                     <p>Un solo inicio de sesi&oacute;n para estudiantes, familias, docentes y personal. El sistema reconoce tu rol autom&aacute;ticamente.</p>
                     <a href="{% url 'accounts:login' %}" class="btn-portal-main">Ingresar al portal &rarr;</a>
                 </div>
@@ -219,10 +219,10 @@
             <div class="footer-container">
                 <div class="footer-brand">
                     <div class="footer-logo">
-                        {% include 'includes/_portal_brand_logo.html' with logo_alt='Raccademy' extra_class='portal-brand-logo--footer' %}
-                        <span>Raccademy</span>
+                        {% include 'includes/_portal_brand_logo.html' with logo_alt=portal_school_name extra_class='portal-brand-logo--footer' %}
+                        <span>{{ portal_school_name }}</span>
                     </div>
-                    <p>&copy; 2026 Raccademy &bull; Sistema de gesti&oacute;n educativa</p>
+                    <p>&copy; 2026 {{ portal_school_name }} &bull; Plataforma {{ portal_platform_name }}</p>
                 </div>
                 <div class="footer-links">
                     <a href="#">T&eacute;rminos de servicio</a>

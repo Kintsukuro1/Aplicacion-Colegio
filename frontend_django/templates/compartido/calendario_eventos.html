@@ -4,9 +4,13 @@
 <link rel="stylesheet" href="{% static 'css/profesor/calendario_eventos.css' %}?v=20260528-demo-intel">
 {% elif rol == 'admin_general' or rol == 'Administrador general' %}
 {% load static %}
+{% if not admin_general_school_view %}
 {% include 'admin/_admin_wrap_start.html' %}
 <div class="adm-portal adm-ce-page">
 {% include 'admin/_admin_hero.html' with hero_eyebrow="Comunidad escolar" hero_title="Calendario escolar" hero_subtitle="Feriados, evaluaciones y actividades visibles para profesores, estudiantes y apoderados" hero_aria="Calendario escolar" hero_show_date="0" m1_value="—" m1_label="Eventos" m1_mod="clases" m2_value="—" m2_label="Próximos" m2_mod="tareas" m3_value="—" m3_label="Feriados" m3_mod="warn" m4_value="—" m4_label="Este mes" m4_mod="neutral" %}
+{% else %}
+<div class="adm-portal adm-ce-page">
+{% endif %}
 {% include 'admin_escolar/_calendario_admin_guia.html' %}
 {% endif %}
 <div class="{% if rol == 'admin_general' or rol == 'Administrador general' %}adm-ce-content{% else %}content-wrapper{% endif %} ce-page">

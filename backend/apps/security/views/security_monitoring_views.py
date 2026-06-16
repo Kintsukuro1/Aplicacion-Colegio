@@ -10,10 +10,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.cache import never_cache
 from django_ratelimit.decorators import ratelimit
-from datetime import datetime
 
 from backend.apps.security.services import SecurityMonitoringService
-from backend.apps.core.services.dashboard_auth_service import DashboardAuthService
+from backend.common.utils.dashboard_helpers import build_dashboard_context
 
 
 @login_required()
@@ -73,7 +72,7 @@ def monitoreo_seguridad(request):
     # ========================================================================
     # PASO 2: Obtener información de la escuela del usuario
     # ========================================================================
-    escuela_info = SecurityMonitoringService.get_user_school_info(request.user)
+    escuela_info = SecurityMonitoringService.get_user_school_info(request.user, request.session)
     escuela_rbd = escuela_info['rbd_colegio']
     escuela_nombre = escuela_info['nombre_colegio']
     
@@ -122,55 +121,28 @@ def monitoreo_seguridad(request):
     axes_config = SecurityMonitoringService.get_axes_settings()
     
     # ========================================================================
-    # PASO 9: Determinar sidebar y navegación según rol
+    # PASO 9–10: Contexto del dashboard + datos de monitoreo
     # ========================================================================
-    rol = 'admin' if es_admin_general else 'admin_escolar'
-
-    sidebar_map = {
-        'admin': 'sidebars/sidebar_admin.html',
-        'admin_escolar': 'sidebars/sidebar_admin_escuela.html',
-    }
-
-    navigation_access = DashboardAuthService.get_navigation_access(
-        rol=rol,
-        user=request.user,
-        school_id=escuela_rbd,
+    shell_context, redirect_response = build_dashboard_context(
+        request,
+        pagina_actual='monitoreo_seguridad',
+        content_template='',
     )
-    iniciales = (
-        (request.user.nombre[:1] if request.user.nombre else '')
-        + (request.user.apellido_paterno[:1] if request.user.apellido_paterno else '')
-    ).upper() or '?'
+    if redirect_response:
+        return redirect_response
 
-    # ========================================================================
-    # PASO 10: Preparar contexto completo
-    # ========================================================================
     context = {
-        # Datos de seguridad
+        **shell_context,
         'intentos_fallidos': intentos_fallidos,
         'logs_acceso': logs_acceso,
         'ips_bloqueadas': ips_bloqueadas,
         'total_intentos_fallidos': estadisticas['total_intentos_fallidos'],
         'total_ips_bloqueadas': estadisticas['total_ips_bloqueadas'],
         'logs_archivo': logs_archivo,
-
-        # Configuración de axes
         'axes_failure_limit': axes_config['failure_limit'],
         'axes_cooloff_time': axes_config['cooloff_time'],
-
-        # Información del usuario y escuela
         'es_admin_general': es_admin_general,
-        'rol': rol,
         'user': request.user,
-        'nombre_usuario': request.user.get_full_name(),
-        'iniciales': iniciales,
-        'id_usuario': request.user.id,
-        'escuela_rbd': escuela_rbd,
-        'escuela_nombre': escuela_nombre,
-        'sidebar_template': sidebar_map.get(rol, 'sidebars/sidebar_admin.html'),
-        'paginas_habilitadas': navigation_access['paginas_habilitadas'],
-        'menu_access': navigation_access['menu_access'],
-        'year': datetime.now().year,
-        'pagina_actual': 'monitoreo_seguridad',
     }
     
     # ========================================================================
@@ -261,7 +233,7 @@ def desbloquear_ip(request):
     # ========================================================================
     # PASO 5: Desbloquear IP usando servicio
     # ========================================================================
-    escuela_info = SecurityMonitoringService.get_user_school_info(request.user)
+    escuela_info = SecurityMonitoringService.get_user_school_info(request.user, request.session)
     escuela_rbd = escuela_info['rbd_colegio']
     
     deleted_count, mensaje_resultado = SecurityMonitoringService.unblock_ip(

@@ -2,6 +2,56 @@
 Utilidades de permisos y rutas por rol
 """
 
+# Páginas de gestión escolar que comparten layout premium (staff shell + plantillas admin_escolar).
+ADMIN_ESCOLAR_SHELL_PAGES = frozenset({
+    'mi_escuela',
+    'infraestructura',
+    'gestionar_estudiantes',
+    'gestionar_apoderados',
+    'gestionar_cursos',
+    'gestionar_ciclos',
+    'gestionar_asignaturas',
+    'gestionar_finanzas',
+    'gestionar_profesores',
+    'asistencia',
+    'notas',
+    'libro_notas',
+    'libro_clases',
+    'informes_reportes',
+    'reportes',
+    'reporte_cursos',
+})
+
+
+# Consola global SaaS: sin shell escolar aunque haya colegio seleccionado.
+ADMIN_GENERAL_GLOBAL_ONLY_PAGES = frozenset({
+    'inicio',
+    'escuelas',
+    'usuarios',
+    'planes',
+    'estadisticas_globales',
+    'reportes_financieros',
+    'configuracion',
+    'auditoria',
+    'gestionar_escuelas',
+    'seleccionar_escuela',
+    'notificaciones',
+    'perfil',
+})
+
+
+def is_admin_general_school_view(rol, pagina, escuela_rbd):
+    """Admin general con colegio activo fuera de la consola global → layout premium escolar."""
+    rol_norm = (rol or '').strip().lower()
+    if rol_norm not in {'admin_general', 'administrador general'}:
+        return False
+    if not escuela_rbd:
+        return False
+    pagina_norm = (pagina or 'inicio').strip().lower()
+    if pagina_norm in ADMIN_GENERAL_GLOBAL_ONLY_PAGES:
+        return False
+    return True
+
 
 def get_paginas_por_rol(rol):
     """
@@ -54,11 +104,11 @@ def get_paginas_por_rol(rol):
             'gestionar_finanzas': 'admin_escolar/gestionar_finanzas.html',
             'gestionar_profesores': 'admin_escolar/gestionar_profesores.html',
             'asistencia': 'profesor/asistencia.html',
-            'notas': 'profesor/notas.html',
-            'libro_notas': 'profesor/notas.html',
-            'libro_clases': 'profesor/libro_clases.html',
-            'informes_reportes': 'profesor/reportes.html',
-            'reportes': 'profesor/reportes.html',
+            'notas': 'admin_escolar/evaluaciones_notas.html',
+            'libro_notas': 'admin_escolar/evaluaciones_notas.html',
+            'libro_clases': 'admin_escolar/libro_clases.html',
+            'informes_reportes': 'admin_escolar/reportes.html',
+            'reportes': 'admin_escolar/reportes.html',
             'reporte_cursos': 'admin_escolar/reporte_cursos.html',
         },
         'admin_escolar': {

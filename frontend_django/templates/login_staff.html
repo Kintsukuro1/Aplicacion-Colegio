@@ -41,7 +41,7 @@
                             <path d="M14 8 L14 16 M10 12 L14 16 L18 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <rect x="10" y="18" width="8" height="3" rx="0.5" fill="white"/>
                         </svg>
-                        <span>Raccademy</span>
+                        <span>{{ portal_school_name }}</span>
                     </div>
                 </div>
 
@@ -133,7 +133,7 @@
             </div>
 
             <footer class="form-footer">
-                <p>© {{ year|default:"2026" }} Raccademy. Todos los derechos reservados.</p>
+                <p>&copy; {{ year|default:"2026" }} {{ portal_school_name }}. Plataforma {{ portal_platform_name }}.</p>
             </footer>
         </div>
     </div>

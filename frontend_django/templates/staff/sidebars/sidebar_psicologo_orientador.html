@@ -2,7 +2,7 @@
 <aside class="pers-sidebar staff-sidebar adm-sidebar" aria-label="Navegación psicólogo orientador">
     <div class="pers-sidebar__top">
         <div class="pers-sidebar__brand">
-            {% include 'includes/_portal_brand_logo.html' with logo_alt="Raccademy Colegio" extra_class='portal-brand-logo--sidebar' %}
+            {% include 'includes/_portal_brand_logo.html' with logo_alt=escuela_nombre|default:portal_school_name extra_class='portal-brand-logo--sidebar' %}
             <span class="pers-sidebar__brand-text">Orientación Escolar</span>
         </div>
         <div class="pers-sidebar__profile">

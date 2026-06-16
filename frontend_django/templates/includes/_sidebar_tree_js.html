@@ -4,6 +4,55 @@
 
     // ─── Sidebar Hierarchical Tree Navigation ───
     var STORAGE_KEY = 'sidebar_tree_state';
+    var SCROLL_KEY = 'portal_sidebar_scroll';
+
+    function getSidebarNav() {
+        return document.querySelector('.pers-sidebar__nav')
+            || document.querySelector('.sidebar-nav.sidebar-nav--tree')
+            || document.querySelector('.sidebar .sidebar-nav');
+    }
+
+    function saveSidebarScroll() {
+        var nav = getSidebarNav();
+        if (!nav) return;
+        try {
+            sessionStorage.setItem(SCROLL_KEY, String(nav.scrollTop));
+        } catch (e) { /* ignore */ }
+    }
+
+    function restoreSidebarScroll() {
+        var nav = getSidebarNav();
+        if (!nav) return;
+        try {
+            var saved = sessionStorage.getItem(SCROLL_KEY);
+            if (saved !== null && saved !== '') {
+                nav.scrollTop = parseInt(saved, 10) || 0;
+                return;
+            }
+        } catch (e) { /* ignore */ }
+        var active = nav.querySelector('.nav-tree__item.active');
+        if (active && active.scrollIntoView) {
+            active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+    }
+
+    function bindSidebarScrollPersistence() {
+        var nav = getSidebarNav();
+        if (!nav || nav.dataset.scrollPersistBound === 'true') return;
+        nav.dataset.scrollPersistBound = 'true';
+
+        var scrollTimer;
+        nav.addEventListener('scroll', function() {
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(saveSidebarScroll, 120);
+        }, { passive: true });
+
+        nav.querySelectorAll('a[href]').forEach(function(link) {
+            link.addEventListener('click', saveSidebarScroll);
+        });
+
+        window.addEventListener('beforeunload', saveSidebarScroll);
+    }
 
     function loadState() {
         try {
@@ -78,7 +127,11 @@
 
     function initSidebarTree() {
         var groups = document.querySelectorAll('.nav-tree__group');
-        if (!groups.length) return;
+        if (!groups.length) {
+            bindSidebarScrollPersistence();
+            restoreSidebarScroll();
+            return;
+        }
 
         var savedState = loadState();
 
@@ -119,6 +172,9 @@
                 badge.textContent = count;
             }
         });
+
+        bindSidebarScrollPersistence();
+        requestAnimationFrame(restoreSidebarScroll);
     }
 
     if (document.readyState === 'loading') {
